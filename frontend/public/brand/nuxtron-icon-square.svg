@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Nuxtron icon</title>
+  <desc id="desc">Square rounded icon containing NX emblem in cyan and white.</desc>
+  <defs>
+    <style>
+      .cyan { stroke: #22cdea; fill: #22cdea; }
+      .light { stroke: #f4f8ff; fill: #f4f8ff; }
+      .none { fill: none; }
+      .round { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <rect x="32" y="32" width="448" height="448" rx="92" fill="#0a1120"/>
+
+  <g transform="translate(98,106)">
+    <path class="light none round" stroke-width="18" d="M24 252 L24 80 Q24 66 38 66 L104 132 L104 252"/>
+    <path class="light none round" stroke-width="18" d="M62 234 L62 114 L128 180 L128 234"/>
+    <circle class="light" cx="144" cy="64" r="14"/>
+
+    <path class="cyan none round" stroke-width="18" d="M166 70 L246 154 L166 238"/>
+    <path class="cyan none round" stroke-width="18" d="M196 70 L276 154 L196 238"/>
+    <path class="cyan none round" stroke-width="18" d="M248 92 L304 92 L268 138"/>
+    <path class="cyan none round" stroke-width="18" d="M248 216 L304 216 L268 170"/>
+
+    <circle class="cyan" cx="24" cy="252" r="14"/>
+    <circle class="cyan" cx="78" cy="280" r="14"/>
+    <circle class="cyan" cx="136" cy="280" r="14"/>
+    <path class="cyan none round" stroke-width="14" d="M24 252 L78 280 L136 280"/>
+  </g>
+</svg>

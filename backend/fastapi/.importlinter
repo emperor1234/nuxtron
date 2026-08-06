@@ -1,0 +1,19 @@
+[importlinter]
+root_packages =
+    app
+
+[importlinter:contract:routers_do_not_import_tests]
+name = Routers must not import test modules
+type = forbidden
+source_modules =
+    app.routers
+forbidden_modules =
+    app.tests
+
+[importlinter:contract:tests_do_not_import_routers]
+name = Tests should import app entrypoints/services, not router modules directly
+type = forbidden
+source_modules =
+    app.tests
+forbidden_modules =
+    app.routers

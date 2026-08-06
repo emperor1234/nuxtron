@@ -1,0 +1,29 @@
+
+> nuxtron-platform@2.0.0 check:frontend:smoke
+> npm --prefix frontend run test:smoke
+
+
+> nuxtron-frontend@1.0.0 test:smoke
+> playwright test --config=./playwright.config.ts
+
+[WebServer] ÔÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of S:\Users\Ravi\Desktop\nuxtron\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * S:\Users\Ravi\Desktop\nuxtron\frontend\package-lock.json
+[WebServer] 
+[WebServer] ÔÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of S:\Users\Ravi\Desktop\nuxtron\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * S:\Users\Ravi\Desktop\nuxtron\frontend\package-lock.json
+[WebServer] 
+
+Running 104 tests using 1 worker
+
+  Ô£ô    1 [chromium] ÔÇ║ tests\smoke\api-governance.spec.ts:3:5 ÔÇ║ api governance page renders and navigation link is present (764ms)
+  Ô£ô    2 [chromium] ÔÇ║ tests\smoke\api-governance.spec.ts:20:5 ÔÇ║ api governance page shows encryption posture section (336ms)
+  Ô£ô    3 [chromium] ÔÇ║ tests\smoke\api-governance.spec.ts:29:5 ÔÇ║ api governance page does not throw a runtime error (359ms)
+

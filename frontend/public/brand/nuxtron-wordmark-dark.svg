@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="220" viewBox="0 0 980 220" role="img" aria-labelledby="title desc">
+  <title id="title">Nuxtron wordmark dark</title>
+  <desc id="desc">Nuxtron logo with NX icon and dark wordmark on transparent background.</desc>
+  <defs>
+    <style>
+      .cyan { stroke: #22cdea; fill: #22cdea; }
+      .ink { stroke: #0b1330; fill: #0b1330; }
+      .none { fill: none; }
+      .round { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <g transform="translate(24,18)">
+    <rect x="0" y="0" width="184" height="184" rx="28" fill="#ffffff" opacity="0"/>
+
+    <path class="ink none round" stroke-width="10" d="M18 150 L18 58 Q18 50 26 50 L62 86 L62 150"/>
+    <path class="ink none round" stroke-width="10" d="M40 140 L40 76 L76 112 L76 140"/>
+    <circle class="ink" cx="84" cy="50" r="8"/>
+    <path class="cyan none round" stroke-width="10" d="M96 50 L140 96 L96 142"/>
+    <path class="cyan none round" stroke-width="10" d="M112 50 L156 96 L112 142"/>
+    <path class="cyan none round" stroke-width="10" d="M142 62 L172 62 L152 92"/>
+    <path class="cyan none round" stroke-width="10" d="M142 130 L172 130 L152 100"/>
+    <circle class="cyan" cx="18" cy="150" r="8"/>
+    <circle class="cyan" cx="48" cy="166" r="8"/>
+    <circle class="cyan" cx="80" cy="166" r="8"/>
+    <path class="cyan none round" stroke-width="8" d="M18 150 L48 166 L80 166"/>
+  </g>
+
+  <g transform="translate(250,38)">
+    <path class="ink" d="M24 142 V16 h11 l73 95 V16 h14 v126 h-11 L38 47 v95 z"/>
+    <path class="ink" d="M165 143q-16 0-27-10.5T127 104V16h15v87q0 13 6 20.5t17 7.5q12 0 18-7.5t6-20.5V16h15v88q0 18-10.5 28.5T165 143z"/>
+
+    <path class="ink" d="M236 142l44-63-42-63h18l34 50 34-50h18l-42 63 44 63h-18l-36-52-36 52z"/>
+    <path class="cyan" d="M329 142l52-126h16l-52 126z"/>
+    <path class="cyan" d="M403 142V29h-41V16h96v13h-40v113z"/>
+    <path class="cyan" d="M472 142V16h84v13h-69v43h65v13h-65v44h69v13z"/>
+
+    <path class="cyan" d="M639 143q-28 0-45.5-18.5T576 79q0-27 17.5-45.5T639 15q29 0 46 18.5T702 79q0 27-17 45.5T639 143z m0-13q22 0 35-14t13-37q0-23-13-37t-35-14q-21 0-34.5 14T591 79q0 23 13.5 37t34.5 14z"/>
+    <path class="ink" d="M627 79a12 12 0 1 0 24 0a12 12 0 1 0 -24 0"/>
+    <path class="cyan none round" stroke-width="6" d="M638 33c15 0 28 6 38 16"/>
+    <path class="cyan none round" stroke-width="6" d="M601 118c-8-10-12-23-10-37"/>
+    <path class="cyan none round" stroke-width="6" d="M683 109c-8 12-20 20-34 24"/>
+
+    <path class="cyan" d="M737 142V16h15v113h62v13z"/>
+    <path class="cyan" d="M829 142V16h15v126z"/>
+  </g>
+</svg>

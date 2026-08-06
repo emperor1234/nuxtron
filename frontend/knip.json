@@ -1,0 +1,16 @@
+{
+  "entry": [
+    "next.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "app/layout.tsx",
+    "app/page.tsx",
+    "app/opengraph-image.tsx",
+    "app/**/page.tsx",
+    "app/**/route.ts",
+    "app/**/*.test.ts",
+    "tests/smoke/**/*.spec.ts"
+  ],
+  "project": ["app/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "*.{ts,mjs}"],
+  "ignore": ["next-env.d.ts"]
+}

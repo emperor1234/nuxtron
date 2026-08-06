@@ -1,0 +1,120 @@
+
+> nuxtron-frontend@1.0.0 dev
+> next dev --webpack -p 4173
+
+▲ Next.js 16.2.6 (webpack)
+- Local:         http://localhost:4173
+- Network:       http://10.106.0.222:4173
+✓ Ready in 357ms
+
+ GET / 200 in 3.2s (next.js: 3.0s, application-code: 165ms)
+ GET /login 200 in 877ms (next.js: 793ms, application-code: 85ms)
+ GET /register 200 in 290ms (next.js: 229ms, application-code: 61ms)
+ GET / 200 in 120ms (next.js: 15ms, application-code: 106ms)
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-light.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+ GET / 200 in 135ms (next.js: 101ms, application-code: 34ms)
+ GET / 200 in 74ms (next.js: 51ms, application-code: 23ms)
+ GET / 200 in 83ms (next.js: 59ms, application-code: 24ms)
+ GET / 200 in 74ms (next.js: 53ms, application-code: 21ms)
+ GET / 200 in 114ms (next.js: 80ms, application-code: 34ms)
+ GET / 200 in 103ms (next.js: 81ms, application-code: 22ms)
+ GET / 200 in 97ms (next.js: 73ms, application-code: 25ms)
+ GET / 200 in 104ms (next.js: 53ms, application-code: 51ms)
+ GET / 200 in 76ms (next.js: 52ms, application-code: 24ms)
+ GET / 200 in 75ms (next.js: 52ms, application-code: 22ms)
+ GET / 200 in 75ms (next.js: 52ms, application-code: 24ms)
+ GET / 200 in 75ms (next.js: 52ms, application-code: 22ms)
+ GET / 200 in 74ms (next.js: 53ms, application-code: 22ms)
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-dark.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+ GET / 200 in 222ms (next.js: 12ms, application-code: 210ms)
+ GET / 200 in 66ms (next.js: 6ms, application-code: 60ms)
+ GET / 200 in 80ms (next.js: 9ms, application-code: 70ms)
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-dark.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+▲ Next.js 16.2.6 (webpack)
+- Local:         http://localhost:4173
+- Network:       http://10.151.172.222:4173
+✓ Ready in 490ms
+
+○ Compiling / ...
+ GET / 200 in 7.8s (next.js: 7.5s, application-code: 283ms)
+ GET / 200 in 88ms (next.js: 2ms, application-code: 86ms)
+ GET / 200 in 31ms (next.js: 1728µs, application-code: 29ms)
+ GET / 200 in 18ms (next.js: 1246µs, application-code: 17ms)
+ GET / 200 in 41ms (next.js: 3ms, application-code: 38ms)
+ GET / 200 in 21ms (next.js: 1240µs, application-code: 19ms)
+ GET / 200 in 29ms (next.js: 1600µs, application-code: 27ms)
+ GET / 200 in 18ms (next.js: 1200µs, application-code: 17ms)
+ GET / 200 in 71ms (next.js: 1194µs, application-code: 70ms)
+ GET / 200 in 22ms (next.js: 1662µs, application-code: 20ms)
+ GET / 200 in 29ms (next.js: 1133µs, application-code: 28ms)
+ GET / 200 in 18ms (next.js: 1195µs, application-code: 17ms)
+ GET / 200 in 52ms (next.js: 1137µs, application-code: 51ms)
+ GET / 200 in 42ms (next.js: 1231µs, application-code: 41ms)
+ GET / 200 in 32ms (next.js: 2ms, application-code: 29ms)
+ GET / 200 in 19ms (next.js: 1087µs, application-code: 18ms)
+ GET / 200 in 31ms (next.js: 880µs, application-code: 30ms)
+ GET / 200 in 20ms (next.js: 1179µs, application-code: 18ms)
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-dark.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-dark.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+ GET / 200 in 128ms (next.js: 4ms, application-code: 125ms)
+ GET / 200 in 58ms (next.js: 1162µs, application-code: 57ms)
+ GET / 200 in 39ms (next.js: 1997µs, application-code: 37ms)
+ GET / 200 in 23ms (next.js: 1921µs, application-code: 21ms)
+ GET / 200 in 41ms (next.js: 4ms, application-code: 37ms)
+ GET / 200 in 25ms (next.js: 3ms, application-code: 22ms)
+ GET / 200 in 35ms (next.js: 3ms, application-code: 32ms)
+ GET / 200 in 20ms (next.js: 1078µs, application-code: 19ms)
+ GET / 200 in 40ms (next.js: 1334µs, application-code: 39ms)
+ GET / 200 in 27ms (next.js: 1605µs, application-code: 25ms)
+ GET / 200 in 29ms (next.js: 819µs, application-code: 28ms)
+ GET / 200 in 18ms (next.js: 997µs, application-code: 17ms)
+ GET / 200 in 42ms (next.js: 3ms, application-code: 40ms)
+ GET / 200 in 29ms (next.js: 1596µs, application-code: 27ms)
+ GET / 200 in 30ms (next.js: 940µs, application-code: 29ms)
+ GET / 200 in 19ms (next.js: 920µs, application-code: 18ms)
+ GET / 200 in 41ms (next.js: 1001µs, application-code: 40ms)
+ GET / 200 in 32ms (next.js: 1810µs, application-code: 30ms)
+ GET / 200 in 35ms (next.js: 1072µs, application-code: 34ms)
+ GET / 200 in 21ms (next.js: 1893µs, application-code: 20ms)
+ GET / 200 in 36ms (next.js: 1097µs, application-code: 34ms)
+ GET / 200 in 23ms (next.js: 1618µs, application-code: 22ms)
+ GET / 200 in 49ms (next.js: 961µs, application-code: 48ms)
+ GET / 200 in 43ms (next.js: 1173µs, application-code: 42ms)
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-dark.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-dark.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+ GET / 200 in 143ms (next.js: 8ms, application-code: 134ms)
+ GET / 200 in 61ms (next.js: 1362µs, application-code: 59ms)
+ GET / 200 in 34ms (next.js: 3ms, application-code: 31ms)
+ GET / 200 in 22ms (next.js: 1094µs, application-code: 21ms)
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-dark.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-dark.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+ GET / 200 in 132ms (next.js: 3ms, application-code: 129ms)
+ GET / 200 in 61ms (next.js: 2ms, application-code: 59ms)
+ GET / 200 in 109ms (next.js: 3ms, application-code: 106ms)
+ GET / 200 in 60ms (next.js: 3ms, application-code: 57ms)
+ GET / 200 in 123ms (next.js: 5ms, application-code: 118ms)
+ GET / 200 in 75ms (next.js: 2ms, application-code: 72ms)
+ GET / 200 in 139ms (next.js: 5ms, application-code: 134ms)
+ GET / 200 in 155ms (next.js: 1937µs, application-code: 153ms)
+ GET / 200 in 38ms (next.js: 3ms, application-code: 35ms)
+ GET / 200 in 22ms (next.js: 920µs, application-code: 21ms)
+ GET / 200 in 32ms (next.js: 911µs, application-code: 31ms)
+ GET / 200 in 21ms (next.js: 1071µs, application-code: 20ms)
+ GET / 200 in 64ms (next.js: 3ms, application-code: 61ms)
+ GET / 200 in 44ms (next.js: 1263µs, application-code: 42ms)
+⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+▲ Next.js 16.2.6 (webpack)
+- Local:         http://localhost:4173
+- Network:       http://10.151.172.222:4173
+✓ Ready in 770ms
+
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-dark.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "http://localhost:4173/brand/nuxtron-wordmark-dark.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+▲ Next.js 16.2.6 (webpack)
+- Local:         http://localhost:4173
+- Network:       http://10.151.172.222:4173
+✓ Ready in 308ms
+
+ GET / 200 in 3.1s (next.js: 2.9s, application-code: 180ms)

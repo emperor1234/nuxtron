@@ -1,0 +1,9 @@
+# ML/AI runtime dependencies - not required for CI quality gate or smoke tests
+# Install separately for production ML inference
+sentence-transformers>=2.0.0
+torch>=2.0.0
+tensorflow-cpu>=2.16.0
+pinecone-client>=3.0.0
+weaviate-client>=4.0.0
+langchain>=0.1.0
+semantic-kernel>=1.0.0

@@ -1,0 +1,24 @@
+{
+  "fallback_buffers": {
+    "max_items_per_buffer": 5,
+    "warning_utilization_threshold": 0.4,
+    "sizes": {
+      "meilisearch": 0,
+      "redis": 3,
+      "twilio": 0,
+      "slack": 0,
+      "resend": 0,
+      "algolia": 0
+    },
+    "utilization_ratio": {
+      "meilisearch": 0.0,
+      "redis": 0.6,
+      "twilio": 0.0,
+      "slack": 0.0,
+      "resend": 0.0,
+      "algolia": 0.0
+    },
+    "hot_buffers": ["redis"],
+    "any_buffer_hot": true
+  }
+}

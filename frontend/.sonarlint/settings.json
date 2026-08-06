@@ -1,0 +1,14 @@
+{
+  "sonarlint.pathToNodeExecutable": "",
+  "sonarlint.testFilePattern": "**/*.{test,spec}.{ts,tsx,js,jsx}",
+  "sonarlint.exclusions": [
+    "node_modules/**",
+    ".next/**",
+    "coverage/**",
+    "dist/**",
+    "out/**",
+    "**/*.min.js",
+    "**/*.map",
+    "app/seo/performance/page.tsx"
+  ]
+}

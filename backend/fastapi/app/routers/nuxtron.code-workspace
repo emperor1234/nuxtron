@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../../../.."
+		},
+		{
+			"path": "../../../../../supabase"
+		}
+	],
+	"settings": {
+		"powershell.cwd": "nuxtron"
+	}
+}

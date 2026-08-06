@@ -1,0 +1,47 @@
+# ── Repo root allowlist ──────────────────────────────────────────────────
+# This repo tracks only frontend/, backend/, README.md, and this file.
+# Everything else at root (scratch dirs, local db files, coverage output,
+# deployment notes, editor/tool config, etc.) is intentionally untracked —
+# add a narrow exception below if something new genuinely belongs in git.
+/*
+!/frontend/
+!/backend/
+!/README.md
+!/.gitignore
+
+# ── Build artifacts & caches (apply at any depth, inside frontend/ and
+# backend/ too — these must never be tracked regardless of the allowlist
+# above) ─────────────────────────────────────────────────────────────────
+**/node_modules/
+**/.next/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.hypothesis/
+**/venv/
+**/.venv/
+**/*.egg-info/
+**/dist/
+**/build/
+**/coverage/
+**/.coverage
+**/htmlcov/
+**/test-results/
+**/playwright-report/
+**/*.tsbuildinfo
+**/.DS_Store
+
+# Local databases / dev artifacts that sometimes land inside frontend or
+# backend during local runs.
+**/*.sqlite3
+**/*.db
+
+# ── Secrets ───────────────────────────────────────────────────────────────
+# Real .env files must never be committed. Template/example files
+# (.env.*.example, *.env.template) are explicitly un-ignored below so those
+# stay tracked — they document required vars without containing real values.
+**/.env
+**/.env.*
+!**/.env.*.example
+!**/*.env.template

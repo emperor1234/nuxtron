@@ -1,0 +1,816 @@
+/*
+ * Marketing Overview dashboard — scoped styles.
+ * Tokens mirror the approved "Nuxtron Dashboard" reference (data-dense, light).
+ * Kept in a CSS Module so the global stylesheet is untouched.
+ */
+
+.root {
+  /* palette */
+  --d-bg: #f5f6f9;
+  --d-card: #ffffff;
+  --d-border: #e7e9ef;
+  --d-border-soft: #eef0f4;
+  --d-ink: #0e1525;
+  --d-ink-2: #3d4456;
+  --d-muted: #6b7385;
+  --d-faint: #9aa1b2;
+  --d-brand: #6d5efc;
+  --d-brand-2: #a855f7;
+  --d-green: #10b981;
+  --d-blue: #0ea5e9;
+  --d-amber: #f59e0b;
+  --d-pink: #ec4899;
+  --d-red: #ef4444;
+
+  --d-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --d-radius: 16px;
+
+  --d-font: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --d-font-display: var(--font-grotesk), 'Space Grotesk', var(--d-font);
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--d-ink);
+  font-family: var(--d-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- shared surfaces ---------- */
+.card {
+  background: var(--d-card);
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius);
+  box-shadow: var(--d-shadow);
+}
+
+.cardPad {
+  padding: 20px 22px;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 3px;
+  letter-spacing: -0.2px;
+}
+
+.cardSub {
+  font-size: 13px;
+  color: var(--d-muted);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- page header ---------- */
+.pageHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.pageTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.pageTitle {
+  font-family: var(--d-font-display);
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  margin: 0;
+}
+
+.livePill {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--d-green);
+  background: #e7f8f1;
+  padding: 3px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  background: var(--d-green);
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .liveDot {
+    animation: pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.78);
+  }
+}
+
+.pageMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--d-muted);
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.pageMetaSwatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, var(--d-brand), var(--d-brand-2));
+}
+
+.pageMetaStrong {
+  font-weight: 600;
+  color: var(--d-ink);
+}
+
+.pageMetaDivider {
+  color: #c2c7d2;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--d-brand);
+  outline-offset: 2px;
+}
+
+.btnGhost {
+  background: var(--d-card);
+  border: 1px solid var(--d-border);
+  color: var(--d-ink);
+}
+
+.btnGhost:hover {
+  background: #f6f6fb;
+  border-color: #d9dce6;
+}
+
+.btnDark {
+  background: var(--d-ink);
+  border: 1px solid var(--d-ink);
+  color: #fff;
+}
+
+.btnDark:hover {
+  background: #1b2333;
+}
+
+/* ---------- KPI row ---------- */
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.kpiCard {
+  padding: 17px 18px;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.kpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+}
+
+.kpiTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 11px;
+}
+
+.kpiLabelWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kpiIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.kpiLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--d-muted);
+}
+
+.kpiDelta {
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.kpiValue {
+  font-family: var(--d-font-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.kpiSpark {
+  width: 100%;
+  height: 34px;
+  display: block;
+}
+
+/* ---------- generic grids ---------- */
+.gridTrend {
+  display: grid;
+  grid-template-columns: 1.85fr 1fr;
+  gap: 16px;
+}
+
+.gridKeywords {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 16px;
+}
+
+.gridFunnel {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 16px;
+}
+
+/* ---------- trend ---------- */
+.trendTabs {
+  display: flex;
+  gap: 6px;
+  background: #f3f4f8;
+  padding: 3px;
+  border-radius: 9px;
+}
+
+.trendTab {
+  padding: 6px 13px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--d-faint);
+  font-family: inherit;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.trendTab:hover {
+  color: var(--d-ink-2);
+}
+
+.trendTab:focus-visible {
+  outline: 2px solid var(--d-brand);
+  outline-offset: 2px;
+}
+
+.trendTabActive {
+  background: #fff;
+  color: var(--d-ink);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1);
+}
+
+.trendValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.trendValue {
+  font-family: var(--d-font-display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+}
+
+.trendDelta {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--d-green);
+}
+
+.trendNote {
+  font-size: 13px;
+  color: var(--d-faint);
+}
+
+.trendChart {
+  width: 100%;
+  height: 230px;
+  display: block;
+}
+
+.trendDot {
+  transition:
+    cx 0.4s ease,
+    cy 0.4s ease;
+}
+
+.trendMonths {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--d-faint);
+  font-weight: 500;
+}
+
+/* ---------- donut ---------- */
+.donutCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.donutWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0 16px;
+}
+
+.donutLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: auto;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+}
+
+.legendSwatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.legendLabel {
+  color: var(--d-ink-2);
+  font-weight: 500;
+}
+
+.legendValue {
+  margin-left: auto;
+  font-weight: 700;
+}
+
+/* ---------- keywords table ---------- */
+.tableCard {
+  overflow: hidden;
+}
+
+.tableHeadRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+}
+
+.viewAll {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--d-brand);
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+
+.viewAll:hover {
+  text-decoration: underline;
+}
+
+.kwGrid {
+  display: grid;
+  grid-template-columns: 2.4fr 0.9fr 0.9fr 1.1fr;
+  align-items: center;
+}
+
+.kwColHead {
+  padding: 9px 22px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--d-faint);
+  border-top: 1px solid var(--d-border-soft);
+  border-bottom: 1px solid var(--d-border-soft);
+  background: #fafbfc;
+}
+
+.kwRow {
+  padding: 13px 22px;
+  border-bottom: 1px solid #f2f3f6;
+  font-size: 13.5px;
+  transition: background 0.15s ease;
+}
+
+.kwRow:hover {
+  background: #fafbff;
+}
+
+.kwName {
+  font-weight: 600;
+  color: var(--d-ink);
+}
+
+.kwPosCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.kwPos {
+  font-weight: 700;
+}
+
+.kwChange {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.kwVol {
+  text-align: right;
+  font-weight: 600;
+  color: var(--d-ink-2);
+}
+
+.kwIntentCell {
+  text-align: right;
+}
+
+.kwIntent {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.alignCenter {
+  text-align: center;
+}
+
+.alignRight {
+  text-align: right;
+}
+
+/* ---------- social bars ---------- */
+.barList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.barHead {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.barName {
+  font-weight: 600;
+  color: var(--d-ink-2);
+}
+
+.barValue {
+  margin-left: auto;
+  font-weight: 700;
+}
+
+.barTrack {
+  height: 9px;
+  background: #f1f2f6;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 6px;
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .barFill {
+    animation: growBar 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes growBar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.deltaPill {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--d-green);
+  background: #e7f8f1;
+  padding: 4px 9px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+
+/* ---------- funnel ---------- */
+.funnelChip {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--d-ink);
+  background: #f3f4f8;
+  padding: 5px 11px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.funnelList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.funnelRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.funnelStage {
+  width: 96px;
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--d-ink-2);
+}
+
+.funnelTrack {
+  flex: 1;
+  height: 38px;
+  background: #f5f6fa;
+  border-radius: 9px;
+  position: relative;
+  overflow: hidden;
+}
+
+.funnelFill {
+  height: 100%;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  padding-left: 14px;
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .funnelFill {
+    animation: growBar 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+.funnelValue {
+  font-family: var(--d-font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.funnelRate {
+  width: 48px;
+  flex: none;
+  text-align: right;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--d-muted);
+}
+
+/* ---------- AI insights (dark) ---------- */
+.aiCard {
+  background: linear-gradient(165deg, #15132e, #1c1840 55%, #241a47);
+  border: 1px solid #2c2754;
+  border-radius: var(--d-radius);
+  padding: 20px 22px;
+  color: #e9e7f7;
+  box-shadow: 0 6px 24px rgba(40, 30, 90, 0.18);
+}
+
+.aiHead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 16px;
+}
+
+.aiIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--d-brand), var(--d-brand-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.aiTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.aiBadge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: #b9aef9;
+  background: rgba(109, 94, 252, 0.18);
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.aiList {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.aiItem {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  padding: 13px 14px;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.aiItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.aiItemTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.aiTag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.aiImpact {
+  font-size: 11.5px;
+  color: #9b94c4;
+  margin-left: auto;
+}
+
+.aiText {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #dcd9f0;
+}
+
+.aiCta {
+  width: 100%;
+  margin-top: 14px;
+  background: #fff;
+  color: #1c1840;
+  border: none;
+  border-radius: 10px;
+  padding: 11px;
+  font-size: 13.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.aiCta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.aiCta:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 1100px) {
+  .kpiRow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .gridTrend,
+  .gridKeywords,
+  .gridFunnel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .kpiRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pageTitle {
+    font-size: 23px;
+  }
+  .cardPad {
+    padding: 16px 16px;
+  }
+  .kwColHead,
+  .kwRow {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* Phones: single column so dense cards aren't squeezed/clipped. */
+@media (max-width: 560px) {
+  .kpiRow {
+    grid-template-columns: 1fr;
+  }
+}

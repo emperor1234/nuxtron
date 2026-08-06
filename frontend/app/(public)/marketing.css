@@ -1,0 +1,240 @@
+/*
+ * Nuxtron Marketing — "Red Noir" design system.
+ * Black canvas, signature red (#ef233c), Manrope display / Inter body
+ * (already loaded via next/font in app/layout.tsx). A deliberate single
+ * dark visual identity for the marketing site — not a light/dark toggle.
+ */
+
+.mk-root {
+  --mk-bg: #050505;
+  --mk-surface: #0a0a0a;
+  --mk-surface-raised: #111111;
+  --mk-ink: #f5f5f5;
+  --mk-muted: #a1a1aa;
+  --mk-faint: #71717a;
+  --mk-line: rgba(255, 255, 255, 0.08);
+  --mk-line-strong: rgba(255, 255, 255, 0.16);
+  --mk-red: #ef233c;
+  --mk-red-hover: #d81f36;
+  --mk-red-tint: rgba(239, 35, 60, 0.1);
+  min-height: 100vh;
+  color: var(--mk-ink);
+  background: var(--mk-bg);
+  font-family: var(--font-body), sans-serif;
+  isolation: isolate;
+}
+body:has(.mk-root) {
+  background: var(--mk-bg);
+  scroll-padding-top: 84px;
+  color-scheme: dark;
+}
+body:has(.mk-root)::before,
+body:has(.mk-root)::after {
+  display: none;
+}
+body:has(.mk-root) .ira-shell {
+  display: none !important;
+}
+.mk-root *,
+.mk-root *::before,
+.mk-root *::after {
+  box-sizing: border-box;
+}
+.mk-main {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  animation: none;
+  position: relative;
+}
+.mk-root h1,
+.mk-root h2,
+.mk-root h3 {
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.mk-root p {
+  color: var(--mk-muted);
+}
+.mk-root a {
+  color: inherit;
+}
+.mk-root ::selection {
+  background: var(--mk-red);
+  color: #fff;
+}
+
+.mk-skip {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 200;
+  padding: 0.75rem 1.25rem;
+  border-radius: 9999px;
+  background: var(--mk-red);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: top 0.2s ease;
+}
+.mk-skip:focus {
+  top: 1rem;
+}
+
+/* ── Global background: subtle grid + soft red glow ── */
+.mk-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.mk-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, #140505 0%, #050505 45%);
+}
+.mk-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at 50% 0%, black 0%, transparent 75%);
+}
+.mk-bg-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 900px;
+  height: 900px;
+  border-radius: 9999px;
+  background: rgba(239, 35, 60, 0.06);
+  filter: blur(140px);
+}
+
+/* ── Shared section rhythm ── */
+.mk-section {
+  position: relative;
+  z-index: 1;
+  padding: clamp(4rem, 8vw, 7rem) 1.5rem;
+}
+.mk-container {
+  width: min(100% - 2.5rem, 1200px);
+  margin: 0 auto;
+}
+.mk-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid var(--mk-line-strong);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--mk-red);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── Shiny CTA button (conic-gradient spinning border) ── */
+@property --mk-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes mk-border-spin {
+  to {
+    --mk-angle: 360deg;
+  }
+}
+.mk-shiny-cta {
+  --mk-angle: 0deg;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  padding: 0.9rem 2rem;
+  background:
+    linear-gradient(#000, #000) padding-box,
+    conic-gradient(from var(--mk-angle), transparent 0%, var(--mk-red) 8%, var(--mk-red) 22%, transparent 34%, transparent 100%) border-box;
+  border: 2px solid transparent;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  animation: mk-border-spin 2.6s linear infinite;
+  text-decoration: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-shiny-cta {
+    animation: none;
+    border-color: var(--mk-red);
+  }
+}
+
+/* ── Fade-up entrance (used sparingly — hero + first section only) ── */
+@keyframes mk-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.mk-fade-up {
+  animation: mk-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-fade-up {
+    animation: none;
+  }
+}
+
+/* ── Huge footer wordmark — solid white, lifted off the black canvas by a
+   red glow underneath it, rather than the earlier faint outline-only
+   treatment. ── */
+.mk-wordmark {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  font-size: clamp(3.5rem, 15vw, 12rem);
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  text-shadow:
+    0 6px 0 rgba(239, 35, 60, 0.55),
+    0 18px 45px rgba(239, 35, 60, 0.35);
+  user-select: none;
+}
+
+/* ── Card / surface primitives ── */
+.mk-card {
+  border-radius: 1rem;
+  border: 1px solid var(--mk-line);
+  background: var(--mk-surface);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+.mk-card:hover {
+  border-color: var(--mk-line-strong);
+  background: var(--mk-surface-raised);
+}
+
+@media (max-width: 640px) {
+  .mk-section {
+    padding: 3.5rem 1.25rem;
+  }
+}

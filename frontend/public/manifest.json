@@ -1,0 +1,20 @@
+{
+  "name": "Nuxtron Platform",
+  "short_name": "Nuxtron",
+  "description": "The Nuxtron platform — AI content, analytics, integrations and automation in one place.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7ff",
+  "theme_color": "#22cdea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/brand/nuxtron-icon-square.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "en"
+}

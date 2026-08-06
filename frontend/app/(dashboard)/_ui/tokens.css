@@ -1,0 +1,43 @@
+/*
+ * Dashboard design tokens — the single source of truth for color, typography,
+ * spacing, radius, and elevation across every (dashboard) route.
+ *
+ * Mirrors the approved "Nuxtron Dashboard" reference (light, data-dense). Pages
+ * consume these via the `nx-*` custom properties and the primitives in
+ * `kit.tsx`, replacing per-page inline palettes so the whole app stays visually
+ * consistent. Scoped to `.nxScope` (applied by the shell) to avoid leaking into
+ * the public/marketing surface.
+ */
+.nxScope {
+  --nx-bg: #f5f6f9;
+  --nx-card: #ffffff;
+  --nx-border: #e7e9ef;
+  --nx-border-soft: #eef0f4;
+  --nx-ink: #0e1525;
+  --nx-ink-2: #3d4456;
+  --nx-muted: #6b7385;
+  --nx-faint: #9aa1b2;
+
+  --nx-brand: #6d5efc;
+  --nx-brand-2: #a855f7;
+  --nx-brand-soft: #efeefe;
+
+  --nx-green: #10b981;
+  --nx-green-soft: #e7f8f1;
+  --nx-blue: #0ea5e9;
+  --nx-amber: #f59e0b;
+  --nx-pink: #ec4899;
+  --nx-red: #ef4444;
+  --nx-red-soft: #fdecec;
+
+  --nx-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --nx-shadow-lg: 0 8px 30px rgba(16, 24, 40, 0.08);
+  --nx-radius: 16px;
+  --nx-radius-sm: 10px;
+  --nx-radius-pill: 999px;
+
+  --nx-gap: 20px;
+
+  --nx-font: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --nx-font-display: var(--font-grotesk), 'Space Grotesk', var(--nx-font);
+}

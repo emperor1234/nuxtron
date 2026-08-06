@@ -1,0 +1,21 @@
+[run]
+omit =
+    manage.py
+    config/wsgi.py
+    config/asgi.py
+    */migrations/*
+    tests/*
+
+[report]
+# Measured 2026-08-06 after adding platform_api test coverage: 83.6% (with
+# the above omitted — manage.py/wsgi.py/migrations aren't meaningfully
+# testable unit-by-unit). Floor set a couple points below measured so
+# incidental fluctuation doesn't flap CI; raise this as coverage genuinely
+# improves, never lower it to make a failing build pass.
+fail_under = 82
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if TYPE_CHECKING:
+    if __name__ == .__main__.:

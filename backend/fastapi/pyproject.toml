@@ -1,0 +1,84 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "B", "UP", "C4", "SIM"]
+# Keep strict linting for correctness/security while allowing established FastAPI idioms.
+ignore = ["E501", "B008", "B904", "E741", "N806", "SIM103", "SIM108", "SIM117"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+pretty = true
+warn_unused_ignores = false
+warn_redundant_casts = true
+warn_return_any = false
+show_error_codes = true
+explicit_package_bases = true
+plugins = ["pydantic.mypy"]
+disable_error_code = [
+  "arg-type",
+  "attr-defined",
+  "import-untyped",
+  "misc",
+  "no-any-return",
+  "no-redef",
+  "no-untyped-def",
+  "operator",
+  "return-value",
+  "type-arg",
+  "union-attr",
+  "unused-ignore",
+]
+exclude = "(?x)(^app/selftest\\.py$|^app/.*_smoke\\.py$|^app/tests/)"
+
+[[tool.mypy.overrides]]
+module = [
+  "hvac.*",
+  "supabase.*",
+  "saml2.*",
+  "google.auth.transport.requests",
+  "google.oauth2",
+  "google.oauth2.*",
+  "PIL",
+  "PIL.*",
+  "oqs",
+  "oqs.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers --cov=app --cov-report=term-missing --cov-report=xml:coverage-python.xml"
+testpaths = ["app/tests"]
+markers = [
+  "no_legacy: skip autouse legacy_main reset (isolated unit tests)",
+]
+
+[tool.coverage.run]
+omit = [
+  "app/selftest.py",
+  "app/chaos_smoke.py",
+  "app/load_smoke.py",
+  "app/fallback_pressure_guard.py",
+  "app/fallback_pressure_refresh_baseline.py",
+  "app/fallback_pressure_trend_check.py",
+  "app/vse_selftest.py",
+  "app/tests/*",
+  "app/legacy_main.py",
+]
+
+[tool.coverage.report]
+# Measured 2026-08-06: 41% (with app/legacy_main.py excluded above, per the
+# `omit` list — that file is ~10k lines and not currently measured at all).
+# Floor set a couple points below measured so incidental fluctuation doesn't
+# flap CI; raise this number as coverage genuinely improves, never lower it
+# to make a failing build pass.
+fail_under = 39
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "raise NotImplementedError",
+  "if TYPE_CHECKING:",
+  "if __name__ == .__main__.:",
+]

@@ -1,0 +1,6 @@
+[1A[2K[2m[WebServer] [22m^C
+
+[1A[2K[2m[WebServer] [22m^C
+
+Error: Process from config.webServer was not able to start. Exit code: 3221225786
+

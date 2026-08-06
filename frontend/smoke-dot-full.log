@@ -1,0 +1,9 @@
+
+> nuxtron-frontend@1.0.0 test:smoke
+> playwright test --config=./playwright.config.ts --reporter=dot
+
+
+Running 87 tests using 1 worker
+┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À┬À
+┬À┬À┬À┬À┬À┬À┬À
+  87 passed (5.3m)

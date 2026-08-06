@@ -1,0 +1,142 @@
+'use client';
+
+import { useState } from 'react';
+import { apiPost, DEFAULT_TENANT_ID } from '@/app/lib/api-client';
+
+export default function ResetPasswordPage() {
+  const [tenantId, setTenantId] = useState(DEFAULT_TENANT_ID);
+  const [email, setEmail] = useState('');
+
+  // Step 1: request reset token
+  const [requestBusy, setRequestBusy] = useState(false);
+  const [requestError, setRequestError] = useState('');
+  const [requestSent, setRequestSent] = useState(false);
+
+  // Step 2: confirm new password with token
+  const [token, setToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [confirmError, setConfirmError] = useState('');
+  const [confirmSuccess, setConfirmSuccess] = useState(false);
+
+  async function handleRequest(event: React.FormEvent) {
+    event.preventDefault();
+    if (!email.trim()) return;
+    setRequestError('');
+    setRequestBusy(true);
+    try {
+      const response = await apiPost('/auth/password-reset/request', { email: email.trim() }, tenantId);
+      const result = response.result as Record<string, unknown> | undefined;
+      // In dev mode the backend returns the token directly to allow testing
+      const devToken = result?.dev_reset_token;
+      if (typeof devToken === 'string' && devToken) {
+        setToken(devToken);
+      }
+      setRequestSent(true);
+    } catch (ex) {
+      setRequestError(ex instanceof Error ? ex.message : 'Could not send reset request.');
+    } finally {
+      setRequestBusy(false);
+    }
+  }
+
+  async function handleConfirm(event: React.FormEvent) {
+    event.preventDefault();
+    if (newPassword.length < 10) {
+      setConfirmError('Password must be at least 10 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setConfirmError('Passwords do not match.');
+      return;
+    }
+    setConfirmError('');
+    setConfirmBusy(true);
+    try {
+      await apiPost(
+        '/auth/password-reset/confirm',
+        { email: email.trim(), token: token.trim(), new_password: newPassword },
+        tenantId
+      );
+      setConfirmSuccess(true);
+    } catch (ex) {
+      setConfirmError(ex instanceof Error ? ex.message : 'Could not reset password.');
+    } finally {
+      setConfirmBusy(false);
+    }
+  }
+
+  return (
+    <main>
+      <section className="auth-shell">
+        <h1>Reset Password</h1>
+
+        {confirmSuccess ? (
+          <p className="muted">
+            Password updated successfully. <a href="/login">Log in</a> with your new password.
+          </p>
+        ) : (
+          <>
+            {/* Step 1 — request reset link */}
+            <form className="auth-form" onSubmit={handleRequest}>
+              <label>
+                <span>Tenant ID</span>
+                <input value={tenantId} onChange={(e) => setTenantId(e.target.value)} required />
+              </label>
+              <label>
+                <span>Email</span>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </label>
+              {requestError ? <p className="auth-errors">{requestError}</p> : null}
+              {requestSent ? (
+                <p className="muted">If your account exists, a reset link has been sent. Enter the token below.</p>
+              ) : null}
+              <button type="submit" disabled={requestBusy || requestSent}>
+                {requestBusy ? 'Sending...' : 'Send Reset Link'}
+              </button>
+            </form>
+
+            {/* Step 2 — confirm with token + new password */}
+            {requestSent ? (
+              <form className="auth-form" onSubmit={handleConfirm} style={{ marginTop: '1.5rem' }}>
+                <label>
+                  <span>Reset Token</span>
+                  <input
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    placeholder="Paste the token from your email"
+                    required
+                  />
+                </label>
+                <label>
+                  <span>New Password</span>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    minLength={10}
+                    required
+                  />
+                </label>
+                <label>
+                  <span>Confirm New Password</span>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </label>
+                {confirmError ? <p className="auth-errors">{confirmError}</p> : null}
+                <button type="submit" disabled={confirmBusy}>
+                  {confirmBusy ? 'Updating...' : 'Set New Password'}
+                </button>
+              </form>
+            ) : null}
+          </>
+        )}
+      </section>
+    </main>
+  );
+}

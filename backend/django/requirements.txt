@@ -1,0 +1,57 @@
+# ---------------------------------------------------------------------------
+# Nuxtron Django backend — production dependencies.
+# Pin all packages. Python 3.13 compatible. Django 5.2 LTS track.
+# ---------------------------------------------------------------------------
+
+# Core framework
+Django==5.2.14
+djangorestframework==3.16.1
+
+# Token authentication (rotating refresh tokens + blacklist)
+djangorestframework-simplejwt==5.3.1
+
+# API docs / OpenAPI schema
+drf-spectacular==0.28.0
+
+# Filtering / pagination niceties for DRF
+django-filter==24.3
+
+# CORS
+django-cors-headers==4.9.0
+
+# Rate limiting (decorator + DRF throttle classes backed by Redis)
+django-ratelimit==4.1.0
+
+# Content-Security-Policy header enforcement
+django-csp==3.8
+
+# Static assets in production (compressed, fingerprinted, served by gunicorn)
+whitenoise==6.8.2
+
+# S3-backed media storage in production (django.core.files.storage.FileSystemStorage
+# doesn't survive container restarts/scale-out) — see STORAGES in settings.py
+django-storages[s3]==1.14.4
+
+# Database — PostgreSQL via psycopg3 with optional connection pooling
+psycopg[binary,pool]==3.2.10
+
+# Cache + sessions — Redis backend
+# Bumped to match backend/fastapi's redis==6.4.0 exactly — the two services
+# likely share a Redis instance, and django-redis 6.0.0 is the release that
+# added official redis-py 5.x/6.x support (5.4.0 predates redis-py 6 support).
+django-redis==6.0.0
+redis==6.4.0
+
+# WSGI server
+gunicorn==23.0.0
+
+# HashiCorp Vault client (secret resolution: pepper, app encryption key)
+hvac==2.3.0
+
+# Password hashing primitives (Argon2 + bcrypt), used via Django hashers
+argon2-cffi==25.1.0
+bcrypt==4.3.0
+cryptography==46.0.7
+
+# Error tracking / APM (no-op unless SENTRY_DSN is set — see settings.py)
+sentry-sdk[django]==2.19.2

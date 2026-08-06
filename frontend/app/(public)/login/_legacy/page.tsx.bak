@@ -1,0 +1,19 @@
+import { AuthLayout } from '@/app/components/auth/auth-layout';
+import { LoginForm } from '@/app/components/auth/login-form';
+
+export default function LoginPage() {
+  return (
+    <AuthLayout
+      heading="Sign in to Nuxtron"
+      subheading="Pick up exactly where your AI agents left off."
+      panelTitle="Run social, ads, and SEO on autopilot"
+      panelPoints={[
+        'Live performance intelligence across every channel',
+        'Autonomous campaign generation and optimization',
+        'Enterprise-grade security and access controls',
+      ]}
+    >
+      <LoginForm />
+    </AuthLayout>
+  );
+}

@@ -1,0 +1,19 @@
+import { AuthLayout } from '@/app/components/auth/auth-layout';
+import { SignupForm } from '@/app/components/auth/signup-form';
+
+export default function RegisterPage() {
+  return (
+    <AuthLayout
+      heading="Create your account"
+      subheading="Set up your Nuxtron workspace in a couple of minutes."
+      panelTitle="Launch your autonomous growth workspace"
+      panelPoints={[
+        'Free starter plan, no credit card required',
+        'Connect social, ads, and SEO in one place',
+        'Agents start working the moment you finish setup',
+      ]}
+    >
+      <SignupForm />
+    </AuthLayout>
+  );
+}
