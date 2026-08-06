@@ -17,7 +17,6 @@ import os
 from typing import Literal
 
 import bcrypt
-import hvac
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from cryptography.fernet import Fernet, InvalidToken
@@ -41,6 +40,13 @@ def _read_vault_secret(path: str, field: str) -> str | None:
         return None
 
     try:
+        # Deferred import: hvac is being removed as a hard dependency —
+        # Vault is one optional secret source in _read_managed_secret's
+        # fallback chain (env var -> secrets manager -> this -> dev default),
+        # so this path simply no-ops (returns None) when hvac isn't
+        # installed, same as when VAULT_ADDR/VAULT_TOKEN are unset.
+        import hvac
+
         client = hvac.Client(url=vault_addr, token=vault_token)
         response = client.secrets.kv.v2.read_secret_version(path=path)  # type: ignore[attr-defined]
         data = response.get('data', {}).get('data', {})  # type: ignore[attr-defined]

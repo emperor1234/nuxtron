@@ -18,6 +18,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, unquote, urlsplit
 
 # --------------------------------------------------------------------------- #
 # Paths
@@ -169,16 +170,54 @@ ASGI_APPLICATION = 'config.asgi.application'
 # Database — PostgreSQL via psycopg3 with optional connection pooling.
 # Falls back to SQLite only when explicitly requested for local dev/tests.
 # --------------------------------------------------------------------------- #
+def _parse_database_url(url: str) -> dict[str, Any]:
+    """Parse a postgres://user:pass@host:port/dbname?sslmode=... URL.
+
+    Mirrors what app.database._get_database_url does on the FastAPI side —
+    DATABASE_URL takes priority over discrete POSTGRES_* vars there too, so
+    a single Coolify-provided connection string works the same way for both
+    services instead of needing to be split into parts for one of them.
+    """
+    parsed = urlsplit(url)
+    query = dict(parse_qsl(parsed.query))
+    return {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': parsed.path.lstrip('/') or 'nuxtron',
+        'USER': unquote(parsed.username) if parsed.username else '',
+        'PASSWORD': unquote(parsed.password) if parsed.password else '',
+        'HOST': parsed.hostname or '',
+        'PORT': str(parsed.port or 5432),
+        'sslmode': query.get('sslmode'),
+    }
+
+
 def _build_databases() -> dict[str, dict[str, Any]]:
+    database_url = os.getenv('DATABASE_URL', '').strip()
     pg_host = os.getenv('POSTGRES_HOST', '').strip()
-    if pg_host:
+    if database_url or pg_host:
+        if database_url:
+            parsed_url = _parse_database_url(database_url)
+            db_name = parsed_url['NAME']
+            db_user = parsed_url['USER']
+            db_password = parsed_url['PASSWORD']
+            db_host = parsed_url['HOST']
+            db_port = parsed_url['PORT']
+            url_sslmode = parsed_url['sslmode']
+        else:
+            db_name = os.getenv('POSTGRES_DB', 'nuxtron')
+            db_user = os.getenv('POSTGRES_USER', 'nuxtron')
+            db_password = os.getenv('POSTGRES_PASSWORD', '')
+            db_host = pg_host
+            db_port = os.getenv('POSTGRES_PORT', '5432')
+            url_sslmode = None
+
         default: dict[str, Any] = {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('POSTGRES_DB', 'nuxtron'),
-            'USER': os.getenv('POSTGRES_USER', 'nuxtron'),
-            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-            'HOST': pg_host,
-            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+            'NAME': db_name,
+            'USER': db_user,
+            'PASSWORD': db_password,
+            'HOST': db_host,
+            'PORT': db_port,
             'ATOMIC_REQUESTS': True,
             'CONN_MAX_AGE': int(os.getenv('POSTGRES_CONN_MAX_AGE', '60')),
             'CONN_HEALTH_CHECKS': True,
@@ -187,8 +226,9 @@ def _build_databases() -> dict[str, dict[str, Any]]:
                 'application_name': os.getenv('POSTGRES_APPLICATION_NAME', 'nuxtron-django'),
                 # Default to encrypted Postgres connections in production so a
                 # misconfigured network path can't silently fall back to
-                # plaintext. Local/dev can relax this via POSTGRES_SSLMODE.
-                'sslmode': os.getenv('POSTGRES_SSLMODE', 'require' if IS_PRODUCTION else 'prefer'),
+                # plaintext. Local/dev can relax this via POSTGRES_SSLMODE, or
+                # a ?sslmode=... query param on DATABASE_URL (takes priority).
+                'sslmode': url_sslmode or os.getenv('POSTGRES_SSLMODE', 'require' if IS_PRODUCTION else 'prefer'),
             },
         }
         # Use server-side pooling when psycopg-pool is available.

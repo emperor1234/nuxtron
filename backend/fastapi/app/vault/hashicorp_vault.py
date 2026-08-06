@@ -8,8 +8,6 @@ import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import hvac
-
 logger = logging.getLogger(__name__)
 
 
@@ -33,7 +31,9 @@ class HashiCorpVaultClient:
         self.vault_jwt = vault_jwt or os.getenv('VAULT_JWT')
         self.cache_ttl_seconds = cache_ttl_seconds
         self.cache: dict[str, tuple[Any, datetime]] = {}
-        self.client: hvac.Client | None = None
+        # hvac is an optional dependency, imported lazily in connect() only
+        # — untyped here (Any) so this module loads fine without it installed.
+        self.client: Any | None = None
         self._auth_method = self._detect_auth_method()
 
     def _detect_auth_method(self) -> str:
@@ -53,6 +53,11 @@ class HashiCorpVaultClient:
         Returns True if successful, False otherwise.
         """
         try:
+            # Deferred import: hvac is optional — connect() (and therefore
+            # this import) only runs when something actually asks for the
+            # Vault client (get_vault_client()), not at module import time.
+            import hvac
+
             self.client = hvac.Client(url=self.vault_addr)
 
             if self._auth_method == 'token' and self.vault_token:
