@@ -31,7 +31,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from . import memory_stores
 from .config import validate_startup_security
-from .database import close_db, get_db_session, init_db
+from .database import _get_database_url, close_db, get_db_session, init_db
 from .deps import AuthContext, JwtClaims, require_auth
 from .governance_db import GovernanceDB as _GovernanceDB
 from .intelligence.routes import router as intel_router
@@ -1181,6 +1181,14 @@ def _db_security_alert_email_exists(message_id: int) -> bool:
 
 
 def _db_dsn() -> str:
+    # psycopg.connect() accepts a URI conninfo string directly, so prefer the
+    # same DATABASE_URL (> POSTGRES_* vars) precedence the SQLAlchemy engine
+    # already uses in database.py, instead of only ever reading POSTGRES_*
+    # and silently connecting to localhost when just DATABASE_URL is set.
+    if url := _get_database_url():
+        separator = '&' if '?' in url else '?'
+        return f'{url}{separator}connect_timeout=2'
+
     host = os.getenv('POSTGRES_HOST', 'localhost')
     port = os.getenv('POSTGRES_PORT', '5432')
     db_name = os.getenv('POSTGRES_DB', 'nuxtron')
