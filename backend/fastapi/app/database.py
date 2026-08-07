@@ -69,6 +69,21 @@ def _get_database_url() -> str | None:
     return f'postgresql://{user}@{host}:{port}/{db_name}'
 
 
+def _as_sqlalchemy_url(db_url: str) -> str:
+    """Force the psycopg3 dialect for SQLAlchemy engines.
+
+    requirements.txt installs psycopg[binary] (psycopg3), not psycopg2, but
+    SQLAlchemy's default dialect for a bare "postgresql://" URL is psycopg2
+    — without this, create_engine() (here and in alembic/env.py) tries to
+    import a driver that was never installed. Not applied inside
+    _get_database_url() itself: legacy_main.py's raw psycopg.connect() calls
+    that function directly and needs the plain, undecorated URI.
+    """
+    if db_url.startswith('postgresql://'):
+        return 'postgresql+psycopg://' + db_url[len('postgresql://') :]
+    return db_url
+
+
 def _is_production_environment() -> bool:
     return os.getenv('ENVIRONMENT', 'development').strip().lower() == 'production'
 
@@ -98,6 +113,8 @@ def _get_engine() -> Engine:
             poolclass=StaticPool,
             echo=False,
         )
+
+    db_url = _as_sqlalchemy_url(db_url)
 
     # Production: PostgreSQL with connection pooling.
     engine_kwargs: dict[str, Any] = {

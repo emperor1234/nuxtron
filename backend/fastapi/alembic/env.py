@@ -19,7 +19,7 @@ import app.models  # noqa: E402,F401
 import app.models_lindy_email  # noqa: E402,F401
 import app.models_lindy_meeting  # noqa: E402,F401
 import app.stores.notifications  # noqa: E402,F401
-from app.database import Base, _get_database_url  # noqa: E402
+from app.database import Base, _as_sqlalchemy_url, _get_database_url  # noqa: E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -47,7 +47,7 @@ def _resolve_url() -> str:
     """
     url = _get_database_url()
     if url:
-        return url
+        return _as_sqlalchemy_url(url)
     return 'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '_alembic_local.db')
 
 
