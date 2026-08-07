@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken } from '@/app/lib/auth/jwt-edge';
 import { SESSION_COOKIE_NAME } from '@/app/lib/auth/session-cookie';
+import { buildContentSecurityPolicy, generateNonce } from '@/app/lib/security/csp';
 
 /**
  * Proxy runs before matched requests. Two jobs:
@@ -122,7 +123,17 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const guardResponse = await guardAppRoute(request);
   if (guardResponse) return guardResponse;
 
-  return NextResponse.next();
+  // Page render: attach a fresh nonce both to the outgoing request (so
+  // app/layout.tsx can read it via next/headers and pass it to the one
+  // custom inline <Script> tag it renders) and to the CSP response header
+  // (so Next's own framework-injected hydration scripts pick it up too).
+  const nonce = generateNonce();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set('Content-Security-Policy', buildContentSecurityPolicy(nonce));
+  return response;
 }
 
 export const config = {

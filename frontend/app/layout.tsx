@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { headers } from 'next/headers';
 import Script from 'next/script';
 import { Partytown } from '@builder.io/partytown/react';
 import { Manrope, Sora, Inter } from 'next/font/google';
@@ -59,16 +60,19 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
-  
+  // Set per-request by proxy.ts alongside the nonce'd CSP header — required
+  // for this page's own inline <Script> to be allowed to execute at all.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
+
   return (
     <html lang="en" data-theme="light" className={`${bodyFont.variable} ${displayFont.variable} ${interFont.variable}`} style={{ colorScheme: 'light' }}>
       <body>
         {children}
         
-        <Partytown forward={['clarity']} />
+        <Partytown forward={['clarity']} nonce={nonce} />
         <PwaBootstrap />
         {clarityId ? (
-          <Script id="ms-clarity" type="text/partytown">
+          <Script id="ms-clarity" type="text/partytown" nonce={nonce}>
             {`(function(c,l,a,r,i,t,y){
     c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
     t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;

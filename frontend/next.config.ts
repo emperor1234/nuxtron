@@ -2,37 +2,17 @@ import type { NextConfig } from 'next';
 import { copyLibFiles } from '@builder.io/partytown/utils';
 import path from 'path';
 
-const isDev = process.env.NODE_ENV !== 'production';
-
-/**
- * Content-Security-Policy for the dashboard.
- *
- * The app renders pervasive inline styles and loads Google Fonts, so
- * `style-src` and `font-src` must permit those origins. `'unsafe-inline'`
- * scripts are tolerated only in development (Next.js dev overlay + HMR);
- * production drops it. All data egress is same-origin through the
- * `/api/fastapi` proxy, so `connect-src 'self'` is sufficient.
- */
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  `script-src 'self'${isDev ? " 'unsafe-inline' 'unsafe-eval'" : ''}`,
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob: https:",
-  "connect-src 'self'",
-  "worker-src 'self' blob:",
-  "frame-ancestors 'none'",
-  "form-action 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  'upgrade-insecure-requests',
-].join('; ');
+// Content-Security-Policy is NOT set here. A static CSP can't carry a
+// per-request nonce, and `script-src 'self'` without one blocks every
+// inline hydration `<script>` the App Router injects — see proxy.ts and
+// app/lib/security/csp.ts, which set a fresh nonce'd CSP per page request
+// instead. Everything below is safe to stay static (no per-request state
+// needed).
 
 // Applied to every route. `frame-ancestors 'none'` + `X-Frame-Options` block
 // clickjacking; HSTS enforces TLS (A02); Permissions-Policy strips unused
 // device access to shrink the attack surface.
 const securityHeaders = [
-  { key: 'Content-Security-Policy', value: contentSecurityPolicy },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
