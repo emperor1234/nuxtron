@@ -274,8 +274,29 @@ body:has(.mk-root)::after {
   transform: translateY(-2px);
 }
 
-/* ── Hero world video: the AI-generated dive-in clip. Reduced-motion users
-   get the static poster frame instead — never an autoplaying video. ── */
+/* ── Hero world video: scroll-scrubbed, not autoplaying. .mk-scrub-wrap is a
+   tall runway (its height IS the scroll distance the whole dive takes); the
+   panel inside pins via position:sticky while that runway scrolls past, and
+   scroll-scrub-hero.tsx maps scroll progress within it straight to
+   video.currentTime. Reduced-motion users never get the runway or the video
+   at all — just the static poster at normal document height. ── */
+.mk-scrub-wrap {
+  position: relative;
+  height: 250vh;
+}
+.mk-scrub-sticky {
+  position: sticky;
+  top: 96px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-scrub-wrap {
+    height: auto;
+  }
+  .mk-scrub-sticky {
+    position: static;
+  }
+}
+
 .mk-hero-video-shell {
   position: relative;
   overflow: hidden;

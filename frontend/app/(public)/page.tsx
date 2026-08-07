@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Bot, Radar, Share2, Shield, Star } from 'lucide-react';
+import { ScrollScrubHero } from '@/app/components/marketing/scroll-scrub-hero';
 
 export const metadata: Metadata = {
   title: 'Nuxtron — The command center for growth and security teams',
@@ -104,26 +105,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mk-hero-video-shell mk-fade-up mx-auto mt-16 w-full max-w-4xl">
-          <video
-            className="mk-hero-video"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            poster="/media/hero-world-poster.jpg"
-            aria-hidden="true"
-          >
-            <source src="/media/hero-world.mp4" type="video/mp4" />
-          </video>
-          <img
-            src="/media/hero-world-poster.jpg"
-            alt="An isometric world of connected glass structures, camera descending into a glowing core representing the Nuxtron workspace"
-            className="mk-hero-video-poster"
-          />
-        </div>
-
         <div className="mt-16 w-full border-y border-[#dbe6ee] bg-[#f6fafd] py-8 opacity-90 backdrop-blur-sm transition-opacity hover:opacity-100">
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 md:flex-row md:gap-12">
             <p className="shrink-0 text-xs font-bold uppercase tracking-widest text-[#8595a8]">
@@ -137,6 +118,22 @@ export default function HomePage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="mk-section pt-0 text-center">
+        <div className="mk-container mb-10 max-w-2xl">
+          <span className="mk-eyebrow mb-5">Inside the workspace</span>
+          <h2 className="text-3xl font-semibold tracking-tight text-[#0b1b2b] sm:text-4xl">
+            Scroll to fly through it
+          </h2>
+        </div>
+        <div className="mk-container">
+          <ScrollScrubHero
+            src="/media/hero-world.mp4"
+            poster="/media/hero-world-poster.jpg"
+            alt="An isometric world of connected glass structures; the camera descends from the outside into a glowing core representing the Nuxtron workspace"
+          />
         </div>
       </section>
 

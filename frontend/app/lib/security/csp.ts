@@ -23,6 +23,12 @@ export function buildContentSecurityPolicy(nonce: string): string {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https:",
+    // blob: is required for the scroll-scrubbed hero video (scroll-scrub-hero.tsx):
+    // it fetches the clip and plays it from an in-memory object URL so seeking
+    // never depends on the host serving HTTP byte-range requests. Without an
+    // explicit media-src, this falls back to default-src 'self', which does not
+    // cover the blob: scheme, and the browser silently refuses to load it.
+    "media-src 'self' blob:",
     "connect-src 'self'",
     "worker-src 'self' blob:",
     "frame-ancestors 'none'",
