@@ -418,7 +418,15 @@ def _allow_api_docs() -> bool:
 def _allowed_hosts() -> list[str]:
     raw = os.getenv('ALLOWED_HOSTS', '').strip()
     if raw:
-        return [item.strip() for item in raw.split(',') if item.strip()]
+        hosts = [item.strip() for item in raw.split(',') if item.strip()]
+        # Container-local healthchecks (Docker HEALTHCHECK, Coolify's internal
+        # probe) hit /healthz over loopback with Host: 127.0.0.1, which never
+        # matches a real public ALLOWED_HOSTS domain. Always allow loopback
+        # so those checks succeed without weakening the public-facing check.
+        for local_host in ('localhost', '127.0.0.1'):
+            if local_host not in hosts:
+                hosts.append(local_host)
+        return hosts
     if _is_production():
         raise RuntimeError('ALLOWED_HOSTS must be configured in production mode.')
     return ['*']
