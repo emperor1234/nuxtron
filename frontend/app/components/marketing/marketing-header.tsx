@@ -7,6 +7,7 @@ import { ArrowRight, Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
   ['/features', 'Features'],
+  ['/integrations', 'Integrations'],
   ['/pricing', 'Pricing'],
   ['/about', 'Company'],
   ['/trust', 'Trust'],
@@ -24,21 +25,20 @@ export function MarketingHeader() {
     return () => window.removeEventListener('scroll', update);
   }, []);
 
-  useEffect(() => {
-    setMobile(false);
-  }, [pathname]);
 
   return (
     <header className="fixed top-0 left-0 z-[100] w-full pt-4 sm:pt-6 px-3 sm:px-4">
       <nav
         aria-label="Primary navigation"
-        className={`mx-auto flex max-w-5xl items-center justify-between rounded-full border border-white/10 bg-black/60 px-4 sm:px-6 py-2.5 sm:py-3 shadow-2xl backdrop-blur-xl transition-shadow ${
-          scrolled ? 'shadow-[0_8px_40px_rgba(0,0,0,0.5)]' : ''
+        className={`mx-auto flex max-w-5xl items-center justify-between rounded-full border border-[#dbe6ee] bg-white/80 px-4 sm:px-6 py-2.5 sm:py-3 shadow-lg backdrop-blur-xl transition-shadow ${
+          scrolled ? 'shadow-[0_8px_32px_rgba(11,27,43,0.12)]' : ''
         }`}
       >
         <Link href="/" className="flex items-center gap-2" aria-label="Nuxtron home">
-          <span className="h-5 w-5 rotate-45 rounded-sm bg-[#ef233c]" aria-hidden="true" />
-          <span className="[font-family:var(--font-display)] text-lg font-bold tracking-tight text-white">Nuxtron</span>
+          <img src="/brand/nuxtron-icon-square.svg" alt="" width={28} height={28} className="rounded-md" />
+          <span className="[font-family:var(--font-display)] text-lg font-bold tracking-tight text-[#0b1b2b]">
+            Nuxtron
+          </span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
@@ -47,7 +47,7 @@ export function MarketingHeader() {
               key={href}
               href={href}
               className={`text-sm font-medium transition-colors ${
-                pathname === href ? 'text-white' : 'text-zinc-400 hover:text-white'
+                pathname === href ? 'text-[#0b1b2b]' : 'text-[#55677c] hover:text-[#0b1b2b]'
               }`}
             >
               {label}
@@ -56,30 +56,28 @@ export function MarketingHeader() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          <Link href="/login" className="hidden md:block text-sm font-medium text-zinc-300 hover:text-white">
+          <Link href="/login" className="hidden md:block text-sm font-medium text-[#33475b] hover:text-[#0b1b2b]">
             Log in
           </Link>
           <Link
             href="/register"
-            className="group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-white/5 px-5 py-2 transition-transform active:scale-95"
+            className="group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-[#0ea5e9] px-5 py-2 shadow-[0_6px_18px_rgba(14,165,233,0.35)] transition-transform active:scale-95"
           >
-            <span className="absolute inset-0 rounded-full border border-white/10" aria-hidden="true" />
             <span
               className="absolute inset-[-100%] animate-spin opacity-0 transition-opacity duration-300 group-hover:opacity-100 [animation-duration:3s]"
               style={{
-                background:
-                  'conic-gradient(from 90deg at 50% 50%, transparent 0%, transparent 75%, #ef233c 100%)',
+                background: 'conic-gradient(from 90deg at 50% 50%, transparent 0%, transparent 75%, #f59e0b 100%)',
               }}
               aria-hidden="true"
             />
-            <span className="absolute inset-[1px] rounded-full bg-black" aria-hidden="true" />
+            <span className="absolute inset-[1px] rounded-full bg-[#0ea5e9]" aria-hidden="true" />
             <span className="relative z-10 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white">
               Start free <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>
           <button
             type="button"
-            className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-white md:hidden"
+            className="grid h-10 w-10 place-items-center rounded-full border border-[#dbe6ee] bg-white text-[#0b1b2b] md:hidden"
             onClick={() => setMobile((v) => !v)}
             aria-expanded={mobile}
             aria-label="Toggle navigation"
@@ -90,28 +88,31 @@ export function MarketingHeader() {
       </nav>
 
       {mobile ? (
-        <div className="mx-auto mt-2 w-[calc(100%-1.5rem)] max-w-5xl rounded-3xl border border-white/10 bg-black/95 p-5 shadow-2xl backdrop-blur-xl md:hidden">
+        <div className="mx-auto mt-2 w-[calc(100%-1.5rem)] max-w-5xl rounded-3xl border border-[#dbe6ee] bg-white/98 p-5 shadow-2xl backdrop-blur-xl md:hidden">
           <div className="flex flex-col gap-1">
             {NAV_LINKS.map(([href, label]) => (
               <Link
                 key={href}
                 href={href}
-                className="rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-200 hover:bg-white/5 hover:text-white"
+                onClick={() => setMobile(false)}
+                className="rounded-xl px-3 py-2.5 text-sm font-semibold text-[#33475b] hover:bg-[#0ea5e9]/8 hover:text-[#0b1b2b]"
               >
                 {label}
               </Link>
             ))}
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[#dbe6ee] pt-4">
             <Link
               href="/login"
-              className="rounded-full border border-white/15 px-4 py-2.5 text-center text-sm font-semibold text-white"
+              onClick={() => setMobile(false)}
+              className="rounded-full border border-[#dbe6ee] px-4 py-2.5 text-center text-sm font-semibold text-[#0b1b2b]"
             >
               Log in
             </Link>
             <Link
               href="/register"
-              className="rounded-full bg-[#ef233c] px-4 py-2.5 text-center text-sm font-semibold text-white"
+              onClick={() => setMobile(false)}
+              className="rounded-full bg-[#0ea5e9] px-4 py-2.5 text-center text-sm font-semibold text-white"
             >
               Start free
             </Link>

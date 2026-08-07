@@ -101,18 +101,30 @@ const FAQS = [
   },
 ];
 
+const FAQ_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQS.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
+
 export default function PricingPage() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
+
       <section className="mk-section pt-40 text-center">
         <div className="mk-container">
           <span className="mk-eyebrow mb-5">Pricing</span>
-          <h1 className="mx-auto max-w-2xl text-5xl font-semibold tracking-tight text-white sm:text-6xl">
+          <h1 className="mx-auto max-w-2xl text-5xl font-semibold tracking-tight text-[#0b1b2b] sm:text-6xl">
             Plans that scale with your team
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-zinc-400">
-            Start free. Every plan includes CRM, SEO &amp; AI visibility tracking, and social scheduling — upgrade for
-            more seats, more AI credits, and deeper automation.
+          <p className="mx-auto mt-5 max-w-xl text-lg text-[#55677c]">
+            Start free. Every plan includes CRM, SEO &amp; AI visibility tracking, and social scheduling — upgrade
+            for more seats, more AI credits, and deeper automation.
           </p>
         </div>
       </section>
@@ -124,29 +136,29 @@ export default function PricingPage() {
               key={plan.id}
               className={`relative flex flex-col rounded-2xl border p-8 ${
                 plan.highlighted
-                  ? 'z-10 border-[#ef233c] bg-zinc-900/50 shadow-[0_0_40px_rgba(239,35,60,0.12)] lg:scale-105'
-                  : 'border-white/10 bg-black hover:border-white/20'
+                  ? 'z-10 border-[#0ea5e9] bg-[#f0f8fd] shadow-[0_0_40px_rgba(14,165,233,0.14)] lg:scale-105'
+                  : 'border-[#dbe6ee] bg-white hover:border-[#0ea5e9]/40'
               } transition-all`}
             >
               {plan.highlighted ? (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#ef233c] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0ea5e9] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
                   Most popular
                 </span>
               ) : null}
 
-              <h2 className="text-xl font-bold text-white">{plan.name}</h2>
-              <p className="mb-8 mt-2 h-10 text-sm text-zinc-500">{plan.description}</p>
+              <h2 className="text-xl font-bold text-[#0b1b2b]">{plan.name}</h2>
+              <p className="mb-8 mt-2 h-10 text-sm text-[#8595a8]">{plan.description}</p>
 
               <div className="mb-8 flex items-baseline gap-1">
-                <span className="text-zinc-500">$</span>
-                <span className="text-5xl font-bold tabular-nums text-white">{plan.price}</span>
-                <span className="text-sm text-zinc-500">{plan.cadence}</span>
+                <span className="text-[#8595a8]">$</span>
+                <span className="text-5xl font-bold tabular-nums text-[#0b1b2b]">{plan.price}</span>
+                <span className="text-sm text-[#8595a8]">{plan.cadence}</span>
               </div>
 
               <ul className="mb-8 flex-1 space-y-3.5">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2.5 text-sm text-zinc-300">
-                    <Check size={16} className="mt-0.5 shrink-0 text-[#ef233c]" aria-hidden="true" />
+                  <li key={feature} className="flex items-start gap-2.5 text-sm text-[#33475b]">
+                    <Check size={16} className="mt-0.5 shrink-0 text-[#0ea5e9]" aria-hidden="true" />
                     {feature}
                   </li>
                 ))}
@@ -156,8 +168,8 @@ export default function PricingPage() {
                 href={plan.cta.href}
                 className={`w-full rounded-lg px-4 py-3 text-center text-sm font-bold uppercase tracking-wider transition-all ${
                   plan.highlighted
-                    ? 'bg-[#ef233c] text-white hover:bg-[#d81f36]'
-                    : 'border border-white/10 bg-white/5 text-white hover:bg-white/10'
+                    ? 'bg-[#0ea5e9] text-white hover:bg-[#0c8fcc]'
+                    : 'border border-[#dbe6ee] bg-white text-[#0b1b2b] hover:border-[#0ea5e9]/50 hover:bg-[#f0f8fd]'
                 }`}
               >
                 {plan.cta.label}
@@ -169,24 +181,27 @@ export default function PricingPage() {
 
       <section className="mk-section">
         <div className="mk-container max-w-3xl">
-          <h2 className="mb-10 text-center text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+          <h2 className="mb-10 text-center text-3xl font-semibold tracking-tight text-[#0b1b2b] sm:text-4xl">
             Frequently asked questions
           </h2>
-          <dl className="divide-y divide-white/10 rounded-2xl border border-white/10">
+          <dl className="divide-y divide-[#dbe6ee] rounded-2xl border border-[#dbe6ee] bg-white">
             {FAQS.map((item) => (
               <div key={item.q} className="p-6">
-                <dt className="mb-2 font-semibold text-white">{item.q}</dt>
-                <dd className="text-sm leading-relaxed text-zinc-400">{item.a}</dd>
+                <dt className="mb-2 font-semibold text-[#0b1b2b]">{item.q}</dt>
+                <dd className="text-sm leading-relaxed text-[#55677c]">{item.a}</dd>
               </div>
             ))}
           </dl>
+          <p className="mt-6 text-center text-sm text-[#55677c]">
+            More questions? See the full <Link href="/faq" className="font-semibold text-[#0c8fcc] hover:underline">FAQ</Link>.
+          </p>
         </div>
       </section>
 
       <section className="mk-section text-center">
         <div className="mk-container max-w-2xl">
-          <h2 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">Still deciding?</h2>
-          <p className="mx-auto mt-4 max-w-md text-lg text-zinc-400">
+          <h2 className="text-4xl font-semibold tracking-tight text-[#0b1b2b] sm:text-5xl">Still deciding?</h2>
+          <p className="mx-auto mt-4 max-w-md text-lg text-[#55677c]">
             Talk to our team about which plan fits your workflow — no pressure, no scripted demo.
           </p>
           <Link href="/contact" className="mk-shiny-cta mt-8">

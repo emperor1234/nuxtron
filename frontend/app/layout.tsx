@@ -58,6 +58,27 @@ export const metadata: Metadata = {
   },
 };
 
+const ORGANIZATION_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Nuxtron',
+  url: siteUrl,
+  logo: `${siteUrl}/brand/nuxtron-icon-square.svg`,
+  description: 'Autonomous AI platform for Social Media, Ads, SEO, and conversion growth.',
+};
+
+const WEBSITE_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Nuxtron',
+  url: siteUrl,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${siteUrl}/blog?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
+
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
   // Set per-request by proxy.ts alongside the nonce'd CSP header — required
@@ -67,8 +88,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en" data-theme="light" className={`${bodyFont.variable} ${displayFont.variable} ${interFont.variable}`} style={{ colorScheme: 'light' }}>
       <body>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSON_LD) }} />
         {children}
-        
+
         <Partytown forward={['clarity']} nonce={nonce} />
         <PwaBootstrap />
         {clarityId ? (

@@ -61,8 +61,10 @@ export default function FeaturesPage() {
       <section className="mk-section pt-40 text-center">
         <div className="mk-container max-w-2xl">
           <span className="mk-eyebrow mb-5">Features</span>
-          <h1 className="text-5xl font-semibold tracking-tight text-white sm:text-6xl">Everything in one workspace</h1>
-          <p className="mt-5 text-lg text-zinc-400">
+          <h1 className="text-5xl font-semibold tracking-tight text-[#0b1b2b] sm:text-6xl">
+            Everything in one workspace
+          </h1>
+          <p className="mt-5 text-lg text-[#55677c]">
             Six systems that used to live in six separate tools — now sharing one tenant, one data model, and one set
             of AI agents.
           </p>
@@ -73,14 +75,14 @@ export default function FeaturesPage() {
         <div className="mk-container grid grid-cols-1 gap-6 md:grid-cols-2">
           {CAPABILITIES.map((cap) => (
             <div key={cap.title} className="mk-card p-8">
-              <div className="mb-5 inline-flex w-fit rounded-lg border border-white/10 bg-white/5 p-3 text-[#ef233c]">
+              <div className="mk-icon-tile mb-5">
                 <cap.icon size={22} strokeWidth={1.75} aria-hidden="true" />
               </div>
-              <h2 className="mb-2.5 text-xl font-semibold text-white">{cap.title}</h2>
-              <p className="mb-5 text-[15px] leading-relaxed text-zinc-400">{cap.body}</p>
-              <ul className="space-y-2 border-t border-white/10 pt-5">
+              <h2 className="mb-2.5 text-xl font-semibold text-[#0b1b2b]">{cap.title}</h2>
+              <p className="mb-5 text-[15px] leading-relaxed text-[#55677c]">{cap.body}</p>
+              <ul className="space-y-2 border-t border-[#dbe6ee] pt-5">
                 {cap.points.map((point) => (
-                  <li key={point} className="text-sm text-zinc-500">
+                  <li key={point} className="text-sm text-[#55677c]">
                     {point}
                   </li>
                 ))}
@@ -92,15 +94,14 @@ export default function FeaturesPage() {
 
       <section className="mk-section text-center">
         <div className="mk-container max-w-2xl">
-          <h2 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">See it running on your data</h2>
+          <h2 className="text-4xl font-semibold tracking-tight text-[#0b1b2b] sm:text-5xl">
+            See it running on your data
+          </h2>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link href="/register" className="mk-shiny-cta">
               Start free <ArrowRight size={16} />
             </Link>
-            <Link
-              href="/pricing"
-              className="rounded-full border border-zinc-800 bg-zinc-900 px-8 py-4 font-medium text-zinc-300 transition-all hover:bg-zinc-800 hover:text-white"
-            >
+            <Link href="/pricing" className="mk-btn-secondary">
               View pricing
             </Link>
           </div>

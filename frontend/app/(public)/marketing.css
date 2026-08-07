@@ -1,22 +1,30 @@
 /*
- * Nuxtron Marketing — "Red Noir" design system.
- * Black canvas, signature red (#ef233c), Manrope display / Inter body
- * (already loaded via next/font in app/layout.tsx). A deliberate single
- * dark visual identity for the marketing site — not a light/dark toggle.
+ * Nuxtron Marketing — brand design system.
+ * White canvas, light-blue primary/secondary (from the product logo),
+ * amber accent for emphasis. Manrope display / Inter body (already loaded
+ * via next/font in app/layout.tsx). One light visual identity across every
+ * public page — no dark/light toggle.
  */
 
 .mk-root {
-  --mk-bg: #050505;
-  --mk-surface: #0a0a0a;
-  --mk-surface-raised: #111111;
-  --mk-ink: #f5f5f5;
-  --mk-muted: #a1a1aa;
-  --mk-faint: #71717a;
-  --mk-line: rgba(255, 255, 255, 0.08);
-  --mk-line-strong: rgba(255, 255, 255, 0.16);
-  --mk-red: #ef233c;
-  --mk-red-hover: #d81f36;
-  --mk-red-tint: rgba(239, 35, 60, 0.1);
+  --mk-bg: #ffffff;
+  --mk-bg-soft: #f6fafd;
+  --mk-surface: #ffffff;
+  --mk-surface-raised: #f0f8fd;
+  --mk-ink: #0b1b2b;
+  --mk-muted: #55677c;
+  --mk-faint: #8595a8;
+  --mk-line: #dbe6ee;
+  --mk-line-strong: #c2d5e3;
+  /* Primary + secondary: both light blue, matching the Nuxtron logo. */
+  --mk-blue: #0ea5e9;
+  --mk-blue-hover: #0c8fcc;
+  --mk-blue-2: #38bdf8;
+  --mk-blue-tint: rgba(14, 165, 233, 0.08);
+  --mk-blue-tint-strong: rgba(14, 165, 233, 0.14);
+  /* One accent color, deliberately not purple. */
+  --mk-accent: #f59e0b;
+  --mk-accent-tint: rgba(245, 158, 11, 0.12);
   min-height: 100vh;
   color: var(--mk-ink);
   background: var(--mk-bg);
@@ -26,14 +34,11 @@
 body:has(.mk-root) {
   background: var(--mk-bg);
   scroll-padding-top: 84px;
-  color-scheme: dark;
+  color-scheme: light;
 }
 body:has(.mk-root)::before,
 body:has(.mk-root)::after {
   display: none;
-}
-body:has(.mk-root) .ira-shell {
-  display: none !important;
 }
 .mk-root *,
 .mk-root *::before,
@@ -53,6 +58,7 @@ body:has(.mk-root) .ira-shell {
   font-family: var(--font-display), sans-serif;
   letter-spacing: -0.02em;
   text-wrap: balance;
+  color: var(--mk-ink);
 }
 .mk-root p {
   color: var(--mk-muted);
@@ -61,7 +67,7 @@ body:has(.mk-root) .ira-shell {
   color: inherit;
 }
 .mk-root ::selection {
-  background: var(--mk-red);
+  background: var(--mk-blue);
   color: #fff;
 }
 
@@ -72,7 +78,7 @@ body:has(.mk-root) .ira-shell {
   z-index: 200;
   padding: 0.75rem 1.25rem;
   border-radius: 9999px;
-  background: var(--mk-red);
+  background: var(--mk-blue);
   color: #fff;
   font-weight: 700;
   font-size: 0.85rem;
@@ -82,7 +88,7 @@ body:has(.mk-root) .ira-shell {
   top: 1rem;
 }
 
-/* ── Global background: subtle grid + soft red glow ── */
+/* ── Global background: soft grid + light blue glow ── */
 .mk-bg {
   position: fixed;
   inset: 0;
@@ -94,15 +100,15 @@ body:has(.mk-root) .ira-shell {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, #140505 0%, #050505 45%);
+  background: linear-gradient(to bottom, #f2fbff 0%, #ffffff 45%);
 }
 .mk-bg::after {
   content: '';
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: radial-gradient(circle at 50% 0%, black 0%, transparent 75%);
 }
@@ -114,7 +120,7 @@ body:has(.mk-root) .ira-shell {
   width: 900px;
   height: 900px;
   border-radius: 9999px;
-  background: rgba(239, 35, 60, 0.06);
+  background: rgba(14, 165, 233, 0.1);
   filter: blur(140px);
 }
 
@@ -135,8 +141,8 @@ body:has(.mk-root) .ira-shell {
   padding: 0.35rem 0.9rem;
   border-radius: 9999px;
   border: 1px solid var(--mk-line-strong);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--mk-red);
+  background: var(--mk-blue-tint);
+  color: var(--mk-blue-hover);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -164,8 +170,8 @@ body:has(.mk-root) .ira-shell {
   border-radius: 9999px;
   padding: 0.9rem 2rem;
   background:
-    linear-gradient(#000, #000) padding-box,
-    conic-gradient(from var(--mk-angle), transparent 0%, var(--mk-red) 8%, var(--mk-red) 22%, transparent 34%, transparent 100%) border-box;
+    linear-gradient(var(--mk-blue), var(--mk-blue)) padding-box,
+    conic-gradient(from var(--mk-angle), transparent 0%, var(--mk-accent) 8%, var(--mk-accent) 22%, transparent 34%, transparent 100%) border-box;
   border: 2px solid transparent;
   color: #fff;
   font-weight: 600;
@@ -173,12 +179,42 @@ body:has(.mk-root) .ira-shell {
   cursor: pointer;
   animation: mk-border-spin 2.6s linear infinite;
   text-decoration: none;
+  box-shadow: 0 8px 24px rgba(14, 165, 233, 0.28);
+}
+.mk-shiny-cta:hover {
+  background:
+    linear-gradient(var(--mk-blue-hover), var(--mk-blue-hover)) padding-box,
+    conic-gradient(from var(--mk-angle), transparent 0%, var(--mk-accent) 8%, var(--mk-accent) 22%, transparent 34%, transparent 100%) border-box;
 }
 @media (prefers-reduced-motion: reduce) {
   .mk-shiny-cta {
     animation: none;
-    border-color: var(--mk-red);
+    border-color: var(--mk-blue);
   }
+}
+
+/* ── Secondary (outline) button — pairs with .mk-shiny-cta everywhere ── */
+.mk-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--mk-line-strong);
+  background: #fff;
+  padding: 0.9rem 2rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--mk-ink);
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.mk-btn-secondary:hover {
+  border-color: var(--mk-blue);
+  background: var(--mk-blue-tint);
+  color: var(--mk-blue-hover);
 }
 
 /* ── Fade-up entrance (used sparingly — hero + first section only) ── */
@@ -201,9 +237,9 @@ body:has(.mk-root) .ira-shell {
   }
 }
 
-/* ── Huge footer wordmark — solid white, lifted off the black canvas by a
-   red glow underneath it, rather than the earlier faint outline-only
-   treatment. ── */
+/* ── Huge footer wordmark — light-blue glow lifting it off the white
+   canvas, mirroring the logo's own glow-on-black treatment inverted for
+   a light page. ── */
 .mk-wordmark {
   font-family: var(--font-display), sans-serif;
   font-weight: 800;
@@ -212,10 +248,10 @@ body:has(.mk-root) .ira-shell {
   font-size: clamp(3.5rem, 15vw, 12rem);
   width: 100%;
   text-align: center;
-  color: #fff;
+  color: var(--mk-ink);
   text-shadow:
-    0 6px 0 rgba(239, 35, 60, 0.55),
-    0 18px 45px rgba(239, 35, 60, 0.35);
+    0 6px 0 rgba(14, 165, 233, 0.18),
+    0 18px 45px rgba(14, 165, 233, 0.16);
   user-select: none;
 }
 
@@ -224,13 +260,28 @@ body:has(.mk-root) .ira-shell {
   border-radius: 1rem;
   border: 1px solid var(--mk-line);
   background: var(--mk-surface);
+  box-shadow: 0 1px 2px rgba(11, 27, 43, 0.04);
   transition:
     border-color 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 .mk-card:hover {
   border-color: var(--mk-line-strong);
   background: var(--mk-surface-raised);
+  box-shadow: 0 12px 32px rgba(11, 27, 43, 0.08);
+  transform: translateY(-2px);
+}
+
+.mk-icon-tile {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 0.65rem;
+  border: 1px solid var(--mk-line-strong);
+  background: var(--mk-blue-tint);
+  padding: 0.7rem;
+  color: var(--mk-blue-hover);
 }
 
 @media (max-width: 640px) {

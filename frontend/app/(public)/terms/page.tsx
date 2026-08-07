@@ -50,21 +50,21 @@ export default function TermsPage() {
     <section className="mk-section pt-40">
       <div className="mk-container max-w-3xl">
         <span className="mk-eyebrow mb-5">Legal</span>
-        <h1 className="mb-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">Terms of Service</h1>
-        <p className="mb-12 text-sm text-zinc-500">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        <h1 className="mb-4 text-4xl font-semibold tracking-tight text-[#0b1b2b] sm:text-5xl">Terms of Service</h1>
+        <p className="mb-12 text-sm text-[#8595a8]">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
         <div className="space-y-10">
           {SECTIONS.map((section) => (
             <div key={section.title}>
-              <h2 className="mb-2.5 text-lg font-semibold text-white">{section.title}</h2>
-              <p className="text-[15px] leading-relaxed text-zinc-400">{section.body}</p>
+              <h2 className="mb-2.5 text-lg font-semibold text-[#0b1b2b]">{section.title}</h2>
+              <p className="text-[15px] leading-relaxed text-[#55677c]">{section.body}</p>
             </div>
           ))}
         </div>
 
-        <p className="mt-14 border-t border-white/10 pt-8 text-sm text-zinc-500">
+        <p className="mt-14 border-t border-[#dbe6ee] pt-8 text-sm text-[#8595a8]">
           Questions about these terms? Contact us at{' '}
-          <a href="mailto:legal@nuxtron.app" className="text-[#ef233c] hover:underline">
+          <a href="mailto:legal@nuxtron.app" className="text-[#0c8fcc] hover:underline">
             legal@nuxtron.app
           </a>
           .

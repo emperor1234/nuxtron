@@ -47,10 +47,10 @@ export default function TrustPage() {
       <section className="mk-section pt-40 text-center">
         <div className="mk-container max-w-2xl">
           <span className="mk-eyebrow mb-5">Trust &amp; security</span>
-          <h1 className="text-5xl font-semibold tracking-tight text-white sm:text-6xl">
+          <h1 className="text-5xl font-semibold tracking-tight text-[#0b1b2b] sm:text-6xl">
             Security is not an afterthought
           </h1>
-          <p className="mt-5 text-lg text-zinc-400">
+          <p className="mt-5 text-lg text-[#55677c]">
             The same tenant isolation and access controls that protect your data protect every other tenant on
             Nuxtron — here&apos;s what that actually means underneath the product.
           </p>
@@ -61,11 +61,11 @@ export default function TrustPage() {
         <div className="mk-container grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {CONTROLS.map((control) => (
             <div key={control.title} className="mk-card p-8">
-              <div className="mb-5 inline-flex w-fit rounded-lg border border-white/10 bg-white/5 p-3 text-[#ef233c]">
+              <div className="mk-icon-tile mb-5">
                 <control.icon size={22} strokeWidth={1.75} aria-hidden="true" />
               </div>
-              <h2 className="mb-2.5 text-lg font-semibold text-white">{control.title}</h2>
-              <p className="text-[15px] leading-relaxed text-zinc-400">{control.body}</p>
+              <h2 className="mb-2.5 text-lg font-semibold text-[#0b1b2b]">{control.title}</h2>
+              <p className="text-[15px] leading-relaxed text-[#55677c]">{control.body}</p>
             </div>
           ))}
         </div>
@@ -74,12 +74,12 @@ export default function TrustPage() {
       <section className="mk-section">
         <div className="mk-container max-w-3xl">
           <div className="mk-card p-10">
-            <h2 className="mb-3 text-2xl font-semibold text-white">Have a security question?</h2>
-            <p className="mb-6 text-[15px] leading-relaxed text-zinc-400">
+            <h2 className="mb-3 text-2xl font-semibold text-[#0b1b2b]">Have a security question?</h2>
+            <p className="mb-6 text-[15px] leading-relaxed text-[#55677c]">
               For security disclosures, questionnaires, or a deeper technical review, reach out and we&apos;ll loop
               in the right person.
             </p>
-            <Link href="/contact" className="inline-flex items-center gap-2 font-semibold text-[#ef233c]">
+            <Link href="/contact" className="inline-flex items-center gap-2 font-semibold text-[#0c8fcc]">
               Contact security <ArrowRight size={16} />
             </Link>
           </div>

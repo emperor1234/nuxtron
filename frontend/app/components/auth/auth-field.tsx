@@ -20,8 +20,8 @@ type AuthFieldProps = {
 
 /**
  * Labeled input. Label ABOVE the control, error BELOW it (never placeholder
- * as label). Dark surface matching the auth shell's red-noir theme, with an
- * optional leading icon and a show/hide toggle for password fields.
+ * as label). Light surface matching the auth shell's white/blue theme, with
+ * an optional leading icon and a show/hide toggle for password fields.
  */
 export function AuthField({
   label,
@@ -44,12 +44,12 @@ export function AuthField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-zinc-300">
+      <label htmlFor={id} className="text-sm font-medium text-[#33475b]">
         {label}
       </label>
       <div className="relative">
         {icon ? (
-          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-zinc-500">
+          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[#8595a8]">
             {icon}
           </span>
         ) : null}
@@ -65,17 +65,17 @@ export function AuthField({
           placeholder={placeholder}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full rounded-xl border bg-white/5 py-2.5 text-[15px] text-white outline-none transition placeholder:text-zinc-600 focus:ring-2 focus:ring-[#ef233c]/25 ${
+          className={`w-full rounded-xl border bg-white py-2.5 text-[15px] text-[#0b1b2b] outline-none transition placeholder:text-[#a7b4c3] focus:ring-2 focus:ring-[#0ea5e9]/20 ${
             icon ? 'pl-10' : 'pl-3.5'
           } ${isPassword ? 'pr-11' : 'pr-3.5'} ${
-            error ? 'border-rose-500/60 focus:border-rose-500' : 'border-white/10 focus:border-[#ef233c]/60'
+            error ? 'border-rose-500/60 focus:border-rose-500' : 'border-[#dbe6ee] focus:border-[#0ea5e9]/60'
           }`}
         />
         {isPassword ? (
           <button
             type="button"
             onClick={() => setRevealed((v) => !v)}
-            className="absolute inset-y-0 right-3 flex items-center text-zinc-500 transition-colors hover:text-zinc-300"
+            className="absolute inset-y-0 right-3 flex items-center text-[#8595a8] transition-colors hover:text-[#33475b]"
             aria-label={revealed ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
             tabIndex={-1}
           >
@@ -84,7 +84,7 @@ export function AuthField({
         ) : null}
       </div>
       {error ? (
-        <span id={errorId} className="text-sm text-rose-400">
+        <span id={errorId} className="text-sm text-rose-600">
           {error}
         </span>
       ) : null}

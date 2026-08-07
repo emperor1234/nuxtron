@@ -114,9 +114,9 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => setShowWorkspace(true)}
-            className="-mt-2 self-start text-xs font-medium text-zinc-500 underline-offset-4 transition-colors hover:text-zinc-300 hover:underline"
+            className="-mt-2 self-start text-xs font-medium text-[#8595a8] underline-offset-4 transition-colors hover:text-[#33475b] hover:underline"
           >
-            Signing into a specific workspace? <span className="text-zinc-400">Add workspace ID</span>
+            Signing into a specific workspace? <span className="text-[#55677c]">Add workspace ID</span>
           </button>
         )}
 
@@ -131,8 +131,8 @@ export function LoginForm() {
         </AuthSubmit>
 
         <div aria-live="polite" role="status">
-          {error ? <p className="text-sm text-rose-400">{error}</p> : null}
-          {result ? <p className="text-sm text-zinc-400">{result}</p> : null}
+          {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+          {result ? <p className="text-sm text-[#55677c]">{result}</p> : null}
         </div>
       </form>
 
