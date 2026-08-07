@@ -18,20 +18,20 @@ const DEFAULT_TENANT = (
 
 const ENGINE_META: Record<string, { color: string; glow: string; accent: string }> = {
   auth: { color: '#38bdf8', glow: 'rgba(56,189,248,0.25)', accent: '#0ea5e9' },
-  cc: { color: '#a78bfa', glow: 'rgba(167,139,250,0.25)', accent: '#6366f1' },
+  cc: { color: '#2dd4bf', glow: 'rgba(45,212,191,0.25)', accent: '#0d9488' },
   analytics: { color: '#34d399', glow: 'rgba(52,211,153,0.25)', accent: '#059669' },
   e01: { color: '#f472b6', glow: 'rgba(244,114,182,0.25)', accent: '#db2777' },
   e02: { color: '#fb923c', glow: 'rgba(251,146,60,0.25)', accent: '#ea580c' },
   e03: { color: '#60a5fa', glow: 'rgba(96,165,250,0.25)', accent: '#6366f1' },
   e04: { color: '#f87171', glow: 'rgba(248,113,113,0.25)', accent: '#dc2626' },
-  e05: { color: '#c084fc', glow: 'rgba(192,132,252,0.25)', accent: '#9333ea' },
+  e05: { color: '#a3e635', glow: 'rgba(163,230,53,0.25)', accent: '#65a30d' },
   e06: { color: '#4ade80', glow: 'rgba(74,222,128,0.25)', accent: '#16a34a' },
   e07: { color: '#fbbf24', glow: 'rgba(251,191,36,0.25)', accent: '#d97706' },
   e08: { color: '#f43f5e', glow: 'rgba(244,63,94,0.25)', accent: '#e11d48' },
   e09: { color: '#f97316', glow: 'rgba(249,115,22,0.25)', accent: '#c2410c' },
   e10: { color: '#22d3ee', glow: 'rgba(34,211,238,0.25)', accent: '#0891b2' },
   e11: { color: '#6366f1', glow: 'rgba(99,102,241,0.25)', accent: '#6366f1' },
-  e12: { color: '#e879f9', glow: 'rgba(232,121,249,0.25)', accent: '#c026d3' },
+  e12: { color: '#94a3b8', glow: 'rgba(148,163,184,0.25)', accent: '#475569' },
 };
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
@@ -211,7 +211,7 @@ function Field({
   rows?: number;
   engineKey?: keyof typeof ENGINE_META;
 }) {
-  const color = engineKey ? ENGINE_META[engineKey].color : '#a78bfa';
+  const color = engineKey ? ENGINE_META[engineKey].color : '#3b82f6';
   const shared = {
     width: '100%',
     background: 'rgba(0,0,0,0.4)',
@@ -679,13 +679,13 @@ export default function VSEPage() {
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-        ::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.4); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.4); border-radius: 4px; }
       `}</style>
       <main
         style={{
           minHeight: '100vh',
           background:
-            'radial-gradient(ellipse 80% 60% at 50% -20%, rgba(120,40,200,0.18) 0%, transparent 70%), #080810',
+            'radial-gradient(ellipse 80% 60% at 50% -20%, rgba(37,99,235,0.18) 0%, transparent 70%), #080810',
           color: '#f1f5f9',
           padding: 'clamp(20px, 3.2vw, 40px) clamp(12px, 2vw, 20px) clamp(24px, 4vw, 60px)',
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
@@ -709,9 +709,9 @@ export default function VSEPage() {
                 fontWeight: 700,
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                color: '#a78bfa',
-                background: 'rgba(167,139,250,0.12)',
-                border: '1px solid rgba(167,139,250,0.3)',
+                color: '#3b82f6',
+                background: 'rgba(59,130,246,0.12)',
+                border: '1px solid rgba(59,130,246,0.3)',
                 borderRadius: 999,
                 padding: isShortViewport ? '3px 12px' : '4px 14px',
                 marginBottom: isShortViewport ? 10 : 18,
@@ -722,7 +722,7 @@ export default function VSEPage() {
                   width: 6,
                   height: 6,
                   borderRadius: '50%',
-                  background: '#a78bfa',
+                  background: '#3b82f6',
                   animation: 'pulse-glow 2s ease infinite',
                 }}
               />
@@ -734,7 +734,7 @@ export default function VSEPage() {
                 fontWeight: 900,
                 letterSpacing: '-0.03em',
                 lineHeight: 1.1,
-                background: 'linear-gradient(135deg, #f8fafc 0%, #a78bfa 50%, #60a5fa 100%)',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #93c5fd 50%, #60a5fa 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 margin: isShortViewport ? '0 0 8px' : '0 0 12px',
@@ -760,7 +760,7 @@ export default function VSEPage() {
                 }}
               >
                 {[
-                  { label: 'Engines', value: '12', color: '#a78bfa' },
+                  { label: 'Engines', value: '12', color: '#3b82f6' },
                   { label: 'Sub-systems', value: '47', color: '#60a5fa' },
                   { label: 'Psych Triggers', value: '247', color: '#f472b6' },
                   { label: 'Influencer DB', value: '12M', color: '#34d399' },
@@ -1626,7 +1626,7 @@ export default function VSEPage() {
                   const items = payload.variants ?? payload.all_variants ?? [];
                   return (
                     <div style={{ marginTop: 14 }}>
-                      <p style={{ fontSize: 11, color: '#a78bfa', marginBottom: 8 }}>
+                      <p style={{ fontSize: 11, color: '#3b82f6', marginBottom: 8 }}>
                         Variants returned: <strong>{items.length}</strong>
                       </p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -3544,7 +3544,7 @@ function ScoreGauge({ score, label, size = 110 }: Readonly<{ score: number; labe
 
 function WaterfallBars({ timeline }: Readonly<{ timeline: WaterfallTimeline }>) {
   const phases: { key: keyof WaterfallTimeline; label: string; color: string }[] = [
-    { key: 'dns', label: 'DNS', color: '#8b5cf6' },
+    { key: 'dns', label: 'DNS', color: '#2563eb' },
     { key: 'tcp', label: 'TCP', color: '#6366f1' },
     { key: 'tls', label: 'TLS', color: '#06b6d4' },
     { key: 'ttfb', label: 'TTFB', color: '#f59e0b' },
@@ -3668,8 +3668,8 @@ function integrationHealthColor(health: string): string {
 
 // ─── Chart Components ─────────────────────────────────────────────────────────
 
-const DONUT_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#8b5cf6', '#06b6d4'];
-const NETWORK_COLORS = ['#06b6d4', '#6366f1', '#8b5cf6', '#f59e0b'];
+const DONUT_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4'];
+const NETWORK_COLORS = ['#06b6d4', '#6366f1', '#ec4899', '#f59e0b'];
 
 function DonutChart({
   slices,
@@ -3850,7 +3850,7 @@ function CapabilitySuiteSection({
 
   const tierColor = (tier?: string): string => {
     if (tier === 'Core') return '#0ea5e9';
-    if (tier === 'New') return '#a855f7';
+    if (tier === 'New') return '#ec4899';
     if (tier === 'AI') return '#22c55e';
     if (tier === 'Experiment') return '#f59e0b';
     return '#64748b';
@@ -8775,7 +8775,7 @@ function LatencyTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     script: '#f59e0b',
                     css: '#6366f1',
                     image: '#22c55e',
-                    font: '#a855f7',
+                    font: '#0d9488',
                     api: '#f97316',
                   };
                   const col = typeColor[entry.type ?? 'api'] ?? 'var(--muted)';
@@ -10132,7 +10132,7 @@ function AccessibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {
               label: 'Contrast Failures',
               value: result.accessibility_audit?.color_contrast_failures ?? 0,
-              color: '#8b5cf6',
+              color: '#2563eb',
             },
             { label: 'ARIA Issues', value: result.accessibility_audit?.aria_issues ?? 0, color: '#6366f1' },
             {
@@ -10166,7 +10166,7 @@ function AccessibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '10px 12px', fontSize: 12 }}
                 >
                   <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontFamily: 'monospace', color: '#8b5cf6', fontWeight: 700 }}>{issue.wcag}</span>
+                    <span style={{ fontFamily: 'monospace', color: '#2563eb', fontWeight: 700 }}>{issue.wcag}</span>
                     <span
                       style={{
                         background:
@@ -10919,7 +10919,7 @@ function UxConversionTab({ result, card, isOfflinePreview }: PerfTabProps) {
               value: result.ux_conversion?.brand_voice_score ?? 0,
               color: scoreColor(result.ux_conversion?.brand_voice_score ?? 0),
             },
-            { label: 'OG Coverage', value: `${result.ux_conversion?.og_coverage_pct ?? 0}%`, color: '#8b5cf6' },
+            { label: 'OG Coverage', value: `${result.ux_conversion?.og_coverage_pct ?? 0}%`, color: '#2563eb' },
           ].map((m) => (
             <div
               key={m.label}
@@ -11360,7 +11360,7 @@ function LiveIntelligenceTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       >
                         {(k.delta ?? 0) > 0 ? `+${k.delta}` : k.delta}
                       </td>
-                      <td style={{ padding: '6px 8px', fontSize: 10, color: '#8b5cf6' }}>
+                      <td style={{ padding: '6px 8px', fontSize: 10, color: '#2563eb' }}>
                         {k.serp_feature !== 'none' ? k.serp_feature : '\u2014'}
                       </td>{' '}
                       {/* NOSONAR */}
@@ -12457,7 +12457,7 @@ function KeywordsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     <td style={{ padding: '7px 8px' }}>
                       <span style={badge('#6366f1')}>{k.intent}</span>
                     </td>
-                    <td style={{ padding: '7px 8px', color: '#8b5cf6', fontSize: 11 }}>{k.feat}</td>
+                    <td style={{ padding: '7px 8px', color: '#2563eb', fontSize: 11 }}>{k.feat}</td>
                   </tr>
                 );
               })}
@@ -12599,7 +12599,7 @@ function SeoRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   <td style={{ padding: '7px 8px' }}>{p.kws}</td>
                   <td style={{ padding: '7px 8px' }}>{p.impr.toLocaleString()}</td>
                   <td style={{ padding: '7px 8px', color: p.ctr > 6 ? '#22c55e' : '#f59e0b' }}>{p.ctr}%</td>
-                  <td style={{ padding: '7px 8px', color: '#8b5cf6', fontSize: 11 }}>{p.feat}</td>
+                  <td style={{ padding: '7px 8px', color: '#2563eb', fontSize: 11 }}>{p.feat}</td>
                 </tr>
               ))}
             </tbody>
@@ -12649,7 +12649,7 @@ function AiModelsRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
           { label: 'ChatGPT Mentions', value: '184', color: '#10b981' },
           { label: 'Perplexity Rank', value: '#3', color: '#6366f1' },
           { label: 'Gemini Citations', value: '112', color: '#f59e0b' },
-          { label: 'Claude Citations', value: '132', color: '#8b5cf6' },
+          { label: 'Claude Citations', value: '132', color: '#2563eb' },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -12662,7 +12662,7 @@ function AiModelsRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <MiniBarChart
           items={[
             { label: 'ChatGPT (GPT-4o)', value: 184, color: '#10b981', max: 428, suffix: ' cites' },
-            { label: 'Claude 3.5 Sonnet', value: 132, color: '#8b5cf6', max: 428, suffix: ' cites' },
+            { label: 'Claude 3.5 Sonnet', value: 132, color: '#2563eb', max: 428, suffix: ' cites' },
             { label: 'Gemini 2.5 Pro', value: 112, color: '#f59e0b', max: 428, suffix: ' cites' },
             { label: 'Perplexity', value: 0, color: '#6366f1', max: 428, suffix: ' cites' },
           ]}
@@ -13052,7 +13052,7 @@ function LeadsTab({ result, card, isOfflinePreview }: PerfTabProps) {
             { label: 'Paid Search', value: 196, color: '#f59e0b', max: 1284, suffix: ' leads' },
             { label: 'Social Organic', value: 128, color: '#6366f1', max: 1284, suffix: ' leads' },
             { label: 'Referral', value: 56, color: '#6366f1', max: 1284, suffix: ' leads' },
-            { label: 'AI Referral', value: 30, color: '#8b5cf6', max: 1284, suffix: ' leads' },
+            { label: 'AI Referral', value: 30, color: '#2563eb', max: 1284, suffix: ' leads' },
           ]}
         />
       </div>

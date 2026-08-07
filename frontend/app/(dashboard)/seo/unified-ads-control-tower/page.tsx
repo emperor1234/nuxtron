@@ -44,7 +44,7 @@ const NAV_ITEMS = [
     icon: '📅',
     title: 'Campaign Calendar',
     description: 'Visualize scheduled campaigns. Drag events to reschedule them automatically.',
-    color: '#a855f7',
+    color: '#2563eb',
   },
   {
     href: '/seo/ads-kpis' as Route,
@@ -324,7 +324,7 @@ export default function UnifiedAdsControlTowerPage() {
             },
             {
               title: 'Operating Model',
-              color: '#a855f7',
+              color: '#2563eb',
               items: [
                 'Control tower orchestrates; ad networks remain the system of record for delivery.',
                 'API approvals, quotas, and editorial rules are first-class operational constraints.',

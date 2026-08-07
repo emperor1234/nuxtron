@@ -17,15 +17,19 @@ export default function KpiCard({ kpi }: { kpi: Kpi }) {
           </span>
           <span className={styles.kpiLabel}>{kpi.label}</span>
         </div>
-        <span className={styles.kpiDelta} style={{ color: deltaColor }}>
-          {kpi.up ? '▲' : '▼'}
-          {kpi.delta}
-        </span>
+        {kpi.delta !== undefined ? (
+          <span className={styles.kpiDelta} style={{ color: deltaColor }}>
+            {kpi.up ? '▲' : '▼'}
+            {kpi.delta}%
+          </span>
+        ) : null}
       </div>
       <div className={`${styles.kpiValue} ${styles.tabular}`}>
         <NumberTicker value={kpi.value} suffix={kpi.suffix} decimals={kpi.decimals ?? 0} />
       </div>
-      <Sparkline values={kpi.data} color={kpi.color} className={styles.kpiSpark} gradientId={`spark-${kpi.key}`} />
+      {kpi.data && kpi.data.length > 1 ? (
+        <Sparkline values={kpi.data} color={kpi.color} className={styles.kpiSpark} gradientId={`spark-${kpi.key}`} />
+      ) : null}
     </article>
   );
 }

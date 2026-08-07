@@ -268,7 +268,7 @@ export default function PromptVolumesDashboard() {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 h-3 rounded-full"
+                        className="bg-gradient-to-r from-blue-600 to-cyan-500 h-3 rounded-full"
                         style={{
                           width: `${(volume / Math.max(...Object.values(analysis.by_source))) * 100}%`,
                         }}

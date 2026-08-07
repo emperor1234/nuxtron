@@ -1,23 +1,14 @@
 import styles from '../dashboard.module.css';
-import { INTENT_STYLE, KEYWORDS } from '../_data/marketing-data';
+import { DIFFICULTY_STYLE, type KeywordRow } from '../_data/marketing-data';
 
-const CHANGE_COLOR: Record<'up' | 'down' | 'flat', string> = {
-  up: 'var(--d-green)',
-  down: 'var(--d-red)',
-  flat: 'var(--d-faint)',
-};
-
-export default function TopKeywordsCard() {
+export default function TopKeywordsCard({ keywords }: { keywords: KeywordRow[] }) {
   return (
     <div className={`${styles.card} ${styles.tableCard}`}>
       <div className={styles.tableHeadRow}>
         <div>
           <h3 className={styles.cardTitle}>Top ranking keywords</h3>
-          <div className={styles.cardSub}>Tracked positions this week</div>
+          <div className={styles.cardSub}>Tracked organic positions</div>
         </div>
-        <button type="button" className={styles.viewAll}>
-          View all →
-        </button>
       </div>
 
       <div className={`${styles.kwGrid} ${styles.kwColHead}`} role="row">
@@ -29,30 +20,37 @@ export default function TopKeywordsCard() {
           Volume
         </span>
         <span role="columnheader" className={styles.alignRight}>
-          Intent
+          CPC
+        </span>
+        <span role="columnheader" className={styles.alignRight}>
+          Difficulty
         </span>
       </div>
 
-      {KEYWORDS.map((row) => {
-        const intent = INTENT_STYLE[row.intent];
-        return (
-          <div key={row.keyword} className={`${styles.kwGrid} ${styles.kwRow}`} role="row">
-            <span className={styles.kwName}>{row.keyword}</span>
-            <div className={styles.kwPosCell}>
-              <span className={`${styles.kwPos} ${styles.tabular}`}>{row.position}</span>
-              <span className={styles.kwChange} style={{ color: CHANGE_COLOR[row.trend] }}>
-                {row.change}
-              </span>
+      {keywords.length === 0 ? (
+        <p className="muted" style={{ padding: '16px 22px' }}>
+          No tracked keywords yet.
+        </p>
+      ) : (
+        keywords.map((row) => {
+          const diff = DIFFICULTY_STYLE[row.difficulty];
+          return (
+            <div key={row.keyword} className={`${styles.kwGrid} ${styles.kwRow}`} role="row">
+              <span className={styles.kwName}>{row.keyword}</span>
+              <div className={styles.kwPosCell}>
+                <span className={`${styles.kwPos} ${styles.tabular}`}>{row.position}</span>
+              </div>
+              <span className={`${styles.kwVol} ${styles.tabular}`}>{row.volume.toLocaleString('en-US')}</span>
+              <span className={`${styles.kwVol} ${styles.tabular}`}>${row.cpc.toFixed(2)}</span>
+              <div className={styles.kwIntentCell}>
+                <span className={styles.kwIntent} style={{ background: diff.bg, color: diff.color }}>
+                  {row.difficulty}
+                </span>
+              </div>
             </div>
-            <span className={`${styles.kwVol} ${styles.tabular}`}>{row.volume}</span>
-            <div className={styles.kwIntentCell}>
-              <span className={styles.kwIntent} style={{ background: intent.bg, color: intent.color }}>
-                {row.intent}
-              </span>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })
+      )}
     </div>
   );
 }

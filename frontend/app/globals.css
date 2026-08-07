@@ -36,17 +36,17 @@
   --ink-2: #3d4456;
   --muted: #6b7385;
   --faint: #9aa1b2;
-  /* Brand: indigo -> violet -> fuchsia */
-  --brand: #6d5efc;
-  --brand-2: #a855f7;
+  /* Brand: blue -> sky -> pink */
+  --brand: #2563eb;
+  --brand-2: #1d4ed8;
   --brand-3: #ec4899;
   --brand-sky: #38bdf8;
-  --gradient-brand: linear-gradient(120deg, #6366f1 0%, #8b5cf6 45%, #ec4899 100%);
-  --gradient-brand-soft: linear-gradient(120deg, rgba(99, 102, 241, 0.16), rgba(139, 92, 246, 0.14), rgba(236, 72, 153, 0.12));
+  --gradient-brand: linear-gradient(120deg, #2563eb 0%, #0ea5e9 45%, #ec4899 100%);
+  --gradient-brand-soft: linear-gradient(120deg, rgba(37, 99, 235, 0.16), rgba(14, 165, 233, 0.14), rgba(236, 72, 153, 0.12));
   --line: #e7e9ef;
   --line-soft: #eef0f4;
-  --surface-glass: rgba(99, 102, 241, 0.04);
-  --surface-glass-strong: rgba(99, 102, 241, 0.08);
+  --surface-glass: rgba(37, 99, 235, 0.04);
+  --surface-glass-strong: rgba(37, 99, 235, 0.08);
   --radius-sm: 12px;
   --radius-md: 16px;
   --radius-lg: 22px;

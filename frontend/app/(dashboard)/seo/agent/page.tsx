@@ -74,14 +74,14 @@ export default function AgentPage() {
   const phases = result?.phases as AgentPhase[] | undefined;
   const PHASE_COLORS = [
     'rgba(27,199,255,0.1)',
-    'rgba(139,92,246,0.1)',
+    'rgba(37,99,235,0.1)',
     'rgba(34,197,94,0.1)',
     'rgba(234,179,8,0.1)',
     'rgba(239,68,68,0.1)',
   ];
   const PHASE_BORDERS = [
     'rgba(27,199,255,0.3)',
-    'rgba(139,92,246,0.3)',
+    'rgba(37,99,235,0.3)',
     'rgba(34,197,94,0.3)',
     'rgba(234,179,8,0.3)',
     'rgba(239,68,68,0.3)',
@@ -191,7 +191,7 @@ export default function AgentPage() {
             )}
 
             <section
-              style={{ ...card, background: 'linear-gradient(135deg, rgba(27,199,255,0.05), rgba(139,92,246,0.05))' }}
+              style={{ ...card, background: 'linear-gradient(135deg, rgba(27,199,255,0.05), rgba(37,99,235,0.05))' }}
             >
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>Strategic Goal</div>
               <div style={{ fontSize: 16, fontWeight: 700 }}>{(result.goal as string) || goal}</div>

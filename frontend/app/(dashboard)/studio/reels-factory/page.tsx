@@ -296,7 +296,7 @@ export default function ReelsFactoryPage() {
                       const parts = seg.split('_');
                       const name = parts.slice(0, -1).join(' ').replace(/\b\w/g, (c) => c.toUpperCase());
                       const dur = parts[parts.length - 1];
-                      const colors = ['#6366f1', '#22c55e', '#F59E0B', '#EF4444', '#8B5CF6'];
+                      const colors = ['#6366f1', '#22c55e', '#F59E0B', '#EF4444', '#ec4899'];
                       return (
                         <div key={seg} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                           <div style={{ width: 26, height: 26, borderRadius: '50%', background: colors[i % colors.length] + '33', color: colors[i % colors.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>

@@ -415,7 +415,7 @@ export default function AdvancedModulePage(props: Readonly<AdvancedModulePagePro
         >
           <PillCloud title="Supported Channels" items={moduleDetail?.supported_channels} accent="#22c55e" />
           <PillCloud title="Integrations" items={moduleDetail?.integrations} accent="#38bdf8" />
-          <PillCloud title="AI Model Stack" items={moduleDetail?.ai_models} accent="#a855f7" />
+          <PillCloud title="AI Model Stack" items={moduleDetail?.ai_models} accent="#2563eb" />
         </section>
 
         <section
@@ -430,7 +430,7 @@ export default function AdvancedModulePage(props: Readonly<AdvancedModulePagePro
           <ChecklistCard title="Architecture Blueprint" items={moduleDetail?.architecture_layers} tone="#60a5fa" />
           <ChecklistCard title="Automation Engine" items={moduleDetail?.automation_features} tone="#22c55e" />
           <ChecklistCard title="Analytics & Attribution" items={moduleDetail?.analytics_features} tone="#f59e0b" />
-          <ChecklistCard title="Enterprise Controls" items={moduleDetail?.enterprise_features} tone="#a855f7" />
+          <ChecklistCard title="Enterprise Controls" items={moduleDetail?.enterprise_features} tone="#2563eb" />
           <ChecklistCard title="Delivery Constraints" items={moduleDetail?.delivery_constraints} tone="#ef4444" />
         </section>
       </div>

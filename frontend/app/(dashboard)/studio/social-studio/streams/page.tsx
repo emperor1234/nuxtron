@@ -33,7 +33,7 @@ type MonitoringStream = {
 
 function getStreamTypeColor(streamType: string): string {
   if (streamType === 'hashtag') {
-    return '#A855F7';
+    return '#ec4899';
   }
   if (streamType === 'account') {
     return '#6366f1';

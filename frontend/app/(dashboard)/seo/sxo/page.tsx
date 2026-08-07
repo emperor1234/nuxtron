@@ -272,7 +272,7 @@ export default function SXOPage() {
               {[
                 { label: 'SXO Score', value: result.sxo_score, color: '#22c55e' },
                 { label: 'Dwell Time', value: result.dwell_time_score, color: '#22d3ee' },
-                { label: 'CTR Score', value: result.ctr_score, color: '#a78bfa' },
+                { label: 'CTR Score', value: result.ctr_score, color: '#2563eb' },
                 { label: 'UX Quality', value: result.ux_quality_score, color: '#f59e0b' },
               ].map((m) => (
                 <div key={m.label} className="rounded-xl border border-[var(--line)] bg-white p-4 text-center">

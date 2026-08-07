@@ -85,7 +85,7 @@ export default function RagSearchPage() {
 
   const INTENT_COLORS: Record<string, string> = {
     informational: 'bg-blue-100 text-[var(--brand)]',
-    navigational: 'bg-purple-100 text-[var(--brand)]',
+    navigational: 'bg-teal-100 text-teal-700',
     transactional: 'bg-green-100 text-green-700',
     commercial: 'bg-orange-100 text-orange-700',
   };

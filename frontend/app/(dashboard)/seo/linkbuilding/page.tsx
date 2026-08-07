@@ -144,7 +144,7 @@ export default function LinkbuildingPage() {
   const STATUS_COLORS: Record<string, string> = {
     new: '#1bc7ff',
     contacted: '#ffb867',
-    in_progress: '#a78bfa',
+    in_progress: '#ec4899',
     won: '#26d78e',
     lost: '#f87171',
   };
@@ -152,7 +152,7 @@ export default function LinkbuildingPage() {
     guest_post: '#1bc7ff',
     resource_page: '#26d78e',
     broken_link: '#ffb867',
-    skyscraper: '#a78bfa',
+    skyscraper: '#0d9488',
     unlinked_mention: '#60a5fa',
     podcast: '#f97316',
     interview: '#ec4899',

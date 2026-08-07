@@ -256,7 +256,7 @@ export default function EEATPage() {
                       style={{
                         width: `${dimScore(result, d.key) ?? 0}%`,
                         height: '100%',
-                        background: '#a78bfa',
+                        background: '#2563eb',
                         borderRadius: 4,
                       }}
                     />
