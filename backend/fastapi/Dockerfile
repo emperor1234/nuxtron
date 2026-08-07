@@ -16,10 +16,13 @@ ENV PIP_NO_CACHE_DIR=1 \
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
+# No apt packages needed here: every dependency in requirements.txt installs
+# from a prebuilt manylinux wheel on this Python/platform combo (confirmed —
+# cryptography, bcrypt, pynacl, lxml, xmlsec, pqcrypto, argon2-cffi-bindings
+# all ship wheels; psycopg[binary] bundles its own libpq, it doesn't need
+# libpq-dev to build against). build-essential + libpq-dev were pure dead
+# weight here — ~90MB of gcc/g++ downloaded and installed to compile nothing,
+# adding build time and memory pressure for no benefit.
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 
