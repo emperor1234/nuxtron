@@ -502,11 +502,24 @@ def _build_media_storage(*, is_production: bool) -> dict[str, Any]:
         return {'BACKEND': 'django.core.files.storage.FileSystemStorage'}
 
     if not bucket:
+        if os.getenv('ALLOW_LOCAL_MEDIA_STORAGE', '').strip().lower() in {'1', 'true', 'yes'}:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                'ALLOW_LOCAL_MEDIA_STORAGE=1: using local FileSystemStorage in '
+                'production. Uploaded files will NOT survive container '
+                'restarts, redeploys, or scale-out. Set AWS_STORAGE_BUCKET_NAME '
+                '(+ credentials) and remove this flag before relying on file '
+                'uploads for real.'
+            )
+            return {'BACKEND': 'django.core.files.storage.FileSystemStorage'}
         raise ImproperlyConfigured(
             'AWS_STORAGE_BUCKET_NAME is required in production. Local media '
             "storage doesn't survive container restarts or scale-out — set "
             'the bucket plus AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY (or rely '
-            'on an IAM instance role) and AWS_S3_REGION_NAME.'
+            'on an IAM instance role) and AWS_S3_REGION_NAME. To deploy '
+            'without S3 for now, set ALLOW_LOCAL_MEDIA_STORAGE=1 instead — '
+            'file uploads will be lost on every restart until you configure S3.'
         )
     return {'BACKEND': 'storages.backends.s3.S3Storage'}
 
