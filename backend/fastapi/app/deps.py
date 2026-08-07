@@ -439,7 +439,27 @@ def _authenticate_bearer(
     return tenant_id, 'bearer_jwt', subject, roles, jti, exp
 
 
-def _authenticate_api_key(supplied_api_key: str, supplied_tenant_id: str) -> tuple[str, str, str, list[str], str, int]:
+# Endpoints that mint a session from scratch (email+password, not an existing
+# bearer token) have no bearer token to present by definition — they are the
+# thing that produces one. With ALLOW_HEADER_API_KEYS left at its secure
+# default (false), gating these behind the same policy as general API traffic
+# is a deadlock: a client can never obtain a bearer token to satisfy the
+# bearer-only requirement. These paths are exempted from that specific gate
+# (the API key itself is still verified via hmac.compare_digest below, so a
+# caller without the correct FASTAPI_API_KEY is still rejected) — matching
+# production_middleware.py's SensitiveRouteTokenMiddleware, which already
+# assumes '/auth/login' works via API key by directing rejected callers there.
+_AUTH_BOOTSTRAP_PATHS = frozenset({
+    '/auth/register',
+    '/auth/login',
+    '/auth/password-reset/request',
+    '/auth/password-reset/confirm',
+})
+
+
+def _authenticate_api_key(
+    supplied_api_key: str, supplied_tenant_id: str, request_path: str = ''
+) -> tuple[str, str, str, list[str], str, int]:
     """Return ``(tenant_id, 'api_key', '', [], '', 0)``. No user identity or roles for key auth."""
     # Token-only policy is the secure default. Legacy API keys can be re-enabled
     # only by explicitly setting ALLOW_HEADER_API_KEYS=true.
@@ -447,7 +467,8 @@ def _authenticate_api_key(supplied_api_key: str, supplied_tenant_id: str) -> tup
     # test-mode signal here — it is set on ordinary production startup paths to
     # skip DB seeding, and honoring it would silently weaken auth in prod.
     is_test_mode = bool(os.getenv('PYTEST_CURRENT_TEST'))
-    if not env_bool('ALLOW_HEADER_API_KEYS', False) and not is_test_mode:
+    is_bootstrap_path = request_path in _AUTH_BOOTSTRAP_PATHS
+    if not env_bool('ALLOW_HEADER_API_KEYS', False) and not is_test_mode and not is_bootstrap_path:
         raise HTTPException(status_code=401, detail='Header API keys are disabled. Use bearer tokens.')
 
     expected = os.getenv('FASTAPI_API_KEY', 'change-this-fastapi-key').strip()
@@ -487,7 +508,9 @@ async def require_auth(
         if jti and await _is_token_revoked(jti):
             raise HTTPException(status_code=401, detail='Token has been revoked.')
     else:
-        tenant_id, auth_mode, subject, roles, jti, exp = _authenticate_api_key(supplied_api_key, supplied_tenant_id)
+        tenant_id, auth_mode, subject, roles, jti, exp = _authenticate_api_key(
+            supplied_api_key, supplied_tenant_id, request.url.path
+        )
 
     await _audit_api_usage(
         request,
