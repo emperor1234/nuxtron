@@ -140,6 +140,6 @@ export const config = {
   // Runs on every request except static assets and Next internals; API
   // proxy calls and app-route gating are both handled inside proxy() above.
   matcher: [
-    '/((?!_next/static|_next/image|favicon\\.ico|brand/|robots\\.txt|sitemap\\.xml|sw\\.js|manifest\\.json|~partytown/).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|brand/|media/|robots\\.txt|sitemap\\.xml|sw\\.js|manifest\\.json|~partytown/).*)',
   ],
 };

@@ -274,6 +274,44 @@ body:has(.mk-root)::after {
   transform: translateY(-2px);
 }
 
+/* ── Hero world video: the AI-generated dive-in clip. Reduced-motion users
+   get the static poster frame instead — never an autoplaying video. ── */
+.mk-hero-video-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid var(--mk-line);
+  box-shadow: 0 24px 64px rgba(11, 27, 43, 0.12);
+  background: #0b1b2b;
+}
+.mk-hero-video-shell::after {
+  /* Soft brand-blue glow ring so the panel doesn't look like a bare video embed. */
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.25);
+  pointer-events: none;
+}
+.mk-hero-video,
+.mk-hero-video-poster {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.mk-hero-video-poster {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-hero-video {
+    display: none;
+  }
+  .mk-hero-video-poster {
+    display: block;
+  }
+}
+
 .mk-icon-tile {
   display: inline-flex;
   width: fit-content;

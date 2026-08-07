@@ -104,7 +104,27 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mt-28 w-full border-y border-[#dbe6ee] bg-[#f6fafd] py-8 opacity-90 backdrop-blur-sm transition-opacity hover:opacity-100">
+        <div className="mk-hero-video-shell mk-fade-up mx-auto mt-16 w-full max-w-4xl">
+          <video
+            className="mk-hero-video"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster="/media/hero-world-poster.jpg"
+            aria-hidden="true"
+          >
+            <source src="/media/hero-world.mp4" type="video/mp4" />
+          </video>
+          <img
+            src="/media/hero-world-poster.jpg"
+            alt="An isometric world of connected glass structures, camera descending into a glowing core representing the Nuxtron workspace"
+            className="mk-hero-video-poster"
+          />
+        </div>
+
+        <div className="mt-16 w-full border-y border-[#dbe6ee] bg-[#f6fafd] py-8 opacity-90 backdrop-blur-sm transition-opacity hover:opacity-100">
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 md:flex-row md:gap-12">
             <p className="shrink-0 text-xs font-bold uppercase tracking-widest text-[#8595a8]">
               One workspace, connected:
