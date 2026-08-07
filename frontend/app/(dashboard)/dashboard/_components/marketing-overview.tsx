@@ -39,7 +39,10 @@ function exportData(data: NonNullable<ReturnType<typeof useMarketingOverview>['d
   link.href = url;
   link.download = `marketing-overview-${data.domain}-${new Date().toISOString().slice(0, 10)}.json`;
   link.click();
-  URL.revokeObjectURL(url);
+  // Defer revocation past the current task: some browsers haven't finished
+  // consuming the object URL for the download by the time click() returns,
+  // and revoking synchronously can intermittently cancel it.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default function MarketingOverview({ className }: MarketingOverviewProps) {

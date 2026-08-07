@@ -254,14 +254,17 @@ export function useMarketingOverview() {
         },
       ];
 
-      const pipelineTotal = pipeline.pipeline.reduce((sum, s) => sum + s.count, 0) || 1;
-      const pipelineDonut: DonutSlice[] = pipeline.pipeline
-        .filter((s) => s.stage !== 'closed_lost')
-        .map((s) => ({
-          label: s.display,
-          pct: Math.round((s.count / pipelineTotal) * 100),
-          color: PIPELINE_COLORS[s.stage] ?? '#6b7385',
-        }));
+      // "Open" means still in motion: excludes both closed_lost (not shown)
+      // and closed_won (already closed, not open pipeline). The percentage
+      // denominator is the same filtered set that's rendered, so slices sum
+      // to ~100%.
+      const openStages = pipeline.pipeline.filter((s) => s.stage !== 'closed_lost' && s.stage !== 'closed_won');
+      const openTotal = openStages.reduce((sum, s) => sum + s.count, 0) || 1;
+      const pipelineDonut: DonutSlice[] = openStages.map((s) => ({
+        label: s.display,
+        pct: Math.round((s.count / openTotal) * 100),
+        color: PIPELINE_COLORS[s.stage] ?? '#6b7385',
+      }));
 
       const keywords: KeywordRow[] = organicKeywords.keywords.map((k) => ({
         keyword: k.keyword,
@@ -279,16 +282,18 @@ export function useMarketingOverview() {
         color: SOCIAL_PLATFORMS[i].color,
       }));
 
-      const funnelBase = pipeline.pipeline[0]?.count || 1;
-      const funnel: FunnelStage[] = pipeline.pipeline
-        .filter((s) => s.stage !== 'closed_lost')
-        .map((s) => ({
-          stage: s.display,
-          value: s.count.toLocaleString('en-US'),
-          pct: Math.max(6, Math.round((s.count / funnelBase) * 100)),
-          rate: `$${Math.round(s.total_value).toLocaleString('en-US')}`,
-          color: PIPELINE_COLORS[s.stage] ?? '#6b7385',
-        }));
+      const funnelStages = pipeline.pipeline.filter((s) => s.stage !== 'closed_lost');
+      // Baseline off the largest stage, not the first (prospect can be 0
+      // while later stages still have deals — using stage 0 as the
+      // denominator would then produce >100% widths).
+      const funnelBase = Math.max(...funnelStages.map((s) => s.count), 1);
+      const funnel: FunnelStage[] = funnelStages.map((s) => ({
+        stage: s.display,
+        value: s.count.toLocaleString('en-US'),
+        pct: Math.min(100, Math.max(6, Math.round((s.count / funnelBase) * 100))),
+        rate: `$${Math.round(s.total_value).toLocaleString('en-US')}`,
+        color: PIPELINE_COLORS[s.stage] ?? '#6b7385',
+      }));
 
       const insights = buildInsights({
         keywords: organicKeywords.keywords,
@@ -304,7 +309,9 @@ export function useMarketingOverview() {
         trend,
         trendDeltaPct,
         pipelineDonut,
-        pipelineTotalValue: pipeline.total_pipeline_value,
+        // total_pipeline_value already excludes closed_lost; subtract
+        // closed_won too so this matches the donut's "open value" label.
+        pipelineTotalValue: Math.max(0, pipeline.total_pipeline_value - pipeline.total_closed_won),
         keywords,
         social,
         funnel,
