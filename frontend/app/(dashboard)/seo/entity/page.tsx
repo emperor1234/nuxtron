@@ -169,7 +169,7 @@ export default function EntityPage() {
     PERSON: '#1bc7ff',
     ORG: '#26d78e',
     LOC: '#ffb867',
-    PRODUCT: '#a78bfa',
+    PRODUCT: '#ec4899',
     EVENT: '#f87171',
     CONCEPT: '#60a5fa',
   };
@@ -645,11 +645,11 @@ export default function EntityPage() {
                           style={{
                             padding: '4px 12px',
                             borderRadius: 999,
-                            background: 'rgba(167,139,250,0.1)',
-                            color: '#a78bfa',
+                            background: 'rgba(37,99,235,0.1)',
+                            color: '#2563eb',
                             fontSize: 12,
                             fontWeight: 700,
-                            border: '1px solid rgba(167,139,250,0.25)',
+                            border: '1px solid rgba(37,99,235,0.25)',
                           }}
                         >
                           {s}

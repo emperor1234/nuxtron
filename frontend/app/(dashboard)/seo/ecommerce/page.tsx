@@ -288,10 +288,10 @@ export default function EcommerceSEOPage() {
                       style={{
                         fontSize: 12,
                         padding: '4px 12px',
-                        background: 'rgba(167,139,250,0.1)',
-                        border: '1px solid rgba(167,139,250,0.3)',
+                        background: 'rgba(37,99,235,0.1)',
+                        border: '1px solid rgba(37,99,235,0.3)',
                         borderRadius: 99,
-                        color: '#a78bfa',
+                        color: '#2563eb',
                       }}
                     >
                       {k}

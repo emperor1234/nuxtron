@@ -269,9 +269,9 @@ export default function AgentAnalyticsDashboard() {
                     <div className="text-sm text-green-600">First Seen</div>
                     <div className="text-sm text-green-900">{new Date(botDetails.first_seen).toLocaleDateString()}</div>
                   </div>
-                  <div className="p-3 bg-purple-50 rounded">
-                    <div className="text-sm text-[var(--brand)]">Last Seen</div>
-                    <div className="text-sm text-purple-900">{new Date(botDetails.last_seen).toLocaleDateString()}</div>
+                  <div className="p-3 bg-teal-50 rounded">
+                    <div className="text-sm text-teal-600">Last Seen</div>
+                    <div className="text-sm text-teal-900">{new Date(botDetails.last_seen).toLocaleDateString()}</div>
                   </div>
                 </div>
 

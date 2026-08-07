@@ -102,7 +102,7 @@ const IRA_ASSISTANCE_LINKS: IraAssistanceLink[] = [
     title: 'Campaign Calendar',
     href: '/studio/social-calendar',
     description: 'Review scheduled posts and control publishing cadence.',
-    accent: '#a855f7',
+    accent: '#0ea5e9',
   },
   {
     title: 'Review Management',
@@ -114,7 +114,7 @@ const IRA_ASSISTANCE_LINKS: IraAssistanceLink[] = [
     title: 'Influencer CRM',
     href: '/studio/social-influencers',
     description: 'Search creators, shortlist matches, and manage partner discovery.',
-    accent: '#8b5cf6',
+    accent: '#ec4899',
   },
   {
     title: 'Employee Advocacy',

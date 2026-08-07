@@ -6,9 +6,13 @@ type PageHeaderProps = {
   domain: string;
   scope: string;
   updatedLabel: string;
+  sourceLabel?: string;
+  onRefresh?: () => void;
+  refreshing?: boolean;
+  onExport?: () => void;
 };
 
-export default function PageHeader({ title, domain, scope, updatedLabel }: PageHeaderProps) {
+export default function PageHeader({ title, domain, scope, updatedLabel, sourceLabel, onRefresh, refreshing, onExport }: PageHeaderProps) {
   return (
     <header className={styles.pageHeader}>
       <div>
@@ -30,17 +34,29 @@ export default function PageHeader({ title, domain, scope, updatedLabel }: PageH
             •
           </span>
           <span>{updatedLabel}</span>
+          {sourceLabel ? (
+            <>
+              <span className={styles.pageMetaDivider} aria-hidden="true">
+                •
+              </span>
+              <span>Source: {sourceLabel}</span>
+            </>
+          ) : null}
         </div>
       </div>
       <div className={styles.headerActions}>
-        <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
-          <DownloadIcon size={15} style={{ color: '#5b6478' }} />
-          Export
-        </button>
-        <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
-          <SlidersIcon size={15} style={{ color: '#5b6478' }} />
-          Customize
-        </button>
+        {onExport ? (
+          <button type="button" className={`${styles.btn} ${styles.btnGhost}`} onClick={onExport}>
+            <DownloadIcon size={15} style={{ color: '#5b6478' }} />
+            Export
+          </button>
+        ) : null}
+        {onRefresh ? (
+          <button type="button" className={`${styles.btn} ${styles.btnGhost}`} onClick={onRefresh} disabled={refreshing}>
+            <SlidersIcon size={15} style={{ color: '#5b6478' }} />
+            {refreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
+        ) : null}
       </div>
     </header>
   );

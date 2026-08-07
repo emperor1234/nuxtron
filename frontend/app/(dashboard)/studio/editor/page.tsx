@@ -983,7 +983,7 @@ export default function StudioEditorPage() {
     { id: 'trk-video', label: 'Video', type: 'video', locked: false, grouped: false, muted: false, color: '#6366f1' },
     { id: 'trk-audio', label: 'Audio', type: 'audio', locked: false, grouped: false, muted: false, color: '#10b981' },
     { id: 'trk-text', label: 'Text', type: 'text', locked: false, grouped: false, muted: false, color: '#f59e0b' },
-    { id: 'trk-fx', label: 'Effects', type: 'effect', locked: false, grouped: false, muted: false, color: '#8b5cf6' },
+    { id: 'trk-fx', label: 'Effects', type: 'effect', locked: false, grouped: false, muted: false, color: '#2563eb' },
   ]);
   const [keyframes, setKeyframes] = useState<Keyframe[]>([
     { id: 'kf-1', trackId: 'trk-video', time: 0, type: 'opacity', value: 0 },
@@ -5830,7 +5830,7 @@ export default function StudioEditorPage() {
         }
 
         .text-style-serif {
-          color: #f5d0fe;
+          color: #bae6fd;
         }
 
         .text-style-serif .text-style-line-primary {
@@ -6421,7 +6421,7 @@ export default function StudioEditorPage() {
           width: 60px;
           height: 60px;
           border-radius: 50%;
-          background: conic-gradient(#ef4444, #f59e0b, #10b981, #6366f1, #8b5cf6, #ef4444);
+          background: conic-gradient(#ef4444, #f59e0b, #10b981, #6366f1, #ec4899, #ef4444);
           display: grid;
           place-items: center;
           box-shadow: inset 0 0 0 6px color-mix(in oklab, var(--bg-soft) 96%, transparent);

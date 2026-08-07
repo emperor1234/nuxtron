@@ -593,7 +593,7 @@ export default function ContentAuditorPage() {
                 <ScoreBar value={result.eeat_signals.expertise} label="Expertise" color="#1bc7ff" />
                 <ScoreBar value={result.eeat_signals.experience} label="Experience" color="#26d78e" />
                 <ScoreBar value={result.eeat_signals.authority} label="Authoritativeness" color="#ffb867" />
-                <ScoreBar value={result.eeat_signals.trust} label="Trustworthiness" color="#a78bfa" />
+                <ScoreBar value={result.eeat_signals.trust} label="Trustworthiness" color="#2563eb" />
                 <div
                   style={{
                     marginTop: 16,

@@ -42,7 +42,7 @@ const DATA: Record<Tab, TabData> = {
     recentActivity: [],
   },
   videos: {
-    color: '#a78bfa',
+    color: '#ec4899',
     totalToday: '0',
     delta: '+0%',
     successRate: '—',
@@ -271,7 +271,7 @@ export default function AiAnalyticsPage() {
       label: 'Active Models',
       value: String(d.activeModels),
       sub: 'all healthy',
-      color: '#a78bfa',
+      color: '#ec4899',
     },
   ];
 

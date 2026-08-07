@@ -112,8 +112,8 @@ export default function DomainOverviewPage() {
                 {
                   label: 'Authority Score',
                   value: String(data.authority_score ?? '—'),
-                  color: 'text-[var(--brand)]',
-                  bg: 'bg-purple-50',
+                  color: 'text-teal-600',
+                  bg: 'bg-teal-50',
                 },
                 { label: 'Backlinks', value: fmt(data.backlinks), color: 'text-orange-600', bg: 'bg-orange-50' },
               ].map((kpi) => (

@@ -325,7 +325,7 @@ export default function BacklinkIntelligencePage() {
                 }}
               >
                 <ScoreRing score={result.backlink_intelligence_score} label="Intelligence Score" color="#22d3ee" />
-                <ScoreRing score={result.domain_authority_estimate} label="Domain Authority Est." color="#a78bfa" />
+                <ScoreRing score={result.domain_authority_estimate} label="Domain Authority Est." color="#2563eb" />
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--brand)' }}>
                     {lk?.total_estimated_backlinks?.toLocaleString() ?? '—'}

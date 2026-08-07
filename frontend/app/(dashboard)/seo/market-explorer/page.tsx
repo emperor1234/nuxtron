@@ -22,7 +22,7 @@ const QUADRANT_COLORS: Record<string, string> = {
   Leaders: 'bg-blue-100 text-blue-800',
   'Game Changers': 'bg-green-100 text-green-800',
   'Niche Players': 'bg-yellow-100 text-yellow-800',
-  Emerging: 'bg-purple-100 text-purple-800',
+  Emerging: 'bg-teal-100 text-teal-800',
 };
 
 export default function MarketExplorerPage() {

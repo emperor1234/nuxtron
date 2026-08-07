@@ -79,7 +79,7 @@ export default function LLMOPage() {
     padding: 16,
     marginBottom: 16,
     backdropFilter: 'blur(12px)',
-    boxShadow: '0 20px 60px -45px rgba(139, 92, 246, 0.65)',
+    boxShadow: '0 20px 60px -45px rgba(37, 99, 235, 0.65)',
   };
   const inp = {
     width: '100%',
@@ -130,10 +130,10 @@ export default function LLMOPage() {
                     textTransform: 'uppercase',
                     letterSpacing: '0.12em',
                     color: 'var(--brand)',
-                    border: '1px solid rgba(196,181,253,0.45)',
+                    border: '1px solid rgba(147,197,253,0.45)',
                     borderRadius: 999,
                     padding: '3px 10px',
-                    background: 'rgba(167,139,250,0.14)',
+                    background: 'rgba(37,99,235,0.14)',
                   }}
                 >
                   LLMO Engine
@@ -262,10 +262,10 @@ export default function LLMOPage() {
                   textTransform: 'uppercase',
                   letterSpacing: '0.1em',
                   color: 'var(--brand)',
-                  border: '1px solid rgba(196,181,253,0.35)',
+                  border: '1px solid rgba(147,197,253,0.35)',
                   borderRadius: 8,
                   padding: '4px 8px',
-                  background: 'rgba(167,139,250,0.12)',
+                  background: 'rgba(37,99,235,0.12)',
                 }}
               >
                 Advanced Mode
@@ -321,8 +321,8 @@ export default function LLMOPage() {
               style={{
                 padding: '8px 16px',
                 borderRadius: 10,
-                border: '1px solid rgba(196,181,253,0.45)',
-                background: 'linear-gradient(90deg, rgba(139,92,246,0.9) 0%, rgba(99,102,241,0.85) 100%)',
+                border: '1px solid rgba(147,197,253,0.45)',
+                background: 'linear-gradient(90deg, rgba(37,99,235,0.9) 0%, rgba(99,102,241,0.85) 100%)',
                 color: '#eef2ff',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -359,8 +359,8 @@ export default function LLMOPage() {
                       width: 20,
                       height: 20,
                       borderRadius: 999,
-                      border: '1px solid rgba(196,181,253,0.4)',
-                      background: 'rgba(167,139,250,0.16)',
+                      border: '1px solid rgba(147,197,253,0.4)',
+                      background: 'rgba(37,99,235,0.16)',
                       color: 'var(--brand)',
                       display: 'flex',
                       alignItems: 'center',
@@ -390,8 +390,8 @@ export default function LLMOPage() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
                 <span
                   style={{
-                    border: '1px solid rgba(196,181,253,0.35)',
-                    background: 'rgba(167,139,250,0.14)',
+                    border: '1px solid rgba(147,197,253,0.35)',
+                    background: 'rgba(37,99,235,0.14)',
                     color: 'var(--brand)',
                     borderRadius: 999,
                     padding: '3px 8px',

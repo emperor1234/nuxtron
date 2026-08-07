@@ -165,7 +165,7 @@ export default function InternalLinkingPage() {
     borderBottom: '1px solid var(--line)',
   };
   const td: React.CSSProperties = { padding: '9px 12px', fontSize: 12, borderBottom: '1px solid var(--line)' };
-  const LINK_COLORS = { hub: '#1bc7ff', spoke: '#26d78e', bridge: '#ffb867', support: '#a78bfa' };
+  const LINK_COLORS = { hub: '#1bc7ff', spoke: '#26d78e', bridge: '#ffb867', support: '#ec4899' };
   const TRAFFIC_COLORS = { high: '#f87171', medium: '#ffb867', low: 'var(--muted)' };
 
   const tabs = [

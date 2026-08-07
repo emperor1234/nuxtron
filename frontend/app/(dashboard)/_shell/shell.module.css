@@ -14,8 +14,8 @@
   --s-ink-2: #3d4456;
   --s-muted: #6b7385;
   --s-faint: #9aa1b2;
-  --s-brand: #6d5efc;
-  --s-brand-2: #a855f7;
+  --s-brand: #2563eb;
+  --s-brand-2: #1d4ed8;
   --s-hover: #f5f5fb;
   --s-hover-2: #f6f6fb;
 
@@ -56,7 +56,7 @@
   align-items: center;
   justify-content: center;
   margin: 16px 0 8px;
-  box-shadow: 0 4px 14px rgba(109, 94, 252, 0.4);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
 }
 
 .railNav {
@@ -109,7 +109,7 @@
 }
 
 .railItemActive {
-  background: #efeefe;
+  background: #eaf1ff;
   color: var(--s-brand);
 }
 

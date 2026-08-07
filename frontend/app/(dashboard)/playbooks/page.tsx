@@ -24,7 +24,7 @@ const VERTICAL_COLORS: Record<string, string> = {
   healthtech: '#06b6d4',
   nonprofit: '#84cc16',
   education: '#f97316',
-  marketplace: '#8b5cf6',
+  marketplace: '#0d9488',
   other: 'var(--muted)',
 };
 

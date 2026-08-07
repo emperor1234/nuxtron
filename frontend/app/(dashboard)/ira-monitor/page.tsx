@@ -316,7 +316,7 @@ export default function IRAMonitor() {
                           {filteredSnapshots.slice(0, 12).map((s) => (
                             <tr key={s.id} className="hover:bg-[var(--brand)]/60 transition">
                               <td className="px-5 py-3">
-                                <span className="px-2 py-0.5 bg-[var(--brand)]/20 text-purple-300 rounded text-xs font-mono">
+                                <span className="px-2 py-0.5 bg-[var(--brand)]/20 text-blue-300 rounded text-xs font-mono">
                                   {s.target}
                                 </span>
                               </td>

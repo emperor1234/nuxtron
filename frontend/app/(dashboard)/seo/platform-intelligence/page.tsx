@@ -56,13 +56,13 @@ interface MetricsData {
 
 const GROUP_COLORS: Record<string, string> = {
   'Search Intelligence': '#6366f1',
-  'Experience Optimization': '#8b5cf6',
+  'Experience Optimization': '#2563eb',
   'Growth & Governance': '#06b6d4',
   'Core Foundations': '#22c55e',
   'Expansion Modules': '#f59e0b',
   'SaaS Platform': '#ec4899',
   'Monitoring & Observability': '#14b8a6',
-  'Schema & Optimization': '#a78bfa',
+  'Schema & Optimization': '#78716c',
   'Content & Distribution': '#fb923c',
   'Accessibility & Media': '#34d399',
   'Performance & Audits': '#f43f5e',
@@ -78,7 +78,7 @@ const C = {
   amber: '#f59e0b',
   red: '#ef4444',
   blue: '#6366f1',
-  purple: '#8b5cf6',
+  purple: '#3b82f6',
   cyan: '#06b6d4',
 };
 

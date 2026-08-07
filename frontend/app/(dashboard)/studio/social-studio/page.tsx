@@ -599,7 +599,7 @@ const CATEGORY_THEMES = [
   { icon: '🎵', color: '#4c8dff' },
   { icon: '🧾', color: '#2bd97f' },
   { icon: '📊', color: '#ffb41f' },
-  { icon: '🗓️', color: '#a55cff' },
+  { icon: '🗓️', color: '#64748b' },
   { icon: '📈', color: '#ff5f6d' },
   { icon: '🧠', color: '#14c4e6' },
   { icon: '🎬', color: '#7d8cff' },
@@ -607,7 +607,7 @@ const CATEGORY_THEMES = [
   { icon: '🖼️', color: 'var(--brand)' },
   { icon: '📚', color: '#34d399' },
   { icon: '✍️', color: '#f59e0b' },
-  { icon: '🧑', color: '#c084fc' },
+  { icon: '🧑', color: '#0ea5e9' },
   { icon: '🧩', color: '#fb7185' },
   { icon: '✂️', color: '#22d3ee' },
 ];
@@ -782,12 +782,12 @@ const SOCIAL_OPS_ACCENT_BY_ID: Record<SocialOpsModuleId, string> = {
   accounts: '#6366f1',
   autonomous: '#22c55e',
   trends: '#f59e0b',
-  calendar: '#a855f7',
+  calendar: '#2563eb',
   kpi: '#ef4444',
   approvals: '#06b6d4',
   inbox: '#2dd4bf',
   ugc: '#f97316',
-  browser_capture: '#8b5cf6',
+  browser_capture: '#78716c',
   mobile: '#22c55e',
   optimization: '#f59e0b',
   manychat: '#0ea5e9',
@@ -4250,9 +4250,9 @@ export default function SocialStudioPage() {
                       style={
                         calendarDragOverDay === day.id
                           ? {
-                              borderColor: '#a855f7',
-                              background: 'rgba(168,85,247,0.12)',
-                              boxShadow: '0 0 0 2px rgba(168,85,247,0.35)',
+                              borderColor: '#2563eb',
+                              background: 'rgba(37,99,235,0.12)',
+                              boxShadow: '0 0 0 2px rgba(37,99,235,0.35)',
                             }
                           : undefined
                       }

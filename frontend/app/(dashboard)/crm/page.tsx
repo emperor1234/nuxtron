@@ -578,7 +578,7 @@ const DEFAULT_TENANT = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID ?? 'tenant-demo
 const STAGE_COLOR: Record<string, string> = {
   prospect: '#1bc7ff',
   qualified: '#26d78e',
-  proposal: '#a78bfa',
+  proposal: '#ec4899',
   negotiation: '#f59e0b',
   closed_won: '#22c55e',
   closed_lost: '#ef4444',
@@ -682,7 +682,7 @@ function getReadinessState(score: number): CrmAutonomyModule['state'] {
 function getTierColor(tier: CrmAutonomyModule['autonomy_tier']): string {
   if (tier === 'autonomous') return '#22c55e';
   if (tier === 'self_optimizing') return '#0ea5e9';
-  if (tier === 'predictive') return '#a78bfa';
+  if (tier === 'predictive') return '#0d9488';
   return '#f59e0b';
 }
 
@@ -1472,7 +1472,7 @@ export default function CRMPage() {
       {
         label: 'In Progress',
         value: tasks.filter((task) => task.status === 'in_progress').length,
-        color: '#a78bfa',
+        color: '#ec4899',
       },
       { label: 'Completed', value: tasks.filter((task) => task.status === 'completed').length, color: '#22c55e' },
       { label: 'Cancelled', value: tasks.filter((task) => task.status === 'cancelled').length, color: '#f97316' },

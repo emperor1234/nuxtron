@@ -109,7 +109,7 @@ const C = {
   amber: '#f59e0b',
   red: '#ef4444',
   blue: '#6366f1',
-  purple: '#8b5cf6',
+  purple: '#3b82f6',
   cyan: '#06b6d4',
   pink: '#ec4899',
   indigo: '#6366f1',

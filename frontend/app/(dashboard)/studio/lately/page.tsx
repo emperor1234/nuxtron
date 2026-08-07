@@ -212,7 +212,7 @@ const styles: Record<string, React.CSSProperties> = {
   card: { display: 'block', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: 20, textDecoration: 'none', color: 'inherit', transition: 'border-color 0.2s', boxShadow: 'var(--shadow-sm)' },
   cardTop: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 },
   icon: { fontSize: 28 },
-  badge: { fontSize: 11, fontWeight: 700, background: 'rgba(109,94,252,0.12)', color: 'var(--brand)', border: '1px solid rgba(109,94,252,0.28)', borderRadius: 4, padding: '2px 6px' },
+  badge: { fontSize: 11, fontWeight: 700, background: 'rgba(37,99,235,0.12)', color: 'var(--brand)', border: '1px solid rgba(37,99,235,0.28)', borderRadius: 4, padding: '2px 6px' },
   cardTitle: { fontSize: 16, fontWeight: 700, margin: '0 0 8px', color: 'var(--text)' },
   cardDesc: { fontSize: 13, color: 'var(--muted)', margin: '0 0 12px', lineHeight: 1.5 },
   vendorChip: { fontSize: 11, color: 'var(--muted)', borderTop: '1px solid var(--line)', paddingTop: 10 },

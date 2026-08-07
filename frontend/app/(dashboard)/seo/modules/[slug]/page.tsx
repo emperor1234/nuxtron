@@ -301,7 +301,7 @@ export default function SeoModuleDetailPage({ params }: Readonly<{ params: Promi
             renderPills('Required Integrations', moduleDetail.integrations)}
 
           {moduleDetail && renderPills('Supported Channels', moduleDetail.supported_channels, '#22c55e')}
-          {moduleDetail && renderPills('AI Models', moduleDetail.ai_models, '#8b5cf6')}
+          {moduleDetail && renderPills('AI Models', moduleDetail.ai_models, '#2563eb')}
 
           {moduleDetail && (
             <div

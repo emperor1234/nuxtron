@@ -331,11 +331,11 @@ export default function CompetitorPage() {
           </div>
 
           {/* AI Visibility */}
-          <div className="bg-purple-50 rounded-xl border border-purple-200 p-6">
+          <div className="bg-blue-50 rounded-xl border border-blue-200 p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="text-2xl">🤖</div>
               <div>
-                <h2 className="text-base font-semibold text-purple-900">AI Visibility</h2>
+                <h2 className="text-base font-semibold text-blue-900">AI Visibility</h2>
                 <div className="text-xs text-[var(--brand)]">
                   How likely is your brand to appear in AI-generated answers?
                 </div>
@@ -351,17 +351,17 @@ export default function CompetitorPage() {
             </div>
             <div className="grid grid-cols-2 gap-4 mt-3">
               <div>
-                <div className="text-xs font-semibold text-purple-800 mb-1">Citation Topics</div>
+                <div className="text-xs font-semibold text-blue-800 mb-1">Citation Topics</div>
                 <div className="flex flex-wrap gap-1.5">
                   {result.ai_visibility.citation_topics.map((t, i) => (
-                    <span key={`item-${i}`} className="text-xs bg-purple-100 text-[var(--brand)] px-2 py-0.5 rounded-full">
+                    <span key={`item-${i}`} className="text-xs bg-blue-100 text-[var(--brand)] px-2 py-0.5 rounded-full">
                       {t}
                     </span>
                   ))}
                 </div>
               </div>
               <div>
-                <div className="text-xs font-semibold text-purple-800 mb-1">Improvement Actions</div>
+                <div className="text-xs font-semibold text-blue-800 mb-1">Improvement Actions</div>
                 <ul className="space-y-1">
                   {result.ai_visibility.improvement_actions.map((a, i) => (
                     <li key={`item-${i}`} className="text-xs text-[var(--brand)]">

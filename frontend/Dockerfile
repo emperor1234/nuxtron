@@ -20,11 +20,22 @@ ARG NEXT_PUBLIC_DEFAULT_TENANT_ID
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_CLARITY_PROJECT_ID
 ARG NEXT_PUBLIC_STRICT_NO_MOCK
+# `next build` over this app's ~300 routes is memory-hungry, and V8's
+# default heap ceiling in a container is sized off /proc/meminfo, which is
+# not always what the container's actual cgroup memory limit is. Set an
+# explicit ceiling so the build either succeeds using memory that's really
+# available, or fails loudly with "JS heap out of memory" instead of being
+# silently SIGKILLed by the OOM killer (which is what a bare "exit code 255,
+# no error text" build failure right after "Creating an optimized production
+# build ..." usually means). Raise via --build-arg if the host has more RAM
+# and builds still die; this does not create memory the host doesn't have.
+ARG NODE_BUILD_MAX_OLD_SPACE_MB=4096
 ENV NEXT_PUBLIC_DEFAULT_TENANT_ID=$NEXT_PUBLIC_DEFAULT_TENANT_ID \
     NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_CLARITY_PROJECT_ID=$NEXT_PUBLIC_CLARITY_PROJECT_ID \
     NEXT_PUBLIC_STRICT_NO_MOCK=$NEXT_PUBLIC_STRICT_NO_MOCK \
-    NODE_ENV=production
+    NODE_ENV=production \
+    NODE_OPTIONS=--max-old-space-size=${NODE_BUILD_MAX_OLD_SPACE_MB}
 RUN npm run build
 
 FROM node:22-alpine AS runner

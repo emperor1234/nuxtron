@@ -41,7 +41,7 @@ export default function TrendsPage() {
   const getMomentumColor = (momentum: string) => {
     switch (momentum) {
       case 'emerging':
-        return '#8B5CF6';
+        return '#0d9488';
       case 'uptrend':
         return '#10B981';
       case 'peak':
@@ -384,7 +384,7 @@ const styles: Record<string, React.CSSProperties> = {
   tag: {
     display: 'inline-block',
     padding: '4px 10px',
-    backgroundColor: '#8B5CF626',
+    backgroundColor: '#2563eb26',
     color: 'var(--brand)',
     borderRadius: '4px',
     fontSize: '12px',

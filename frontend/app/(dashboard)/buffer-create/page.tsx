@@ -289,7 +289,7 @@ export default function BufferCreatePage() {
             >
               + New Idea
             </button>
-            <button style={btn('#8b5cf6')} onClick={() => setShowAI(!showAI)}>
+            <button style={btn('#2563eb')} onClick={() => setShowAI(!showAI)}>
               ✨ AI Assistant
             </button>
           </div>
@@ -299,7 +299,7 @@ export default function BufferCreatePage() {
 
         {/* AI Assistant Panel */}
         {showAI && (
-          <div style={{ ...card, marginBottom: 20, borderColor: '#8b5cf6', borderWidth: 2 }}>
+          <div style={{ ...card, marginBottom: 20, borderColor: '#2563eb', borderWidth: 2 }}>
             <h3 style={{ margin: '0 0 12px', color: '#6366f1' }}>✨ AI Assistant</h3>
             <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
               {(['rephrase', 'shorten', 'expand', 'casual', 'formal', 'generate'] as const).map((a) => (

@@ -228,7 +228,7 @@ export default function SocialInfluencersPage() {
 const styles: Record<string, React.CSSProperties> = {
   container: { minHeight: '100vh', background: 'var(--card)', color: 'var(--text)', padding: '32px 24px 60px' },
   header: { marginBottom: 24 },
-  backLink: { color: '#b093ff', textDecoration: 'none', fontSize: 14, display: 'inline-block', marginBottom: 12 },
+  backLink: { color: '#60a5fa', textDecoration: 'none', fontSize: 14, display: 'inline-block', marginBottom: 12 },
   title: { margin: 0, fontSize: 34, lineHeight: 1.1 },
   subtitle: { margin: '8px 0 0', color: '#9fb0d1', maxWidth: 780 },
   errorBanner: {
@@ -250,7 +250,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '12px 14px',
   },
   primaryBtn: {
-    background: '#8b5cf6',
+    background: '#2563eb',
     color: '#fff',
     border: 0,
     borderRadius: 12,

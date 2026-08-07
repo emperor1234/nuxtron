@@ -292,8 +292,8 @@ export default function BufferCommunityPage() {
                           borderRadius: 999,
                           padding: '6px 10px',
                           cursor: 'pointer',
-                          background: '#ede9fe',
-                          color: '#6d28d9',
+                          background: '#dbeafe',
+                          color: '#1d4ed8',
                           fontSize: 12,
                         }}
                       >

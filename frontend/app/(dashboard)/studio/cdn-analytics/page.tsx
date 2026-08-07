@@ -273,9 +273,9 @@ export default function CDNAnalyticsDashboard() {
                 <div className="text-sm text-green-600 font-medium">Best Cache Hit</div>
                 <div className="text-2xl font-bold text-green-900 mt-1">{dashboard.comparison.best_cache_hit}</div>
               </div>
-              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="text-sm text-[var(--brand)] font-medium">Highest Traffic</div>
-                <div className="text-2xl font-bold text-purple-900 mt-1">{dashboard.comparison.highest_traffic}</div>
+              <div className="p-4 bg-teal-50 rounded-lg border border-teal-200">
+                <div className="text-sm text-teal-600 font-medium">Highest Traffic</div>
+                <div className="text-2xl font-bold text-teal-900 mt-1">{dashboard.comparison.highest_traffic}</div>
               </div>
               <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
                 <div className="text-sm text-orange-600 font-medium">Most Reliable</div>

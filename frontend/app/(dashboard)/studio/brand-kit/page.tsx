@@ -132,7 +132,7 @@ const DEFAULT_KIT: BrandKit = {
   tenant_id: DEFAULT_TENANT_ID,
   colors: {
     primary: '#6366f1',
-    secondary: '#8B5CF6',
+    secondary: '#0d9488',
     accent: '#EC4899',
     background: 'var(--card)',
     text: 'var(--text)',
@@ -1523,7 +1523,7 @@ const styles: Record<string, CSSProperties> = {
   previewControls: { display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 },
   generateBtn: {
     padding: '12px 28px',
-    background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+    background: 'linear-gradient(135deg, #6366F1, #0d9488)',
     color: '#fff',
     border: 'none',
     borderRadius: 10,
@@ -1618,7 +1618,7 @@ const styles: Record<string, CSSProperties> = {
   byTypeBarWrap: { flex: 1, height: 6, background: 'var(--card)', borderRadius: 3, overflow: 'hidden' },
   byTypeBar: {
     height: '100%',
-    background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+    background: 'linear-gradient(90deg, #6366F1, #0d9488)',
     borderRadius: 3,
     transition: 'width 0.4s',
   },
