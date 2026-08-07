@@ -55,7 +55,7 @@ COPY --chown=app:app . /app
 
 # The test suite imports the package under backend.fastapi.app; mirror that
 # path so both import styles resolve to the same module.
-RUN mkdir -p /monorepo/backend/fastapi \
+RUN mkdir -p /monorepo/backend/fastapi /monorepo/services \
     && ln -sf /app/app /monorepo/backend/fastapi/app \
     && touch /monorepo/services/__init__.py /monorepo/backend/fastapi/__init__.py \
     && chown -R app:app /app /monorepo
