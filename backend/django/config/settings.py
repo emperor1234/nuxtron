@@ -66,6 +66,13 @@ if not SECRET_KEY:
 _ALLOWED_HOSTS_RAW = os.getenv('DJANGO_ALLOWED_HOSTS', '').strip()
 if _ALLOWED_HOSTS_RAW:
     ALLOWED_HOSTS: list[str] = [h.strip() for h in _ALLOWED_HOSTS_RAW.split(',') if h.strip()]
+    # Container-local healthchecks (Docker HEALTHCHECK, Coolify's internal
+    # probe) hit /api/health/ over loopback with Host: 127.0.0.1, which never
+    # matches a real public ALLOWED_HOSTS domain. Always allow loopback so
+    # those checks succeed without loosening the check for real traffic.
+    for _local_host in ('localhost', '127.0.0.1'):
+        if _local_host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(_local_host)
 elif DEBUG:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'testserver']
 else:
