@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Check, KeyRound, Lock, Mail } from 'lucide-react';
 import { apiPost, DEFAULT_TENANT_ID } from '@/app/lib/api-client';
+import { AuthLayout, AuthSubmit, AuthAltLinks, authLink } from '@/app/components/auth/auth-layout';
+import { AuthField } from '@/app/components/auth/auth-field';
+
+const PANEL_POINTS = [
+  'Reset links are single-use and expire automatically.',
+  'Your session is signed out everywhere once the password changes.',
+  'Every account event is written to the audit trail.',
+] as const;
 
 export default function ResetPasswordPage() {
   const [tenantId, setTenantId] = useState(DEFAULT_TENANT_ID);
@@ -68,202 +77,102 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div
-      className="cin-root"
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '2rem 1.5rem',
-        background: 'var(--cin-ink)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+    <AuthLayout
+      heading={confirmSuccess ? 'Password updated' : 'Reset your password'}
+      subheading={
+        confirmSuccess
+          ? 'Your password has been reset successfully.'
+          : "Enter your account email and we'll send you a secure reset token."
+      }
+      panelTitle="Get back into your command center."
+      panelPoints={PANEL_POINTS}
     >
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0.3,
-          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-        }}
-      />
-
-      <div
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          width: '100%',
-          maxWidth: 440,
-          padding: '2.5rem',
-          borderRadius: 'var(--cin-radius-lg)',
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.08)',
-        }}
-      >
-        <Link
-          href="/"
-          style={{
-            display: 'inline-block',
-            fontSize: '1.25rem',
-            fontWeight: 800,
-            color: '#fff',
-            textDecoration: 'none',
-            marginBottom: '2rem',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          nuxtron
-        </Link>
-
-        {confirmSuccess ? (
-          <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>✓</div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem' }}>
-              Password updated.
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.65, marginBottom: '1.5rem' }}>
-              Your password has been reset successfully.
-            </p>
-            <Link
-              href="/login"
-              style={{
-                display: 'inline-block',
-                padding: '0.9rem 2rem',
-                borderRadius: 'var(--cin-radius-pill)',
-                background: '#fff',
-                color: 'var(--cin-ink)',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                textDecoration: 'none',
-              }}
-            >
-              Log in
-            </Link>
+      {confirmSuccess ? (
+        <div className="py-2">
+          <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#466cf314] text-[#466cf3]">
+            <Check size={22} strokeWidth={2.5} aria-hidden="true" />
           </div>
-        ) : (
-          <>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem', letterSpacing: '-0.03em' }}>
-              Reset your password.
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: 1.65 }}>
-              Enter your account email and we&apos;ll send you a secure link to set a new password.
-            </p>
-
-            {/* Step 1 — request reset link */}
-            <form onSubmit={handleRequest} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <span style={labelStyle}>Email</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  style={inputStyle}
-                  placeholder="you@company.com"
-                />
-              </label>
-
-              {requestError ? (
-                <p style={{ color: '#ef4444', fontSize: '0.85rem' }}>{requestError}</p>
-              ) : null}
-
-              <button type="submit" disabled={requestBusy || requestSent} style={primaryBtnStyle}>
-                {requestBusy ? 'Sending...' : 'Send Reset Link'}
-              </button>
-            </form>
-
-            {/* Step 2 — confirm with token + new password */}
-            {requestSent ? (
-              <form
-                onSubmit={handleConfirm}
-                style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem' }}>
-                  Check your inbox — enter the token and your new password below.
-                </p>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <span style={labelStyle}>Reset Token</span>
-                  <input
-                    value={token}
-                    onChange={(e) => setToken(e.target.value)}
-                    placeholder="Paste the token from your email"
-                    required
-                    style={inputStyle}
-                  />
-                </label>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <span style={labelStyle}>New Password</span>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    minLength={10}
-                    required
-                    style={inputStyle}
-                    placeholder="Min. 10 characters"
-                  />
-                </label>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <span style={labelStyle}>Confirm New Password</span>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    style={inputStyle}
-                    placeholder="Re-enter new password"
-                  />
-                </label>
-                {confirmError ? (
-                  <p style={{ color: '#ef4444', fontSize: '0.85rem' }}>{confirmError}</p>
-                ) : null}
-                <button type="submit" disabled={confirmBusy} style={primaryBtnStyle}>
-                  {confirmBusy ? 'Updating...' : 'Set New Password'}
-                </button>
-              </form>
-            ) : null}
-          </>
-        )}
-
-        <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem' }}>
-          <Link href="/login" style={{ color: '#a78bfa', textDecoration: 'none', fontWeight: 600 }}>
-            ← Back to login
+          <Link href="/login" className="mk-btn-primary">
+            Log in
           </Link>
-        </p>
-      </div>
-    </div>
+        </div>
+      ) : (
+        <>
+          <form className="flex flex-col gap-5" onSubmit={handleRequest} noValidate>
+            <AuthField
+              label="Email"
+              name="email"
+              type="email"
+              inputMode="email"
+              value={email}
+              onChange={setEmail}
+              autoComplete="email"
+              required
+              icon={<Mail size={17} aria-hidden="true" />}
+              placeholder="you@company.com"
+            />
+
+            {requestError ? <p className="text-sm text-rose-600">{requestError}</p> : null}
+
+            <AuthSubmit busy={requestBusy || requestSent}>
+              {requestBusy ? 'Sending…' : requestSent ? 'Reset link sent' : 'Send reset link'}
+            </AuthSubmit>
+          </form>
+
+          {requestSent ? (
+            <form
+              className="mt-8 flex flex-col gap-5 border-t border-[#18181814] pt-8"
+              onSubmit={handleConfirm}
+              noValidate
+            >
+              <p className="text-sm text-[#46484d]">
+                Check your inbox — enter the token and your new password below.
+              </p>
+              <AuthField
+                label="Reset token"
+                name="token"
+                value={token}
+                onChange={setToken}
+                required
+                icon={<KeyRound size={17} aria-hidden="true" />}
+                placeholder="Paste the token from your email"
+              />
+              <AuthField
+                label="New password"
+                name="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={setNewPassword}
+                autoComplete="new-password"
+                required
+                icon={<Lock size={17} aria-hidden="true" />}
+                placeholder="Min. 10 characters"
+              />
+              <AuthField
+                label="Confirm new password"
+                name="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                autoComplete="new-password"
+                required
+                icon={<Lock size={17} aria-hidden="true" />}
+                placeholder="Re-enter new password"
+              />
+
+              {confirmError ? <p className="text-sm text-rose-600">{confirmError}</p> : null}
+
+              <AuthSubmit busy={confirmBusy}>{confirmBusy ? 'Updating…' : 'Set new password'}</AuthSubmit>
+            </form>
+          ) : null}
+        </>
+      )}
+
+      <AuthAltLinks>
+        <Link href="/login" className={authLink}>
+          ← Back to login
+        </Link>
+      </AuthAltLinks>
+    </AuthLayout>
   );
 }
-
-const labelStyle: React.CSSProperties = {
-  fontSize: '0.85rem',
-  fontWeight: 500,
-  color: 'rgba(255,255,255,0.7)',
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.85rem 1rem',
-  borderRadius: 'var(--cin-radius-sm)',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  color: '#fff',
-  fontSize: '0.95rem',
-  fontFamily: 'var(--font-body)',
-  outline: 'none',
-};
-
-const primaryBtnStyle: React.CSSProperties = {
-  padding: '0.9rem 2rem',
-  borderRadius: 'var(--cin-radius-pill)',
-  border: 'none',
-  background: '#fff',
-  color: 'var(--cin-ink)',
-  fontWeight: 700,
-  fontSize: '0.95rem',
-  cursor: 'pointer',
-};

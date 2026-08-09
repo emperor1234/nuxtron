@@ -277,7 +277,7 @@ export default function HubspotE2EPage() {
       </section>
 
       {data ? (
-        <section className="grid" style={{ marginTop: 20 }}>
+        <section className="legacy-auto-grid" style={{ marginTop: 20 }}>
           <article className="card">
             <h3 style={{ marginTop: 0 }}>Implementation</h3>
             <p style={{ fontSize: 28, fontWeight: 700 }}>{pctLabel(data.audit.summary.implementation_pct)}</p>
@@ -365,7 +365,7 @@ export default function HubspotE2EPage() {
       ) : null}
 
       {data ? (
-        <section className="grid" style={{ marginTop: 20 }}>
+        <section className="legacy-auto-grid" style={{ marginTop: 20 }}>
           <article id="how-it-works" className="card">
             <h3 style={{ marginTop: 0 }}>How It Works</h3>
             <ul className="bullet-list">

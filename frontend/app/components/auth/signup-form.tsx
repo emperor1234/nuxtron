@@ -203,17 +203,14 @@ export function SignupForm() {
         <button
           type="button"
           onClick={() => setShowWorkspace(true)}
-          className="-mt-2 self-start text-xs font-medium text-zinc-500 underline-offset-4 transition-colors hover:text-zinc-300 hover:underline"
+          className="-mt-2 self-start text-xs font-medium text-[#8a8d93] underline-offset-4 transition-colors hover:text-[#46484d] hover:underline"
         >
-          Joining an existing workspace? <span className="text-zinc-400">Add workspace ID</span>
+          Joining an existing workspace? <span className="text-[#46484d]">Add workspace ID</span>
         </button>
       )}
 
       {submitted && errors.length > 0 ? (
-        <div
-          role="alert"
-          className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
-        >
+        <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/5 px-4 py-3 text-sm text-rose-700">
           <p className="font-semibold">Please fix the following:</p>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             {errors.map((error) => (
@@ -224,8 +221,8 @@ export function SignupForm() {
       ) : null}
 
       <div aria-live="polite" role="status">
-        {apiError ? <p className="text-sm text-rose-400">{apiError}</p> : null}
-        {apiSuccess ? <p className="text-sm text-emerald-400">{apiSuccess}</p> : null}
+        {apiError ? <p className="text-sm text-rose-600">{apiError}</p> : null}
+        {apiSuccess ? <p className="text-sm text-emerald-600">{apiSuccess}</p> : null}
       </div>
 
       <AuthSubmit busy={busy}>

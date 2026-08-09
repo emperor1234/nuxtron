@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import Script from 'next/script';
 import { Partytown } from '@builder.io/partytown/react';
 import { Manrope, Sora, Inter } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
 import IraChat from './components/ira-chat';
 import PwaBootstrap from './components/pwa-bootstrap';
 
@@ -20,14 +21,18 @@ const displayFont = Sora({
   display: 'swap',
 });
 
-// Open-source substitute for the proprietary Sohne tier used on the
-// marketing homepage: Inter at thin/regular/medium with ss01 + tnum support.
+// Marketing site body/UI copy — Salix template reference uses Inter across
+// the full weight range, not just the thin/regular/medium homepage tier.
 const interFont = Inter({
   subsets: ['latin'],
-  weight: ['300', '400', '500'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-inter',
   display: 'swap',
 });
+
+// Marketing site headings only (scoped via --font-geist) — does not replace
+// --font-display, which the dashboard still relies on.
+const geistFont = GeistSans;
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -65,7 +70,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
-    <html lang="en" data-theme="light" className={`${bodyFont.variable} ${displayFont.variable} ${interFont.variable}`} style={{ colorScheme: 'light' }}>
+    <html
+      lang="en"
+      data-theme="light"
+      className={`${bodyFont.variable} ${displayFont.variable} ${interFont.variable} ${geistFont.variable}`}
+      style={{ colorScheme: 'light' }}
+    >
       <body>
         {children}
         

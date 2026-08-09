@@ -46,21 +46,21 @@ export default function PrivacyPage() {
     <section className="mk-section pt-40">
       <div className="mk-container max-w-3xl">
         <span className="mk-eyebrow mb-5">Legal</span>
-        <h1 className="mb-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">Privacy Policy</h1>
-        <p className="mb-12 text-sm text-zinc-500">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        <h1 className="mb-4 text-4xl font-semibold tracking-tight text-[#181818] sm:text-5xl">Privacy Policy</h1>
+        <p className="mb-12 text-sm text-[#8a8d93]">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
         <div className="space-y-10">
           {SECTIONS.map((section) => (
             <div key={section.title}>
-              <h2 className="mb-2.5 text-lg font-semibold text-white">{section.title}</h2>
-              <p className="text-[15px] leading-relaxed text-zinc-400">{section.body}</p>
+              <h2 className="mb-2.5 text-lg font-semibold text-[#181818]">{section.title}</h2>
+              <p className="text-[15px] leading-relaxed text-[#46484d]">{section.body}</p>
             </div>
           ))}
         </div>
 
-        <p className="mt-14 border-t border-white/10 pt-8 text-sm text-zinc-500">
+        <p className="mt-14 border-t border-[#18181814] pt-8 text-sm text-[#8a8d93]">
           Questions about this policy? Contact us at{' '}
-          <a href="mailto:privacy@nuxtron.app" className="text-[#ef233c] hover:underline">
+          <a href="mailto:privacy@nuxtron.app" className="text-[#466cf3] hover:underline">
             privacy@nuxtron.app
           </a>
           .

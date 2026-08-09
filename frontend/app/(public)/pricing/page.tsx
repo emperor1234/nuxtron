@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Building2, Check, Rocket, ShieldCheck, Zap } from 'lucide-react';
+import { Reveal } from '../_components/reveal';
 
 export const metadata: Metadata = {
   title: 'Pricing | Nuxtron',
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 type Plan = {
   id: string;
   name: string;
+  icon: typeof Rocket;
   price: number | null;
   cadence: string;
   description: string;
@@ -23,6 +25,7 @@ const PLANS: Plan[] = [
   {
     id: 'starter',
     name: 'Starter',
+    icon: Rocket,
     price: 0,
     cadence: '/mo',
     description: 'For solo operators trying Nuxtron on real work.',
@@ -32,6 +35,7 @@ const PLANS: Plan[] = [
   {
     id: 'pro',
     name: 'Pro',
+    icon: Zap,
     price: 79,
     cadence: '/mo',
     description: 'For small teams running growth and support day to day.',
@@ -49,6 +53,7 @@ const PLANS: Plan[] = [
   {
     id: 'studio',
     name: 'Studio',
+    icon: Building2,
     price: 199,
     cadence: '/mo',
     description: 'For growing teams and agencies managing multiple brands.',
@@ -67,6 +72,7 @@ const PLANS: Plan[] = [
   {
     id: 'enterprise',
     name: 'Enterprise',
+    icon: ShieldCheck,
     price: 699,
     cadence: '/mo',
     description: 'For organizations that need scale, white-label, and a dedicated CSM.',
@@ -105,48 +111,53 @@ export default function PricingPage() {
   return (
     <>
       <section className="mk-section pt-40 text-center">
-        <div className="mk-container">
+        <Reveal className="mk-container">
           <span className="mk-eyebrow mb-5">Pricing</span>
-          <h1 className="mx-auto max-w-2xl text-5xl font-semibold tracking-tight text-white sm:text-6xl">
+          <h1 className="mx-auto max-w-2xl text-5xl font-semibold tracking-tight text-[#181818] sm:text-6xl">
             Plans that scale with your team
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-zinc-400">
+          <p className="mx-auto mt-5 max-w-xl text-lg text-[#46484d]">
             Start free. Every plan includes CRM, SEO &amp; AI visibility tracking, and social scheduling — upgrade for
             more seats, more AI credits, and deeper automation.
           </p>
-        </div>
+        </Reveal>
       </section>
 
       <section className="mk-section pt-0">
         <div className="mk-container grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {PLANS.map((plan) => (
-            <div
+          {PLANS.map((plan, i) => (
+            <Reveal
               key={plan.id}
+              delay={i * 0.06}
               className={`relative flex flex-col rounded-2xl border p-8 ${
                 plan.highlighted
-                  ? 'z-10 border-[#ef233c] bg-zinc-900/50 shadow-[0_0_40px_rgba(239,35,60,0.12)] lg:scale-105'
-                  : 'border-white/10 bg-black hover:border-white/20'
+                  ? 'z-10 border-[#466cf3] bg-[#466cf308] shadow-[0_0_40px_rgba(70,108,243,0.12)] lg:scale-105'
+                  : 'border-[#18181814] bg-white hover:border-[#1818181f]'
               } transition-all`}
             >
               {plan.highlighted ? (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#ef233c] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#466cf3] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
                   Most popular
                 </span>
               ) : null}
 
-              <h2 className="text-xl font-bold text-white">{plan.name}</h2>
-              <p className="mb-8 mt-2 h-10 text-sm text-zinc-500">{plan.description}</p>
+              <div className="mb-5 inline-flex w-fit rounded-lg border border-[#18181814] bg-[#466cf314] p-2.5 text-[#466cf3]">
+                <plan.icon size={20} strokeWidth={1.75} aria-hidden="true" />
+              </div>
+
+              <h2 className="text-xl font-bold text-[#181818]">{plan.name}</h2>
+              <p className="mb-8 mt-2 h-10 text-sm text-[#8a8d93]">{plan.description}</p>
 
               <div className="mb-8 flex items-baseline gap-1">
-                <span className="text-zinc-500">$</span>
-                <span className="text-5xl font-bold tabular-nums text-white">{plan.price}</span>
-                <span className="text-sm text-zinc-500">{plan.cadence}</span>
+                <span className="text-[#8a8d93]">$</span>
+                <span className="text-5xl font-bold tabular-nums text-[#181818]">{plan.price}</span>
+                <span className="text-sm text-[#8a8d93]">{plan.cadence}</span>
               </div>
 
               <ul className="mb-8 flex-1 space-y-3.5">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2.5 text-sm text-zinc-300">
-                    <Check size={16} className="mt-0.5 shrink-0 text-[#ef233c]" aria-hidden="true" />
+                  <li key={feature} className="flex items-start gap-2.5 text-sm text-[#46484d]">
+                    <Check size={16} className="mt-0.5 shrink-0 text-[#466cf3]" aria-hidden="true" />
                     {feature}
                   </li>
                 ))}
@@ -156,43 +167,45 @@ export default function PricingPage() {
                 href={plan.cta.href}
                 className={`w-full rounded-lg px-4 py-3 text-center text-sm font-bold uppercase tracking-wider transition-all ${
                   plan.highlighted
-                    ? 'bg-[#ef233c] text-white hover:bg-[#d81f36]'
-                    : 'border border-white/10 bg-white/5 text-white hover:bg-white/10'
+                    ? 'bg-[#181818] text-white hover:bg-black'
+                    : 'border border-[#18181814] bg-[#18181808] text-[#181818] hover:bg-[#1818180f]'
                 }`}
               >
                 {plan.cta.label}
               </Link>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       <section className="mk-section">
         <div className="mk-container max-w-3xl">
-          <h2 className="mb-10 text-center text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            Frequently asked questions
-          </h2>
-          <dl className="divide-y divide-white/10 rounded-2xl border border-white/10">
-            {FAQS.map((item) => (
-              <div key={item.q} className="p-6">
-                <dt className="mb-2 font-semibold text-white">{item.q}</dt>
-                <dd className="text-sm leading-relaxed text-zinc-400">{item.a}</dd>
-              </div>
-            ))}
-          </dl>
+          <Reveal>
+            <h2 className="mb-10 text-center text-3xl font-semibold tracking-tight text-[#181818] sm:text-4xl">
+              Frequently asked questions
+            </h2>
+            <dl className="divide-y divide-[#18181814] rounded-2xl border border-[#18181814]">
+              {FAQS.map((item) => (
+                <div key={item.q} className="p-6">
+                  <dt className="mb-2 font-semibold text-[#181818]">{item.q}</dt>
+                  <dd className="text-sm leading-relaxed text-[#46484d]">{item.a}</dd>
+                </div>
+              ))}
+            </dl>
+          </Reveal>
         </div>
       </section>
 
-      <section className="mk-section text-center">
-        <div className="mk-container max-w-2xl">
-          <h2 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">Still deciding?</h2>
-          <p className="mx-auto mt-4 max-w-md text-lg text-zinc-400">
+      <section className="mk-section mk-section-alt text-center">
+        <Reveal className="mk-container max-w-2xl">
+          <h2 className="text-4xl font-semibold tracking-tight text-[#181818] sm:text-5xl">Still deciding?</h2>
+          <p className="mx-auto mt-4 max-w-md text-lg text-[#46484d]">
             Talk to our team about which plan fits your workflow — no pressure, no scripted demo.
           </p>
           <Link href="/contact" className="mk-shiny-cta mt-8">
             Talk to sales <ArrowRight size={16} />
           </Link>
-        </div>
+        </Reveal>
       </section>
     </>
   );
