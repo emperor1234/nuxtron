@@ -78,6 +78,8 @@ export default [
         HTMLFormElement: 'readonly',
         HTMLSelectElement: 'readonly',
         HTMLTextAreaElement: 'readonly',
+        HTMLVideoElement: 'readonly',
+        HTMLImageElement: 'readonly',
         CSSStyleDeclaration: 'readonly',
         Event: 'readonly',
         EventTarget: 'readonly',

@@ -16,7 +16,7 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: '/',
         // Gated / private areas must not be indexed.
-        disallow: ['/dashboard', '/account', '/login', '/register', '/billing', '/api/'],
+        disallow: ['/dashboard', '/account', '/login', '/register', '/reset-password', '/billing', '/api/'],
       },
     ],
     sitemap: `${base}/sitemap.xml`,

@@ -7,6 +7,7 @@ import { ArrowRight, Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
   ['/features', 'Features'],
+  ['/integrations', 'Integrations'],
   ['/pricing', 'Pricing'],
   ['/about', 'Company'],
   ['/trust', 'Trust'],
@@ -37,7 +38,7 @@ export function MarketingHeader() {
         }`}
       >
         <Link href="/" className="flex items-center gap-2" aria-label="Nuxtron home">
-          <span className="h-5 w-5 rotate-45 rounded-sm bg-[#466cf3]" aria-hidden="true" />
+          <img src="/brand/nuxtron-icon-square.svg" alt="" width={20} height={20} className="rounded-sm" />
           <span className="[font-family:var(--font-geist-sans)] text-lg font-bold tracking-tight text-[#181818]">
             Nuxtron
           </span>
@@ -97,6 +98,7 @@ export function MarketingHeader() {
               <Link
                 key={href}
                 href={href}
+                onClick={() => setMobile(false)}
                 className="rounded-xl px-3 py-2.5 text-sm font-semibold text-[#46484d] hover:bg-[#18181808] hover:text-[#181818]"
               >
                 {label}
@@ -106,12 +108,14 @@ export function MarketingHeader() {
           <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[#18181814] pt-4">
             <Link
               href="/login"
+              onClick={() => setMobile(false)}
               className="rounded-full border border-[#18181822] px-4 py-2.5 text-center text-sm font-semibold text-[#181818]"
             >
               Log in
             </Link>
             <Link
               href="/register"
+              onClick={() => setMobile(false)}
               className="rounded-full bg-[#181818] px-4 py-2.5 text-center text-sm font-semibold text-white"
             >
               Start free

@@ -8,15 +8,26 @@ const COLUMNS = [
     title: 'Platform',
     links: [
       ['/features', 'Features'],
+      ['/integrations', 'Integrations'],
       ['/pricing', 'Pricing'],
       ['/trust', 'Trust & security'],
       ['/tools/translation-studio', 'Translation Studio'],
     ],
   },
   {
+    title: 'Resources',
+    links: [
+      ['/blog', 'Blog'],
+      ['/case-studies', 'Case studies'],
+      ['/changelog', 'Changelog'],
+      ['/faq', 'FAQ'],
+    ],
+  },
+  {
     title: 'Company',
     links: [
       ['/about', 'About'],
+      ['/careers', 'Careers'],
       ['/contact', 'Contact'],
     ],
   },
@@ -42,10 +53,10 @@ export function MarketingFooter({ authRoutes }: { authRoutes: readonly string[] 
 
   return (
     <footer className="relative overflow-hidden border-t border-[#18181814] bg-[#fafafa] pt-16 sm:pt-20 pb-8">
-      <div className="mx-auto mb-16 sm:mb-20 grid max-w-6xl grid-cols-2 gap-8 sm:grid-cols-3 sm:gap-10 lg:grid-cols-6 lg:gap-8 px-6">
+      <div className="mx-auto mb-16 sm:mb-20 grid max-w-6xl grid-cols-2 gap-8 sm:grid-cols-3 sm:gap-10 lg:grid-cols-7 lg:gap-8 px-6">
         <div className="col-span-2 sm:col-span-3 lg:col-span-2">
           <Link href="/" className="mb-5 flex items-center gap-2" aria-label="Nuxtron home">
-            <span className="h-5 w-5 rotate-45 rounded-sm bg-[#466cf3]" aria-hidden="true" />
+            <img src="/brand/nuxtron-icon-square.svg" alt="" width={22} height={22} className="rounded-sm" />
             <span className="[font-family:var(--font-geist-sans)] text-xl font-bold tracking-tight text-[#181818]">
               Nuxtron
             </span>

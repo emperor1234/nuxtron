@@ -107,9 +107,21 @@ const FAQS = [
   },
 ];
 
+const FAQ_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQS.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
+
 export default function PricingPage() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
+
       <section className="mk-section pt-40 text-center">
         <Reveal className="mk-container">
           <span className="mk-eyebrow mb-5">Pricing</span>

@@ -26,6 +26,24 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 };
 
+// No aggregateRating here: we don't have real review data to back one, and
+// fabricating one in structured data (vs. just on-page copy) risks a Google
+// manual action for fake review markup on top of being misleading.
+const ORG_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Nuxtron',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description:
+    'CRM, SEO & AI-visibility intelligence, social operations, and security monitoring — run by your team and your AI agents, in one workspace.',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+};
+
 const CONNECTED = [
   { icon: Building2, label: 'CRM' },
   { icon: Radar, label: 'SEO & AEO' },
@@ -83,6 +101,8 @@ const FAQS = [
 export default function HomePage() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSON_LD) }} />
+
       <section className="relative flex min-h-screen flex-col items-center justify-center px-6 pb-20 pt-40">
         <div className="mk-fade-up mx-auto max-w-4xl text-center">
           <span className="mk-eyebrow mb-8 inline-flex">

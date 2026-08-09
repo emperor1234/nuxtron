@@ -27,8 +27,14 @@ import { buildContentSecurityPolicy, generateNonce } from '@/app/lib/security/cs
 const PUBLIC_EXACT_PATHS = new Set([
   '/',
   '/about',
+  '/blog',
+  '/careers',
+  '/case-studies',
+  '/changelog',
   '/contact',
+  '/faq',
   '/features',
+  '/integrations',
   '/login',
   '/pricing',
   '/privacy',
@@ -40,8 +46,9 @@ const PUBLIC_EXACT_PATHS = new Set([
 
 // /tools/translation-studio is the one surviving nested public page (the
 // /tools listing page itself was removed, but a (dashboard) route re-exports
-// this one — see app/(dashboard)/seo/ai-localization/page.tsx).
-const PUBLIC_PREFIXES = ['/tools/'];
+// this one — see app/(dashboard)/seo/ai-localization/page.tsx). /blog/
+// covers individual [slug] post pages (the index itself is /blog, above).
+const PUBLIC_PREFIXES = ['/tools/', '/blog/'];
 
 // Paths that require an elevated role beyond plain authentication. The
 // backend RBAC layer (backend/fastapi/app/authz.py) is the real
@@ -140,6 +147,6 @@ export const config = {
   // Runs on every request except static assets and Next internals; API
   // proxy calls and app-route gating are both handled inside proxy() above.
   matcher: [
-    '/((?!_next/static|_next/image|favicon\\.ico|brand/|images/|robots\\.txt|sitemap\\.xml|sw\\.js|manifest\\.json|~partytown/).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|brand/|images/|media/|robots\\.txt|sitemap\\.xml|sw\\.js|manifest\\.json|~partytown/).*)',
   ],
 };

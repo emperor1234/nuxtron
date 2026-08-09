@@ -164,6 +164,16 @@ body:has(.mk-root) .ira-shell {
   padding: 0.35rem 0.9rem;
 }
 
+.mk-icon-tile {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 0.65rem;
+  border: 1px solid var(--mk-line-strong);
+  background: var(--mk-blue-tint);
+  padding: 0.7rem;
+  color: var(--mk-blue-hover);
+}
+
 /* ── Buttons ── */
 .mk-btn-primary {
   display: inline-flex;

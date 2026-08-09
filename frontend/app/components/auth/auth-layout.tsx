@@ -54,7 +54,7 @@ export function AuthLayout({ heading, subheading, panelTitle, panelPoints, child
           />
           <div className="relative">
             <div className="mb-12 flex items-center gap-2">
-              <span className="h-5 w-5 rotate-45 rounded-sm bg-[#466cf3]" />
+              <img src="/brand/nuxtron-icon-square.svg" alt="" width={22} height={22} className="rounded-sm" />
               <span className="[font-family:var(--font-geist-sans)] text-lg font-bold tracking-tight text-white">
                 Nuxtron
               </span>

@@ -25,7 +25,7 @@ export function SeoVisual() {
     <div className={CARD}>
       <div className={HEADER}>
         <span className="text-sm font-semibold text-[#1F1F1F]">Position Tracking</span>
-        <span className="ml-auto rounded-full bg-[#FFF1EC] px-2 py-0.5 text-xs font-semibold text-[#FF4800]">
+        <span className="ml-auto rounded-full bg-[#FEF3E2] px-2 py-0.5 text-xs font-semibold text-[#F59E0B]">
           Live
         </span>
       </div>
@@ -85,8 +85,8 @@ export function SocialVisual() {
                   key={i}
                   className={
                     i < c.posts
-                      ? 'h-6 w-3 rounded-sm bg-[#FF4800]'
-                      : 'h-6 w-3 rounded-sm bg-[#FFF1EC]'
+                      ? 'h-6 w-3 rounded-sm bg-[#F59E0B]'
+                      : 'h-6 w-3 rounded-sm bg-[#FEF3E2]'
                   }
                 />
               ))}
@@ -95,7 +95,7 @@ export function SocialVisual() {
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-2 border-t border-[#EFE9DC] bg-[#FFF1EC] px-4 py-2.5 text-xs font-semibold text-[#FF4800]">
+      <div className="flex items-center gap-2 border-t border-[#EFE9DC] bg-[#FEF3E2] px-4 py-2.5 text-xs font-semibold text-[#F59E0B]">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
         </svg>
@@ -138,13 +138,13 @@ export function AdsVisual() {
                 Spend: <span className="font-semibold text-[#33475B]">{c.spend}</span>
               </span>
               <span className="text-[#899AA8]">
-                ROAS: <span className="font-semibold text-[#FF4800]">{c.roas}</span>
+                ROAS: <span className="font-semibold text-[#F59E0B]">{c.roas}</span>
               </span>
             </div>
           </div>
         ))}
       </div>
-      <div className="border-t border-[#EFE9DC] bg-[#FFF1EC] px-4 py-2.5 text-xs font-semibold text-[#FF4800]">
+      <div className="border-t border-[#EFE9DC] bg-[#FEF3E2] px-4 py-2.5 text-xs font-semibold text-[#F59E0B]">
         {'⚡ AI reallocated $500 from “Lookalike” to “Brand Search” — projected +$1,840 revenue'}
       </div>
     </div>
