@@ -88,7 +88,7 @@ export default function FaqPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
 
-      <section className="mk-section pt-40 text-center">
+      <section className="mk-section mk-pt-hero text-center">
         <div className="mk-container max-w-2xl">
           <span className="mk-eyebrow mb-5">FAQ</span>
           <h1 className="text-5xl font-semibold tracking-tight text-[#0b1b2b] sm:text-6xl">
@@ -100,7 +100,7 @@ export default function FaqPage() {
         </div>
       </section>
 
-      <section className="mk-section pt-0">
+      <section className="mk-section mk-pt-flush">
         <div className="mk-container max-w-3xl space-y-12">
           {GROUPS.map((group) => (
             <div key={group.title}>

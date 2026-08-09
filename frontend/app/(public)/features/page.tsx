@@ -102,7 +102,7 @@ export default function FeaturesPage() {
         </Reveal>
       </section>
 
-      <section className="mk-section pt-16">
+      <section className="mk-section mk-pt-tight">
         <div className="mk-container grid grid-cols-1 gap-6 md:grid-cols-2">
           {CAPABILITIES.map((cap, i) => (
             <Reveal key={cap.title} delay={(i % 2) * 0.08} className="mk-card overflow-hidden p-8">

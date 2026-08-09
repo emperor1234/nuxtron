@@ -39,7 +39,7 @@ const CATEGORIES = [
 export default function IntegrationsPage() {
   return (
     <>
-      <section className="mk-section pt-40 text-center">
+      <section className="mk-section mk-pt-hero text-center">
         <div className="mk-container max-w-2xl">
           <span className="mk-eyebrow mb-5">Integrations</span>
           <h1 className="text-5xl font-semibold tracking-tight text-[#0b1b2b] sm:text-6xl">
@@ -52,7 +52,7 @@ export default function IntegrationsPage() {
         </div>
       </section>
 
-      <section className="mk-section pt-0">
+      <section className="mk-section mk-pt-flush">
         <div className="mk-container grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {CATEGORIES.map((category) => (
             <div key={category.title} className="mk-card p-8">

@@ -15,7 +15,7 @@ function formatDate(iso: string): string {
 
 export default function BlogIndexPage() {
   return (
-    <section className="mk-section pt-40">
+    <section className="mk-section mk-pt-hero">
       <div className="mk-container max-w-3xl">
         <span className="mk-eyebrow mb-5">Blog</span>
         <h1 className="mb-4 text-4xl font-semibold tracking-tight text-[#0b1b2b] sm:text-5xl">

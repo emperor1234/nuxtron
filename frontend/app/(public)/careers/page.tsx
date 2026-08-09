@@ -42,7 +42,7 @@ const ROLES = [
 export default function CareersPage() {
   return (
     <>
-      <section className="mk-section pt-40 text-center">
+      <section className="mk-section mk-pt-hero text-center">
         <div className="mk-container max-w-2xl">
           <span className="mk-eyebrow mb-5">Careers</span>
           <h1 className="text-5xl font-semibold tracking-tight text-[#0b1b2b] sm:text-6xl">Build the workspace</h1>
@@ -53,7 +53,7 @@ export default function CareersPage() {
         </div>
       </section>
 
-      <section className="mk-section pt-0">
+      <section className="mk-section mk-pt-flush">
         <div className="mk-container grid grid-cols-1 gap-6 sm:grid-cols-2">
           {VALUES.map((value) => (
             <div key={value.title} className="mk-card p-8">

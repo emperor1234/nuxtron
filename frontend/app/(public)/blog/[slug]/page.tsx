@@ -52,7 +52,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
 
-      <article className="mk-section pt-40">
+      <article className="mk-section mk-pt-hero">
         <div className="mk-container max-w-2xl">
           <Link href="/blog" className="mb-8 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0c8fcc]">
             <ArrowLeft size={14} /> Back to blog

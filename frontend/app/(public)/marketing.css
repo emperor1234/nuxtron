@@ -131,6 +131,23 @@ body:has(.mk-root) .ira-shell {
   z-index: 1;
   padding: clamp(4rem, 8vw, 7rem) 1.5rem;
 }
+/* Page-hero padding-top overrides. Tailwind's pt-* utilities can't reliably
+   win here: this file isn't processed alongside globals.css's @tailwind
+   directives, so @layer isn't available, and unlayered CSS always beats
+   Tailwind's own (layered) utilities regardless of specificity or source
+   order — .mk-section's own padding-top silently overrode every page's
+   pt-40/pt-16/pt-0 override. These modifier classes live in the same
+   unlayered context as .mk-section, so they can actually win by source
+   order at equal specificity. */
+.mk-pt-hero {
+  padding-top: 10rem;
+}
+.mk-pt-tight {
+  padding-top: 4rem;
+}
+.mk-pt-flush {
+  padding-top: 0;
+}
 .mk-section-alt {
   background: var(--mk-canvas-alt);
   border-top: 1px solid var(--mk-line);

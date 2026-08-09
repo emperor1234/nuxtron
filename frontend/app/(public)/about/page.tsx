@@ -34,7 +34,7 @@ const VALUES = [
 export default function AboutPage() {
   return (
     <>
-      <section className="mk-section pt-40 text-center">
+      <section className="mk-section mk-pt-hero text-center">
         <div className="mk-container max-w-3xl">
           <span className="mk-eyebrow mb-5">Company</span>
           <h1 className="text-5xl font-semibold tracking-tight text-[#181818] sm:text-6xl">
@@ -49,7 +49,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="mk-section pt-0">
+      <section className="mk-section mk-pt-flush">
         <div className="mk-container grid grid-cols-1 gap-6 sm:grid-cols-2">
           {VALUES.map((value) => (
             <div key={value.title} className="mk-card p-8">

@@ -43,7 +43,7 @@ const SECTIONS = [
 
 export default function PrivacyPage() {
   return (
-    <section className="mk-section pt-40">
+    <section className="mk-section mk-pt-hero">
       <div className="mk-container max-w-3xl">
         <span className="mk-eyebrow mb-5">Legal</span>
         <h1 className="mb-4 text-4xl font-semibold tracking-tight text-[#181818] sm:text-5xl">Privacy Policy</h1>

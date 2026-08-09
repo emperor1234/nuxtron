@@ -41,7 +41,7 @@ export default function ContactPage() {
   }
 
   return (
-    <section className="mk-section pt-40">
+    <section className="mk-section mk-pt-hero">
       <div className="mk-container grid max-w-4xl grid-cols-1 gap-12 md:grid-cols-2">
         <div>
           <span className="mk-eyebrow mb-5">Contact</span>

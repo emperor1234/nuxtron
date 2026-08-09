@@ -122,7 +122,7 @@ export default function PricingPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
 
-      <section className="mk-section pt-40 text-center">
+      <section className="mk-section mk-pt-hero text-center">
         <Reveal className="mk-container">
           <span className="mk-eyebrow mb-5">Pricing</span>
           <h1 className="mx-auto max-w-2xl text-5xl font-semibold tracking-tight text-[#181818] sm:text-6xl">
@@ -135,7 +135,7 @@ export default function PricingPage() {
         </Reveal>
       </section>
 
-      <section className="mk-section pt-0">
+      <section className="mk-section mk-pt-flush">
         <div className="mk-container grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((plan, i) => (
             <Reveal
