@@ -9,8 +9,8 @@ Autonomous agent for:
 """
 
 
-from backend.fastapi.app.agents.base import AgentExecution, AgentType, BaseAgent, ToolRegistry, ToolType
-from backend.fastapi.app.llm.providers import LLMModel, get_completion
+from .base import AgentExecution, AgentType, BaseAgent, ToolRegistry, ToolType
+from ..llm.providers import LLMModel, get_completion
 
 
 class DemandGenAgent(BaseAgent):

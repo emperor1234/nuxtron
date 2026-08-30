@@ -123,82 +123,84 @@ export default function PricingPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
 
       <section className="mk-section mk-pt-hero text-center">
-        <Reveal className="mk-container">
+        <Reveal className="mk-container animate-slide-in-left">
           <span className="mk-eyebrow mb-5">Pricing</span>
           <h1 className="mx-auto max-w-2xl text-5xl font-semibold tracking-tight text-[#181818] sm:text-6xl">
             Plans that scale with your team
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-[#46484d]">
-            Start free. Every plan includes CRM, SEO &amp; AI visibility tracking, and social scheduling — upgrade for
+            Start free. Every plan includes CRM, SEO & AI visibility tracking, and social scheduling — upgrade for
             more seats, more AI credits, and deeper automation.
           </p>
         </Reveal>
       </section>
 
       <section className="mk-section mk-pt-flush">
-        <div className="mk-container grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {PLANS.map((plan, i) => (
-            <Reveal
-              key={plan.id}
-              delay={i * 0.06}
-              className={`relative flex flex-col rounded-2xl border p-8 ${
-                plan.highlighted
-                  ? 'z-10 border-[#466cf3] bg-[#466cf308] shadow-[0_0_40px_rgba(70,108,243,0.12)] lg:scale-105'
-                  : 'border-[#18181814] bg-white hover:border-[#1818181f]'
-              } transition-all`}
-            >
-              {plan.highlighted ? (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#466cf3] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
-                  Most popular
-                </span>
-              ) : null}
-
-              <div className="mb-5 inline-flex w-fit rounded-lg border border-[#18181814] bg-[#466cf314] p-2.5 text-[#466cf3]">
-                <plan.icon size={20} strokeWidth={1.75} aria-hidden="true" />
-              </div>
-
-              <h2 className="text-xl font-bold text-[#181818]">{plan.name}</h2>
-              <p className="mb-8 mt-2 h-10 text-sm text-[#8a8d93]">{plan.description}</p>
-
-              <div className="mb-8 flex items-baseline gap-1">
-                <span className="text-[#8a8d93]">$</span>
-                <span className="text-5xl font-bold tabular-nums text-[#181818]">{plan.price}</span>
-                <span className="text-sm text-[#8a8d93]">{plan.cadence}</span>
-              </div>
-
-              <ul className="mb-8 flex-1 space-y-3.5">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2.5 text-sm text-[#46484d]">
-                    <Check size={16} className="mt-0.5 shrink-0 text-[#466cf3]" aria-hidden="true" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                href={plan.cta.href}
-                className={`w-full rounded-lg px-4 py-3 text-center text-sm font-bold uppercase tracking-wider transition-all ${
+        <Reveal className="mk-container stagger-children">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {PLANS.map((plan, i) => (
+              <Reveal
+                key={plan.id}
+                delay={i * 0.06}
+                className={`relative flex flex-col rounded-2xl border p-8 transition-all ${
                   plan.highlighted
-                    ? 'bg-[#181818] text-white hover:bg-black'
-                    : 'border border-[#18181814] bg-[#18181808] text-[#181818] hover:bg-[#1818180f]'
+                    ? 'z-10 border-[#466cf3] bg-[#466cf308] shadow-[0_0_40px_rgba(70,108,243,0.12)] lg:scale-105'
+                    : 'border-[#18181814] bg-white hover:border-[#1818181f] hover:shadow-lg hover:shadow-[#466cf3]/10'
                 }`}
               >
-                {plan.cta.label}
-              </Link>
-            </Reveal>
-          ))}
-        </div>
+                {plan.highlighted ? (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#466cf3] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
+                    Most popular
+                  </span>
+                ) : null}
+
+                <div className="mb-5 inline-flex w-fit rounded-lg border border-[#18181814] bg-[#466cf314] p-2.5 text-[#466cf3]">
+                  <plan.icon size={20} strokeWidth={1.75} aria-hidden="true" />
+                </div>
+
+                <h2 className="text-xl font-bold text-[#181818]">{plan.name}</h2>
+                <p className="mb-8 mt-2 h-10 text-sm text-[#8a8d93]">{plan.description}</p>
+
+                <div className="mb-8 flex items-baseline gap-1">
+                  <span className="text-[#8a8d93]">$</span>
+                  <span className="text-5xl font-bold tabular-nums text-[#181818]">{plan.price}</span>
+                  <span className="text-sm text-[#8a8d93]">{plan.cadence}</span>
+                </div>
+
+                <ul className="mb-8 flex-1 space-y-3.5">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-sm text-[#46484d] transition-colors group-hover:text-[#181818]">
+                      <Check size={16} className="mt-0.5 shrink-0 text-[#466cf3]" aria-hidden="true" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  href={plan.cta.href}
+                  className={`w-full rounded-lg px-4 py-3 text-center text-sm font-bold uppercase tracking-wider transition-all ${
+                    plan.highlighted
+                      ? 'bg-[#181818] text-white hover:bg-black'
+                      : 'border border-[#18181814] bg-[#18181808] text-[#181818] hover:bg-[#1818180f]'
+                  }`}
+                >
+                  {plan.cta.label}
+                </Link>
+              </Reveal>
+            ))}
+          </div>
+        </Reveal>
       </section>
 
       <section className="mk-section">
         <div className="mk-container max-w-3xl">
-          <Reveal>
+          <Reveal className="animate-slide-in-left">
             <h2 className="mb-10 text-center text-3xl font-semibold tracking-tight text-[#181818] sm:text-4xl">
               Frequently asked questions
             </h2>
-            <dl className="divide-y divide-[#18181814] rounded-2xl border border-[#18181814]">
+            <dl className="divide-y divide-[#18181814] rounded-2xl border border-[#18181814] stagger-children">
               {FAQS.map((item) => (
-                <div key={item.q} className="p-6">
+                <div key={item.q} className="p-6 transition-colors hover:bg-[#18181803]">
                   <dt className="mb-2 font-semibold text-[#181818]">{item.q}</dt>
                   <dd className="text-sm leading-relaxed text-[#46484d]">{item.a}</dd>
                 </div>
@@ -209,13 +211,13 @@ export default function PricingPage() {
       </section>
 
       <section className="mk-section mk-section-alt text-center">
-        <Reveal className="mk-container max-w-2xl">
+        <Reveal className="mk-container max-w-2xl animate-scale-in">
           <h2 className="text-4xl font-semibold tracking-tight text-[#181818] sm:text-5xl">Still deciding?</h2>
           <p className="mx-auto mt-4 max-w-md text-lg text-[#46484d]">
             Talk to our team about which plan fits your workflow — no pressure, no scripted demo.
           </p>
-          <Link href="/contact" className="mk-shiny-cta mt-8">
-            Talk to sales <ArrowRight size={16} />
+          <Link href="/contact" className="mk-shiny-cta mt-8 group">
+            Talk to sales <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
           </Link>
         </Reveal>
       </section>

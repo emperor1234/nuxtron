@@ -13,8 +13,8 @@ from sqlalchemy import Column, DateTime, ForeignKey, String, Text, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 
-from app.database import Base
-from app.stores.base import PersistentStore
+from ..database import Base
+from .base import PersistentStore
 
 # Reuse the shared declarative base (app.database.Base) so this model
 # participates in the same metadata/create_all/Alembic migrations as the rest

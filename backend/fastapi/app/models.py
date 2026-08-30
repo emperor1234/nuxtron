@@ -400,6 +400,68 @@ class JobExecution(BaseTenantModel):
     data: Mapped[JsonObject] = mapped_column(JsonField, default=dict)
 
 
+class BillingSubscription(BaseTenantModel):
+    """Durable local projection of a Stripe subscription."""
+
+    __tablename__ = 'billing_subscriptions'
+    __table_args__ = (
+        Index('ix_billing_subscriptions_tenant_status', 'tenant_id', 'status'),
+    )
+
+    stripe_subscription_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    stripe_customer_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    stripe_checkout_session_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    plan_id: Mapped[str] = mapped_column(String(40), nullable=False)
+    billing_cycle: Mapped[str] = mapped_column(String(20), nullable=False)
+    status: Mapped[str] = mapped_column(String(40), default='active')
+
+
+class BillingCreditPurchase(BaseTenantModel):
+    """Server-priced credit purchase fulfilled by a signed Stripe event."""
+
+    __tablename__ = 'billing_credit_purchases'
+    __table_args__ = (
+        Index('ix_billing_credit_purchases_tenant_status', 'tenant_id', 'status'),
+    )
+
+    request_id: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    stripe_checkout_session_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, default=None,
+    )
+    stripe_payment_intent_id: Mapped[str | None] = mapped_column(String(255), default=None)
+    credits: Mapped[int] = mapped_column(nullable=False)
+    amount_cents: Mapped[int] = mapped_column(nullable=False)
+    currency: Mapped[str] = mapped_column(String(8), default='usd')
+    status: Mapped[str] = mapped_column(String(40), default='creating_checkout')
+
+
+class BillingCreditLedger(BaseTenantModel):
+    """Durable credit grant ledger; Checkout Session uniqueness prevents replay."""
+
+    __tablename__ = 'billing_credit_ledger'
+
+    amount: Mapped[int] = mapped_column(nullable=False)
+    reason: Mapped[str] = mapped_column(String(80), nullable=False)
+    stripe_checkout_session_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, default=None,
+    )
+    stripe_invoice_id: Mapped[str | None] = mapped_column(String(255), unique=True, default=None)
+
+
+class StripeWebhookEvent(Base):
+    """Processed Stripe event IDs for durable webhook idempotency."""
+
+    __tablename__ = 'stripe_webhook_events'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(120), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(255), default='')
+    processed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+    )
+
+
 # Register all models with Base for create_all() to work
 __all__ = [
     'Tenant',
@@ -420,4 +482,8 @@ __all__ = [
     'MissionJob',
     'WorkflowExecution',
     'JobExecution',
+    'BillingSubscription',
+    'BillingCreditPurchase',
+    'BillingCreditLedger',
+    'StripeWebhookEvent',
 ]

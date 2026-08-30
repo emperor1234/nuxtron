@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Bot, Layers, Radar, Shield } from 'lucide-react';
+import { Reveal } from '../_components/reveal';
 
 export const metadata: Metadata = {
   title: 'About | Nuxtron',
@@ -35,7 +36,7 @@ export default function AboutPage() {
   return (
     <>
       <section className="mk-section mk-pt-hero text-center">
-        <div className="mk-container max-w-3xl">
+        <Reveal className="mk-container max-w-3xl animate-slide-in-left">
           <span className="mk-eyebrow mb-5">Company</span>
           <h1 className="text-5xl font-semibold tracking-tight text-[#181818] sm:text-6xl">
             We got tired of the six-tab tax
@@ -46,55 +47,59 @@ export default function AboutPage() {
             as much as the tools themselves. Nuxtron is what we built instead: one workspace, one data model, and AI
             agents that can act across all of it.
           </p>
-        </div>
+        </Reveal>
       </section>
 
       <section className="mk-section mk-pt-flush">
-        <div className="mk-container grid grid-cols-1 gap-6 sm:grid-cols-2">
-          {VALUES.map((value) => (
-            <div key={value.title} className="mk-card p-8">
-              <div className="mb-5 inline-flex w-fit rounded-lg border border-[#18181814] bg-[#18181808] p-3 text-[#466cf3]">
-                <value.icon size={22} strokeWidth={1.75} aria-hidden="true" />
+        <Reveal className="mk-container stagger-children">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {VALUES.map((value) => (
+              <div key={value.title} className="mk-card p-8 group">
+                <div className="mb-5 inline-flex w-fit rounded-lg border border-[#18181814] bg-[#18181808] p-3 text-[#466cf3] transition-transform group-hover:scale-105">
+                  <value.icon size={22} strokeWidth={1.75} aria-hidden="true" />
+                </div>
+                <h2 className="mb-2.5 text-xl font-semibold text-[#181818]">{value.title}</h2>
+                <p className="text-[15px] leading-relaxed text-[#46484d]">{value.body}</p>
               </div>
-              <h2 className="mb-2.5 text-xl font-semibold text-[#181818]">{value.title}</h2>
-              <p className="text-[15px] leading-relaxed text-[#46484d]">{value.body}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Reveal>
       </section>
 
       <section className="mk-section">
-        <div className="mk-container max-w-3xl rounded-2xl border border-[#18181814] bg-[#f5f6f8] p-10 sm:p-14">
-          <h2 className="mb-4 text-3xl font-semibold tracking-tight text-[#181818]">How we build</h2>
-          <div className="space-y-4 text-[15px] leading-relaxed text-[#46484d]">
-            <p>
-              We ship for teams who need to trust what the platform does on their behalf — which means every
-              AI-driven action in Nuxtron is scoped, logged, and reviewable, and every tenant&apos;s data is isolated
-              at the database layer, not just the application layer.
-            </p>
-            <p>
-              We&apos;d rather ship one workflow that genuinely replaces a tool you&apos;re paying for than ten
-              half-finished integrations. That&apos;s the bar for everything that ships.
-            </p>
+        <Reveal className="mk-container animate-slide-in-right">
+          <div className="max-w-3xl rounded-2xl border border-[#18181814] bg-[#f5f6f8] p-10 sm:p-14">
+            <h2 className="mb-4 text-3xl font-semibold tracking-tight text-[#181818]">How we build</h2>
+            <div className="space-y-4 text-[15px] leading-relaxed text-[#46484d]">
+              <p>
+                We ship for teams who need to trust what the platform does on their behalf — which means every
+                AI-driven action in Nuxtron is scoped, logged, and reviewable, and every tenant&apos;s data is isolated
+                at the database layer, not just the application layer.
+              </p>
+              <p>
+                We&apos;d rather ship one workflow that genuinely replaces a tool you&apos;re paying for than ten
+                half-finished integrations. That&apos;s the bar for everything that ships.
+              </p>
+            </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       <section className="mk-section text-center">
-        <div className="mk-container max-w-2xl">
+        <Reveal className="mk-container max-w-2xl animate-scale-in">
           <h2 className="text-4xl font-semibold tracking-tight text-[#181818] sm:text-5xl">Come see it for yourself</h2>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link href="/register" className="mk-shiny-cta">
-              Start free <ArrowRight size={16} />
+            <Link href="/register" className="mk-shiny-cta group">
+              Start free <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
               href="/contact"
-              className="rounded-full border border-[#18181822] bg-white px-8 py-4 font-medium text-[#46484d] transition-all hover:border-[#181818] hover:bg-[#f5f6f8] hover:text-[#181818]"
+              className="rounded-full border border-[#18181822] bg-white px-8 py-4 font-medium text-[#46484d] transition-all hover:border-[#181818] hover:bg-[#f5f6f8] hover:text-[#181818] group"
             >
-              Talk to us
+              Talk to us <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
-        </div>
+        </Reveal>
       </section>
     </>
   );

@@ -190,7 +190,7 @@ function statusLabel(page: import('@playwright/test').Page) {
 
 test.describe('Deep media uploader coverage', () => {
   test('rejects unsupported file types with a clear error', async ({ page }) => {
-    await page.goto('/studio');
+    await page.goto('/media-processing');
 
     await mediaInput(page).setInputFiles({
       name: 'unsupported.txt',
@@ -204,7 +204,7 @@ test.describe('Deep media uploader coverage', () => {
 
   test('runs upload pipeline to completion with signed output URL', async ({ page }) => {
     await mockMediaPipeline(page, 'complete');
-    await page.goto('/studio');
+    await page.goto('/media-processing');
 
     await mediaInput(page).setInputFiles({
       name: 'mock-image.png',
@@ -224,7 +224,7 @@ test.describe('Deep media uploader coverage', () => {
 
   test('supports cancel flow while job is active', async ({ page }) => {
     await mockMediaPipeline(page, 'inflight');
-    await page.goto('/studio');
+    await page.goto('/media-processing');
 
     await mediaInput(page).setInputFiles({
       name: 'cancel-me.png',
@@ -242,7 +242,7 @@ test.describe('Deep media uploader coverage', () => {
 
   test('failed job shows retry button and retry resets job to queued', async ({ page }) => {
     await mockMediaPipeline(page, 'failed');
-    await page.goto('/studio');
+    await page.goto('/media-processing');
 
     // Filename containing 'fail' triggers mock server failure path
     await mediaInput(page).setInputFiles({
@@ -267,7 +267,7 @@ test.describe('Deep media uploader coverage', () => {
 
   test('DLQ panel opens and lists entries for failed jobs', async ({ page }) => {
     await mockMediaPipeline(page, 'failed');
-    await page.goto('/studio');
+    await page.goto('/media-processing');
 
     // Force a failure to populate DLQ
     await mediaInput(page).setInputFiles({
@@ -294,7 +294,7 @@ test.describe('Deep media uploader coverage', () => {
 
   test('upload another resets uploader to idle state', async ({ page }) => {
     await mockMediaPipeline(page, 'complete');
-    await page.goto('/studio');
+    await page.goto('/media-processing');
 
     await mediaInput(page).setInputFiles({
       name: 'reset-test.png',
@@ -317,7 +317,7 @@ test.describe('Deep media uploader coverage', () => {
     test.slow();
     test.setTimeout(60000);
     await mockMediaPipeline(page, 'complete');
-    await page.goto('/studio');
+    await page.goto('/media-processing');
     await expect(uploader(page)).toBeVisible();
 
     // MP4 magic bytes: ftyp box at offset 4 is unreliable; use minimal valid header approach
@@ -338,7 +338,7 @@ test.describe('Deep media uploader coverage', () => {
 
   test('progress bar reaches 100% on completion', async ({ page }) => {
     await mockMediaPipeline(page, 'complete');
-    await page.goto('/studio');
+    await page.goto('/media-processing');
 
     await mediaInput(page).setInputFiles({
       name: 'progress-check.png',

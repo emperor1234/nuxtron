@@ -27,6 +27,14 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   allowedDevOrigins: ['localhost', '127.0.0.1'],
   outputFileTracingRoot: path.join(__dirname, '..'),
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'assets.watermelon.sh',
+      },
+    ],
+  },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

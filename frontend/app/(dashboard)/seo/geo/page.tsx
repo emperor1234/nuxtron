@@ -246,21 +246,6 @@ export default function GEOPage() {
                   Configure context for multi-engine GEO optimization
                 </p>
               </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: 'var(--brand)',
-                  border: '1px solid rgba(147,197,253,0.35)',
-                  borderRadius: 8,
-                  padding: '4px 8px',
-                  background: 'rgba(96,165,250,0.12)',
-                }}
-              >
-                Advanced Mode
-              </div>
             </div>
 
             <label htmlFor="geo-topic" style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>

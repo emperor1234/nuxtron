@@ -1,6 +1,8 @@
 from collections.abc import Callable
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from ..deps import require_auth
 
 JsonObject = dict[str, object]
 
@@ -52,7 +54,7 @@ def create_content_integrations_router(
     stripe_list_events = handlers['stripe_list_events']
     get_audit_log = handlers['get_audit_log']
 
-    router = APIRouter()
+    router = APIRouter(dependencies=[Depends(require_auth)])
 
     router.add_api_route('/content/generate', generate_content, methods=['POST'])
     router.add_api_route('/ads/generate', generate_ads, methods=['POST'])

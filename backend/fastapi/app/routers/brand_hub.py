@@ -4,8 +4,8 @@ import logging
 import os
 from typing import Annotated, Any
 
-from backend.fastapi.app.brand_hub.core import BrandAsset, BrandStatus, brand_hub_manager
-from backend.fastapi.app.deps import AuthContext, require_auth
+from ..brand_hub.core import BrandAsset, BrandStatus, brand_hub_manager
+from ..deps import AuthContext, require_auth
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 router = APIRouter(prefix="/api/v1/brands", tags=["Brand Hub"])
@@ -361,6 +361,5 @@ async def get_brand_analytics(
     except Exception as exc:
         logger.exception("Failed to get analytics.")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-
 
 

@@ -255,21 +255,6 @@ export default function LLMOPage() {
                   Define positioning context for model representation analysis
                 </p>
               </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: 'var(--brand)',
-                  border: '1px solid rgba(196,181,253,0.35)',
-                  borderRadius: 8,
-                  padding: '4px 8px',
-                  background: 'rgba(167,139,250,0.12)',
-                }}
-              >
-                Advanced Mode
-              </div>
             </div>
 
             <label htmlFor="llmo-brand" style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>

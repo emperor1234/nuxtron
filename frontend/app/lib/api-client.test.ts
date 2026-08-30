@@ -28,6 +28,7 @@ function makeFetchResponse(body: unknown, ok = true, status = 200, contentType =
 describe('api-client session helpers', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it('stores tenant id and bearer token on setAuthSession', () => {
@@ -51,10 +52,10 @@ describe('api-client session helpers', () => {
 
   it('stores super admin key only when non-empty', () => {
     setSuperAdminKeySession('');
-    expect(localStorage.getItem(STORAGE_SUPER_ADMIN_KEY)).toBeNull();
+    expect(sessionStorage.getItem(STORAGE_SUPER_ADMIN_KEY)).toBeNull();
 
     setSuperAdminKeySession('super-secret');
-    expect(localStorage.getItem(STORAGE_SUPER_ADMIN_KEY)).toBe('super-secret');
+    expect(sessionStorage.getItem(STORAGE_SUPER_ADMIN_KEY)).toBe('super-secret');
   });
 });
 

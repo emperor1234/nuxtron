@@ -8,7 +8,6 @@ import { resolveSessionTenant } from '@/app/lib/api-client';
 type Usage = { credit_balance: number; pending_credit_topups?: number };
 type Wallet = { wallet?: { available_balance_usd?: number; recent_transactions?: unknown[] } };
 type Quote = { credits: number; total_usd: number; unit_price_usd: number };
-type Checkout = { id: number; amount: number; payment_reference: string; status: string };
 
 export default function AccountWalletPage() {
   // Bound to the authenticated session; not user-editable (A01/IDOR).
@@ -19,7 +18,6 @@ export default function AccountWalletPage() {
   const [pendingTopups, setPendingTopups] = useState(0);
   const [creditAmount, setCreditAmount] = useState('250');
   const [quote, setQuote] = useState<Quote | null>(null);
-  const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -69,45 +67,18 @@ export default function AccountWalletPage() {
     setBusy(true);
     setError('');
     try {
-      const response = await apiSend<{ invoice: Checkout }>(
-        '/billing/credits/checkout',
+      const response = await apiSend<{ checkout_url: string }>(
+        '/billing/stripe/credit-checkout-session',
         'POST',
         {
-          amount: Number.parseInt(creditAmount, 10) || 0,
-          payment_provider: 'manual',
-          payment_method_id: 'wallet-topup-ui',
+          credits: Number.parseInt(creditAmount, 10) || 0,
+          request_id: crypto.randomUUID().replaceAll('-', ''),
         },
         tenantId
       );
-      setCheckout(response.invoice);
-      await loadWallet(tenantId);
+      window.location.assign(response.checkout_url);
     } catch (ex) {
       setError(ex instanceof Error ? ex.message : 'Could not create checkout.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function confirmCredits() {
-    if (!checkout) return;
-    setBusy(true);
-    setError('');
-    try {
-      await apiSend(
-        '/billing/credits/confirm',
-        'POST',
-        {
-          invoice_id: checkout.id,
-          payment_reference: checkout.payment_reference,
-          provider_transaction_id: `wallet-${checkout.id}`,
-          amount_usd: checkout.amount,
-        },
-        tenantId
-      );
-      setCheckout(null);
-      await loadWallet(tenantId);
-    } catch (ex) {
-      setError(ex instanceof Error ? ex.message : 'Could not confirm payment.');
     } finally {
       setBusy(false);
     }
@@ -143,26 +114,18 @@ export default function AccountWalletPage() {
           </article>
         </div>
         <div style={{ maxWidth: 320, display: 'grid', gap: 10 }}>
-          <input value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} type="number" min={1} />
+          <input value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} type="number" min={100} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={quoteCredits} disabled={busy}>
               {busy ? 'Working...' : 'Quote Credits'}
             </button>
             <button onClick={createCheckout} disabled={busy}>
-              {busy ? 'Working...' : 'Create Checkout'}
-            </button>
-            <button onClick={confirmCredits} disabled={busy || !checkout}>
-              {busy ? 'Working...' : 'Confirm Payment'}
+              {busy ? 'Opening Stripe...' : 'Buy with Stripe'}
             </button>
           </div>
           {quote ? (
             <p className="muted">
               Quote: {quote.credits} credits for ${quote.total_usd.toFixed(2)}.
-            </p>
-          ) : null}
-          {checkout ? (
-            <p className="muted">
-              Pending: {checkout.payment_reference} · ${checkout.amount.toFixed(2)}
             </p>
           ) : null}
         </div>

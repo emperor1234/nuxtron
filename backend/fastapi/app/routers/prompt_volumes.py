@@ -7,9 +7,9 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from backend.fastapi.app.deps import AuthContext, require_auth
-from backend.fastapi.app.persistence.ai_visibility_store import get_ai_visibility_store
-from backend.fastapi.app.prompt_volumes.core import (
+from ..deps import AuthContext, require_auth
+from ..persistence.ai_visibility_store import get_ai_visibility_store
+from ..prompt_volumes.core import (
     KeywordType,
     PromptVolumesCollector,
     prompt_volumes_collector,

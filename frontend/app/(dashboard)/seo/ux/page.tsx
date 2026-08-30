@@ -103,47 +103,14 @@ export default function UxConversionPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl p-4 md:p-6 lg:p-8 space-y-6 text-[var(--text)]">
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--line)] bg-white backdrop-blur-xl p-6 md:p-8">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[var(--brand)]/20 blur-3xl" />
-        <div className="pointer-events-none absolute -left-28 -bottom-24 h-64 w-64 rounded-full bg-emerald-500/15 blur-3xl" />
-        <div className="relative grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div>
-            <div className="relative mb-4 flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-[var(--line)] bg-[var(--brand)]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-200">
-                Conversion Intelligence
-              </span>
-              <span className="rounded-full border border-[var(--line)] bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                Live Audit Workflow
-              </span>
-            </div>
-            <h1 className="relative text-3xl md:text-4xl font-semibold tracking-tight text-[var(--text)]">
-              UX & Conversion Optimizer
-            </h1>
-            <p className="relative mt-3 max-w-3xl text-sm md:text-base text-[var(--muted)] leading-relaxed">
-              Diagnose friction, evaluate conversion quality, and generate experiment-ready improvements for SEO traffic
-              journeys with executive-grade clarity.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:min-w-[260px]">
-            <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2">
-              <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Selected Page Type</div>
-              <div className="mt-1 text-sm font-semibold capitalize text-cyan-100">{pageType}</div>
-            </div>
-            <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2">
-              <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Traffic Focus</div>
-              <div className="mt-1 text-sm font-semibold capitalize text-emerald-100">{trafficSource}</div>
-            </div>
-            <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2">
-              <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Method</div>
-              <div className="mt-1 text-sm font-semibold text-[var(--text)]">Behavior + Conversion</div>
-            </div>
-            <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2">
-              <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Output</div>
-              <div className="mt-1 text-sm font-semibold text-[var(--text)]">A/B Roadmap</div>
-            </div>
-          </div>
-        </div>
+      <div>
+        <h1 className="text-[27px] font-semibold tracking-tight text-[var(--nx-ink,var(--text))]">
+          UX & Conversion Optimizer
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm text-[var(--nx-muted,var(--muted))] leading-relaxed">
+          Diagnose friction, evaluate conversion quality, and generate experiment-ready improvements for SEO traffic
+          journeys.
+        </p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
@@ -151,14 +118,9 @@ export default function UxConversionPage() {
           onSubmit={handleSubmit}
           className="rounded-2xl border border-[var(--line)] bg-white p-5 md:p-6 backdrop-blur-xl shadow-[0_18px_55px_-30px_rgba(6,182,212,0.65)] space-y-5"
         >
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-[var(--text)]">Audit Inputs</h2>
-              <p className="mt-0.5 text-xs text-[var(--muted)]">Provide context for conversion-quality analysis</p>
-            </div>
-            <div className="rounded-lg border border-[var(--line)] bg-[var(--brand)]/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-200">
-              Advanced Mode
-            </div>
+          <div>
+            <h2 className="text-base font-semibold text-[var(--text)]">Audit Inputs</h2>
+            <p className="mt-0.5 text-xs text-[var(--muted)]">Provide context for conversion-quality analysis</p>
           </div>
 
           <div>

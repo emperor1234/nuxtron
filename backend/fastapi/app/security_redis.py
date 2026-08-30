@@ -15,8 +15,12 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Any
 
-import redis as redis_sync
+try:
+    import redis as redis_sync
+except ModuleNotFoundError:  # Optional dependency in local/test environments.
+    redis_sync: Any = None
 
 logger = logging.getLogger('nuxtron.security.redis')
 
@@ -34,6 +38,10 @@ def get_sync_redis() -> redis_sync.Redis | None:
     when Redis is genuinely down).
     """
     global _client, _client_init_failed  # noqa: PLW0603
+    if redis_sync is None:
+        _client_init_failed = True
+        logger.info('Sync Redis client is not installed; using in-process rate limiting.')
+        return None
     if _client is not None:
         return _client
     if _client_init_failed:

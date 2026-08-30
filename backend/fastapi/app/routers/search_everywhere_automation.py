@@ -349,6 +349,8 @@ def create_search_everywhere_automation_router(
     botify_projects_memory: list[dict[str, Any]] = []
     botify_runs_memory: list[dict[str, Any]] = []
     botify_schedules_memory: list[dict[str, Any]] = []
+    semrush_projects_memory: list[dict[str, Any]] = []
+    semrush_runs_memory: list[dict[str, Any]] = []
     seoai_projects_memory: list[dict[str, Any]] = []
     seoai_runs_memory: list[dict[str, Any]] = []
     seoai_schedules_memory: list[dict[str, Any]] = []
@@ -3075,6 +3077,82 @@ def create_search_everywhere_automation_router(
             "env_template": template["content"],
             "generated_at": _now_iso(),
         }
+
+    @router.get("/semrush/projects")
+    def semrush_list_projects(auth: AuthDep) -> dict[str, Any]:
+        enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:semrush:projects:list", 120, 60)
+        projects = [item for item in semrush_projects_memory if item.get("tenant_id") == auth.tenant_id]
+        return {"status": "ok", "tenant_id": auth.tenant_id, "projects": projects}
+
+    @router.post("/semrush/projects")
+    def semrush_create_project(payload: SliceProjectCreateRequest, auth: AuthDep) -> dict[str, Any]:
+        enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:semrush:projects:create", 60, 60)
+        project_id = f"smproj-{auth.tenant_id}-{sum(1 for p in semrush_projects_memory if p.get('tenant_id') == auth.tenant_id) + 1}"
+        project = {
+            "id": project_id,
+            "tenant_id": auth.tenant_id,
+            "name": payload.name,
+            "primary_domain": payload.primary_domain,
+            "competitor_domains": payload.competitor_domains,
+            "default_seed_keyword": payload.default_seed_keyword,
+            "created_at": _now_iso(),
+            "updated_at": _now_iso(),
+        }
+        semrush_projects_memory.append(project)
+        return {"status": "ok", "tenant_id": auth.tenant_id, "project": project}
+
+    @router.post("/semrush/projects/{project_id}/run")
+    def semrush_run_project(project_id: str, payload: SliceProjectRunRequest, auth: AuthDep) -> dict[str, Any]:
+        enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:semrush:runs:create", 30, 60)
+        project = _slice_project_lookup(semrush_projects_memory, auth.tenant_id, project_id, "semrush_project_not_found")
+        automation = semrush_full_automation(
+            SemrushFullAutomationRequest(
+                seed_keyword=payload.seed_keyword or str(project.get("default_seed_keyword") or "social media management"),
+                your_domain=str(project.get("primary_domain")),
+                competitor_domains=list(project.get("competitor_domains") or ["ahrefs.com", "moz.com"]),
+                max_results=payload.max_results,
+                require_live_providers=payload.require_live_providers,
+            ),
+            auth,
+        )
+        run_id = f"smrun-{auth.tenant_id}-{sum(1 for r in semrush_runs_memory if r.get('tenant_id') == auth.tenant_id) + 1}"
+        run = {
+            "id": run_id,
+            "tenant_id": auth.tenant_id,
+            "project_id": project_id,
+            "completed_at": _now_iso(),
+            "run_mode": automation.get("run_mode"),
+        }
+        semrush_runs_memory.append(run)
+        return {"status": "ok", "tenant_id": auth.tenant_id, "run": run, "results": automation.get("results", {}), "generated_at": _now_iso()}
+
+    @router.get("/semrush/runs")
+    def semrush_list_runs(auth: AuthDep) -> dict[str, Any]:
+        enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:semrush:runs:list", 120, 60)
+        runs = [item for item in semrush_runs_memory if item.get("tenant_id") == auth.tenant_id]
+        return {"status": "ok", "tenant_id": auth.tenant_id, "runs": runs}
+
+    @router.get("/botify/parity-audit")
+    def botify_parity_audit(auth: AuthDep) -> dict[str, Any]:
+        enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:botify:parity", 60, 60)
+        return {"status": "ok", "tenant_id": auth.tenant_id, "vendor": "botify", "parity": _slice_completion_chart(auth, "botify_module", 10, force_integrated=False)}
+
+    @router.get("/botify/runs")
+    def botify_list_runs(auth: AuthDep) -> dict[str, Any]:
+        enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:botify:runs:list", 120, 60)
+        runs = [item for item in botify_runs_memory if item.get("tenant_id") == auth.tenant_id]
+        return {"status": "ok", "tenant_id": auth.tenant_id, "runs": runs}
+
+    @router.get("/seoai/parity-audit")
+    def seoai_parity_audit(auth: AuthDep) -> dict[str, Any]:
+        enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:seoai:parity", 60, 60)
+        return {"status": "ok", "tenant_id": auth.tenant_id, "vendor": "seoai", "parity": _slice_completion_chart(auth, "seoai_module", 10, force_integrated=False)}
+
+    @router.get("/seoai/runs")
+    def seoai_list_runs(auth: AuthDep) -> dict[str, Any]:
+        enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:seoai:runs:list", 120, 60)
+        runs = [item for item in seoai_runs_memory if item.get("tenant_id") == auth.tenant_id]
+        return {"status": "ok", "tenant_id": auth.tenant_id, "runs": runs}
 
     @router.post("/semrush/full-automation")
     def semrush_full_automation(payload: SemrushFullAutomationRequest, auth: AuthDep) -> dict[str, Any]:

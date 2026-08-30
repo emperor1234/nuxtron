@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { apiSend } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
 
 export default function BillingSuccessPage() {
   const searchParams = useSearchParams();
@@ -18,13 +19,24 @@ export default function BillingSuccessPage() {
         return;
       }
       try {
-        // Activate subscription in our system after successful Stripe checkout
-        await apiSend('/billing/stripe/activate', 'POST', { session_id: sessionId }, DEFAULT_TENANT_ID);
-        setStatus('success');
+        // Entitlements are granted only by the signed Stripe webhook. This
+        // endpoint verifies that the returned Session belongs to this tenant.
+        const result = await apiSend<{ payment_status: string }>(
+          '/billing/stripe/session-status',
+          'POST',
+          { session_id: sessionId },
+          resolveSessionTenant()
+        );
+        if (result.payment_status === 'paid' || result.payment_status === 'no_payment_required') {
+          setStatus('success');
+          setMessage('Payment received. Stripe is finalizing your account now.');
+        } else {
+          setStatus('error');
+          setMessage('Stripe has not confirmed payment yet. Please check Billing again shortly.');
+        }
       } catch {
-        // Even if activation call fails, Stripe payment succeeded — webhook will retry
-        setStatus('success');
-        setMessage('Payment received! Your plan will be activated shortly.');
+        setStatus('error');
+        setMessage('We could not verify this Checkout Session. No account changes were made.');
       }
     }
     void activate();

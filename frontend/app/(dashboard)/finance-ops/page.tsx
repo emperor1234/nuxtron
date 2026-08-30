@@ -244,25 +244,17 @@ export default function FinanceOpsPage() {
 
   async function buyCreditsViaStripe() {
     try {
-      const quantity = Math.max(1, Number.parseInt(buyCredits, 10) || 1);
-      const currentOrigin = globalThis.location.origin;
-      const returnUrl = `${currentOrigin}/finance-ops`;
-      const result = await apiSend<{ result?: { checkout_url?: string } }>(
-        '/payments/stripe/create-checkout',
+      const quantity = Math.max(100, Number.parseInt(buyCredits, 10) || 100);
+      const result = await apiSend<{ checkout_url?: string }>(
+        '/billing/stripe/credit-checkout-session',
         'POST',
         {
-          price_id: sandbox.test_price_id || 'price_test_credits_pack',
-          success_url: returnUrl,
-          cancel_url: returnUrl,
-          quantity,
-          metadata: {
-            intent: 'credits_purchase',
-            credits_requested: quantity,
-          },
+          credits: quantity,
+          request_id: crypto.randomUUID().replaceAll('-', ''),
         },
         tenantId
       );
-      const checkoutUrl = result?.result?.checkout_url;
+      const checkoutUrl = result.checkout_url;
       if (checkoutUrl) {
         window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
         setStatus('Stripe checkout opened in a new tab.');

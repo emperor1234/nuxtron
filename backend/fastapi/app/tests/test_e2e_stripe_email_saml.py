@@ -101,9 +101,8 @@ class TestBillingPlans:
 
     def test_subscribe_pro(self, client: TestClient) -> None:
         r = client.post("/billing/subscribe", headers=H, json={"plan_id": "pro", "billing_cycle": "monthly"})
-        assert r.status_code == 200
-        data = r.json()
-        assert data["status"] == "ok"
+        assert r.status_code == 409
+        assert "Stripe Checkout" in r.json()["detail"]
 
     def test_subscribe_invalid_plan(self, client: TestClient) -> None:
         r = client.post("/billing/subscribe", headers=H, json={"plan_id": "nonexistent", "billing_cycle": "monthly"})
@@ -130,8 +129,9 @@ class TestBillingPlans:
         assert data["quote"]["total_usd"] > 0
 
     def test_cancel_subscription(self, client: TestClient) -> None:
-        # Subscribe first to ensure there is an active subscription
-        client.post("/billing/subscribe", headers=H, json={"plan_id": "pro", "billing_cycle": "monthly"})
+        # The local endpoint only owns the free plan. Paid plans are managed in
+        # Stripe's portal and webhook lifecycle.
+        client.post("/billing/subscribe", headers=H, json={"plan_id": "starter", "billing_cycle": "monthly"})
         r = client.post("/billing/cancel", headers=H)
         assert r.status_code == 200
 
@@ -139,11 +139,25 @@ class TestBillingPlans:
 # ── Stripe billing router ─────────────────────────────────────────────────────
 
 class TestStripeBilling:
+    def test_legacy_checkout_rejects_arbitrary_price(self, client: TestClient) -> None:
+        r = client.post(
+            "/payments/stripe/create-checkout",
+            headers=H,
+            json={
+                "price_id": "price_attacker_selected",
+                "success_url": "https://evil.example/success",
+                "cancel_url": "https://evil.example/cancel",
+                "quantity": 1,
+            },
+        )
+        assert r.status_code == 422
+
     def test_checkout_session_free_plan(self, client: TestClient) -> None:
         """Starter plan should return free_plan=True without calling Stripe."""
         r = client.post("/billing/stripe/checkout-session", headers=H, json={
             "plan_id": "starter",
             "billing_cycle": "monthly",
+            "request_id": "starter_monthly_test",
         })
         assert r.status_code == 200
         data = r.json()
@@ -156,6 +170,7 @@ class TestStripeBilling:
         r = client.post("/billing/stripe/checkout-session", headers=H, json={
             "plan_id": "pro",
             "billing_cycle": "monthly",
+            "request_id": "pro_monthly_test_123",
         })
         assert r.status_code == 503
 
@@ -163,6 +178,7 @@ class TestStripeBilling:
         r = client.post("/billing/stripe/checkout-session", headers=H, json={
             "plan_id": "bogus_plan",
             "billing_cycle": "monthly",
+            "request_id": "invalid_plan_test_1",
         })
         assert r.status_code == 422
 
@@ -171,22 +187,24 @@ class TestStripeBilling:
         r = client.post("/billing/stripe/checkout-session", headers=H, json={
             "plan_id": "starter",
             "billing_cycle": "annual",
+            "request_id": "starter_annual_test1",
         })
         assert r.status_code == 200
         assert r.json()["free_plan"] is True
 
     def test_webhook_no_signature_with_local_secret(self, client: TestClient) -> None:
-        """Webhook with whsec_local_placeholder should skip verification and return 200."""
+        """A placeholder secret must fail closed; unsigned events grant entitlements."""
         r = client.post(
             "/billing/stripe/webhook",
             json={"type": "checkout.session.completed", "data": {"object": {"metadata": {}, "id": "cs_test"}}},
         )
-        assert r.status_code == 200
-        assert r.json()["received"] is True
+        assert r.status_code == 503
 
     def test_portal_session_no_stripe_key(self, client: TestClient) -> None:
         r = client.post("/billing/stripe/portal-session", headers=H, json={"customer_id": "cus_test123"})
-        assert r.status_code == 503
+        # Client-supplied customer IDs are ignored. With no server-owned Stripe
+        # customer for this tenant, the resource is not found.
+        assert r.status_code == 404
 
 
 # ── Email provider router ─────────────────────────────────────────────────────

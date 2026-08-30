@@ -474,34 +474,11 @@ export default function RankTrackingPage() {
 
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))' }}>
           <section style={{ ...card, marginBottom: 0 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                marginBottom: 12,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Filter size={15} color="var(--brand)" />
-                <span style={{ fontWeight: 700, fontSize: 14 }}>Tracking Configuration</span>
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: 'var(--brand)',
-                  border: '1px solid rgba(147,197,253,0.35)',
-                  borderRadius: 8,
-                  padding: '4px 8px',
-                  background: 'rgba(96,165,250,0.12)',
-                }}
-              >
-                Advanced Mode
-              </div>
+            <div style={{ marginBottom: 12 }}>
+              <h2 style={{ margin: 0, fontSize: 16, color: 'var(--text)' }}>Tracking inputs</h2>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted)' }}>
+                Domain, keywords, and location for rank analysis
+              </p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 20 }}>
               <div>

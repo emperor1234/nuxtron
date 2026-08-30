@@ -17,7 +17,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from backend.fastapi.app.llm.providers import LLMModel, get_completion
+from ..llm.providers import LLMModel, get_completion
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

@@ -1866,6 +1866,25 @@ textarea:focus-visible {
   display: none;
 }
 
+.seo-product-surface .pointer-events-none {
+  display: none;
+}
+
+/* Decorative 4-up hero status tiles used by AEO/GEO/SAGEO/LLMO twins. */
+.seo-product-surface [style*='minmax(min(100%, 420px)'] {
+  display: none;
+}
+
+/* Unreadable mint/cyan on white — force ink-level contrast. */
+.nxScope [style*='#99f6e4'],
+.nxScope [style*='#99F6E4'] {
+  color: #0f766e !important;
+}
+
+.nxScope :is(.text-cyan-100, .text-cyan-200, .text-emerald-100, .text-indigo-100, .text-indigo-200) {
+  color: #334155 !important;
+}
+
 .seo-advanced-page {
   max-width: 1120px;
   margin: 0 auto;

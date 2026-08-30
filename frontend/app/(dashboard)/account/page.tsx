@@ -4,11 +4,14 @@ import AccountNav from '@/app/components/account-nav';
 import { useEffect, useState } from 'react';
 import { apiGet, resolveSessionTenant } from '@/app/lib/api-client';
 
+/** Shown until the API answers, so no figure is ever guessed on the user's behalf. */
+const UNKNOWN = '—';
+
 export default function AccountOverviewPage() {
   const [tenantId] = useState(resolveSessionTenant);
-  const [plan, setPlan] = useState('Growth');
-  const [credits, setCredits] = useState('0');
-  const [orders, setOrders] = useState('0');
+  const [plan, setPlan] = useState('');
+  const [credits, setCredits] = useState('');
+  const [orders, setOrders] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -22,22 +25,30 @@ export default function AccountOverviewPage() {
           apiGet('/money-printers/commerce-pro/orders', tenantId),
         ]);
         if (!active) return;
+        // Never substitute a plausible-looking plan tier: showing the wrong
+        // one produces billing disputes. Absent data stays absent.
         const rawPlan = usage.plan_display ?? usage.current_plan;
-        const planText = typeof rawPlan === 'string' ? rawPlan : 'Starter';
+        const planText = typeof rawPlan === 'string' && rawPlan.trim() ? rawPlan.trim() : '';
         const rawCredits = usage.credit_balance;
-        const creditsText = typeof rawCredits === 'number' || typeof rawCredits === 'string' ? String(rawCredits) : '0';
+        const creditsText =
+          typeof rawCredits === 'number' || typeof rawCredits === 'string' ? String(rawCredits) : '';
         const rawOrders = orderData.count;
-        const ordersText = typeof rawOrders === 'number' || typeof rawOrders === 'string' ? String(rawOrders) : '0';
+        const ordersText =
+          typeof rawOrders === 'number' || typeof rawOrders === 'string' ? String(rawOrders) : '';
         const whiteLabel = profile.white_label as Record<string, unknown> | undefined;
         const whiteLabelProfile = whiteLabel?.profile as Record<string, unknown> | undefined;
         const rawStage = whiteLabelProfile?.stage;
-        const stage = typeof rawStage === 'string' ? rawStage : 'foundation';
+        const stage = typeof rawStage === 'string' && rawStage.trim() ? rawStage.trim() : '';
 
-        setPlan(`${planText} (${stage})`);
+        setPlan(planText && stage ? `${planText} (${stage})` : planText);
         setCredits(creditsText);
         setOrders(ordersText);
       } catch (ex) {
         if (!active) return;
+        // Clear the figures too — a stale or blank value must not read as fact.
+        setPlan('');
+        setCredits('');
+        setOrders('');
         setError(ex instanceof Error ? ex.message : 'Failed to load account overview.');
       }
     }
@@ -64,15 +75,15 @@ export default function AccountOverviewPage() {
         <div className="grid dashboard-kpis">
           <article className="card kpi-card">
             <p className="kpi-label">Current Plan</p>
-            <h3>{plan}</h3>
+            <h3>{plan || UNKNOWN}</h3>
           </article>
           <article className="card kpi-card">
             <p className="kpi-label">Wallet Credits</p>
-            <h3>{credits}</h3>
+            <h3>{credits || UNKNOWN}</h3>
           </article>
           <article className="card kpi-card">
             <p className="kpi-label">Open Orders</p>
-            <h3>{orders}</h3>
+            <h3>{orders || UNKNOWN}</h3>
           </article>
         </div>
       </section>

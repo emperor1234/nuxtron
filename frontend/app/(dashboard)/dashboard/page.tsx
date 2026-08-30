@@ -3,7 +3,7 @@ import MarketingOverview from './_components/marketing-overview';
 
 export const metadata: Metadata = {
   title: 'Marketing Overview · Nuxtron',
-  description: 'Organic traffic, keyword rankings, social engagement, conversion funnel, and AI insights at a glance.',
+  description: 'Workspace usage, SEO analyses, and module coverage from live APIs.',
 };
 
 export default function DashboardPage() {

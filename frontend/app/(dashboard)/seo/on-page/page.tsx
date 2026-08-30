@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
-import { Search, Zap, AlertTriangle, CheckCircle, RefreshCw, Copy, Target, BarChart2 } from 'lucide-react';
+import { Search, Zap, AlertTriangle, CheckCircle, RefreshCw, Copy, BarChart2 } from 'lucide-react';
 
 const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
 const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
@@ -220,65 +220,11 @@ export default function OnPagePage() {
   return (
     <main className="seo-advanced-page" style={{ minHeight: '100vh', color: 'var(--text)', padding: 24 }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <section
-          style={{
-            position: 'relative',
-            overflow: 'hidden',
-            borderRadius: 16,
-            border: '1px solid rgba(45,212,191,0.3)',
-            background:
-              'var(--card)',
-            padding: '22px 24px',
-            marginBottom: 20,
-          }}
-        >
-          <div style={{ display: 'inline-flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                color: '#99f6e4',
-                border: '1px solid rgba(94,234,212,0.45)',
-                borderRadius: 999,
-                padding: '3px 10px',
-                background: 'rgba(45,212,191,0.14)',
-              }}
-            >
-              On-Page Intelligence
-            </span>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                color: 'var(--muted)',
-                border: '1px solid rgba(148,163,184,0.3)',
-                borderRadius: 999,
-                padding: '3px 10px',
-                background: 'rgba(148,163,184,0.12)',
-              }}
-            >
-              Metadata + Structure Audit
-            </span>
-          </div>
-          <h1
-            style={{
-              margin: '0 0 4px',
-              fontSize: 30,
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              color: 'var(--text)',
-            }}
-          >
-            <Target size={26} color="#2dd4bf" />
+        <section style={{ marginBottom: 20 }}>
+          <h1 style={{ margin: '0 0 6px', fontSize: 27, fontWeight: 700, letterSpacing: '-0.6px', color: 'var(--nx-ink, var(--text))' }}>
             On-Page Optimizer
           </h1>
-          <p style={{ margin: 0, color: 'var(--muted)', fontSize: 15 }}>
+          <p style={{ margin: 0, color: 'var(--nx-muted, var(--muted))', fontSize: 14 }}>
             SEO signals, meta tags, heading structure, keyword density, and practical content recommendations.
           </p>
         </section>
@@ -289,36 +235,11 @@ export default function OnPagePage() {
 
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))' }}>
           <section style={{ ...card, marginBottom: 0 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                marginBottom: 12,
-              }}
-            >
-              <div>
-                <h2 style={{ margin: 0, fontSize: 16, color: 'var(--text)' }}>Audit Inputs</h2>
-                <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted)' }}>
-                  Configure core signals for on-page diagnosis
-                </p>
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#99f6e4',
-                  border: '1px solid rgba(94,234,212,0.35)',
-                  borderRadius: 8,
-                  padding: '4px 8px',
-                  background: 'rgba(45,212,191,0.12)',
-                }}
-              >
-                Advanced Mode
-              </div>
+            <div style={{ marginBottom: 12 }}>
+              <h2 style={{ margin: 0, fontSize: 16, color: 'var(--text)' }}>Audit Inputs</h2>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted)' }}>
+                Configure core signals for on-page diagnosis
+              </p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
               <div>

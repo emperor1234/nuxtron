@@ -10,7 +10,9 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from ..database import get_db_session
 from ..deps import AuthContext, require_auth
+from ..models import BillingCreditLedger, BillingCreditPurchase, BillingSubscription
 
 # Type alias for dependency injection
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
@@ -147,7 +149,6 @@ PLANS: list[dict[str, Any]] = [
 class SubscribeRequest(BaseModel):
     plan_id: str = Field(min_length=1, max_length=40)
     billing_cycle: str = Field(default='monthly', pattern=r'^(monthly|annual)$')
-    payment_method_id: str = Field(default='', max_length=120)
 
 
 class CreditsAddRequest(BaseModel):
@@ -157,19 +158,6 @@ class CreditsAddRequest(BaseModel):
 
 class CreditsQuoteRequest(BaseModel):
     amount: int = Field(ge=1, le=1_000_000)
-
-
-class CreditsCheckoutRequest(BaseModel):
-    amount: int = Field(ge=1, le=1_000_000)
-    payment_provider: str = Field(default='manual', max_length=40)
-    payment_method_id: str = Field(min_length=1, max_length=120)
-
-
-class CreditsConfirmRequest(BaseModel):
-    invoice_id: int = Field(ge=1)
-    payment_reference: str = Field(min_length=1, max_length=120)
-    provider_transaction_id: str = Field(min_length=1, max_length=160)
-    amount_usd: float = Field(gt=0)
 
 
 class UpgradeRequest(BaseModel):
@@ -211,6 +199,26 @@ def create_billing_router(  # NOSONAR
             })
 
     def _current_subscription(tenant_id: str) -> dict[str, Any] | None:
+        with get_db_session() as db:
+            persisted = (
+                db.query(BillingSubscription)
+                .filter(
+                    BillingSubscription.tenant_id == tenant_id,
+                    BillingSubscription.status.in_(['active', 'trialing', 'past_due']),
+                )
+                .order_by(BillingSubscription.created_at.desc())
+                .first()
+            )
+            if persisted is not None:
+                plan = next((item for item in PLANS if item['id'] == persisted.plan_id), None)
+                return {
+                    'tenant_id': tenant_id,
+                    'plan_id': persisted.plan_id,
+                    'plan_display': plan['display'] if plan else persisted.plan_id,
+                    'billing_cycle': persisted.billing_cycle,
+                    'status': persisted.status,
+                    'stripe_subscription_id': persisted.stripe_subscription_id,
+                }
         with lock:
             return next(
                 (s.copy() for s in subscriptions_memory
@@ -219,6 +227,14 @@ def create_billing_router(  # NOSONAR
             )
 
     def _credit_balance(tenant_id: str) -> int:
+        with get_db_session() as db:
+            persisted = (
+                db.query(BillingCreditLedger)
+                .filter(BillingCreditLedger.tenant_id == tenant_id)
+                .all()
+            )
+            if persisted:
+                return sum(item.amount for item in persisted)
         with lock:
             return sum(int(e.get('amount', 0)) for e in credit_ledger_memory if e.get('tenant_id') == tenant_id)
 
@@ -243,6 +259,11 @@ def create_billing_router(  # NOSONAR
         plan = next((p for p in PLANS if p['id'] == payload.plan_id), None)
         if plan is None:
             raise HTTPException(status_code=422, detail=f'Unknown plan: {payload.plan_id}')
+        if payload.plan_id != 'starter':
+            raise HTTPException(
+                status_code=409,
+                detail='Paid subscriptions must be created through Stripe Checkout.',
+            )
 
         now = datetime.now(UTC).isoformat()
         with lock:
@@ -299,28 +320,12 @@ def create_billing_router(  # NOSONAR
         auth: AuthDep,
     ) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:billing:upgrade', 10, 60)
-        plan = next((p for p in PLANS if p['id'] == payload.new_plan_id), None)
-        if plan is None:
+        if not any(p['id'] == payload.new_plan_id for p in PLANS):
             raise HTTPException(status_code=422, detail=f'Unknown plan: {payload.new_plan_id}')
-
-        now = datetime.now(UTC).isoformat()
-        with lock:
-            current = next(
-                (s for s in subscriptions_memory
-                 if s.get('tenant_id') == auth.tenant_id and s.get('status') == 'active'),
-                None,
-            )
-            if current:
-                current['plan_id'] = payload.new_plan_id
-                current['plan_display'] = plan['display']
-                current['price'] = plan['price_monthly']
-                current['updated_at'] = now
-                snapshot = current.copy()
-            else:
-                raise HTTPException(status_code=422, detail='No active subscription to upgrade.')
-
-        _audit(auth.tenant_id, f'upgraded_to_{payload.new_plan_id}')
-        return {'status': 'ok', 'tenant_id': auth.tenant_id, 'subscription': snapshot}
+        raise HTTPException(
+            status_code=409,
+            detail='Subscription changes must be completed in the Stripe customer portal.',
+        )
 
     @router.post('/billing/cancel', responses={422: {'description': 'No active subscription found'}})
     def cancel(auth: AuthDep) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
@@ -334,6 +339,11 @@ def create_billing_router(  # NOSONAR
             )
             if sub is None:
                 raise HTTPException(status_code=422, detail='No active subscription found.')
+            if sub.get('stripe_subscription_id'):
+                raise HTTPException(
+                    status_code=409,
+                    detail='Stripe subscriptions must be cancelled in the customer portal.',
+                )
             sub['status'] = 'cancelled'
             sub['cancelled_at'] = now
             sub['updated_at'] = now
@@ -366,114 +376,44 @@ def create_billing_router(  # NOSONAR
         }
 
     @router.post('/billing/credits/checkout')
-    def checkout_credits(  # pyright: ignore[reportUnusedFunction]
-        payload: CreditsCheckoutRequest,
-        auth: AuthDep,
-    ) -> dict[str, Any]:
+    def legacy_checkout_credits(auth: AuthDep) -> None:  # pyright: ignore[reportUnusedFunction]
         enforce_rate_limit(f'{auth.tenant_id}:billing:credits:checkout', 20, 60)
-        now = datetime.now(UTC).isoformat()
-        quote = _credits_quote(payload.amount)
-        with lock:
-            invoice_id = len(invoices_memory) + 1
-            payment_reference = f'credit_topup_{auth.tenant_id}_{invoice_id}'
-            invoice = {
-                'id': invoice_id,
-                'tenant_id': auth.tenant_id,
-                'subscription_id': None,
-                'amount': quote['total_usd'],
-                'currency': 'USD',
-                'status': 'pending_payment',
-                'created_at': now,
-                'invoice_type': 'credit_topup',
-                'credits_requested': payload.amount,
-                'payment_provider': payload.payment_provider,
-                'payment_method_id': payload.payment_method_id,
-                'payment_reference': payment_reference,
-                'credits_applied': False,
-            }
-            invoices_memory.append(invoice)
+        raise HTTPException(
+            status_code=409,
+            detail='Credit purchases must be created through Stripe Checkout.',
+        )
 
-        _audit(auth.tenant_id, 'credit_checkout_created')
-        return {
-            'status': 'ok',
-            'tenant_id': auth.tenant_id,
-            'invoice': invoice,
-            'quote': quote,
-        }
-
-    @router.post('/billing/credits/confirm', responses={422: {'description': 'Invoice mismatch or invalid payment confirmation'}})
-    def confirm_credits(  # pyright: ignore[reportUnusedFunction]
-        payload: CreditsConfirmRequest,
-        auth: AuthDep,
-    ) -> dict[str, Any]:
+    @router.post('/billing/credits/confirm')
+    def legacy_confirm_credits(auth: AuthDep) -> None:  # pyright: ignore[reportUnusedFunction]
         enforce_rate_limit(f'{auth.tenant_id}:billing:credits:confirm', 30, 60)
-        now = datetime.now(UTC).isoformat()
-        with lock:
-            invoice = next(
-                (
-                    item for item in invoices_memory
-                    if item.get('id') == payload.invoice_id and item.get('tenant_id') == auth.tenant_id
-                ),
-                None,
-            )
-            if invoice is None or invoice.get('invoice_type') != 'credit_topup':
-                raise HTTPException(status_code=422, detail='Unknown credit top-up invoice.')
-            if invoice.get('payment_reference') != payload.payment_reference:
-                raise HTTPException(status_code=422, detail='Payment reference mismatch.')
-            if invoice.get('credits_applied'):
-                balance = _credit_balance(auth.tenant_id)
-                return {
-                    'status': 'ok',
-                    'tenant_id': auth.tenant_id,
-                    'credits_added': 0,
-                    'new_balance': balance,
-                    'invoice': invoice,
-                }
-            expected_total = float(invoice.get('amount') or 0)
-            received_total = round(float(payload.amount_usd), 2)
-            if received_total != expected_total:
-                raise HTTPException(status_code=422, detail='Confirmed payment amount does not match invoice total.')
-
-            credits_requested = int(invoice.get('credits_requested') or 0)
-            ledger_entry: dict[str, Any] = {
-                'id': len(credit_ledger_memory) + 1,
-                'tenant_id': auth.tenant_id,
-                'amount': credits_requested,
-                'reason': 'confirmed_credit_topup',
-                'created_at': now,
-                'invoice_id': invoice['id'],
-                'payment_reference': payload.payment_reference,
-                'provider_transaction_id': payload.provider_transaction_id,
-            }
-            credit_ledger_memory.append(ledger_entry)
-            invoice['status'] = 'paid'
-            invoice['paid_at'] = now
-            invoice['provider_transaction_id'] = payload.provider_transaction_id
-            invoice['credits_applied'] = True
-            balance = _credit_balance(auth.tenant_id)
-
-        _audit(auth.tenant_id, 'credits_confirmed_after_payment')
-        return {
-            'status': 'ok',
-            'tenant_id': auth.tenant_id,
-            'credits_added': credits_requested,
-            'new_balance': balance,
-            'invoice': invoice,
-        }
+        raise HTTPException(
+            status_code=409,
+            detail='Client-side payment confirmation is disabled. Stripe webhooks apply credits.',
+        )
 
     @router.get('/billing/usage')
     def get_usage(auth: AuthDep) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
         enforce_rate_limit(f'{auth.tenant_id}:billing:usage', 120, 60)
         balance = _credit_balance(auth.tenant_id)
         sub = _current_subscription(auth.tenant_id)
+        with get_db_session() as db:
+            durable_pending = (
+                db.query(BillingCreditPurchase)
+                .filter(
+                    BillingCreditPurchase.tenant_id == auth.tenant_id,
+                    BillingCreditPurchase.status.in_(['creating_checkout', 'pending_payment']),
+                )
+                .count()
+            )
         with lock:
-            pending_credit_topups = sum(
+            memory_pending = sum(
                 1
                 for item in invoices_memory
                 if item.get('tenant_id') == auth.tenant_id
                 and item.get('invoice_type') == 'credit_topup'
                 and item.get('status') == 'pending_payment'
             )
+            pending_credit_topups = durable_pending or memory_pending
         return {
             'status': 'ok',
             'tenant_id': auth.tenant_id,
@@ -487,8 +427,29 @@ def create_billing_router(  # NOSONAR
     @router.get('/billing/invoices')
     def list_invoices(auth: AuthDep) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
         enforce_rate_limit(f'{auth.tenant_id}:billing:invoices', 120, 60)
+        with get_db_session() as db:
+            purchases = (
+                db.query(BillingCreditPurchase)
+                .filter(BillingCreditPurchase.tenant_id == auth.tenant_id)
+                .all()
+            )
         with lock:
             items = [i.copy() for i in invoices_memory if i.get('tenant_id') == auth.tenant_id]
+        known_sessions = {str(item.get('stripe_checkout_session_id') or '') for item in items}
+        for purchase in purchases:
+            if purchase.stripe_checkout_session_id in known_sessions:
+                continue
+            items.append({
+                'id': purchase.id,
+                'tenant_id': purchase.tenant_id,
+                'amount': purchase.amount_cents / 100,
+                'currency': purchase.currency.upper(),
+                'status': purchase.status,
+                'created_at': purchase.created_at.isoformat(),
+                'invoice_type': 'credit_topup',
+                'credits_requested': purchase.credits,
+                'stripe_checkout_session_id': purchase.stripe_checkout_session_id,
+            })
         items.sort(key=lambda i: str(i.get('created_at', '')), reverse=True)
         return {'status': 'ok', 'tenant_id': auth.tenant_id, 'count': len(items), 'invoices': items}
 

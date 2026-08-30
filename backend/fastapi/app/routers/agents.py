@@ -10,9 +10,9 @@ import uuid
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from backend.fastapi.app.agents.base import AgentExecution, ToolType, initialize_tools, tool_registry
-from backend.fastapi.app.agents.types import AgentType, create_agent
-from backend.fastapi.app.deps import AuthContext, require_auth
+from ..agents.base import AgentExecution, ToolType, initialize_tools, tool_registry
+from ..agents.types import AgentType, create_agent
+from ..deps import AuthContext, require_auth
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel
 

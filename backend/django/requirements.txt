@@ -4,11 +4,11 @@
 # ---------------------------------------------------------------------------
 
 # Core framework
-Django==5.2.14
+Django==5.2.16
 djangorestframework==3.16.1
 
 # Token authentication (rotating refresh tokens + blacklist)
-djangorestframework-simplejwt==5.3.1
+djangorestframework-simplejwt==5.5.1
 
 # API docs / OpenAPI schema
 drf-spectacular==0.28.0
@@ -51,7 +51,7 @@ hvac==2.3.0
 # Password hashing primitives (Argon2 + bcrypt), used via Django hashers
 argon2-cffi==25.1.0
 bcrypt==4.3.0
-cryptography==46.0.7
+cryptography==50.0.0
 
 # Error tracking / APM (no-op unless SENTRY_DSN is set — see settings.py)
 sentry-sdk[django]==2.19.2

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiGet, apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { apiGet, apiSend } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
 import { Page, PageHeader, Card, CardTitle, Button, Badge, Stat, StatGrid, Field } from '../_ui/kit';
 
 type Plan = { id: string; display: string; price_monthly: number; price_annual: number; ai_credits: number };
@@ -19,8 +20,6 @@ type Invoice = {
 
 type Quote = { credits: number; total_usd: number; unit_price_usd: number };
 
-type Checkout = { id: number; amount: number; payment_reference: string; status: string };
-
 const selectStyle: React.CSSProperties = {
   height: 38,
   width: '100%',
@@ -34,7 +33,7 @@ const selectStyle: React.CSSProperties = {
 };
 
 export default function BillingPage() {
-  const [tenantId] = useState(DEFAULT_TENANT_ID);
+  const [tenantId] = useState(resolveSessionTenant);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -42,7 +41,7 @@ export default function BillingPage() {
   const [cycle, setCycle] = useState<'monthly' | 'annual'>('monthly');
   const [credits, setCredits] = useState('1000');
   const [quote, setQuote] = useState<Quote | null>(null);
-  const [checkout, setCheckout] = useState<Checkout | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
 
@@ -70,11 +69,31 @@ export default function BillingPage() {
 
   async function subscribe() {
     try {
-      await apiSend('/billing/subscribe', 'POST', { plan_id: planId, billing_cycle: cycle, payment_method_id: 'manual-dev' }, tenantId);
-      setStatus('Subscription updated.');
-      await load();
+      setBusy(true);
+      setError('');
+      setStatus('');
+      if (planId === 'starter') {
+        await apiSend('/billing/subscribe', 'POST', { plan_id: planId, billing_cycle: cycle }, tenantId);
+        setStatus('Starter plan activated.');
+        await load();
+        return;
+      }
+      const response = await apiSend<{ checkout_url: string | null }>(
+        '/billing/stripe/checkout-session',
+        'POST',
+        {
+          plan_id: planId,
+          billing_cycle: cycle,
+          request_id: crypto.randomUUID().replaceAll('-', ''),
+        },
+        tenantId
+      );
+      if (!response.checkout_url) throw new Error('Stripe Checkout is unavailable for this plan.');
+      window.location.assign(response.checkout_url);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Subscribe failed');
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -95,45 +114,45 @@ export default function BillingPage() {
     }
   }
 
-  async function createCheckout() {
+  async function buyCredits() {
     try {
+      setBusy(true);
       setError('');
       setStatus('');
-      const response = await apiSend<{ invoice: Checkout }>(
-        '/billing/credits/checkout',
-        'POST',
-        { amount: Number.parseInt(credits, 10) || 0, payment_provider: 'manual', payment_method_id: 'billing-center-topup' },
-        tenantId
-      );
-      setCheckout(response.invoice);
-      setStatus(`Pending checkout created: ${response.invoice.payment_reference}`);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Credit checkout failed');
-    }
-  }
-
-  async function confirmCredits() {
-    if (!checkout) return;
-    try {
-      setError('');
-      setStatus('');
-      await apiSend(
-        '/billing/credits/confirm',
+      const response = await apiSend<{ checkout_url: string }>(
+        '/billing/stripe/credit-checkout-session',
         'POST',
         {
-          invoice_id: checkout.id,
-          payment_reference: checkout.payment_reference,
-          provider_transaction_id: `billing-center-${checkout.id}`,
-          amount_usd: checkout.amount,
+          credits: Number.parseInt(credits, 10) || 0,
+          request_id: crypto.randomUUID().replaceAll('-', ''),
         },
         tenantId
       );
-      setCheckout(null);
-      setStatus('Payment confirmed and credits applied.');
-      await load();
+      if (!response.checkout_url) throw new Error('Stripe Checkout is unavailable.');
+      window.location.assign(response.checkout_url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Credit confirmation failed');
+      setError(e instanceof Error ? e.message : 'Credit checkout failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openPortal() {
+    try {
+      setBusy(true);
+      setError('');
+      setStatus('');
+      const response = await apiSend<{ portal_url: string }>(
+        '/billing/stripe/portal-session',
+        'POST',
+        {},
+        tenantId
+      );
+      window.location.assign(response.portal_url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not open the billing portal');
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -169,25 +188,22 @@ export default function BillingPage() {
               <option value="monthly">Monthly</option>
               <option value="annual">Annual</option>
             </select>
-            <Button variant="primary" onClick={() => void subscribe()}>
-              Subscribe / Switch
+            <Button variant="primary" onClick={() => void subscribe()} disabled={busy}>
+              {busy ? 'Opening Stripe…' : planId === 'starter' ? 'Use Starter' : 'Continue to Stripe'}
+            </Button>
+            <Button onClick={() => void openPortal()} disabled={busy}>
+              Manage subscription
             </Button>
             <Field label="Credits" type="number" min={1} value={credits} onChange={(e) => setCredits(e.target.value)} />
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <Button onClick={() => void quoteCredits()}>Quote Credits</Button>
-              <Button onClick={() => void createCheckout()}>Create Checkout</Button>
-              <Button variant="primary" onClick={() => void confirmCredits()} disabled={!checkout}>
-                Confirm Payment
+              <Button variant="primary" onClick={() => void buyCredits()} disabled={busy}>
+                Buy with Stripe
               </Button>
             </div>
             {quote ? (
               <p style={{ fontSize: 12, color: 'var(--nx-muted)', margin: 0 }}>
                 Quote: {quote.credits} credits for ${quote.total_usd.toFixed(2)} at ${quote.unit_price_usd.toFixed(2)}/credit.
-              </p>
-            ) : null}
-            {checkout ? (
-              <p style={{ fontSize: 12, color: 'var(--nx-muted)', margin: 0 }}>
-                Pending invoice #{checkout.id} · {checkout.payment_reference} · ${checkout.amount.toFixed(2)}
               </p>
             ) : null}
           </div>

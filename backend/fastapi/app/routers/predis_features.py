@@ -10,7 +10,9 @@ import uuid
 from datetime import datetime
 from typing import TypedDict
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from ..deps import require_auth
 
 # ============ IN-MEMORY STORES ============
 _store_lock = threading.Lock()
@@ -95,7 +97,11 @@ HIGH_CTR_HOOKS_EXTENDED = {
 }
 
 # Router setup
-predis_router = APIRouter(prefix="/ai/social-studio", tags=["predis-features"])
+predis_router = APIRouter(
+    prefix="/ai/social-studio",
+    tags=["predis-features"],
+    dependencies=[Depends(require_auth)],
+)
 
 # ============ TYPE DEFINITIONS ============
 

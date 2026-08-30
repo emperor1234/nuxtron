@@ -21,6 +21,10 @@ AuthDep = Annotated[AuthContext, Depends(require_auth)]
 SAML_DISABLED_MESSAGE = 'SAML is disabled.'
 JsonObject = dict[str, object]
 
+# Claims that establish identity, scope, or lifetime. A caller may never supply
+# these through JwtIssueRequest.additional_claims; the server always owns them.
+_RESERVED_JWT_CLAIMS = frozenset({'sub', 'tenant_id', 'roles', 'iat', 'exp', 'iss', 'jti'})
+
 
 def _validate_relay_state(relay_state: str | None) -> str | None:
     """Validate relay_state to prevent open-redirect attacks.
@@ -216,7 +220,15 @@ def _register_jwt_routes(
         exp = now + payload.expires_in_seconds
         jti = hashlib.sha256(f'{auth.tenant_id}:{payload.subject}:{now}:{os.urandom(8).hex()}'.encode()).hexdigest()[:24]
 
+        # Caller-supplied extras are merged *under* the reserved claims, never
+        # over them. Merging after would let any authenticated user hand back
+        # additional_claims={'tenant_id': <victim>, 'roles': ['super_admin']}
+        # and have the server sign it, defeating the subject/role checks above.
+        extra_claims = {
+            key: value for key, value in payload.additional_claims.items() if key not in _RESERVED_JWT_CLAIMS
+        }
         claims: JsonObject = {
+            **extra_claims,
             'sub': payload.subject,
             'tenant_id': auth.tenant_id,
             'roles': payload.roles,
@@ -225,7 +237,6 @@ def _register_jwt_routes(
             'iss': 'nuxtron-fastapi',
             'jti': jti,
         }
-        claims.update(payload.additional_claims)
         token = jwt_sign_hs256(claims, secret)
 
         auth_security_memory.append({

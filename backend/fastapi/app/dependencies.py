@@ -35,12 +35,16 @@ async def get_auth(
         # Test/dev compatibility: allow known API key headers when tests run with
         # in-memory bootstrap disabled, without weakening production defaults.
         expected_api_key = os.getenv('FASTAPI_API_KEY', '').strip()
-        is_test_mode = bool(os.getenv('PYTEST_CURRENT_TEST')) or os.getenv('NUXTRON_SKIP_STARTUP_DB_INIT') == '1'
+        is_test_mode = bool(os.getenv('PYTEST_CURRENT_TEST'))
         if is_test_mode and expected_api_key and (x_api_key or '').strip() == expected_api_key and (x_tenant_id or '').strip():
             return AuthContext(tenant_id=(x_tenant_id or '').strip(), auth_mode='api_key')
 
+        # Test-only bearer shim. This MUST stay behind the pytest guard: without
+        # it, any request whose token merely starts with "test" is granted a
+        # bearer_jwt AuthContext, which is an unauthenticated bypass of every
+        # AuthDep route and unlocks the bearer-only path in /auth/jwt/issue.
         auth_value = (authorization or '').strip()
-        if auth_value.lower().startswith('bearer test_') or auth_value.lower().startswith('bearer test'):
+        if is_test_mode and auth_value.lower().startswith('bearer test'):
             return AuthContext(tenant_id='test-tenant-123', auth_mode='bearer_jwt')
         raise
 

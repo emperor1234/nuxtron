@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
-import { MENUS } from './nav';
+import { ROUTE_INDEX } from './route-index.generated';
 import styles from './shell.module.css';
 
 type PaletteItem = {
@@ -11,52 +11,105 @@ type PaletteItem = {
   group: string;
   label: string;
   href: string;
+  haystack: string;
 };
 
-function collectNavItems(): PaletteItem[] {
-  const items: PaletteItem[] = [];
-  for (const menu of Object.values(MENUS)) {
-    if (!menu) continue;
-    for (const group of menu.groups) {
-      for (const entry of group.items) {
-        items.push({
-          section: menu.title,
-          group: group.label,
-          label: entry.label,
-          href: entry.href,
-        });
-      }
-    }
+const SECTION_LABELS: Record<string, string> = {
+  dashboard: 'Home',
+  seo: 'SEO',
+  ai: 'AI',
+  traffic: 'Traffic',
+  local: 'Local',
+  content: 'Content',
+  social: 'Social',
+  studio: 'Studio',
+  apps: 'Apps',
+  settings: 'Settings',
+};
+
+/**
+ * Every route on disk, not just the ones someone remembered to add to the nav
+ * model. The generated index is the reason this is ~240 entries rather than 57.
+ */
+const ITEMS: readonly PaletteItem[] = ROUTE_INDEX.filter((entry) => !entry.internal).map((entry) => {
+  const section = SECTION_LABELS[entry.section] ?? entry.section;
+  return {
+    section,
+    group: entry.group,
+    label: entry.title,
+    href: entry.route,
+    haystack: [entry.title, entry.group, section, entry.route, ...entry.keywords].join(' ').toLowerCase(),
+  };
+});
+
+const RECENTS_KEY = 'nuxtron.nav.recents';
+const RECENTS_LIMIT = 6;
+
+function readRecents(): PaletteItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(RECENTS_KEY);
+    if (!raw) return [];
+    const hrefs: unknown = JSON.parse(raw);
+    if (!Array.isArray(hrefs)) return [];
+    return hrefs
+      .map((href) => ITEMS.find((item) => item.href === href))
+      .filter((item): item is PaletteItem => Boolean(item));
+  } catch {
+    return [];
   }
-  return items;
 }
 
-const NAV_ITEMS = collectNavItems();
+function pushRecent(href: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = readRecents().map((item) => item.href);
+    const next = [href, ...existing.filter((entry) => entry !== href)].slice(0, RECENTS_LIMIT);
+    window.localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
+  } catch {
+    // A full or blocked localStorage must never stop navigation.
+  }
+}
 
-export default function CommandPalette({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+/**
+ * Lower is better. Ranking matters far more at 240 entries than at 57: a bare
+ * `includes` filter buried "Keyword Research" under every route whose path
+ * merely contains "keyword".
+ */
+function score(item: PaletteItem, query: string): number {
+  const label = item.label.toLowerCase();
+  if (label === query) return 0;
+  if (label.startsWith(query)) return 1;
+  if (label.includes(query)) return 2;
+  // Word-boundary hit inside the label, e.g. "audit" -> "Site Audit".
+  if (new RegExp(`\\b${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(label)) return 3;
+  if (item.haystack.includes(query)) return 4;
+  return Number.POSITIVE_INFINITY;
+}
+
+export default function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [recents, setRecents] = useState<PaletteItem[]>([]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return NAV_ITEMS.slice(0, 12);
-    return NAV_ITEMS.filter((item) =>
-      `${item.section} ${item.group} ${item.label}`.toLowerCase().includes(q)
-    ).slice(0, 16);
-  }, [query]);
+    if (!q) return recents.length ? recents : ITEMS.slice(0, 8);
+    return ITEMS.map((item) => ({ item, rank: score(item, q) }))
+      .filter((entry) => entry.rank !== Number.POSITIVE_INFINITY)
+      .sort((a, b) => a.rank - b.rank || a.item.label.length - b.item.label.length)
+      .slice(0, 20)
+      .map((entry) => entry.item);
+  }, [query, recents]);
 
   useEffect(() => {
     if (!open) return;
     setQuery('');
     setActiveIndex(0);
+    setRecents(readRecents());
     const id = window.setTimeout(() => inputRef.current?.focus(), 20);
     return () => window.clearTimeout(id);
   }, [open]);
@@ -64,6 +117,11 @@ export default function CommandPalette({
   useEffect(() => {
     setActiveIndex(0);
   }, [query]);
+
+  // Keep the highlighted row visible when arrowing past the fold.
+  useEffect(() => {
+    listRef.current?.children[activeIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex]);
 
   useEffect(() => {
     if (!open) return;
@@ -77,12 +135,18 @@ export default function CommandPalette({
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  const go = useCallback(
+    (href: string) => {
+      pushRecent(href);
+      onClose();
+      router.push(href as Route);
+    },
+    [onClose, router]
+  );
+
   if (!open) return null;
 
-  const go = (href: string) => {
-    onClose();
-    router.push(href as Route);
-  };
+  const showingRecents = !query.trim() && recents.length > 0;
 
   return (
     <div className={styles.paletteRoot}>
@@ -93,16 +157,28 @@ export default function CommandPalette({
           className={styles.paletteInput}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search domains, keywords, reports…"
+          placeholder={`Search ${ITEMS.length} tools, reports and settings…`}
           aria-label="Search tools"
+          role="combobox"
+          aria-expanded
+          aria-controls="nx-palette-list"
+          aria-activedescendant={results[activeIndex] ? `nx-palette-option-${activeIndex}` : undefined}
           onKeyDown={(event) => {
             if (event.key === 'ArrowDown') {
               event.preventDefault();
-              setActiveIndex((index) => Math.min(index + 1, Math.max(results.length - 1, 0)));
+              setActiveIndex((index) => (results.length ? (index + 1) % results.length : 0));
             }
             if (event.key === 'ArrowUp') {
               event.preventDefault();
-              setActiveIndex((index) => Math.max(index - 1, 0));
+              setActiveIndex((index) => (results.length ? (index - 1 + results.length) % results.length : 0));
+            }
+            if (event.key === 'Home') {
+              event.preventDefault();
+              setActiveIndex(0);
+            }
+            if (event.key === 'End') {
+              event.preventDefault();
+              setActiveIndex(Math.max(results.length - 1, 0));
             }
             if (event.key === 'Enter' && results[activeIndex]) {
               event.preventDefault();
@@ -110,14 +186,16 @@ export default function CommandPalette({
             }
           }}
         />
-        <ul className={styles.paletteList} role="listbox">
+        {showingRecents ? <p className={styles.paletteHint}>Recent</p> : null}
+        <ul className={styles.paletteList} id="nx-palette-list" ref={listRef} role="listbox" aria-label="Results">
           {results.length === 0 ? (
-            <li className={styles.paletteEmpty}>No matching tools</li>
+            <li className={styles.paletteEmpty}>No tool matches “{query.trim()}”</li>
           ) : (
             results.map((item, index) => (
-              <li key={`${item.section}-${item.group}-${item.label}-${item.href}`}>
+              <li key={item.href}>
                 <button
                   type="button"
+                  id={`nx-palette-option-${index}`}
                   role="option"
                   aria-selected={index === activeIndex}
                   className={`${styles.paletteItem} ${index === activeIndex ? styles.paletteItemActive : ''}`}

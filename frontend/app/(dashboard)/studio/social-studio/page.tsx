@@ -13,7 +13,8 @@ import {
   type DragEvent,
   type SetStateAction,
 } from 'react';
-import { DEFAULT_TENANT_ID, apiGet, apiSend, invalidateTenantGetCache } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
+import { apiGet, apiSend, invalidateTenantGetCache } from '@/app/lib/platform-api';
 import { CanvaBridgePanel } from './canva-bridge-panel';
 import { buildCanvaBridgePresetDraft } from './canva-bridge-presets';
 
@@ -235,8 +236,8 @@ type QuoteResponse = {
   quote: { credits: number; total_usd: number; unit_price_usd: number };
 };
 
-type CheckoutResponse = {
-  invoice: { id: number; amount: number; payment_reference: string; status: string };
+type StripeCheckoutResponse = {
+  checkout_url: string;
 };
 
 type UsageResponse = {
@@ -1153,63 +1154,25 @@ async function checkoutCreditsAction(args: {
   topupCredits: string;
   setBusy: (value: BusyState) => void;
   setLastError: (value: string) => void;
-  setCheckout: (value: CheckoutResponse['invoice'] | null) => void;
   addActivity: (label: string, tone: ActivityItem['tone']) => void;
-  loadWorkspace: () => Promise<void>;
 }) {
-  const { tenantId, topupCredits, setBusy, setLastError, setCheckout, addActivity, loadWorkspace } = args;
+  const { tenantId, topupCredits, setBusy, setLastError, addActivity } = args;
   setBusy('topup');
   setLastError('');
   try {
-    const response = await apiSend<CheckoutResponse>(
-      '/billing/credits/checkout',
+    const response = await apiSend<StripeCheckoutResponse>(
+      '/billing/stripe/credit-checkout-session',
       'POST',
       {
-        amount: Number.parseInt(topupCredits, 10) || 0,
-        payment_provider: 'manual',
-        payment_method_id: 'studio-social-topup',
+        credits: Number.parseInt(topupCredits, 10) || 0,
+        request_id: crypto.randomUUID().replaceAll('-', ''),
       },
       tenantId
     );
-    setCheckout(response.invoice);
-    addActivity(`Pending payment created: ${response.invoice.payment_reference}.`, 'warning');
-    await loadWorkspace();
+    addActivity('Opening secure Stripe Checkout.', 'info');
+    window.location.assign(response.checkout_url);
   } catch (error) {
     setLastError(error instanceof Error ? error.message : 'Could not create credit checkout.');
-  } finally {
-    setBusy('idle');
-  }
-}
-
-async function confirmCreditsAction(args: {
-  tenantId: string;
-  checkout: CheckoutResponse['invoice'];
-  setBusy: (value: BusyState) => void;
-  setLastError: (value: string) => void;
-  setCheckout: (value: CheckoutResponse['invoice'] | null) => void;
-  addActivity: (label: string, tone: ActivityItem['tone']) => void;
-  loadWorkspace: () => Promise<void>;
-}) {
-  const { tenantId, checkout, setBusy, setLastError, setCheckout, addActivity, loadWorkspace } = args;
-  setBusy('topup');
-  setLastError('');
-  try {
-    await apiSend(
-      '/billing/credits/confirm',
-      'POST',
-      {
-        invoice_id: checkout.id,
-        payment_reference: checkout.payment_reference,
-        provider_transaction_id: `manual-${checkout.id}`,
-        amount_usd: checkout.amount,
-      },
-      tenantId
-    );
-    setCheckout(null);
-    addActivity('Payment confirmed and credits applied.', 'success');
-    await loadWorkspace();
-  } catch (error) {
-    setLastError(error instanceof Error ? error.message : 'Credit confirmation failed.');
   } finally {
     setBusy('idle');
   }
@@ -1439,8 +1402,7 @@ export default function SocialStudioPage() {
   const generateButtonRef = useRef<HTMLButtonElement | null>(null);
   const quoteButtonRef = useRef<HTMLButtonElement | null>(null);
   const checkoutButtonRef = useRef<HTMLButtonElement | null>(null);
-  const confirmButtonRef = useRef<HTMLButtonElement | null>(null);
-  const [tenantId] = useState(DEFAULT_TENANT_ID);
+  const [tenantId] = useState(resolveSessionTenant);
   const [selectedCategoryId, setSelectedCategoryId] = useState(STUDIO_CATEGORIES[0].id);
   const [prompt, setPrompt] = useState(
     'Build a flagship launch sequence with crisp hooks, premium visuals, and reusable outputs.'
@@ -1470,7 +1432,6 @@ export default function SocialStudioPage() {
   const [lastError, setLastError] = useState('');
   const [topupCredits, setTopupCredits] = useState('500');
   const [quote, setQuote] = useState<QuoteResponse['quote'] | null>(null);
-  const [checkout, setCheckout] = useState<CheckoutResponse['invoice'] | null>(null);
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
   const [isPageReady, setIsPageReady] = useState(false);
   const [hoveredModuleId, setHoveredModuleId] = useState<string | null>(null);
@@ -1829,9 +1790,6 @@ export default function SocialStudioPage() {
         return true;
       case 'k':
         checkoutButtonRef.current?.click();
-        return true;
-      case 'c':
-        confirmButtonRef.current?.click();
         return true;
       case 'd':
         setDensity((previous) => (previous === 'comfortable' ? 'compact' : 'comfortable'));
@@ -2955,17 +2913,10 @@ export default function SocialStudioPage() {
       },
       {
         id: 'checkout',
-        title: 'Create credit checkout',
+        title: 'Buy credits with Stripe',
         shortcut: 'K',
         disabled: busy !== 'idle',
         run: () => checkoutButtonRef.current?.click(),
-      },
-      {
-        id: 'confirm',
-        title: 'Confirm payment',
-        shortcut: 'C',
-        disabled: busy !== 'idle' || !checkout,
-        run: () => confirmButtonRef.current?.click(),
       },
       {
         id: 'density',
@@ -2975,7 +2926,7 @@ export default function SocialStudioPage() {
         run: () => setDensity((previous) => (previous === 'comfortable' ? 'compact' : 'comfortable')),
       },
     ],
-    [busy, checkout, density, prompt]
+    [busy, density, prompt]
   );
 
   const filteredCommandActions = useMemo(() => {
@@ -3174,15 +3125,8 @@ export default function SocialStudioPage() {
       topupCredits,
       setBusy,
       setLastError,
-      setCheckout,
       addActivity,
-      loadWorkspace,
     });
-  }
-
-  function confirmCredits() {
-    if (!checkout) return;
-    void confirmCreditsAction({ tenantId, checkout, setBusy, setLastError, setCheckout, addActivity, loadWorkspace });
   }
 
   async function disconnectSocialAccount(account: SocialAccount) {
@@ -5459,17 +5403,7 @@ export default function SocialStudioPage() {
                   className="command-btn command-btn-muted"
                   aria-keyshortcuts="K"
                 >
-                  Create checkout (K)
-                </button>
-                <button
-                  ref={confirmButtonRef}
-                  type="button"
-                  onClick={confirmCredits}
-                  disabled={busy !== 'idle' || !checkout}
-                  className="command-btn command-btn-success"
-                  aria-keyshortcuts="C"
-                >
-                  Confirm payment (C)
+                  Buy credits (K)
                 </button>
               </div>
               <div className="predis-toggle-groups">
@@ -5614,7 +5548,7 @@ export default function SocialStudioPage() {
                 </section>
               </div>
               <p className="shortcut-hint">
-                Shortcuts: P preview, G generate, Q quote, K checkout, C confirm, D density toggle.
+                Shortcuts: P preview, G generate, Q quote, K buy credits, D density toggle.
               </p>
               {busy === 'generating' ? (
                 <div className="progress-wrap" role="status" aria-live="polite">
@@ -5693,12 +5627,12 @@ export default function SocialStudioPage() {
 
             <section className="card block">
               <h3>Credit command center</h3>
-              <p className="muted">Quote, checkout, and confirm are required before credits are applied.</p>
+              <p className="muted">Review the quote, then complete payment securely in Stripe Checkout.</p>
               <input
                 value={topupCredits}
                 onChange={(event) => setTopupCredits(event.target.value)}
                 type="number"
-                min={1}
+                min={100}
                 style={inputStyle}
               />
               <div className="command-grid compact-grid">
@@ -5716,26 +5650,13 @@ export default function SocialStudioPage() {
                   disabled={busy !== 'idle'}
                   className="command-btn command-btn-muted"
                 >
-                  Create checkout
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmCredits}
-                  disabled={busy !== 'idle' || !checkout}
-                  className="command-btn command-btn-success"
-                >
-                  Confirm payment
+                  Buy with Stripe
                 </button>
               </div>
               {quote ? (
                 <p className="small-text">
                   Quote: {quote.credits} credits for ${quote.total_usd.toFixed(2)} at ${quote.unit_price_usd.toFixed(2)}
                   /credit.
-                </p>
-              ) : null}
-              {checkout ? (
-                <p className="small-text">
-                  Pending invoice #{checkout.id} • {checkout.payment_reference} • ${checkout.amount.toFixed(2)}
                 </p>
               ) : null}
             </section>

@@ -1,0 +1,136 @@
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.navLink {
+  padding: 7px 11px;
+  border: 1px solid var(--nx-border);
+  border-radius: 999px;
+  color: var(--nx-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.navLink:hover,
+.navLinkActive {
+  border-color: var(--nx-brand);
+  color: var(--nx-brand);
+  background: var(--nx-brand-soft);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stack {
+  display: grid;
+  gap: 14px;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--nx-gap);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  color: var(--nx-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  border: 1px solid var(--nx-border);
+  border-radius: 10px;
+  background: var(--nx-card);
+  color: var(--nx-ink);
+  font: inherit;
+  font-weight: 400;
+  padding: 9px 11px;
+}
+
+.field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--nx-border-soft);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.rowMain {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rowTitle {
+  color: var(--nx-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.muted {
+  margin: 0;
+  color: var(--nx-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.notice {
+  margin: 0;
+  color: var(--nx-muted);
+  font-size: 13px;
+}
+
+.error {
+  margin: 0;
+  color: var(--nx-red);
+  font-size: 13px;
+}
+
+.summary {
+  margin: 0;
+  color: var(--nx-ink);
+  line-height: 1.65;
+}
+
+.actions {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--nx-ink);
+  line-height: 1.7;
+}

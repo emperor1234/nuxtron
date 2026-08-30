@@ -1,23 +1,85 @@
 'use client';
 
 import AccountNav from '@/app/components/account-nav';
-import { useState } from 'react';
-import { apiPost, resolveSessionTenant } from '@/app/lib/api-client';
+import { useEffect, useState } from 'react';
+import { apiGet, apiPost, resolveSessionTenant } from '@/app/lib/api-client';
+import { readSessionUser } from '@/app/lib/session-user';
+
+type Contact = {
+  email?: string;
+  title?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  tags?: string[];
+  properties?: Record<string, unknown>;
+};
+
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
 
 export default function AccountProfilePage() {
   const [tenantId] = useState(resolveSessionTenant);
-  const [title, setTitle] = useState('Director');
-  const [firstName, setFirstName] = useState('Alex');
-  const [lastName, setLastName] = useState('Morgan');
-  const [email, setEmail] = useState('alex@company.com');
-  const [mobile, setMobile] = useState('+44 7700 900000');
-  const [addressLine1, setAddressLine1] = useState('221B Baker Street');
-  const [addressLine2, setAddressLine2] = useState('Marylebone');
-  const [city, setCity] = useState('London');
-  const [postcode, setPostcode] = useState('NW1 6XE');
+  const [title, setTitle] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [city, setCity] = useState('');
+  const [postcode, setPostcode] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const session = readSessionUser();
+    if (session?.email) setEmail(session.email);
+    if (session?.name) {
+      const parts = session.name.split(/\s+/);
+      if (parts[0]) setFirstName(parts[0]);
+      if (parts.length > 1) setLastName(parts.slice(1).join(' '));
+    }
+
+    let active = true;
+    async function load() {
+      setLoading(true);
+      setError('');
+      try {
+        const query = session?.email ? `?q=${encodeURIComponent(session.email)}&limit=20` : '?limit=40';
+        const data = await apiGet(`/crm/contacts${query}`, tenantId);
+        if (!active) return;
+        const contacts = Array.isArray(data.contacts) ? (data.contacts as Contact[]) : [];
+        const tagged = contacts.find((item) => Array.isArray(item.tags) && item.tags.includes('account-profile'));
+        const matched =
+          tagged ||
+          contacts.find((item) => session?.email && item.email?.toLowerCase() === session.email.toLowerCase());
+        if (!matched) return;
+
+        setTitle(asString(matched.title));
+        if (matched.first_name) setFirstName(asString(matched.first_name));
+        if (matched.last_name) setLastName(asString(matched.last_name));
+        setEmail(asString(matched.email) || session?.email || '');
+        setMobile(asString(matched.phone));
+        const props = matched.properties || {};
+        setAddressLine1(asString(props.address_line_1));
+        setAddressLine2(asString(props.address_line_2));
+        setCity(asString(props.city));
+        setPostcode(asString(props.postcode));
+      } catch (ex) {
+        if (active) setError(ex instanceof Error ? ex.message : 'Could not load profile.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [tenantId]);
 
   async function saveProfile() {
     setSaving(true);
@@ -57,6 +119,7 @@ export default function AccountProfilePage() {
       <section className="card">
         <h1>Personal Details</h1>
         <p className="muted">Keep your profile information current for billing and compliance.</p>
+        {loading ? <p className="muted">Loading profile…</p> : null}
         <form className="auth-form">
           <label>
             <span>Tenant ID</span>
@@ -102,7 +165,7 @@ export default function AccountProfilePage() {
           </div>
           {error ? <p className="auth-errors">{error}</p> : null}
           {saved ? <p className="muted">Profile saved.</p> : null}
-          <button type="button" onClick={saveProfile} disabled={saving}>
+          <button type="button" onClick={() => void saveProfile()} disabled={saving}>
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>

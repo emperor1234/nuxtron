@@ -162,19 +162,18 @@ class TestBilling:
             headers=H,
             json={"amount": 500, "payment_provider": "manual", "payment_method_id": "pm_credit_test"},
         )
-        assert checkout.status_code == 200
-        invoice = checkout.json()["invoice"]
+        assert checkout.status_code == 409
         confirm = client.post(
             "/billing/credits/confirm",
             headers=H,
             json={
-                "invoice_id": invoice["id"],
-                "payment_reference": invoice["payment_reference"],
+                "invoice_id": 1,
+                "payment_reference": "untrusted-client-reference",
                 "provider_transaction_id": "txn_credit_test",
-                "amount_usd": invoice["amount"],
+                "amount_usd": 0.01,
             },
         )
-        assert confirm.status_code == 200
+        assert confirm.status_code == 409
 
     def test_get_invoices(self, client: TestClient) -> None:
         r = client.get("/billing/invoices", headers=H)

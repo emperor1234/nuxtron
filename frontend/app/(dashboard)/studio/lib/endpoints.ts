@@ -446,30 +446,13 @@ export const STUDIO_ENDPOINTS: EndpointDemoConfig[] = [
   {
     id: 'stripe-checkout',
     category: 'Payments',
-    title: 'Stripe — Create Checkout',
+    title: 'Stripe — Buy Credits',
     method: 'POST',
-    path: '/payments/stripe/create-checkout',
+    path: '/billing/stripe/credit-checkout-session',
     outputKey: 'stripeCheckout',
     buildPayload: () => ({
-      price_id: 'price_studio_test',
-      success_url: 'http://localhost:8001/stripe-success',
-      cancel_url: 'http://localhost:8001/stripe-cancel',
-      quantity: 1,
-      metadata: { source: 'studio' },
-    }),
-  },
-
-  {
-    id: 'stripe-webhook',
-    category: 'Payments',
-    title: 'Stripe — Process Webhook',
-    method: 'POST',
-    path: '/payments/stripe/process-webhook',
-    outputKey: 'stripeWebhook',
-    buildPayload: () => ({
-      event_type: 'checkout.session.completed',
-      event_id: `evt_studio_${Date.now()}`,
-      data: { amount: 4900, currency: 'usd' },
+      credits: 1000,
+      request_id: crypto.randomUUID().replaceAll('-', ''),
     }),
   },
 
@@ -853,14 +836,14 @@ export const STUDIO_ENDPOINTS: EndpointDemoConfig[] = [
   {
     id: 'billing-subscribe',
     category: 'Billing',
-    title: 'Billing — Subscribe',
+    title: 'Billing — Start Stripe Checkout',
     method: 'POST',
-    path: '/billing/subscribe',
+    path: '/billing/stripe/checkout-session',
     outputKey: 'billingSubscribe',
     buildPayload: () => ({
       plan_id: 'studio',
       billing_cycle: 'monthly',
-      payment_method_token: 'tok_demo',
+      request_id: crypto.randomUUID().replaceAll('-', ''),
     }),
   },
 

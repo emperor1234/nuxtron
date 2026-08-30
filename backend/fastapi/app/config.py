@@ -13,6 +13,7 @@ def required_security_vars_present() -> list[str]:
         'FASTAPI_API_KEY',
         'PASSWORD_PEPPER',
         'APP_ENC_KEY',
+        'JWT_SIGNING_KEY',
     ]
     missing: list[str] = []
     for name in required:

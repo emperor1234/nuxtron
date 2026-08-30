@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Mail } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { apiPost, DEFAULT_TENANT_ID } from '@/app/lib/api-client';
 
 export default function ContactPage() {
@@ -43,7 +44,12 @@ export default function ContactPage() {
   return (
     <section className="mk-section mk-pt-hero">
       <div className="mk-container grid max-w-4xl grid-cols-1 gap-12 md:grid-cols-2">
-        <div>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        >
           <span className="mk-eyebrow mb-5">Contact</span>
           <h1 className="text-4xl font-semibold tracking-tight text-[#181818] sm:text-5xl">Talk to our team</h1>
           <p className="mt-5 text-lg leading-relaxed text-[#46484d]">
@@ -54,9 +60,17 @@ export default function ContactPage() {
             <Mail size={18} className="text-[#466cf3]" aria-hidden="true" />
             <span className="text-sm">hello@nuxtron.app</span>
           </div>
-        </div>
+        </motion.div>
 
-        <form onSubmit={handleSubmit} className="mk-card space-y-5 p-8" noValidate>
+        <motion.form
+          onSubmit={handleSubmit}
+          className="mk-card space-y-5 p-8"
+          noValidate
+          initial={{ opacity: 0, x: 20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+        >
           <div>
             <label htmlFor="contact-name" className="mb-1.5 block text-sm font-medium text-[#46484d]">
               Name
@@ -108,11 +122,11 @@ export default function ContactPage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg bg-[#181818] px-4 py-3 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-[#181818] px-4 py-3 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
           >
             {busy ? 'Sending…' : 'Send message'}
           </button>
-        </form>
+        </motion.form>
       </div>
     </section>
   );

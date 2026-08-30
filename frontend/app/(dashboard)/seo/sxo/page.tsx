@@ -100,52 +100,13 @@ export default function SXOPage() {
   return (
     <main className="min-h-screen p-4 md:p-6 lg:p-8 text-[var(--text)]">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="relative overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-6 md:p-8 backdrop-blur-xl">
-          <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-[var(--brand)]/20 blur-3xl" />
-          <div className="pointer-events-none absolute -left-24 -bottom-20 h-60 w-60 rounded-full bg-emerald-500/15 blur-3xl" />
-          <div className="relative grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div>
-              <div className="mb-4 flex flex-wrap gap-2">
-                <span className="rounded-full border border-[var(--line)] bg-[var(--brand)]/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
-                  SXO Engine
-                </span>
-                <span className="rounded-full border border-[var(--line)] bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  SEO + UX Signal Fusion
-                </span>
-              </div>
-              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-[var(--text)]">
-                SXO - Search Experience Optimization
-              </h1>
-              <p className="mt-3 max-w-3xl text-sm md:text-base text-[var(--muted)] leading-relaxed">
-                Align rankings with real experience outcomes. Optimize dwell time, CTR quality, and behavioral
-                engagement to reduce pogo-sticking and increase conversion readiness.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:min-w-[260px]">
-              <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2">
-                <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Primary URL</div>
-                <div className="mt-1 truncate text-sm font-semibold text-cyan-100">{url || 'Not set'}</div>
-              </div>
-              <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2">
-                <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Keyword Scope</div>
-                <div className="mt-1 text-sm font-semibold text-emerald-100">
-                  {keywords
-                    .split(',')
-                    .map((k) => k.trim())
-                    .filter(Boolean).length || 0}{' '}
-                  tracked
-                </div>
-              </div>
-              <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2">
-                <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Method</div>
-                <div className="mt-1 text-sm font-semibold text-[var(--text)]">Behavior + Intent</div>
-              </div>
-              <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2">
-                <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Output</div>
-                <div className="mt-1 text-sm font-semibold text-[var(--text)]">Improvement Roadmap</div>
-              </div>
-            </div>
-          </div>
+        <section>
+          <h1 className="text-[27px] font-semibold tracking-tight text-[var(--nx-ink,var(--text))]">
+            SXO - Search Experience Optimization
+          </h1>
+          <p className="mt-2 max-w-3xl text-sm text-[var(--nx-muted,var(--muted))] leading-relaxed">
+            Align rankings with real experience outcomes. Optimize dwell time, CTR quality, and behavioral engagement.
+          </p>
         </section>
 
         {error && (
@@ -159,14 +120,9 @@ export default function SXOPage() {
             onSubmit={handleSubmit}
             className="rounded-2xl border border-[var(--line)] bg-white p-5 md:p-6 backdrop-blur-xl space-y-4"
           >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-base font-semibold text-[var(--text)]">Analysis Inputs</h2>
-                <p className="mt-0.5 text-xs text-[var(--muted)]">Define intent, URL target, and content context</p>
-              </div>
-              <div className="rounded-lg border border-[var(--line)] bg-[var(--brand)]/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-200">
-                Advanced Mode
-              </div>
+            <div>
+              <h2 className="text-base font-semibold text-[var(--text)]">Analysis Inputs</h2>
+              <p className="mt-0.5 text-xs text-[var(--muted)]">Define intent, URL target, and content context</p>
             </div>
 
             <div>

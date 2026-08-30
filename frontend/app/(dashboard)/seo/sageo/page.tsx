@@ -300,21 +300,6 @@ export default function SageoPage() {
                   Configure search-intent and source strategy inputs
                 </p>
               </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: 'var(--brand)',
-                  border: '1px solid rgba(125,211,252,0.35)',
-                  borderRadius: 8,
-                  padding: '4px 8px',
-                  background: 'rgba(34,211,238,0.12)',
-                }}
-              >
-                Advanced Mode
-              </div>
             </div>
 
             <label htmlFor="sageo-topic" style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>

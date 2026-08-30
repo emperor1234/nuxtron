@@ -25,7 +25,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from ..deps import require_auth
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -326,7 +328,7 @@ def _tool_status(spec: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def create_tool_integrations_router() -> APIRouter:
-    router = APIRouter(prefix="/integrations", tags=["integrations"])
+    router = APIRouter(prefix="/integrations", tags=["integrations"], dependencies=[Depends(require_auth)])
 
     @router.get("/tools")
     async def list_tools() -> dict[str, Any]:
@@ -347,7 +349,7 @@ def create_tool_integrations_router() -> APIRouter:
             raise HTTPException(status_code=404, detail=f"Unknown tool: {tool_key}")
         return _tool_status(spec)
 
-    @router.put("/integrations/tools/{tool_key}")
+    @router.put("/tools/{tool_key}")
     async def update_tool_config(tool_key: str, body: ToolConfigRequest) -> dict[str, Any]:
         """
         Persist tool config — API keys are written to the runtime environment

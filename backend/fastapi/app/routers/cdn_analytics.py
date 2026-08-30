@@ -8,15 +8,40 @@ Endpoints for multi-CDN traffic analytics and cost optimization:
 - Provider health & performance tracking
 """
 
-from typing import Any
+from typing import Annotated, Any
 
-from backend.fastapi.app.cdn_analytics.core import (
+from ..cdn_analytics.core import (
     CDNAnalyticsCollector,
     CDNProvider,
 )
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 
-router = APIRouter()
+from ..deps import AuthContext, require_auth
+
+# Auth is declared on the router, not per-route: previously only
+# /api/v1/cdn/register carried it, leaving the other ten endpoints — including
+# the state-changing /failover — open to unauthenticated callers.
+router = APIRouter(dependencies=[Depends(require_auth)])
+
+
+def _tenant_from_auth(auth: Annotated[AuthContext, Depends(require_auth)]) -> str:
+    """Tenant scope taken from the verified token, never from client input.
+
+    These routes previously declared `tenant_id: str = Query(..., alias=...)`.
+    Despite the header-style alias, `Query` reads the query string, so the
+    caller chose their own tenant on every request.
+    """
+    return auth.tenant_id
+
+
+
+class CDNProviderRegistration(BaseModel):
+    """Provider credentials, accepted in the body so they stay out of logs."""
+
+    provider: str = Field(..., description='vercel, cloudfront, fastly, netlify, akamai, google-cdn, cloudflare, stackpath, imperva')
+    api_key: str = Field(..., min_length=1)
+    api_token: str | None = None
 
 # Singleton collector (TODO: move to database)
 cdn_collector = CDNAnalyticsCollector()  # type: ignore[no-untyped-call]
@@ -24,31 +49,27 @@ cdn_collector = CDNAnalyticsCollector()  # type: ignore[no-untyped-call]
 
 @router.post("/api/v1/cdn/register")
 async def register_cdn_provider(
-    provider: str,
-    api_key: str,
-    api_token: str | None = None,
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    registration: CDNProviderRegistration = Body(...),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict[str, str]:
     """
     Register a CDN provider for analytics collection
-    
-    Args:
-        provider: One of vercel, cloudfront, fastly, netlify, akamai, google-cdn, cloudflare, stackpath, imperva
-        api_key: API key for the provider
-        api_token: Optional API token
-        tenant_id: Multi-tenant identifier
-    
+
+    Credentials arrive in the request body. They were previously query
+    parameters, which wrote third-party CDN keys into access logs, proxy
+    logs, and browser history.
+
     Returns:
         Registration confirmation with provider name
     """
     try:
-        provider_enum = CDNProvider(provider.lower())
-        await cdn_collector.add_provider(provider_enum, api_key, api_token)
+        provider_enum = CDNProvider(registration.provider.lower())
+        await cdn_collector.add_provider(provider_enum, registration.api_key, registration.api_token)
         return {
             "status": "registered",
-            "provider": provider,
+            "provider": registration.provider,
             "tenant_id": tenant_id,
-            "message": f"Successfully registered {provider} CDN provider"
+            "message": f"Successfully registered {registration.provider} CDN provider"
         }
     except ValueError:
         raise HTTPException(
@@ -60,7 +81,7 @@ async def register_cdn_provider(
 @router.post("/api/v1/cdn/sync")
 async def sync_all_providers(
     hours: int = Query(24, ge=1, le=2160),
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict[str, int]:
     """
     Sync metrics from all registered CDN providers
@@ -82,7 +103,7 @@ async def sync_all_providers(
 @router.get("/api/v1/cdn/dashboard")
 async def get_cdn_dashboard(
     days: int = Query(7, ge=1, le=90),
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict:
     """
     Get unified CDN dashboard with aggregated metrics
@@ -148,7 +169,7 @@ async def get_cdn_dashboard(
 async def get_provider_analytics(
     provider: str,
     days: int = Query(7, ge=1, le=90),
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict:
     """
     Get detailed analytics for a specific CDN provider
@@ -202,7 +223,7 @@ async def get_provider_analytics(
 
 @router.get("/api/v1/cdn/comparison")
 async def compare_cdns(
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict:
     """
     Compare all CDN providers side-by-side
@@ -228,7 +249,7 @@ async def compare_cdns(
 
 @router.get("/api/v1/cdn/costs")
 async def get_cost_analysis(
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict:
     """
     Get monthly cost estimates for each provider
@@ -261,7 +282,7 @@ async def get_cost_analysis(
 async def get_provider_metrics(
     provider: str,
     hours: int = Query(24, ge=1, le=2160),
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict:
     """
     Get raw metrics for a specific provider
@@ -307,7 +328,7 @@ async def get_provider_metrics(
 
 @router.get("/api/v1/cdn/health")
 async def get_cdn_health(
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict:
     """
     Get health status of all CDN providers
@@ -342,7 +363,7 @@ async def get_cdn_health(
 
 @router.get("/api/v1/cdn/recommendations")
 async def get_optimization_recommendations(
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict:
     """
     Get AI-powered optimization recommendations
@@ -416,7 +437,7 @@ async def get_optimization_recommendations(
 async def setup_failover(
     primary: str,
     secondary: str,
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict:
     """
     Setup automatic failover between CDN providers
@@ -445,7 +466,7 @@ async def setup_failover(
 
 @router.get("/api/v1/cdn/load-distribution")
 async def get_load_distribution(
-    tenant_id: str = Query(..., alias="X-Tenant-Id"),
+    tenant_id: str = Depends(_tenant_from_auth),
 ) -> dict:
     """
     Get current load distribution across providers

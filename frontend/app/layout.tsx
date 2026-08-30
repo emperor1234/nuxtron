@@ -3,11 +3,11 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { headers } from 'next/headers';
 import Script from 'next/script';
-import { Partytown } from '@builder.io/partytown/react';
 import { Manrope, Sora, Inter } from 'next/font/google';
 import { GeistSans } from 'geist/font/sans';
 import IraChat from './components/ira-chat';
 import PwaBootstrap from './components/pwa-bootstrap';
+import { PartytownWrapper } from './components/PartytownWrapper';
 
 const bodyFont = Manrope({
   subsets: ['latin'],
@@ -102,7 +102,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSON_LD) }} />
         {children}
 
-        <Partytown forward={['clarity']} nonce={nonce} />
+        <PartytownWrapper forward={['clarity']} nonce={nonce} />
         <PwaBootstrap />
         {clarityId ? (
           <Script id="ms-clarity" type="text/partytown" nonce={nonce}>

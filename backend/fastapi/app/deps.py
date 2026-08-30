@@ -51,6 +51,10 @@ class JwtClaims(TypedDict, total=False):
     exp: int
     tenant_id: str
     sub: str  # user/subject identifier issued at /auth/jwt/issue
+    roles: list[str]
+    jti: str
+    iat: int
+    iss: str
 
 
 class ApiUsageAuditRecord(TypedDict):
@@ -75,28 +79,9 @@ def _b64url_decode(raw: str) -> bytes:
 
 
 def _jwt_verify_hs256(token: str, secret: str) -> tuple[bool, JwtClaims | None, str | None]:
-    try:
-        parts = token.split('.')
-        if len(parts) != 3:
-            return False, None, 'Invalid token format.'
+    from .auth_utils import jwt_verify_hs256
 
-        head, body, sig = parts
-        signing_input = f'{head}.{body}'.encode('ascii')
-        expected_sig = hmac.new(secret.encode('utf-8'), signing_input, hashlib.sha256).digest()
-        actual_sig = _b64url_decode(sig)
-        if not hmac.compare_digest(expected_sig, actual_sig):
-            return False, None, 'Invalid token signature.'
-
-        payload = json.loads(_b64url_decode(body).decode('utf-8'))
-        if not isinstance(payload, dict):
-            return False, None, 'Invalid token payload.'
-        claims = cast(JwtClaims, payload)
-        exp = int(claims.get('exp', 0) or 0)
-        if exp and time.time() > exp:
-            return False, claims, 'Token expired.'
-        return True, claims, None
-    except Exception as ex:
-        return False, None, f'Token verification failed: {ex}'
+    return jwt_verify_hs256(token, secret)
 
 
 def _emit_siem_telemetry(
