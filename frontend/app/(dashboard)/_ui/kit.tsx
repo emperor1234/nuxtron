@@ -1,4 +1,4 @@
-import type { ReactNode, ButtonHTMLAttributes, InputHTMLAttributes } from 'react';
+import type { ReactNode, ButtonHTMLAttributes, InputHTMLAttributes, SelectHTMLAttributes } from 'react';
 import styles from './kit.module.css';
 
 /**
@@ -36,6 +36,27 @@ export function PageHeader({
       </div>
       {actions ? <div className={styles.headerActions}>{actions}</div> : null}
     </header>
+  );
+}
+
+export function FieldSelect({
+  label,
+  id,
+  children,
+  className,
+  ...rest
+}: SelectHTMLAttributes<HTMLSelectElement> & { label?: string }) {
+  return (
+    <div className={styles.field}>
+      {label ? (
+        <label className={styles.fieldLabel} htmlFor={id}>
+          {label}
+        </label>
+      ) : null}
+      <select id={id} className={cx(styles.input, className)} {...rest}>
+        {children}
+      </select>
+    </div>
   );
 }
 

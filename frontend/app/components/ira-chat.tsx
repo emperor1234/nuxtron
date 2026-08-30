@@ -41,8 +41,7 @@ const EMPTY_PLAYBOOK_SUMMARY: IraPlaybookSummary = {
   leadQuestion: '',
 };
 
-const IRA_SYSTEM_HINT =
-  'I am IRA, your autonomous growth operations agent. I route intent, score risk, retrieve knowledge, and return a guarded action plan for Social, Ads, SEO, billing, and support workflows.';
+const IRA_SYSTEM_HINT = 'I can plan SEO, social, ads, billing, or support work and return a guarded next step.';
 
 const QUICK_PROMPTS = ['Run an SEO audit', 'Build a social plan', 'Optimise ad spend', 'Check billing risk'];
 
@@ -235,8 +234,14 @@ function IraProviderRouteSection({
   onProviderPreferenceChange: (value: IraChatProviderPreference) => void;
   onCustomProviderChange: (value: string) => void;
 }>) {
+  const missingCount = unavailableRouteBadges.length;
   return (
-    <div style={{ display: 'grid', gap: 8, marginBottom: 8 }}>
+    <details className="ira-settings">
+      <summary>
+        Route and playbook
+        {missingCount ? ` · ${missingCount} provider${missingCount === 1 ? '' : 's'} need setup` : ''}
+      </summary>
+      <div className="ira-settings-body">
       <label style={{ display: 'grid', gap: 4, fontSize: 12 }}>
         <span>Provider route</span>
         <select
@@ -266,7 +271,7 @@ function IraProviderRouteSection({
         />
       ) : null}
       <div style={{ fontSize: 11, opacity: 0.72 }}>
-        Auto keeps today&apos;s internal route live while leaving OpenAI and Claude wiring ready to add later.
+        Auto uses the internal route until OpenAI or Claude is configured.
       </div>
       <div style={{ fontSize: 11, opacity: 0.72 }}>
         OpenAI: {providerReadiness.openai?.configured ? 'ready' : 'not configured'} | Claude:{' '}
@@ -301,8 +306,9 @@ function IraProviderRouteSection({
           ))}
         </div>
       ) : null}
-      {unavailableRouteReason ? <div style={{ fontSize: 11, color: '#f59e0b' }}>{unavailableRouteReason}</div> : null}
-    </div>
+      {unavailableRouteReason ? <div style={{ fontSize: 11, color: '#b45309' }}>{unavailableRouteReason}</div> : null}
+      </div>
+    </details>
   );
 }
 
@@ -452,18 +458,20 @@ export default function IraChat() {
                 </div>
               </div>
             </div>
-            <button className="ira-close-btn" onClick={() => setOpen(false)} aria-label="Close IRA assistant">
-              x
-            </button>
-            <button
-              className="ira-close-btn"
-              onClick={() => setStatusRefreshToken((current) => current + 1)}
-              aria-label="Refresh IRA status"
-              disabled={backendStatus === 'checking'}
-              title="Refresh status and playbook"
-            >
-              R
-            </button>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                className="ira-close-btn"
+                onClick={() => setStatusRefreshToken((current) => current + 1)}
+                aria-label="Refresh IRA status"
+                disabled={backendStatus === 'checking'}
+                title="Refresh status and playbook"
+              >
+                Refresh
+              </button>
+              <button className="ira-close-btn" onClick={() => setOpen(false)} aria-label="Close IRA assistant">
+                Close
+              </button>
+            </div>
           </header>
           <div className="ira-messages">
             {messages.map((message, index) => (
@@ -509,27 +517,29 @@ export default function IraChat() {
               onProviderPreferenceChange={setProviderPreference}
               onCustomProviderChange={setCustomProvider}
             />
-            <input
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
+            <div className="ira-compose-row">
+              <input
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    void send();
+                  }
+                }}
+                placeholder="Ask IRA to run Social, Ads, or SEO"
+                aria-label="Message IRA"
+              />
+              <button
+                className="ira-send-btn"
+                onClick={() => {
                   void send();
-                }
-              }}
-              placeholder="Ask IRA to run Social, Ads, or SEO"
-              aria-label="Message IRA"
-            />
-            <button
-              className="ira-send-btn"
-              onClick={() => {
-                void send();
-              }}
-              disabled={!canSend || sending}
-            >
-              {sending ? '...' : 'Send'}
-            </button>
+                }}
+                disabled={!canSend || sending}
+              >
+                {sending ? '...' : 'Send'}
+              </button>
+            </div>
           </div>
         </section>
       ) : null}

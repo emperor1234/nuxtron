@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import styles from './shell.module.css';
 import '../_ui/tokens.css';
+import CommandPalette from './command-palette';
 import { MENUS, RAIL_ITEMS, SETTINGS_ITEM, type RailKey } from './nav';
 
 const RAIL_ICONS: Record<RailKey, ReactNode> = {
@@ -101,6 +102,7 @@ export default function DashboardShell({
   const pathname = usePathname() || '/dashboard';
   const activeKey = matchKey(pathname);
   const [openMenu, setOpenMenu] = useState<RailKey | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Close the flyout whenever navigation completes or Escape is pressed.
   useEffect(() => {
@@ -115,6 +117,18 @@ export default function DashboardShell({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [openMenu]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+        setOpenMenu(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const activeMenu = openMenu ? MENUS[openMenu] : null;
 
@@ -191,14 +205,20 @@ export default function DashboardShell({
       {/* MAIN */}
       <div className={styles.main}>
         <header className={styles.topbar}>
-          <div className={styles.search} role="search">
+          <button
+            type="button"
+            className={styles.search}
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search domains, keywords, reports"
+          >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.9" />
               <path d="M16 16l4.5 4.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
             </svg>
             <span className={styles.searchText}>Search domains, keywords, reports…</span>
             <span className={styles.kbd}>⌘K</span>
-          </div>
+          </button>
+          <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
           <div className={styles.topActions}>
             <button type="button" className={styles.datePill}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">

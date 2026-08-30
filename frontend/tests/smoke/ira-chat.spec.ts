@@ -203,6 +203,7 @@ test.describe('IRA Chat Widget', () => {
     });
 
     await page.locator('.ira-trigger').click();
+    await page.locator('.ira-settings summary').click();
     await expect(page.getByText('OpenAI: ready | Claude: not configured')).toBeVisible();
     await expect(page.getByText('OpenAI reason: Configured and available')).toBeVisible();
     await expect(page.getByText('Claude reason: Missing provider credentials/configuration')).toBeVisible();
@@ -289,6 +290,7 @@ test.describe('IRA Chat Widget', () => {
     });
 
     await page.locator('.ira-trigger').click();
+    await page.locator('.ira-settings summary').click();
     await expect(page.getByText('Playbook completion: 66.67% (4/6)')).toBeVisible();
     await expect(page.getByText('Playbook focus: Do you have paying users?')).toBeVisible();
 

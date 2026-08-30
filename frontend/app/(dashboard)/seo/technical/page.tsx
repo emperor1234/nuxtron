@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { Button, Card, CardTitle, Field, FieldSelect, Page, PageHeader } from '../../_ui/kit';
 import {
   AlertTriangle,
   CheckCircle,
@@ -9,7 +10,6 @@ import {
   RefreshCw,
   Download,
   Search,
-  Filter,
   Zap,
   Globe,
   Clock,
@@ -68,12 +68,6 @@ type TechnicalResult = {
 type ScoreGaugeProps = Readonly<{ score: number; label: string; size?: number }>;
 type SeverityIconProps = Readonly<{ s: string }>;
 type VitalBadgeProps = Readonly<{ value?: number; unit: string; rating?: string }>;
-
-const TECHNICAL_AUDIT_PHASES = [
-  'Configure crawl and source discovery scope',
-  'Audit indexability, vitals, and technical health',
-  'Prioritize high-impact fixes and quick wins',
-];
 
 function getScoreColor(score: number): string {
   if (score >= 80) return '#26d78e';
@@ -300,331 +294,71 @@ export default function TechnicalSEOPage() {
   const SEVERITY_COLORS = { critical: '#dc2626', warning: '#ffb867', info: '#1bc7ff' };
 
   return (
-    <main className="seo-advanced-page" style={{ minHeight: '100vh', color: 'var(--text)', padding: 24 }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <section
-          style={{
-            position: 'relative',
-            overflow: 'hidden',
-            borderRadius: 16,
-            border: '1px solid rgba(45,212,191,0.3)',
-            background:
-              'var(--card)',
-            padding: '22px 24px',
-            marginBottom: 20,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-            <div>
-              <div style={{ display: 'inline-flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.12em',
-                    color: '#99f6e4',
-                    border: '1px solid rgba(94,234,212,0.45)',
-                    borderRadius: 999,
-                    padding: '3px 10px',
-                    background: 'rgba(45,212,191,0.14)',
-                  }}
-                >
-                  Technical Health Engine
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.12em',
-                    color: 'var(--muted)',
-                    border: '1px solid rgba(148,163,184,0.3)',
-                    borderRadius: 999,
-                    padding: '3px 10px',
-                    background: 'rgba(148,163,184,0.12)',
-                  }}
-                >
-                  Crawl + CWV + Indexability
-                </span>
-              </div>
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: 30,
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  color: 'var(--text)',
-                }}
-              >
-                <Shield size={26} color="#2dd4bf" />
-                Technical SEO Audit
-              </h1>
-              <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 15 }}>
-                Crawlability, indexability, Core Web Vitals, structured data, and mobile readiness.
-              </p>
-            </div>
-            {result && (
-              <button
-                onClick={exportCSV}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '8px 16px',
-                  border: '1px solid rgba(148,163,184,0.35)',
-                  borderRadius: 10,
-                  background: '#f4f5f8',
-                  color: 'var(--text)',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                }}
-              >
+    <Page className="seo-advanced-page">
+        <PageHeader
+          title="Technical SEO Audit"
+          subtitle="Crawlability, indexability, Core Web Vitals, structured data, and mobile readiness."
+          actions={
+            result ? (
+              <Button onClick={exportCSV}>
                 <Download size={14} />
                 Export CSV
-              </button>
-            )}
-          </div>
-        </section>
+              </Button>
+            ) : null
+          }
+        />
 
         {error && (
           <div style={{ ...card, color: '#dc2626', borderColor: '#dc262644', background: '#dc262611' }}>{error}</div>
         )}
 
-        <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))' }}>
-          <section style={{ ...card, marginBottom: 0 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                marginBottom: 12,
-              }}
+        <Card>
+          <CardTitle sub="URL, crawl depth, and the checks to include.">Audit setup</CardTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16, marginTop: 16 }}>
+            <Field
+              id="technical-url"
+              label="Website URL"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://example.com"
+            />
+            <Field
+              id="technical-sitemap"
+              label="Sitemap URL (optional)"
+              value={sitemap}
+              onChange={(e) => setSitemap(e.target.value)}
+              placeholder="https://example.com/sitemap.xml"
+            />
+            <FieldSelect
+              id="technical-crawl-depth"
+              label="Crawl depth"
+              value={crawlDepth}
+              onChange={(e) => setCrawlDepth(e.target.value)}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Filter size={15} color="var(--brand)" />
-                <span style={{ fontWeight: 700, fontSize: 14 }}>Audit Configuration</span>
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#99f6e4',
-                  border: '1px solid rgba(94,234,212,0.35)',
-                  borderRadius: 8,
-                  padding: '4px 8px',
-                  background: 'rgba(45,212,191,0.12)',
-                }}
-              >
-                Advanced Mode
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 20 }}>
-              <div>
-                <label
-                  htmlFor="technical-url"
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    marginBottom: 5,
-                    color: 'var(--muted)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  Website URL
-                </label>
-                <input
-                  id="technical-url"
-                  style={input}
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://example.com"
-                />
-                <label
-                  htmlFor="technical-sitemap"
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    marginBottom: 5,
-                    color: 'var(--muted)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  Sitemap URL (optional)
-                </label>
-                <input
-                  id="technical-sitemap"
-                  style={input}
-                  value={sitemap}
-                  onChange={(e) => setSitemap(e.target.value)}
-                  placeholder="https://example.com/sitemap.xml"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="technical-crawl-depth"
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    marginBottom: 5,
-                    color: 'var(--muted)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  Crawl Depth
-                </label>
-                <select
-                  id="technical-crawl-depth"
-                  style={input}
-                  value={crawlDepth}
-                  onChange={(e) => setCrawlDepth(e.target.value)}
-                >
-                  {['1', '2', '3', '5', '10'].map((v) => (
-                    <option key={v} value={v}>
-                      Depth {v}
-                    </option>
-                  ))}
-                </select>
-                <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={checkMobile} onChange={(e) => setCheckMobile(e.target.checked)} />
-                    <span>Check Mobile Friendly</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={checkCWV} onChange={(e) => setCheckCWV(e.target.checked)} />
-                    <span>Core Web Vitals</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => void runAudit()}
-              disabled={loading}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 28px',
-                border: '1px solid rgba(94,234,212,0.38)',
-                borderRadius: 10,
-                background: loading
-                  ? 'rgba(100,116,139,0.35)'
-                  : 'linear-gradient(90deg, rgba(20,184,166,0.9) 0%, rgba(6,182,212,0.85) 100%)',
-                color: '#ecfeff',
-                fontWeight: 800,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: 14,
-                marginTop: 12,
-              }}
-            >
-              {loading ? (
-                <>
-                  <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} />
-                  Auditing...
-                </>
-              ) : (
-                <>
-                  <Shield size={15} />
-                  Run Technical Audit
-                </>
-              )}
-            </button>
-          </section>
-
-          <aside style={{ ...card, marginBottom: 0 }}>
-            <div>
-              <h3 style={{ margin: '0 0 6px', fontSize: 16, color: 'var(--text)' }}>Audit Blueprint</h3>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>Execution flow for technical SEO diagnostics.</p>
-            </div>
-            <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
-              {TECHNICAL_AUDIT_PHASES.map((phase, index) => (
-                <div
-                  key={phase}
-                  style={{
-                    display: 'flex',
-                    gap: 10,
-                    alignItems: 'flex-start',
-                    border: '1px solid rgba(148,163,184,0.16)',
-                    borderRadius: 10,
-                    padding: '8px 10px',
-                    background: '#f4f5f8',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 999,
-                      border: '1px solid rgba(94,234,212,0.4)',
-                      background: 'rgba(45,212,191,0.16)',
-                      color: '#99f6e4',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 11,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {index + 1}
-                  </div>
-                  <div style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--muted)' }}>{phase}</div>
-                </div>
+              {['1', '2', '3', '5', '10'].map((v) => (
+                <option key={v} value={v}>
+                  Depth {v}
+                </option>
               ))}
-            </div>
-            <div
-              style={{
-                marginTop: 12,
-                border: '1px solid rgba(148,163,184,0.16)',
-                borderRadius: 10,
-                padding: '10px 12px',
-                background: '#f4f5f8',
-              }}
-            >
-              <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Current Scope
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                <span
-                  style={{
-                    border: '1px solid rgba(94,234,212,0.35)',
-                    background: 'rgba(45,212,191,0.14)',
-                    color: '#99f6e4',
-                    borderRadius: 999,
-                    padding: '3px 8px',
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}
-                >
-                  Depth {crawlDepth}
-                </span>
-                <span
-                  style={{
-                    border: '1px solid rgba(148,163,184,0.35)',
-                    background: 'rgba(148,163,184,0.12)',
-                    color: 'var(--text)',
-                    borderRadius: 999,
-                    padding: '3px 8px',
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}
-                >
-                  {checkCWV ? 'CWV enabled' : 'CWV disabled'}
-                </span>
-              </div>
-            </div>
-          </aside>
-        </div>
+            </FieldSelect>
+          </div>
+          <div style={{ display: 'flex', gap: 20, marginTop: 14, flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+              <input type="checkbox" checked={checkMobile} onChange={(e) => setCheckMobile(e.target.checked)} />
+              <span>Check mobile friendly</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+              <input type="checkbox" checked={checkCWV} onChange={(e) => setCheckCWV(e.target.checked)} />
+              <span>Core Web Vitals</span>
+            </label>
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <Button variant="primary" onClick={() => void runAudit()} disabled={loading}>
+              {loading ? <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={15} />}
+              {loading ? 'Auditing…' : 'Run technical audit'}
+            </Button>
+          </div>
+        </Card>
 
         {result && (
           <>
@@ -1071,8 +805,7 @@ export default function TechnicalSEOPage() {
             )}
           </>
         )}
-      </div>
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-    </main>
+    </Page>
   );
 }
