@@ -39,7 +39,7 @@ export function KeyToolsTabs() {
       <div
         role="tablist"
         aria-label="Key tools"
-        className="mb-8 flex flex-wrap justify-center gap-2 rounded-full border border-[#18181814] bg-[#fafafa] p-1.5 mx-auto w-fit"
+        className="mb-8 flex flex-wrap justify-center gap-2 rounded-full border border-line bg-canvas p-1.5 mx-auto w-fit"
       >
         {TOOLS.map((tool) => (
           <button
@@ -49,7 +49,7 @@ export function KeyToolsTabs() {
             aria-selected={active === tool.key}
             onClick={() => setActive(tool.key)}
             className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
-              active === tool.key ? 'bg-[#181818] text-white' : 'text-[#46484d] hover:text-[#181818]'
+              active === tool.key ? 'bg-ink text-white' : 'text-ink-2 hover:text-ink'
             }`}
           >
             <tool.icon size={15} aria-hidden="true" />
@@ -67,18 +67,18 @@ export function KeyToolsTabs() {
             exit={reduced ? undefined : { opacity: 0, y: -8 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="mb-5 inline-flex w-fit rounded-lg border border-[#18181814] bg-[#466cf314] p-3 text-[#466cf3]">
+            <div className="mb-5 inline-flex w-fit rounded-lg border border-line bg-brand-soft p-3 text-brand">
               <current.icon size={22} strokeWidth={1.75} aria-hidden="true" />
             </div>
-            <h3 className="mb-3 text-2xl font-semibold tracking-tight text-[#181818]">{current.title}</h3>
-            <p className="text-[15px] leading-relaxed text-[#46484d]">{current.body}</p>
+            <h3 className="mb-3 text-2xl font-semibold tracking-tight text-ink">{current.title}</h3>
+            <p className="text-[15px] leading-relaxed text-ink-2">{current.body}</p>
           </motion.div>
         </AnimatePresence>
-        <div className="relative hidden overflow-hidden rounded-2xl border border-[#18181814] shadow-[0_16px_40px_rgba(24,24,24,0.1)] md:block" aria-hidden="true">
-          <div className="flex items-center gap-1.5 border-b border-[#18181814] bg-[#fafafa] px-3 py-2.5">
-            <span className="h-2 w-2 rounded-full bg-[#e5e7eb]" />
-            <span className="h-2 w-2 rounded-full bg-[#e5e7eb]" />
-            <span className="h-2 w-2 rounded-full bg-[#e5e7eb]" />
+        <div className="relative hidden overflow-hidden rounded-2xl border border-line shadow-[0_16px_40px_rgba(24,24,24,0.1)] md:block" aria-hidden="true">
+          <div className="flex items-center gap-1.5 border-b border-line bg-canvas px-3 py-2.5">
+            <span className="h-2 w-2 rounded-full bg-line-soft" />
+            <span className="h-2 w-2 rounded-full bg-line-soft" />
+            <span className="h-2 w-2 rounded-full bg-line-soft" />
           </div>
           <Image
             src="/images/marketing-hub-mockup.png"

@@ -96,7 +96,7 @@ async function createNotification(
 }
 
 test('notification center receives realtime updates and keeps unread count in sync', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/dashboard');
 
   await expect(page.locator('#notificationTrigger')).toBeVisible();
   await expect(page.locator('#notificationTrigger')).toHaveAttribute('aria-expanded', 'false');
@@ -180,7 +180,7 @@ test('notification center receives realtime updates and keeps unread count in sy
 
 // ENHANCED: test priority badge rendering
 test('notification item shows priority badge for non-info priorities', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/dashboard');
 
   // Warm up realtime stream before emitting
   await reopenNotificationPanel(page);
@@ -217,7 +217,7 @@ test('notification item shows priority badge for non-info priorities', async ({ 
 
 // ENHANCED: test category filter dropdown renders categories from list
 test('category filter select renders and category option appears', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/dashboard');
   await reopenNotificationPanel(page);
   await expect(page.locator('#notifCategoryFilter')).toBeVisible();
   // 'All categories' default option must be present
@@ -226,7 +226,7 @@ test('category filter select renders and category option appears', async ({ page
 
 // ENHANCED: test toast appears for new notification when panel is closed
 test('toast popup appears when new notification arrives with panel closed', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/dashboard');
 
   // Keep panel closed and wait for SSE stream to establish
   await expect(page.locator('#notificationTrigger')).toBeVisible();

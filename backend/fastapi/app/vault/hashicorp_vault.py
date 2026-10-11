@@ -8,6 +8,11 @@ import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+try:
+    import hvac
+except ImportError:  # Optional until Vault is configured.
+    hvac = None  # type: ignore[assignment]
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,10 +58,9 @@ class HashiCorpVaultClient:
         Returns True if successful, False otherwise.
         """
         try:
-            # Deferred import: hvac is optional — connect() (and therefore
-            # this import) only runs when something actually asks for the
-            # Vault client (get_vault_client()), not at module import time.
-            import hvac
+            if hvac is None:
+                logger.error('hvac is not installed; HashiCorp Vault is unavailable.')
+                return False
 
             self.client = hvac.Client(url=self.vault_addr)
 
@@ -212,3 +216,9 @@ def get_vault_client() -> HashiCorpVaultClient:
         if not _vault_instance.connect():
             logger.warning('⚠ Vault not available, fallback to env vars')
     return _vault_instance
+
+
+def reset_vault_client_for_tests() -> None:
+    """Discard process-local Vault state between isolated tests."""
+    global _vault_instance
+    _vault_instance = None

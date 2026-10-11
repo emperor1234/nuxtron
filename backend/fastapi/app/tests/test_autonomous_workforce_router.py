@@ -183,6 +183,10 @@ def test_schedule_tick_runs_due_mission(client: TestClient) -> None:
 
 
 def test_watchdog_executes_due_schedule(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    from backend.fastapi.app.domains.automation.workforce.services import mission_execution
+
     async def _fake_get(self: Any, url: str, headers: dict[str, str] | None = None) -> _FakeResponse:
         await asyncio.sleep(0)
         return _FakeResponse(200, {"ok": True, "url": url})
@@ -200,6 +204,15 @@ def test_watchdog_executes_due_schedule(monkeypatch: pytest.MonkeyPatch) -> None
 
     monkeypatch.setattr("httpx.AsyncClient.get", _fake_get)
     monkeypatch.setattr("httpx.AsyncClient.post", _fake_post)
+
+    async def _fake_resolve(url: str, **_kwargs: Any) -> SimpleNamespace:
+        return SimpleNamespace(url=url)
+
+    async def _fake_outbound(method: str, target: SimpleNamespace, **_kwargs: Any) -> _FakeResponse:
+        return _FakeResponse(200, {"ok": True, "method": method, "url": target.url})
+
+    monkeypatch.setattr(mission_execution, "resolve_outbound_target_async", _fake_resolve)
+    monkeypatch.setattr(mission_execution, "outbound_async_request", _fake_outbound)
 
     tenant_id = "workforce-watchdog-tenant"
     now = "2020-01-01T00:00:00+00:00"

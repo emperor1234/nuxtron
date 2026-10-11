@@ -93,7 +93,7 @@ def test_crm_feature_governance_strict_lock_blocks_duplicate_enable(client: Test
 
 def test_crm_feature_governance_success_persists_to_control(client: TestClient) -> None:
     # Avoid flaky DB dependencies while still covering router success path.
-    with patch('backend.fastapi.app.routers.ira.psycopg.connect', side_effect=RuntimeError('db unavailable')):
+    with patch('backend.fastapi.app.domains.assistant.operations.db_dsn.psycopg.connect', side_effect=RuntimeError('db unavailable')):
         r = client.post(
             '/ira/crm/feature-governance',
             headers=_headers(),

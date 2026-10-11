@@ -83,7 +83,7 @@ export default function AdsEnginePage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
             }}
@@ -129,7 +129,7 @@ export default function AdsEnginePage() {
                       <p style={{ margin: '4px 0', fontSize: 13, color: 'var(--muted)' }}>Budget: ${campaign.budget}</p>
                       <p style={{ margin: '4px 0 0', fontSize: 13 }}>
                         ROI:{' '}
-                        <strong style={{ color: campaign.roi > 100 ? '#34d399' : '#dc2626' }}>
+                        <strong style={{ color: campaign.roi > 100 ? 'var(--success)' : 'var(--danger)' }}>
                           +{campaign.roi.toFixed(1)}%
                         </strong>
                       </p>

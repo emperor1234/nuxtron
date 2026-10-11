@@ -6,6 +6,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { onCLS, onINP, onLCP, onTTFB, type Metric } from 'web-vitals';
 
 import { apiGet, apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { getProviderMark } from '@/app/lib/provider-marks';
+import { ProviderMark } from '@/app/(dashboard)/_ui/provider-mark';
 
 const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
 const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
@@ -794,10 +796,10 @@ function scoreGrade(score: number): string {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 90) return '#22c55e';
-  if (score >= 70) return '#f59e0b';
-  if (score >= 50) return '#f97316';
-  return '#ef4444';
+  if (score >= 90) return 'var(--success)';
+  if (score >= 70) return 'var(--warning)';
+  if (score >= 50) return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 const CWV_THRESHOLDS: Record<string, [number, number]> = {
@@ -816,9 +818,9 @@ function cwvStatus(metric: string, value: number): RumQuality {
 }
 
 function cwvColor(status: 'good' | 'needs-improvement' | 'poor'): string {
-  if (status === 'good') return '#22c55e';
-  if (status === 'needs-improvement') return '#f59e0b';
-  return '#ef4444';
+  if (status === 'good') return 'var(--success)';
+  if (status === 'needs-improvement') return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function normalizeRumMetricName(metricName: string): string {
@@ -893,16 +895,16 @@ function buildRumInstallSnippet(): string {
 }
 
 function priorityColor(p?: string): string {
-  if (p === 'critical') return '#ef4444';
-  if (p === 'high') return '#f97316';
-  if (p === 'medium') return '#f59e0b';
-  return '#6b7280';
+  if (p === 'critical') return 'var(--danger)';
+  if (p === 'high') return 'var(--warning)';
+  if (p === 'medium') return 'var(--warning)';
+  return 'var(--neutral)';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function confidenceColor(confPct: number): string {
-  if (confPct >= 90) return '#22c55e';
-  if (confPct >= 70) return '#f59e0b';
+  if (confPct >= 90) return 'var(--success)';
+  if (confPct >= 70) return 'var(--warning)';
   return 'var(--text)';
 }
 
@@ -912,7 +914,7 @@ function btn(primary?: boolean): React.CSSProperties {
     borderRadius: 8,
     border: primary ? 'none' : '1px solid var(--line)',
     background: primary ? 'var(--brand)' : 'var(--bg)',
-    color: primary ? '#00101e' : 'var(--text)',
+    color: primary ? 'var(--on-brand)' : 'var(--text)',
     fontWeight: 700,
     cursor: 'pointer',
     fontSize: 13,
@@ -925,7 +927,7 @@ function badge(color: string): React.CSSProperties {
     borderRadius: 999,
     fontSize: 11,
     fontWeight: 700,
-    background: `${color}22`,
+    background: `color-mix(in srgb, ${color} 13.33%, transparent)`,
     color,
     marginLeft: 4,
   };
@@ -2036,9 +2038,9 @@ function offlineAuditFallback(params: {
       coverage: 91,
       opportunity_count: 17,
       distribution: [
-        { label: 'Healthy', value: 58, color: '#22c55e' },
-        { label: 'Needs Work', value: 28, color: '#f59e0b' },
-        { label: 'Critical', value: 14, color: '#ef4444' },
+        { label: 'Healthy', value: 58, color: 'var(--success)' },
+        { label: 'Needs Work', value: 28, color: 'var(--warning)' },
+        { label: 'Critical', value: 14, color: 'var(--danger)' },
       ],
       timeline: [
         { label: 'Q1', value: 72 },
@@ -2213,9 +2215,9 @@ function offlineAuditFallback(params: {
       coverage: 88,
       opportunity_count: 21,
       distribution: [
-        { label: 'Production', value: 52, color: '#22c55e' },
-        { label: 'Editorial QA', value: 31, color: '#6366f1' },
-        { label: 'Needs Workflow', value: 17, color: '#f59e0b' },
+        { label: 'Production', value: 52, color: 'var(--success)' },
+        { label: 'Editorial QA', value: 31, color: "var(--brand)" },
+        { label: 'Needs Workflow', value: 17, color: 'var(--warning)' },
       ],
       timeline: [
         { label: 'Brief', value: 68 },
@@ -2378,9 +2380,9 @@ function offlineAuditFallback(params: {
       coverage: 86,
       opportunity_count: 24,
       distribution: [
-        { label: 'Agent-ready', value: 39, color: '#22c55e' },
-        { label: 'Crawlable', value: 34, color: '#6366f1' },
-        { label: 'Needs structuring', value: 27, color: '#f59e0b' },
+        { label: 'Agent-ready', value: 39, color: 'var(--success)' },
+        { label: 'Crawlable', value: 34, color: "var(--brand)" },
+        { label: 'Needs structuring', value: 27, color: 'var(--warning)' },
       ],
       timeline: [
         { label: 'Promptable', value: 61 },
@@ -2437,7 +2439,7 @@ function offlineAuditFallback(params: {
           status: 'ready',
           score: 84,
           summary:
-            'OpenLens + Playwright + LlamaIndex + JSON-LD optimization for answer engine retrieval and answer precision.',
+            'AI visibility signals, browser validation, retrieval workflows, and structured-data improvements for answer quality.',
           metrics: [
             { label: 'Answer blocks', value: '1,940' },
             { label: 'Featured answer rate', value: '28%' },
@@ -2544,9 +2546,9 @@ function offlineAuditFallback(params: {
       coverage: 83,
       opportunity_count: 19,
       distribution: [
-        { label: 'Search UX strong', value: 41, color: '#22c55e' },
-        { label: 'Voice / AI visible', value: 29, color: '#6366f1' },
-        { label: 'Surface gaps', value: 30, color: '#f59e0b' },
+        { label: 'Search UX strong', value: 41, color: 'var(--success)' },
+        { label: 'Voice / AI visible', value: 29, color: "var(--brand)" },
+        { label: 'Surface gaps', value: 30, color: 'var(--warning)' },
       ],
       timeline: [
         { label: 'Query', value: 64 },
@@ -2649,9 +2651,9 @@ function offlineAuditFallback(params: {
       coverage: 85,
       opportunity_count: 18,
       distribution: [
-        { label: 'Revenue verticals', value: 44, color: '#22c55e' },
-        { label: 'Regional / local', value: 31, color: '#6366f1' },
-        { label: 'Migration risk', value: 25, color: '#f59e0b' },
+        { label: 'Revenue verticals', value: 44, color: 'var(--success)' },
+        { label: 'Regional / local', value: 31, color: "var(--brand)" },
+        { label: 'Migration risk', value: 25, color: 'var(--warning)' },
       ],
       timeline: [
         { label: 'Plan', value: 66 },
@@ -2765,9 +2767,9 @@ function offlineAuditFallback(params: {
       coverage: 89,
       opportunity_count: 22,
       distribution: [
-        { label: 'Automated', value: 47, color: '#22c55e' },
-        { label: 'Observable', value: 33, color: '#6366f1' },
-        { label: 'Operational risk', value: 20, color: '#f59e0b' },
+        { label: 'Automated', value: 47, color: 'var(--success)' },
+        { label: 'Observable', value: 33, color: "var(--brand)" },
+        { label: 'Operational risk', value: 20, color: 'var(--warning)' },
       ],
       timeline: [
         { label: 'Ops', value: 70 },
@@ -3016,8 +3018,8 @@ function offlineAuditFallback(params: {
         },
       ],
       contrast_failures: [
-        { element: '.cta-primary', fg: '#7c8db0', bg: '#ffffff', ratio: 3.1, required: 4.5 },
-        { element: '.muted-text', fg: '#adb5bd', bg: '#f8f9fa', ratio: 2.7, required: 4.5 },
+        { element: '.cta-primary', fg: 'var(--info)', bg: '#ffffff', ratio: 3.1, required: 4.5 },
+        { element: '.muted-text', fg: 'var(--neutral)', bg: 'var(--bg-soft)', ratio: 2.7, required: 4.5 },
       ],
       passing_criteria: ['1.1.1 Non-text content', '1.3.1 Info and relationships', '2.4.1 Bypass blocks'],
       failing_criteria: ['1.4.3 Contrast (Minimum)', '2.1.1 Keyboard', '4.1.2 Name Role Value'],
@@ -3424,15 +3426,15 @@ function FilmstripScreenshotSVG({ label }: Readonly<{ label: string }>) {
   const chrome = '#1a1f2e';
   const sk = '#1e2a3a';
   const skHi = '#2d3a4a';
-  const barColor = progress >= 0.75 ? '#22c55e' : '#6366f1';
+  const barColor = progress >= 0.75 ? 'var(--success)' : 'var(--info)';
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ borderRadius: 6, display: 'block' }}>
       <rect width={W} height={H} fill={bg} rx={4} />
       {/* browser chrome */}
       <rect width={W} height={14} fill={chrome} />
-      <circle cx={8} cy={7} r={2.5} fill="#ef4444" opacity={0.7} />
-      <circle cx={16} cy={7} r={2.5} fill="#f59e0b" opacity={0.7} />
-      <circle cx={24} cy={7} r={2.5} fill="#22c55e" opacity={0.7} />
+      <circle cx={8} cy={7} r={2.5} fill="var(--danger)" opacity={0.7} />
+      <circle cx={16} cy={7} r={2.5} fill="var(--warning)" opacity={0.7} />
+      <circle cx={24} cy={7} r={2.5} fill="var(--success)" opacity={0.7} />
       <rect x={34} y={3} width={120} height={8} rx={3} fill="#111827" />
       {/* nav bar skeleton */}
       {progress >= 0.15 && (
@@ -3448,8 +3450,8 @@ function FilmstripScreenshotSVG({ label }: Readonly<{ label: string }>) {
             width={36}
             height={9}
             rx={2}
-            fill={progress >= 0.45 ? '#1e3a5f' : sk}
-            stroke={progress >= 0.45 ? '#6366f1' : 'none'}
+            fill={progress >= 0.45 ? 'var(--info-ink)' : sk}
+            stroke={progress >= 0.45 ? 'var(--info)' : 'none'}
             strokeWidth={1}
           />
         </>
@@ -3462,17 +3464,17 @@ function FilmstripScreenshotSVG({ label }: Readonly<{ label: string }>) {
           width={W - 16}
           height={40}
           rx={3}
-          fill={progress >= 0.75 ? '#0f2744' : '#1e3a5f'}
-          stroke={progress >= 0.75 ? 'none' : '#6366f188'}
+          fill={progress >= 0.75 ? '#0f2744' : 'var(--info-ink)'}
+          stroke={progress >= 0.75 ? 'none' : 'color-mix(in oklab, var(--info) 53%, transparent)'}
           strokeWidth={1}
         />
       )}
       {progress >= 0.75 && (
         <>
-          <rect x={16} y={42} width={60} height={6} rx={2} fill="#1e3a5f" />
-          <rect x={16} y={52} width={40} height={5} rx={2} fill="#1e3a5f" opacity={0.7} />
+          <rect x={16} y={42} width={60} height={6} rx={2} fill="var(--info-ink)" />
+          <rect x={16} y={52} width={40} height={5} rx={2} fill="var(--info-ink)" opacity={0.7} />
           <rect x={130} y={38} width={52} height={36} rx={3} fill="#162032" />
-          <text x={156} y={58} textAnchor="middle" fontSize={7} fill="#6366f1" opacity={0.8}>
+          <text x={156} y={58} textAnchor="middle" fontSize={7} fill="var(--info)" opacity={0.8}>
             IMG
           </text>
         </>
@@ -3486,7 +3488,7 @@ function FilmstripScreenshotSVG({ label }: Readonly<{ label: string }>) {
         </>
       )}
       {/* interactive indicator */}
-      {progress >= 1 && <rect x={8} y={110} width={50} height={6} rx={3} fill="#22c55e" opacity={0.7} />}
+      {progress >= 1 && <rect x={8} y={110} width={50} height={6} rx={3} fill="var(--success)" opacity={0.7} />}
       {/* load progress bar */}
       <rect y={H - 3} width={W} height={3} fill={bg} />
       <rect y={H - 3} width={W * progress} height={3} fill={barColor} rx={1} />
@@ -3544,11 +3546,11 @@ function ScoreGauge({ score, label, size = 110 }: Readonly<{ score: number; labe
 
 function WaterfallBars({ timeline }: Readonly<{ timeline: WaterfallTimeline }>) {
   const phases: { key: keyof WaterfallTimeline; label: string; color: string }[] = [
-    { key: 'dns', label: 'DNS', color: '#8b5cf6' },
-    { key: 'tcp', label: 'TCP', color: '#6366f1' },
-    { key: 'tls', label: 'TLS', color: '#06b6d4' },
-    { key: 'ttfb', label: 'TTFB', color: '#f59e0b' },
-    { key: 'download', label: 'Download', color: '#22c55e' },
+    { key: 'dns', label: 'DNS', color: "var(--brand)" },
+    { key: 'tcp', label: 'TCP', color: "var(--brand)" },
+    { key: 'tls', label: 'TLS', color: 'var(--info)' },
+    { key: 'ttfb', label: 'TTFB', color: 'var(--warning)' },
+    { key: 'download', label: 'Download', color: 'var(--success)' },
   ];
   const total = Object.values(timeline).reduce((s: number, v) => s + (Number(v) || 0), 0) || 1;
   return (
@@ -3610,66 +3612,66 @@ function Sparkline({ runs }: Readonly<{ runs: HistoryRun[] }>) {
 }
 
 function severityColor(s?: string): string {
-  if (s === 'high') return '#ef4444';
-  if (s === 'medium') return '#f59e0b';
-  return '#6b7280';
+  if (s === 'high') return 'var(--danger)';
+  if (s === 'medium') return 'var(--warning)';
+  return 'var(--neutral)';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function cspScoreColor(score: number): string {
-  if (score >= 70) return '#22c55e';
-  if (score >= 40) return '#f59e0b';
-  return '#ef4444';
+  if (score >= 70) return 'var(--success)';
+  if (score >= 40) return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function headerColor(present: boolean | undefined, severity: string | undefined): string {
-  if (present) return '#22c55e';
-  if (severity === 'high') return '#ef4444';
-  return '#f59e0b';
+  if (present) return 'var(--success)';
+  if (severity === 'high') return 'var(--danger)';
+  return 'var(--warning)';
 }
 
 function pipelineStatusColor(status?: string): string {
-  if (status === 'pass') return '#22c55e';
-  if (status === 'partial_pass') return '#f59e0b';
-  return '#ef4444';
+  if (status === 'pass') return 'var(--success)';
+  if (status === 'partial_pass') return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function funnelBarColor(pct: number, isFirst: boolean): string {
-  if (isFirst) return '#6366f1';
-  if (pct > 0.5) return '#22c55e';
-  if (pct > 0.2) return '#f59e0b';
-  return '#ef4444';
+  if (isFirst) return 'var(--info)';
+  if (pct > 0.5) return 'var(--success)';
+  if (pct > 0.2) return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function perfDeltaColor(delta?: number): string {
-  if ((delta ?? 0) < 0) return '#22c55e';
-  if ((delta ?? 0) > 100) return '#ef4444';
-  return '#f59e0b';
+  if ((delta ?? 0) < 0) return 'var(--success)';
+  if ((delta ?? 0) > 100) return 'var(--danger)';
+  return 'var(--warning)';
 }
 
 function depSeverityColor(severity?: string): string {
-  if (severity === 'critical') return '#ef4444';
-  if (severity === 'high') return '#f97316';
-  if (severity === 'medium') return '#f59e0b';
-  return '#22c55e';
+  if (severity === 'critical') return 'var(--danger)';
+  if (severity === 'high') return 'var(--warning)';
+  if (severity === 'medium') return 'var(--warning)';
+  return 'var(--success)';
 }
 
 function stepColor(passed?: boolean, status?: string): string {
-  if (passed) return '#22c55e';
-  if (status === 'warning') return '#f59e0b';
-  return '#ef4444';
+  if (passed) return 'var(--success)';
+  if (status === 'warning') return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function integrationHealthColor(health: string): string {
-  if (health === 'healthy') return '#22c55e';
-  if (health === 'degraded') return '#f59e0b';
-  return '#ef4444';
+  if (health === 'healthy') return 'var(--success)';
+  if (health === 'degraded') return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 // ─── Chart Components ─────────────────────────────────────────────────────────
 
-const DONUT_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#8b5cf6', '#06b6d4'];
-const NETWORK_COLORS = ['#06b6d4', '#6366f1', '#8b5cf6', '#f59e0b'];
+const DONUT_COLORS = ['var(--info)', 'var(--success)', 'var(--warning)', 'var(--info)', 'var(--info)'];
+const NETWORK_COLORS = ['var(--info)', 'var(--info)', 'var(--info)', 'var(--warning)'];
 
 function DonutChart({
   slices,
@@ -3712,7 +3714,7 @@ function AreaChart({
   points,
   width = 380,
   height = 72,
-  color = '#6366f1',
+  color = 'var(--info)',
   labels,
 }: Readonly<{ points: number[]; width?: number; height?: number; color?: string; labels?: string[] }>) {
   if (points.length < 2) return null;
@@ -3749,11 +3751,16 @@ function MiniBarChart({
   return (
     <div style={{ display: 'grid', gap: 6 }}>
       {items.map((it) => {
-        const col = it.color ?? '#6366f1';
+        const col = it.color ?? 'var(--info)';
         return (
           <div key={it.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11 }}>
-            <div style={{ width: 96, textAlign: 'right', color: 'var(--muted)', flexShrink: 0, fontSize: 10 }}>
-              {it.label}
+            <div style={{ width: 96, textAlign: 'right', color: 'var(--muted)', flexShrink: 0, fontSize: 10 }} title={getProviderMark(it.label) ? it.label : undefined}>
+              {getProviderMark(it.label) ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                  <ProviderMark name={it.label} size={16} decorative />
+                  <span className="sr-only">{it.label}</span>
+                </span>
+              ) : it.label}
             </div>
             <div style={{ flex: 1, height: 14, background: 'var(--line)', borderRadius: 3, overflow: 'hidden' }}>
               <div
@@ -3786,10 +3793,10 @@ function LatencyPercentileBar({
 }: Readonly<{ p50?: number; p75?: number; p95?: number; p99?: number; unit?: string; threshold?: number }>) {
   const mx = Math.max(p99, threshold * 1.1, 1);
   const bars = [
-    { label: 'p50', value: p50, color: '#22c55e' },
-    { label: 'p75', value: p75, color: '#f59e0b' },
-    { label: 'p95', value: p95, color: '#f97316' },
-    { label: 'p99', value: p99, color: '#ef4444' },
+    { label: 'p50', value: p50, color: 'var(--success)' },
+    { label: 'p75', value: p75, color: 'var(--warning)' },
+    { label: 'p95', value: p95, color: 'var(--warning)' },
+    { label: 'p99', value: p99, color: 'var(--danger)' },
   ];
   return (
     <div style={{ display: 'grid', gap: 5 }}>
@@ -3831,9 +3838,9 @@ function LatencyPercentileBar({
 }
 
 function suiteReadinessColor(status?: string): string {
-  if (status === 'ready' || status === 'strong') return '#22c55e';
-  if (status === 'building' || status === 'partial' || status === 'watch') return '#f59e0b';
-  return '#ef4444';
+  if (status === 'ready' || status === 'strong') return 'var(--success)';
+  if (status === 'building' || status === 'partial' || status === 'watch') return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function CapabilitySuiteSection({
@@ -3849,11 +3856,11 @@ function CapabilitySuiteSection({
   };
 
   const tierColor = (tier?: string): string => {
-    if (tier === 'Core') return '#0ea5e9';
-    if (tier === 'New') return '#a855f7';
-    if (tier === 'AI') return '#22c55e';
-    if (tier === 'Experiment') return '#f59e0b';
-    return '#64748b';
+    if (tier === 'Core') return 'var(--info)';
+    if (tier === 'New') return 'var(--info)';
+    if (tier === 'AI') return 'var(--success)';
+    if (tier === 'Experiment') return 'var(--warning)';
+    return 'var(--neutral)';
   };
 
   if (!suite) {
@@ -3908,7 +3915,7 @@ function CapabilitySuiteSection({
                 slices={(suite.distribution ?? []).map((slice) => ({
                   label: slice.label ?? 'slice',
                   value: slice.value ?? 0,
-                  color: slice.color ?? '#6366f1',
+                  color: slice.color ?? 'var(--info)',
                 }))}
                 size={116}
               />
@@ -3923,7 +3930,7 @@ function CapabilitySuiteSection({
                         width: 8,
                         height: 8,
                         borderRadius: '50%',
-                        background: slice.color ?? '#6366f1',
+                        background: slice.color ?? 'var(--info)',
                         flexShrink: 0,
                       }}
                     />
@@ -3942,7 +3949,7 @@ function CapabilitySuiteSection({
             <AreaChart
               points={(suite.timeline ?? []).map((point) => point.value ?? 0)}
               labels={(suite.timeline ?? []).map((point) => point.label ?? '')}
-              color="#6366f1"
+              color="var(--info)"
               height={82}
             />
           </div>
@@ -3967,7 +3974,7 @@ function CapabilitySuiteSection({
             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Risks</div>
             <div style={{ display: 'grid', gap: 7 }}>
               {(suite.risks ?? []).map((item) => (
-                <div key={item} style={{ fontSize: 12, color: '#f59e0b' }}>
+                <div key={item} style={{ fontSize: 12, color: 'var(--warning)' }}>
                   {item}
                 </div>
               ))}
@@ -4045,7 +4052,7 @@ function CapabilitySuiteSection({
                       borderRadius: 999,
                       padding: '2px 8px',
                       fontSize: 10,
-                      color: '#6366f1',
+                      color: "var(--brand)",
                     }}
                   >
                     {item}
@@ -4057,7 +4064,7 @@ function CapabilitySuiteSection({
             {(module.issues ?? []).length > 0 && (
               <div style={{ display: 'grid', gap: 5 }}>
                 {(module.issues ?? []).map((issue) => (
-                  <div key={`${module.name ?? 'module'}-${issue}`} style={{ fontSize: 11, color: '#f59e0b' }}>
+                  <div key={`${module.name ?? 'module'}-${issue}`} style={{ fontSize: 11, color: 'var(--warning)' }}>
                     - {issue}
                   </div>
                 ))}
@@ -4183,10 +4190,10 @@ function SummaryTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 key={asset}
                 style={{
                   padding: '6px 10px',
-                  background: isOfflinePreview ? '#78350f33' : '#7f1d1d22',
+                  background: isOfflinePreview ? 'var(--warning-soft)' : 'var(--danger-soft)',
                   borderRadius: 6,
                   fontSize: 12,
-                  color: isOfflinePreview ? '#92400e' : '#dc2626',
+                  color: isOfflinePreview ? 'var(--warning-ink)' : 'var(--danger)',
                 }}
               >
                 {asset}
@@ -4207,16 +4214,16 @@ function WaterfallTab({ result, card, isOfflinePreview }: PerfTabProps) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
           { label: 'Total Requests', value: String(result.waterfall?.requests ?? 84), color: 'var(--text)' },
-          { label: 'Total Size', value: `${result.waterfall?.transfer_kb ?? 2340} KB`, color: '#f59e0b' },
+          { label: 'Total Size', value: `${result.waterfall?.transfer_kb ?? 2340} KB`, color: 'var(--warning)' },
           {
             label: 'TTFB',
             value: `${result.waterfall?.timeline_ms?.ttfb ?? 210}ms`,
-            color: (result.waterfall?.timeline_ms?.ttfb ?? 210) > 600 ? '#ef4444' : '#22c55e',
+            color: (result.waterfall?.timeline_ms?.ttfb ?? 210) > 600 ? 'var(--danger)' : 'var(--success)',
           },
-          { label: 'Time to Interactive', value: '3,400ms', color: '#f59e0b' },
-          { label: 'Blocking Assets', value: String(result.waterfall?.render_blocking?.length ?? 7), color: '#ef4444' },
-          { label: 'Cached Requests', value: '38%', color: '#6366f1' },
-          { label: 'Compression Ratio', value: '3.2×', color: '#22c55e' },
+          { label: 'Time to Interactive', value: '3,400ms', color: 'var(--warning)' },
+          { label: 'Blocking Assets', value: String(result.waterfall?.render_blocking?.length ?? 7), color: 'var(--danger)' },
+          { label: 'Cached Requests', value: '38%', color: "var(--brand)" },
+          { label: 'Compression Ratio', value: '3.2×', color: 'var(--success)' },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -4233,14 +4240,14 @@ function WaterfallTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {
               label: 'JavaScript',
               value: 28,
-              color: '#f59e0b',
+              color: 'var(--warning)',
               max: result.waterfall?.requests ?? 84,
               suffix: ' reqs',
             },
-            { label: 'CSS', value: 12, color: '#6366f1', max: result.waterfall?.requests ?? 84, suffix: ' reqs' },
-            { label: 'Images', value: 31, color: '#22c55e', max: result.waterfall?.requests ?? 84, suffix: ' reqs' },
-            { label: 'Fonts', value: 6, color: '#6366f1', max: result.waterfall?.requests ?? 84, suffix: ' reqs' },
-            { label: 'API / XHR', value: 7, color: '#ec4899', max: result.waterfall?.requests ?? 84, suffix: ' reqs' },
+            { label: 'CSS', value: 12, color: "var(--brand)", max: result.waterfall?.requests ?? 84, suffix: ' reqs' },
+            { label: 'Images', value: 31, color: 'var(--success)', max: result.waterfall?.requests ?? 84, suffix: ' reqs' },
+            { label: 'Fonts', value: 6, color: "var(--brand)", max: result.waterfall?.requests ?? 84, suffix: ' reqs' },
+            { label: 'API / XHR', value: 7, color: 'var(--series-5)', max: result.waterfall?.requests ?? 84, suffix: ' reqs' },
           ]}
         />
       </div>
@@ -4253,34 +4260,34 @@ function WaterfallTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {
               phase: 'DNS Lookup',
               ms: result.waterfall?.timeline_ms?.dns ?? 18,
-              color: '#6366f1',
+              color: "var(--brand)",
               tip: 'Use DNS prefetch for 3rd-party origins',
             },
             {
               phase: 'TCP Connect',
               ms: result.waterfall?.timeline_ms?.tcp ?? 42,
-              color: '#6366f1',
+              color: "var(--brand)",
               tip: 'Enable HTTP/2 multiplexing',
             },
             {
               phase: 'SSL Handshake',
               ms: result.waterfall?.timeline_ms?.tls ?? 78,
-              color: '#f59e0b',
+              color: 'var(--warning)',
               tip: 'TLS 1.3 reduces handshake to 1-RTT',
             },
             {
               phase: 'TTFB',
               ms: result.waterfall?.timeline_ms?.ttfb ?? 210,
-              color: '#ef4444',
+              color: 'var(--danger)',
               tip: 'Server response time — consider edge caching',
             },
             {
               phase: 'Content Download',
               ms: result.waterfall?.timeline_ms?.download ?? 320,
-              color: '#22c55e',
+              color: 'var(--success)',
               tip: 'Reduce payload with compression + splitting',
             },
-            { phase: 'DOM Processing', ms: 890, color: '#ec4899', tip: 'Defer non-critical JS to unblock parsing' },
+            { phase: 'DOM Processing', ms: 890, color: 'var(--series-5)', tip: 'Defer non-critical JS to unblock parsing' },
           ].map((p) => {
             const maxMs = 1200;
             const w = Math.min(100, Math.round((p.ms / maxMs) * 100));
@@ -4323,14 +4330,14 @@ function WaterfallTab({ result, card, isOfflinePreview }: PerfTabProps) {
             ].map((r, i) => {
               const totalDur = 1520;
               const typeColor: Record<string, string> = {
-                document: '#22c55e',
-                script: '#ef4444',
-                style: '#6366f1',
-                image: '#6366f1',
-                font: '#f59e0b',
-                xhr: '#ec4899',
+                document: 'var(--success)',
+                script: 'var(--danger)',
+                style: 'var(--info)',
+                image: 'var(--info)',
+                font: 'var(--warning)',
+                xhr: 'var(--series-5)',
               };
-              const c = typeColor[r.type] ?? '#888';
+              const c = typeColor[r.type] ?? 'var(--neutral)';
               return (
                 <div
                   key={r.name}
@@ -4374,12 +4381,12 @@ function WaterfallTab({ result, card, isOfflinePreview }: PerfTabProps) {
             })}
             <div style={{ display: 'flex', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
               {[
-                ['script', '#ef4444'],
-                ['style', '#6366f1'],
-                ['image', '#6366f1'],
-                ['font', '#f59e0b'],
-                ['xhr', '#ec4899'],
-                ['document', '#22c55e'],
+                ['script', 'var(--danger)'],
+                ['style', 'var(--info)'],
+                ['image', 'var(--info)'],
+                ['font', 'var(--warning)'],
+                ['xhr', 'var(--series-5)'],
+                ['document', 'var(--success)'],
               ].map(([t, c]) => (
                 <span
                   key={t}
@@ -4429,13 +4436,13 @@ function WaterfallTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   alignItems: 'center',
                   gap: 10,
                   padding: '7px 12px',
-                  background: isOfflinePreview ? '#78350f33' : '#450a0a22',
-                  border: isOfflinePreview ? '1px solid #f59e0b55' : '1px solid #ef444444',
+                  background: isOfflinePreview ? 'var(--warning-soft)' : 'var(--danger-soft)',
+                  border: isOfflinePreview ? '1px solid color-mix(in oklab, var(--warning) 33%, transparent)' : '1px solid color-mix(in oklab, var(--danger) 27%, transparent)',
                   borderRadius: 6,
                   fontSize: 12,
                 }}
               >
-                <span style={{ color: isOfflinePreview ? '#f59e0b' : '#ef4444', fontWeight: 700, fontSize: 10 }}>
+                <span style={{ color: isOfflinePreview ? 'var(--warning)' : 'var(--danger)', fontWeight: 700, fontSize: 10 }}>
                   {isOfflinePreview ? 'SAMPLE' : 'BLOCKING'}
                 </span>
                 <span style={{ flex: 1, fontFamily: 'monospace' }}>{asset}</span>
@@ -4482,7 +4489,7 @@ function WaterfallTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   <td style={{ padding: '7px 10px', fontFamily: 'monospace', fontSize: 11 }}>{r.origin}</td>
                   <td style={{ padding: '7px 10px' }}>{r.reqs}</td>
                   <td style={{ padding: '7px 10px' }}>{r.size}</td>
-                  <td style={{ padding: '7px 10px', color: r.block_ms > 300 ? '#ef4444' : '#f59e0b', fontWeight: 700 }}>
+                  <td style={{ padding: '7px 10px', color: r.block_ms > 300 ? 'var(--danger)' : 'var(--warning)', fontWeight: 700 }}>
                     {r.block_ms}ms
                   </td>
                   <td style={{ padding: '7px 10px' }}>
@@ -4547,7 +4554,7 @@ function FilmstripTab({ result, card, isOfflinePreview }: PerfTabProps) {
   const timelinePoints = frames.map((f) => Math.round(((f.timestamp_ms ?? 0) / Math.max(1, visualCompleteMs)) * 100));
   const timelineLabels = frames.map((_, i) => `F${i + 1}`);
 
-  const renderBadgeColor = visualCompleteMs <= 3200 ? '#22c55e' : visualCompleteMs <= 4200 ? '#f59e0b' : '#ef4444';
+  const renderBadgeColor = visualCompleteMs <= 3200 ? 'var(--success)' : visualCompleteMs <= 4200 ? 'var(--warning)' : 'var(--danger)';
   const renderBadgeLabel =
     visualCompleteMs <= 3200 ? 'fast render' : visualCompleteMs <= 4200 ? 'needs tuning' : 'slow render';
 
@@ -4556,7 +4563,7 @@ function FilmstripTab({ result, card, isOfflinePreview }: PerfTabProps) {
       <div
         style={{
           ...card,
-          borderLeft: '4px solid #6366f1',
+          borderLeft: "4px solid var(--brand)",
           display: 'flex',
           justifyContent: 'space-between',
           gap: 12,
@@ -4577,17 +4584,17 @@ function FilmstripTab({ result, card, isOfflinePreview }: PerfTabProps) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
           { label: 'Frames Captured', value: String(frames.length), color: 'var(--text)' },
-          { label: 'First Paint', value: `${firstPaintMs}ms`, color: firstPaintMs <= 700 ? '#22c55e' : '#f59e0b' },
-          { label: 'FCP', value: `${fcpMs}ms`, color: fcpMs <= 1200 ? '#22c55e' : '#f59e0b' },
-          { label: 'LCP Visual', value: `${lcpMs}ms`, color: lcpMs <= 2500 ? '#22c55e' : '#ef4444' },
+          { label: 'First Paint', value: `${firstPaintMs}ms`, color: firstPaintMs <= 700 ? 'var(--success)' : 'var(--warning)' },
+          { label: 'FCP', value: `${fcpMs}ms`, color: fcpMs <= 1200 ? 'var(--success)' : 'var(--warning)' },
+          { label: 'LCP Visual', value: `${lcpMs}ms`, color: lcpMs <= 2500 ? 'var(--success)' : 'var(--danger)' },
           {
             label: 'Visual Complete',
             value: `${visualCompleteMs}ms`,
-            color: visualCompleteMs <= 3200 ? '#22c55e' : '#ef4444',
+            color: visualCompleteMs <= 3200 ? 'var(--success)' : 'var(--danger)',
           },
-          { label: 'Avg Frame Gap', value: `${avgGapMs}ms`, color: avgGapMs <= 400 ? '#22c55e' : '#f59e0b' },
-          { label: 'Max Gap', value: `${maxGapMs}ms`, color: maxGapMs <= 900 ? '#22c55e' : '#ef4444' },
-          { label: 'Speed Index Est.', value: `${speedIndexEstimate}`, color: '#6366f1' },
+          { label: 'Avg Frame Gap', value: `${avgGapMs}ms`, color: avgGapMs <= 400 ? 'var(--success)' : 'var(--warning)' },
+          { label: 'Max Gap', value: `${maxGapMs}ms`, color: maxGapMs <= 900 ? 'var(--success)' : 'var(--danger)' },
+          { label: 'Speed Index Est.', value: `${speedIndexEstimate}`, color: "var(--brand)" },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -4599,7 +4606,7 @@ function FilmstripTab({ result, card, isOfflinePreview }: PerfTabProps) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 12 }}>
         <div style={card}>
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Render Timeline Coverage</div>
-          <AreaChart points={timelinePoints} labels={timelineLabels} color="#6366f1" height={70} />
+          <AreaChart points={timelinePoints} labels={timelineLabels} color="var(--info)" height={70} />
           <div style={{ marginTop: 8, fontSize: 12, color: 'var(--muted)' }}>
             Above curve indicates how quickly visual completeness ramps up from first paint to final render.
           </div>
@@ -4608,7 +4615,7 @@ function FilmstripTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Frame Cadence Breakdown</div>
           <MiniBarChart
             items={frameGaps.map((gap, i) => {
-              const gapColor = gap > 800 ? '#ef4444' : gap > 450 ? '#f59e0b' : '#22c55e';
+              const gapColor = gap > 800 ? 'var(--danger)' : gap > 450 ? 'var(--warning)' : 'var(--success)';
               return {
                 label: `F${i + 1} -> F${i + 2}`,
                 value: gap,
@@ -4650,7 +4657,7 @@ function FilmstripTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     style={{
                       width: `${progress}%`,
                       height: '100%',
-                      background: progress >= completeness ? '#22c55e' : '#6366f1',
+                      background: progress >= completeness ? 'var(--success)' : "var(--brand)",
                       borderRadius: 2,
                     }}
                   />
@@ -4690,7 +4697,7 @@ function FilmstripTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   const prevTs = i > 0 ? (frames[i - 1]?.timestamp_ms ?? 0) : 0;
                   const delta = i === 0 ? 0 : Math.max(0, ts - prevTs);
                   const visualPct = Math.min(100, Math.round((ts / Math.max(1, visualCompleteMs)) * 100));
-                  const deltaColor = delta > 800 ? '#ef4444' : delta > 450 ? '#f59e0b' : '#22c55e';
+                  const deltaColor = delta > 800 ? 'var(--danger)' : delta > 450 ? 'var(--warning)' : 'var(--success)';
                   return (
                     <tr key={`ms-${frame.label ?? i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                       <td style={{ padding: '7px 8px', fontWeight: 600 }}>
@@ -4719,7 +4726,7 @@ function FilmstripTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   maxGapMs > 900
                     ? 'A large render idle window was detected. Investigate long tasks, blocking scripts, and hydration bursts.'
                     : 'No severe frame stalls detected in this capture window.',
-                tone: maxGapMs > 900 ? '#ef4444' : '#22c55e',
+                tone: maxGapMs > 900 ? 'var(--danger)' : 'var(--success)',
               },
               {
                 title: lcpMs > 2500 ? 'LCP visual milestone is late' : 'LCP visual milestone is healthy',
@@ -4727,7 +4734,7 @@ function FilmstripTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   lcpMs > 2500
                     ? 'Prioritize hero asset compression and server response tuning to pull LCP earlier.'
                     : 'Largest visual element appears in an acceptable window.',
-                tone: lcpMs > 2500 ? '#f59e0b' : '#22c55e',
+                tone: lcpMs > 2500 ? 'var(--warning)' : 'var(--success)',
               },
               {
                 title:
@@ -4736,7 +4743,7 @@ function FilmstripTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   completeness < 75
                     ? 'Critical render path remains active for too long. Inline critical CSS and defer non-essential JS.'
                     : 'Above-the-fold visuals complete early in the timeline.',
-                tone: completeness < 75 ? '#f59e0b' : '#22c55e',
+                tone: completeness < 75 ? 'var(--warning)' : 'var(--success)',
               },
             ].map((insight, i) => (
               <div
@@ -4806,7 +4813,7 @@ function RumTab({
         >
           <div style={card}>
             <div style={{ color: 'var(--muted)', fontSize: 11 }}>Collector Status</div>
-            <div style={{ fontWeight: 800, fontSize: 20, color: rumCollector?.error ? '#ef4444' : '#22c55e' }}>
+            <div style={{ fontWeight: 800, fontSize: 20, color: rumCollector?.error ? 'var(--danger)' : 'var(--success)' }}>
               {rumCollector?.error
                 ? 'Error'
                 : rumCollector?.collecting
@@ -4824,7 +4831,7 @@ function RumTab({
 
           <div style={card}>
             <div style={{ color: 'var(--muted)', fontSize: 11 }}>Audit URL Match</div>
-            <div style={{ fontWeight: 800, fontSize: 20, color: matchesAuditUrl ? '#22c55e' : '#f59e0b' }}>
+            <div style={{ fontWeight: 800, fontSize: 20, color: matchesAuditUrl ? 'var(--success)' : 'var(--warning)' }}>
               {matchesAuditUrl ? 'Direct' : 'Snippet Required'}
             </div>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
@@ -4844,10 +4851,10 @@ function RumTab({
         </div>
 
         {rumCollector?.error && (
-          <div style={{ color: '#dc2626', fontSize: 12, marginBottom: 12 }}>{rumCollector.error}</div>
+          <div style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12 }}>{rumCollector.error}</div>
         )}
         {!matchesAuditUrl && (
-          <div style={{ ...card, borderColor: '#f59e0b55', background: '#f59e0b14', marginBottom: 12 }}>
+          <div style={{ ...card, borderColor: 'color-mix(in oklab, var(--warning) 33%, transparent)', background: 'color-mix(in oklab, var(--warning) 8%, transparent)', marginBottom: 12 }}>
             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>Target-site instrumentation needed</div>
             <div style={{ color: 'var(--muted)', fontSize: 12 }}>
               A browser session can only measure the page it is currently running on. This page is collecting vitals for
@@ -4943,8 +4950,8 @@ function RumTab({
             padding: 12,
             overflowX: 'auto',
             borderRadius: 10,
-            background: '#f6f7fa',
-            color: '#dbeafe',
+            background: "var(--bg)",
+            color: 'var(--info-soft)',
             fontSize: 12,
             lineHeight: 1.5,
           }}
@@ -5116,13 +5123,13 @@ function CausalityTab({ result, card, isOfflinePreview }: PerfTabProps) {
       >
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Critical Path</div>
-          <div style={{ fontWeight: 800, fontSize: 22, color: '#ef4444' }}>
+          <div style={{ fontWeight: 800, fontSize: 22, color: 'var(--danger)' }}>
             {result.causality_graph?.critical_path_ms ?? 0}ms
           </div>
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Wasted Time</div>
-          <div style={{ fontWeight: 800, fontSize: 22, color: '#f59e0b' }}>
+          <div style={{ fontWeight: 800, fontSize: 22, color: 'var(--warning)' }}>
             {result.causality_graph?.wasted_ms ?? 0}ms
           </div>
         </div>
@@ -5151,9 +5158,9 @@ function CausalityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 fontSize: 11,
                 borderRadius: 999,
                 padding: '5px 12px',
-                background: '#7f1d1d22',
-                color: '#dc2626',
-                border: '1px solid #ef444455',
+                background: 'var(--danger-soft)',
+                color: 'var(--danger)',
+                border: '1px solid color-mix(in oklab, var(--danger) 33%, transparent)',
               }}
             >
               ⚠ {cause}
@@ -5170,12 +5177,12 @@ function CausalityTab({ result, card, isOfflinePreview }: PerfTabProps) {
             items={(result.causality_graph?.main_thread_timeline ?? []).map((t) => {
               const taskColor =
                 t.type === 'script'
-                  ? '#ef4444'
+                  ? 'var(--danger)'
                   : t.type === 'style'
-                    ? '#f59e0b'
+                    ? 'var(--warning)'
                     : t.type === 'render'
-                      ? '#22c55e'
-                      : '#6366f1';
+                      ? 'var(--success)'
+                      : 'var(--info)';
               return {
                 label: t.task ?? '',
                 value: t.duration_ms ?? 0,
@@ -5189,10 +5196,10 @@ function CausalityTab({ result, card, isOfflinePreview }: PerfTabProps) {
             style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: 'var(--muted)', flexWrap: 'wrap' }}
           >
             {[
-              ['#ef4444', 'Script'],
-              ['#f59e0b', 'Style'],
-              ['#22c55e', 'Render'],
-              ['#6366f1', 'Parse'],
+              ['var(--danger)', 'Script'],
+              ['var(--warning)', 'Style'],
+              ['var(--success)', 'Render'],
+              ['var(--info)', 'Parse'],
             ].map(([c, l]) => (
               <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ width: 8, height: 8, borderRadius: 2, background: c, display: 'inline-block' }} />
@@ -5216,7 +5223,7 @@ function CausalityTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Render-blocking Attribution</div>
           <MiniBarChart
             items={(result.causality_graph?.render_blocking_attribution ?? []).map((x) => {
-              const attrColor = x.severity === 'critical' ? '#ef4444' : x.severity === 'high' ? '#f59e0b' : '#6366f1';
+              const attrColor = x.severity === 'critical' ? 'var(--danger)' : x.severity === 'high' ? 'var(--warning)' : 'var(--info)';
               return {
                 label: x.asset ?? '',
                 value: x.block_ms ?? 0,
@@ -5229,8 +5236,8 @@ function CausalityTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ marginTop: 8, display: 'grid', gap: 4 }}>
             {(result.causality_graph?.render_blocking_attribution ?? []).map((x, i) => {
               const rbaBackground =
-                x.severity === 'critical' ? '#7f1d1d44' : x.severity === 'high' ? '#78350f44' : '#1e1b4b44';
-              const rbaColor = x.severity === 'critical' ? '#dc2626' : x.severity === 'high' ? '#b45309' : '#6366f1';
+                x.severity === 'critical' ? 'var(--danger-soft)' : x.severity === 'high' ? 'var(--warning-soft)' : 'var(--info-soft)';
+              const rbaColor = x.severity === 'critical' ? 'var(--danger)' : x.severity === 'high' ? 'var(--warning-ink)' : 'var(--info)';
               return (
                 <div
                   key={`rba-${x.asset ?? i}`}
@@ -5262,7 +5269,7 @@ function CausalityTab({ result, card, isOfflinePreview }: PerfTabProps) {
               value: (x.main_thread_block_ms ?? 0) + (x.network_ms ?? 0),
               max: 400,
               suffix: 'ms total',
-              color: x.removable ? '#f59e0b' : '#6366f1',
+              color: x.removable ? 'var(--warning)' : "var(--brand)",
             }))}
           />
           <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
@@ -5283,8 +5290,8 @@ function CausalityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       style={{
                         borderRadius: 999,
                         padding: '2px 7px',
-                        background: '#78350f44',
-                        color: '#b45309',
+                        background: 'var(--warning-soft)',
+                        color: 'var(--warning-ink)',
                         fontSize: 10,
                       }}
                     >
@@ -5365,7 +5372,7 @@ function AgentsTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Healthy Agents</div>
-          <div style={{ fontWeight: 800, fontSize: 26, color: '#22c55e' }}>
+          <div style={{ fontWeight: 800, fontSize: 26, color: 'var(--success)' }}>
             {result.autonomous_agents?.agent_health?.healthy ?? 0}
             <span style={{ fontSize: 13, color: 'var(--muted)' }}>
               /{result.autonomous_agents?.agent_health?.total_agents ?? 0}
@@ -5374,13 +5381,13 @@ function AgentsTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Degraded</div>
-          <div style={{ fontWeight: 800, fontSize: 26, color: '#f59e0b' }}>
+          <div style={{ fontWeight: 800, fontSize: 26, color: 'var(--warning)' }}>
             {result.autonomous_agents?.agent_health?.degraded ?? 0}
           </div>
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Offline</div>
-          <div style={{ fontWeight: 800, fontSize: 26, color: '#ef4444' }}>
+          <div style={{ fontWeight: 800, fontSize: 26, color: 'var(--danger)' }}>
             {result.autonomous_agents?.agent_health?.offline ?? 0}
           </div>
         </div>
@@ -5403,7 +5410,7 @@ function AgentsTab({ result, card, isOfflinePreview }: PerfTabProps) {
             <tbody>
               {(result.autonomous_agents?.journey_metrics ?? []).map((jm, i) => {
                 const pass = (jm.pass_rate ?? 0) >= 0.9;
-                const p95Color = (jm.p95_ms ?? 0) > 4000 ? '#ef4444' : (jm.p95_ms ?? 0) > 2500 ? '#f59e0b' : '#22c55e';
+                const p95Color = (jm.p95_ms ?? 0) > 4000 ? 'var(--danger)' : (jm.p95_ms ?? 0) > 2500 ? 'var(--warning)' : 'var(--success)';
                 return (
                   <tr key={`jm-${jm.journey ?? i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                     <td style={{ padding: '7px 10px', fontWeight: 600 }}>{jm.journey}</td>
@@ -5421,12 +5428,12 @@ function AgentsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                             style={{
                               width: `${(jm.pass_rate ?? 0) * 100}%`,
                               height: '100%',
-                              background: pass ? '#22c55e' : '#ef4444',
+                              background: pass ? 'var(--success)' : 'var(--danger)',
                               borderRadius: 2,
                             }}
                           />
                         </div>
-                        <span style={{ color: pass ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                        <span style={{ color: pass ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
                           {((jm.pass_rate ?? 0) * 100).toFixed(0)}%
                         </span>
                       </div>
@@ -5453,14 +5460,14 @@ function AgentsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   <span style={{ color: 'var(--muted)' }}>{total} runs</span>
                 </div>
                 <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', gap: 1 }}>
-                  <div style={{ flex: m.passed ?? 0, background: '#22c55e' }} />
-                  <div style={{ flex: m.flaky ?? 0, background: '#f59e0b' }} />
-                  <div style={{ flex: m.failed ?? 0, background: '#ef4444' }} />
+                  <div style={{ flex: m.passed ?? 0, background: 'var(--success)' }} />
+                  <div style={{ flex: m.flaky ?? 0, background: 'var(--warning)' }} />
+                  <div style={{ flex: m.failed ?? 0, background: 'var(--danger)' }} />
                 </div>
                 <div style={{ display: 'flex', gap: 10, fontSize: 10, marginTop: 3, color: 'var(--muted)' }}>
-                  <span style={{ color: '#22c55e' }}>{m.passed} pass</span>
-                  <span style={{ color: '#f59e0b' }}>{m.flaky} flaky</span>
-                  <span style={{ color: '#ef4444' }}>{m.failed} fail</span>
+                  <span style={{ color: 'var(--success)' }}>{m.passed} pass</span>
+                  <span style={{ color: 'var(--warning)' }}>{m.flaky} flaky</span>
+                  <span style={{ color: 'var(--danger)' }}>{m.failed} fail</span>
                 </div>
               </div>
             );
@@ -5476,7 +5483,7 @@ function AgentsTab({ result, card, isOfflinePreview }: PerfTabProps) {
               value: d.delta_pct ?? 0,
               max: 30,
               suffix: '%',
-              color: (d.delta_pct ?? 0) > 20 ? '#ef4444' : '#f59e0b',
+              color: (d.delta_pct ?? 0) > 20 ? 'var(--danger)' : 'var(--warning)',
             }))}
           />
           <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
@@ -5486,7 +5493,7 @@ function AgentsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 style={{ fontSize: 11, display: 'flex', justifyContent: 'space-between' }}
               >
                 <span style={{ color: 'var(--muted)' }}>{d.baseline_ms}ms baseline</span>
-                <span style={{ color: '#ef4444', fontWeight: 700 }}>→ {d.current_ms}ms</span>
+                <span style={{ color: 'var(--danger)', fontWeight: 700 }}>→ {d.current_ms}ms</span>
               </div>
             ))}
           </div>
@@ -5509,13 +5516,13 @@ function AgentsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   gap: 8,
                   flexWrap: 'wrap',
                   fontSize: 12,
-                  borderLeft: '3px solid #ef4444',
+                  borderLeft: '3px solid var(--danger)',
                 }}
               >
                 <span>
                   <strong>{h.journey}</strong> <span style={{ color: 'var(--muted)' }}>/ {h.step}</span>
                 </span>
-                <span style={{ color: '#ef4444', fontWeight: 700 }}>P95: {h.p95_ms}ms</span>
+                <span style={{ color: 'var(--danger)', fontWeight: 700 }}>P95: {h.p95_ms}ms</span>
               </div>
             ))}
           </div>
@@ -5528,7 +5535,7 @@ function AgentsTab({ result, card, isOfflinePreview }: PerfTabProps) {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function PredictionTab({ result, card, isOfflinePreview }: PerfTabProps) {
   const deployConfidence = result.predictive_intelligence?.deploy_confidence ?? 0;
-  const deployConfidenceColor = deployConfidence >= 80 ? '#22c55e' : deployConfidence >= 60 ? '#f59e0b' : '#ef4444';
+  const deployConfidenceColor = deployConfidence >= 80 ? 'var(--success)' : deployConfidence >= 60 ? 'var(--warning)' : 'var(--danger)';
   return (
     <section style={card}>
       <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Predictive Performance Intelligence</div>
@@ -5553,7 +5560,7 @@ function PredictionTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Regression Risk</div>
-          <div style={{ fontWeight: 800, fontSize: 26, color: '#f59e0b' }}>
+          <div style={{ fontWeight: 800, fontSize: 26, color: 'var(--warning)' }}>
             {result.predictive_intelligence?.regression_risk?.label?.toUpperCase() ?? 'N/A'}
           </div>
           <div style={{ fontSize: 11, color: 'var(--muted)' }}>
@@ -5562,7 +5569,7 @@ function PredictionTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Forecast LCP</div>
-          <div style={{ fontWeight: 800, fontSize: 26, color: '#ef4444' }}>
+          <div style={{ fontWeight: 800, fontSize: 26, color: 'var(--danger)' }}>
             {result.predictive_intelligence?.forecast?.lcp_ms ?? 0}ms
           </div>
           <div style={{ fontSize: 11, color: 'var(--muted)' }}>
@@ -5575,7 +5582,7 @@ function PredictionTab({ result, card, isOfflinePreview }: PerfTabProps) {
             style={{
               fontWeight: 800,
               fontSize: 26,
-              color: result.predictive_intelligence?.pre_deploy_guardrail?.status === 'pass' ? '#22c55e' : '#f59e0b',
+              color: result.predictive_intelligence?.pre_deploy_guardrail?.status === 'pass' ? 'var(--success)' : 'var(--warning)',
             }}
           >
             {result.predictive_intelligence?.pre_deploy_guardrail?.status?.toUpperCase() ?? 'N/A'}
@@ -5592,7 +5599,7 @@ function PredictionTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>LCP 6-week Trend + 1-week Forecast</div>
           <MiniBarChart
             items={(result.predictive_intelligence?.weekly_trend ?? []).map((w) => {
-              const trendColor = w.week === 'Forecast' ? '#6366f1' : (w.lcp_ms ?? 0) > 2500 ? '#ef4444' : '#22c55e';
+              const trendColor = w.week === 'Forecast' ? 'var(--info)' : (w.lcp_ms ?? 0) > 2500 ? 'var(--danger)' : 'var(--success)';
               return {
                 label: w.week ?? '',
                 value: w.lcp_ms ?? 0,
@@ -5604,15 +5611,15 @@ function PredictionTab({ result, card, isOfflinePreview }: PerfTabProps) {
           />
           <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 11, color: 'var(--muted)' }}>
             <span style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <span style={{ width: 8, height: 8, borderRadius: 2, background: '#22c55e', display: 'inline-block' }} />
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--success)', display: 'inline-block' }} />
               Within budget
             </span>
             <span style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <span style={{ width: 8, height: 8, borderRadius: 2, background: '#ef4444', display: 'inline-block' }} />
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--danger)', display: 'inline-block' }} />
               Over budget
             </span>
             <span style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <span style={{ width: 8, height: 8, borderRadius: 2, background: '#6366f1', display: 'inline-block' }} />
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: "var(--brand)", display: 'inline-block' }} />
               Forecast
             </span>
           </div>
@@ -5635,7 +5642,7 @@ function PredictionTab({ result, card, isOfflinePreview }: PerfTabProps) {
               key={`cf-${f}`}
               style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, marginBottom: 8 }}
             >
-              <span style={{ color: '#f59e0b', marginTop: 1 }}>▲</span>
+              <span style={{ color: 'var(--warning)', marginTop: 1 }}>▲</span>
               <span>{f}</span>
             </div>
           ))}
@@ -5646,8 +5653,8 @@ function PredictionTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Predicted Breach Dates</div>
           {(result.predictive_intelligence?.anomaly_forecast ?? []).map((a, i) => {
             const afBackground =
-              a.severity === 'high' ? '#7f1d1d44' : a.severity === 'medium' ? '#78350f44' : '#1e3a2f44';
-            const afColor = a.severity === 'high' ? '#dc2626' : a.severity === 'medium' ? '#b45309' : '#15803d';
+              a.severity === 'high' ? 'var(--danger-soft)' : a.severity === 'medium' ? 'var(--warning-soft)' : 'var(--success-soft)';
+            const afColor = a.severity === 'high' ? 'var(--danger)' : a.severity === 'medium' ? 'var(--warning-ink)' : 'var(--success-ink)';
             return (
               <div
                 key={`af-${a.metric ?? i}`}
@@ -5700,7 +5707,7 @@ function PredictionTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 border: '1px solid var(--line)',
               }}
             >
-              <span style={{ color: '#6366f1', fontWeight: 700, flexShrink: 0 }}>#{i + 1}</span>
+              <span style={{ color: "var(--brand)", fontWeight: 700, flexShrink: 0 }}>#{i + 1}</span>
               <span>{r}</span>
             </div>
           ))}
@@ -5732,7 +5739,7 @@ function GlobalTab({ result, card, isOfflinePreview }: PerfTabProps) {
       >
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Global P75 LCP</div>
-          <div style={{ fontWeight: 800, fontSize: 24, color: '#ef4444' }}>
+          <div style={{ fontWeight: 800, fontSize: 24, color: 'var(--danger)' }}>
             {result.global_simulation?.global_p75_lcp_ms ?? 0}ms
           </div>
         </div>
@@ -5746,13 +5753,13 @@ function GlobalTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Best Region</div>
-          <div style={{ fontWeight: 700, fontSize: 12, color: '#22c55e', marginTop: 4 }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--success)', marginTop: 4 }}>
             {result.global_simulation?.best_region ?? 'n/a'}
           </div>
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Worst Region</div>
-          <div style={{ fontWeight: 700, fontSize: 12, color: '#ef4444', marginTop: 4 }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>
             {result.global_simulation?.worst_region ?? 'n/a'}
           </div>
         </div>
@@ -5775,7 +5782,7 @@ function GlobalTab({ result, card, isOfflinePreview }: PerfTabProps) {
             <tbody>
               {(result.global_simulation?.region_grid ?? []).map((r, i) => {
                 const lcpColor =
-                  (r.lcp_p75_ms ?? 0) > 4000 ? '#ef4444' : (r.lcp_p75_ms ?? 0) > 2500 ? '#f59e0b' : '#22c55e';
+                  (r.lcp_p75_ms ?? 0) > 4000 ? 'var(--danger)' : (r.lcp_p75_ms ?? 0) > 2500 ? 'var(--warning)' : 'var(--success)';
                 return (
                   <tr key={r.region} style={{ borderBottom: '1px solid var(--line)' }}>
                     <td style={{ padding: '7px 10px', fontWeight: 600 }}>{r.region}</td>
@@ -5801,8 +5808,8 @@ function GlobalTab({ result, card, isOfflinePreview }: PerfTabProps) {
                           borderRadius: 999,
                           padding: '3px 9px',
                           fontSize: 10,
-                          background: r.pass ? '#14532d44' : '#7f1d1d44',
-                          color: r.pass ? '#15803d' : '#dc2626',
+                          background: r.pass ? 'var(--success-soft)' : 'var(--danger-soft)',
+                          color: r.pass ? 'var(--success-ink)' : 'var(--danger)',
                         }}
                       >
                         {r.pass ? 'PASS' : 'FAIL'}
@@ -5822,7 +5829,7 @@ function GlobalTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>CDN PoP Edge Latency</div>
           <MiniBarChart
             items={(result.global_simulation?.cdn_pop_latency ?? []).map((p) => {
-              const popColor = (p.latency_ms ?? 0) > 80 ? '#ef4444' : (p.latency_ms ?? 0) > 40 ? '#f59e0b' : '#22c55e';
+              const popColor = (p.latency_ms ?? 0) > 80 ? 'var(--danger)' : (p.latency_ms ?? 0) > 40 ? 'var(--warning)' : 'var(--success)';
               return {
                 label: p.pop ?? '',
                 value: p.latency_ms ?? 0,
@@ -5874,7 +5881,7 @@ function GlobalTab({ result, card, isOfflinePreview }: PerfTabProps) {
               <span>
                 <strong>{h.region}</strong> <span style={{ color: 'var(--muted)' }}>({h.network?.toUpperCase()})</span>
               </span>
-              <span style={{ color: '#ef4444', fontWeight: 700 }}>LCP {h.lcp_ms}ms</span>
+              <span style={{ color: 'var(--danger)', fontWeight: 700 }}>LCP {h.lcp_ms}ms</span>
             </div>
           ))}
         </div>
@@ -5903,7 +5910,7 @@ function BusinessTab({ result, card, isOfflinePreview }: PerfTabProps) {
       >
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Monthly Revenue at Risk</div>
-          <div style={{ fontWeight: 800, fontSize: 24, color: '#ef4444' }}>
+          <div style={{ fontWeight: 800, fontSize: 24, color: 'var(--danger)' }}>
             ${(result.business_impact?.estimated_monthly_revenue_at_risk_usd ?? 0).toLocaleString()}
           </div>
           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
@@ -5912,19 +5919,19 @@ function BusinessTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Conversion Δ / 100ms</div>
-          <div style={{ fontWeight: 800, fontSize: 24, color: '#ef4444' }}>
+          <div style={{ fontWeight: 800, fontSize: 24, color: 'var(--danger)' }}>
             {((result.business_impact?.conversion_delta_per_100ms ?? 0) * 100).toFixed(2)}%
           </div>
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Bounce Probability</div>
-          <div style={{ fontWeight: 800, fontSize: 24, color: '#f59e0b' }}>
+          <div style={{ fontWeight: 800, fontSize: 24, color: 'var(--warning)' }}>
             {((result.business_impact?.bounce_probability ?? 0) * 100).toFixed(1)}%
           </div>
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>SEO Traffic Δ</div>
-          <div style={{ fontWeight: 800, fontSize: 24, color: '#ef4444' }}>
+          <div style={{ fontWeight: 800, fontSize: 24, color: 'var(--danger)' }}>
             {result.business_impact?.seo_rank_sensitivity?.traffic_delta_pct ?? 0}%
           </div>
           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
@@ -5933,7 +5940,7 @@ function BusinessTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Priority</div>
-          <div style={{ fontWeight: 800, fontSize: 24, color: '#ef4444' }}>
+          <div style={{ fontWeight: 800, fontSize: 24, color: 'var(--danger)' }}>
             {(result.business_impact?.priority ?? 'n/a').toUpperCase()}
           </div>
         </div>
@@ -5955,7 +5962,7 @@ function BusinessTab({ result, card, isOfflinePreview }: PerfTabProps) {
             </thead>
             <tbody>
               {(result.business_impact?.segment_impact ?? []).map((s, i) => {
-                const segLcpColor = (s.lcp_ms ?? 0) > 4000 ? '#ef4444' : (s.lcp_ms ?? 0) > 2500 ? '#f59e0b' : '#22c55e';
+                const segLcpColor = (s.lcp_ms ?? 0) > 4000 ? 'var(--danger)' : (s.lcp_ms ?? 0) > 2500 ? 'var(--warning)' : 'var(--success)';
                 return (
                   <tr key={s.segment} style={{ borderBottom: '1px solid var(--line)' }}>
                     <td style={{ padding: '7px 10px', fontWeight: 600 }}>{s.segment}</td>
@@ -5970,7 +5977,7 @@ function BusinessTab({ result, card, isOfflinePreview }: PerfTabProps) {
                           style={{
                             width: `${Math.min(100, ((s.lcp_ms ?? 0) / 6000) * 100)}%`,
                             height: '100%',
-                            background: (s.lcp_ms ?? 0) > 4000 ? '#ef4444' : '#f59e0b',
+                            background: (s.lcp_ms ?? 0) > 4000 ? 'var(--danger)' : 'var(--warning)',
                             borderRadius: 2,
                           }}
                         />
@@ -5992,7 +5999,7 @@ function BusinessTab({ result, card, isOfflinePreview }: PerfTabProps) {
             <div key={`rw-${w.fix ?? i}`} style={{ marginBottom: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                 <span style={{ fontWeight: 600 }}>{w.fix}</span>
-                <span style={{ color: '#22c55e', fontWeight: 700 }}>+${(w.gain_usd ?? 0).toLocaleString()}/mo</span>
+                <span style={{ color: 'var(--success)', fontWeight: 700 }}>+${(w.gain_usd ?? 0).toLocaleString()}/mo</span>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <div style={{ flex: 1, height: 6, background: 'var(--line)', borderRadius: 3, overflow: 'hidden' }}>
@@ -6000,7 +6007,7 @@ function BusinessTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     style={{
                       width: `${((w.gain_usd ?? 0) / 5000) * 100}%`,
                       height: '100%',
-                      background: '#22c55e',
+                      background: 'var(--success)',
                       borderRadius: 3,
                     }}
                   />
@@ -6030,7 +6037,7 @@ function BusinessTab({ result, card, isOfflinePreview }: PerfTabProps) {
               <span>
                 <strong>#{c.rank}</strong> <span style={{ color: 'var(--muted)' }}>{c.competitor}</span>
               </span>
-              <span style={{ color: (c.gap_ms ?? 0) < 0 ? '#ef4444' : '#22c55e', fontWeight: 700 }}>
+              <span style={{ color: (c.gap_ms ?? 0) < 0 ? 'var(--danger)' : 'var(--success)', fontWeight: 700 }}>
                 {(c.gap_ms ?? 0) < 0 ? `${Math.abs(c.gap_ms ?? 0)}ms faster` : `${c.gap_ms}ms slower`}
               </span>
             </div>
@@ -6077,7 +6084,7 @@ function BusinessTab({ result, card, isOfflinePreview }: PerfTabProps) {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function CiGateTab({ result, card, isOfflinePreview }: PerfTabProps) {
   const gateStatus = result.ci_gate?.status;
-  const gateBorderColor = gateStatus === 'pass' ? '#22c55e' : gateStatus === 'fail' ? '#ef4444' : '#f59e0b';
+  const gateBorderColor = gateStatus === 'pass' ? 'var(--success)' : gateStatus === 'fail' ? 'var(--danger)' : 'var(--warning)';
   return (
     <section style={card}>
       <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Performance CI Gate</div>
@@ -6119,7 +6126,7 @@ function CiGateTab({ result, card, isOfflinePreview }: PerfTabProps) {
             ].map((m) => (
               <div key={m.label} style={card}>
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>{m.label}</div>
-                <div style={{ fontWeight: 800, fontSize: 18, color: m.over ? '#ef4444' : '#22c55e' }}>{m.value}</div>
+                <div style={{ fontWeight: 800, fontSize: 18, color: m.over ? 'var(--danger)' : 'var(--success)' }}>{m.value}</div>
               </div>
             ))}
           </div>
@@ -6136,14 +6143,14 @@ function CiGateTab({ result, card, isOfflinePreview }: PerfTabProps) {
               value: result.ci_gate?.predicted_pr_impact?.lcp_delta_ms ?? 0,
               max: result.ci_gate?.budget?.lcp_ms ?? 2500,
               suffix: 'ms over',
-              color: '#ef4444',
+              color: 'var(--danger)',
             },
             {
               label: 'INP (budget 200ms)',
               value: result.ci_gate?.predicted_pr_impact?.inp_delta_ms ?? 0,
               max: result.ci_gate?.budget?.inp_ms ?? 200,
               suffix: 'ms over',
-              color: '#f59e0b',
+              color: 'var(--warning)',
             },
           ]}
         />
@@ -6163,14 +6170,14 @@ function CiGateTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 padding: '8px 12px',
                 background: 'var(--bg)',
                 borderRadius: 8,
-                border: `1px solid ${rule.pass ? '#22c55e44' : '#ef444444'}`,
+                border: `1px solid ${rule.pass ? 'color-mix(in oklab, var(--success) 27%, transparent)' : 'color-mix(in oklab, var(--danger) 27%, transparent)'}`,
                 fontSize: 12,
               }}
             >
               <span style={{ fontWeight: 600 }}>{rule.rule}</span>
               <span style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <span style={{ color: 'var(--muted)' }}>budget: {rule.threshold}</span>
-                <span style={{ color: rule.pass ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                <span style={{ color: rule.pass ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
                   current: {rule.current}
                 </span>
                 <span
@@ -6178,8 +6185,8 @@ function CiGateTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     borderRadius: 999,
                     padding: '2px 9px',
                     fontSize: 10,
-                    background: rule.pass ? '#14532d44' : '#7f1d1d44',
-                    color: rule.pass ? '#15803d' : '#dc2626',
+                    background: rule.pass ? 'var(--success-soft)' : 'var(--danger-soft)',
+                    color: rule.pass ? 'var(--success-ink)' : 'var(--danger)',
                   }}
                 >
                   {rule.pass ? 'PASS' : 'FAIL'}
@@ -6196,8 +6203,8 @@ function CiGateTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>PR Diff Analysis</div>
           {(result.ci_gate?.pr_diff_analysis ?? []).map((d, i) => {
             const prBackground =
-              d.severity === 'critical' ? '#7f1d1d44' : d.severity === 'high' ? '#78350f44' : '#1e3a5f44';
-            const prColor = d.severity === 'critical' ? '#dc2626' : d.severity === 'high' ? '#b45309' : '#6366f1';
+              d.severity === 'critical' ? 'var(--danger-soft)' : d.severity === 'high' ? 'var(--warning-soft)' : 'var(--info-soft)';
+            const prColor = d.severity === 'critical' ? 'var(--danger)' : d.severity === 'high' ? 'var(--warning-ink)' : 'var(--info)';
             return (
               <div
                 key={d.file}
@@ -6212,7 +6219,7 @@ function CiGateTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   <code style={{ fontSize: 10, background: 'var(--bg)', padding: '2px 5px', borderRadius: 4 }}>
                     {d.file}
                   </code>
-                  <span style={{ color: '#ef4444', fontSize: 11 }}>+{d.size_delta_kb}KB</span>
+                  <span style={{ color: 'var(--danger)', fontSize: 11 }}>+{d.size_delta_kb}KB</span>
                 </div>
                 <div
                   style={{
@@ -6265,8 +6272,8 @@ function CiGateTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   borderRadius: 999,
                   padding: '2px 9px',
                   fontSize: 10,
-                  background: h.status === 'pass' ? '#14532d44' : h.status === 'fail' ? '#7f1d1d44' : '#78350f44',
-                  color: h.status === 'pass' ? '#15803d' : h.status === 'fail' ? '#dc2626' : '#b45309',
+                  background: h.status === 'pass' ? 'var(--success-soft)' : h.status === 'fail' ? 'var(--danger-soft)' : 'var(--warning-soft)',
+                  color: h.status === 'pass' ? 'var(--success-ink)' : h.status === 'fail' ? 'var(--danger)' : 'var(--warning-ink)',
                 }}
               >
                 {h.status?.toUpperCase()}
@@ -6286,7 +6293,7 @@ function CiGateTab({ result, card, isOfflinePreview }: PerfTabProps) {
               Total: <strong>{result.ci_gate.bundle_analysis.total_kb} KB</strong>
             </span>
             <span>
-              PR Δ: <strong style={{ color: '#ef4444' }}>+{result.ci_gate.bundle_analysis.delta_kb} KB</strong>
+              PR Δ: <strong style={{ color: 'var(--danger)' }}>+{result.ci_gate.bundle_analysis.delta_kb} KB</strong>
             </span>
           </div>
           {(result.ci_gate.bundle_analysis.new_deps ?? []).length > 0 && (
@@ -6298,8 +6305,8 @@ function CiGateTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     key={dep}
                     style={{
                       fontSize: 11,
-                      background: '#78350f22',
-                      color: '#b45309',
+                      background: 'var(--warning-soft)',
+                      color: 'var(--warning-ink)',
                       borderRadius: 4,
                       padding: '3px 8px',
                     }}
@@ -6330,7 +6337,7 @@ function SloTab({ result, card, isOfflinePreview }: PerfTabProps) {
         style={{
           ...card,
           marginBottom: 16,
-          borderLeft: `4px solid ${result.slo_guardrails?.overall === 'healthy' ? '#22c55e' : result.slo_guardrails?.overall === 'critical' ? '#ef4444' : '#f59e0b'}`,
+          borderLeft: `4px solid ${result.slo_guardrails?.overall === 'healthy' ? 'var(--success)' : result.slo_guardrails?.overall === 'critical' ? 'var(--danger)' : 'var(--warning)'}`,
         }}
       >
         <div
@@ -6339,7 +6346,7 @@ function SloTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div>
             <div style={{ fontWeight: 700, fontSize: 16 }}>
               Overall:{' '}
-              <span style={{ color: result.slo_guardrails?.overall === 'healthy' ? '#22c55e' : '#f59e0b' }}>
+              <span style={{ color: result.slo_guardrails?.overall === 'healthy' ? 'var(--success)' : 'var(--warning)' }}>
                 {(result.slo_guardrails?.overall ?? 'unknown').toUpperCase()}
               </span>
             </div>
@@ -6355,7 +6362,7 @@ function SloTab({ result, card, isOfflinePreview }: PerfTabProps) {
             ].map((b) => (
               <div key={b.label} style={card}>
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>{b.label}</div>
-                <div style={{ fontWeight: 800, fontSize: 20, color: b.value > 1 ? '#ef4444' : '#22c55e' }}>
+                <div style={{ fontWeight: 800, fontSize: 20, color: b.value > 1 ? 'var(--danger)' : 'var(--success)' }}>
                   {b.value}×
                 </div>
               </div>
@@ -6427,10 +6434,10 @@ function SloTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 <tr key={row.metric} style={{ borderBottom: '1px solid var(--line)' }}>
                   <td style={{ padding: '7px 10px', fontWeight: 600 }}>{row.metric}</td>
                   <td style={{ padding: '7px 10px', color: 'var(--muted)' }}>{row.target}</td>
-                  <td style={{ padding: '7px 10px', fontWeight: 700, color: row.pass ? '#22c55e' : '#ef4444' }}>
+                  <td style={{ padding: '7px 10px', fontWeight: 700, color: row.pass ? 'var(--success)' : 'var(--danger)' }}>
                     {row.current}
                   </td>
-                  <td style={{ padding: '7px 10px', color: row.pass ? '#22c55e' : '#ef4444' }}>
+                  <td style={{ padding: '7px 10px', color: row.pass ? 'var(--success)' : 'var(--danger)' }}>
                     {row.delta > 0 ? '+' : ''}
                     {row.delta.toFixed(2)}
                   </td>
@@ -6440,8 +6447,8 @@ function SloTab({ result, card, isOfflinePreview }: PerfTabProps) {
                         borderRadius: 999,
                         padding: '2px 8px',
                         fontSize: 10,
-                        background: row.pass ? '#14532d44' : '#7f1d1d44',
-                        color: row.pass ? '#15803d' : '#dc2626',
+                        background: row.pass ? 'var(--success-soft)' : 'var(--danger-soft)',
+                        color: row.pass ? 'var(--success-ink)' : 'var(--danger)',
                       }}
                     >
                       {row.pass ? 'OK' : 'BREACH'}
@@ -6472,7 +6479,7 @@ function SloTab({ result, card, isOfflinePreview }: PerfTabProps) {
               <div key={`eb-${i}`} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                   <span style={{ fontWeight: 600 }}>{eb.metric}</span>
-                  <span style={{ color: over ? '#ef4444' : '#22c55e', fontWeight: 700 }}>
+                  <span style={{ color: over ? 'var(--danger)' : 'var(--success)', fontWeight: 700 }}>
                     {over ? `${Math.abs(eb.remaining_pct ?? 0)}% over` : `${eb.remaining_pct}% remaining`}
                   </span>
                 </div>
@@ -6481,7 +6488,7 @@ function SloTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     style={{
                       width: `${Math.min(100, pct)}%`,
                       height: '100%',
-                      background: over ? '#ef4444' : '#22c55e',
+                      background: over ? 'var(--danger)' : 'var(--success)',
                       borderRadius: 3,
                     }}
                   />
@@ -6512,18 +6519,18 @@ function SloTab({ result, card, isOfflinePreview }: PerfTabProps) {
             >
               <span style={{ fontWeight: 700, width: 36 }}>{aw.window}</span>
               <span style={{ color: 'var(--muted)' }}>
-                LCP: <strong style={{ color: (aw.lcp_burn ?? 0) > 1.5 ? '#ef4444' : '#f59e0b' }}>{aw.lcp_burn}×</strong>
+                LCP: <strong style={{ color: (aw.lcp_burn ?? 0) > 1.5 ? 'var(--danger)' : 'var(--warning)' }}>{aw.lcp_burn}×</strong>
               </span>
               <span style={{ color: 'var(--muted)' }}>
-                INP: <strong style={{ color: (aw.inp_burn ?? 0) > 1.5 ? '#ef4444' : '#f59e0b' }}>{aw.inp_burn}×</strong>
+                INP: <strong style={{ color: (aw.inp_burn ?? 0) > 1.5 ? 'var(--danger)' : 'var(--warning)' }}>{aw.inp_burn}×</strong>
               </span>
               <span
                 style={{
                   borderRadius: 999,
                   padding: '2px 9px',
                   fontSize: 10,
-                  background: aw.status === 'ok' ? '#14532d44' : aw.status === 'critical' ? '#7f1d1d44' : '#78350f44',
-                  color: aw.status === 'ok' ? '#15803d' : aw.status === 'critical' ? '#dc2626' : '#b45309',
+                  background: aw.status === 'ok' ? 'var(--success-soft)' : aw.status === 'critical' ? 'var(--danger-soft)' : 'var(--warning-soft)',
+                  color: aw.status === 'ok' ? 'var(--success-ink)' : aw.status === 'critical' ? 'var(--danger)' : 'var(--warning-ink)',
                 }}
               >
                 {aw.status?.toUpperCase()}
@@ -6549,14 +6556,14 @@ function SloTab({ result, card, isOfflinePreview }: PerfTabProps) {
               gap: 10,
               flexWrap: 'wrap',
               fontSize: 12,
-              borderLeft: `3px solid ${(bs.probability ?? 0) > 0.6 ? '#ef4444' : '#f59e0b'}`,
+              borderLeft: `3px solid ${(bs.probability ?? 0) > 0.6 ? 'var(--danger)' : 'var(--warning)'}`,
             }}
           >
             <div>
               <strong>{bs.scenario}</strong>
               <div style={{ color: 'var(--muted)', marginTop: 2 }}>{bs.impact}</div>
             </div>
-            <div style={{ fontWeight: 800, color: (bs.probability ?? 0) > 0.6 ? '#ef4444' : '#f59e0b', flexShrink: 0 }}>
+            <div style={{ fontWeight: 800, color: (bs.probability ?? 0) > 0.6 ? 'var(--danger)' : 'var(--warning)', flexShrink: 0 }}>
               {((bs.probability ?? 0) * 100).toFixed(0)}%
             </div>
           </div>
@@ -6591,19 +6598,19 @@ function RoiTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Max Perf Gain</div>
-          <div style={{ fontWeight: 800, fontSize: 26, color: '#22c55e' }}>
+          <div style={{ fontWeight: 800, fontSize: 26, color: 'var(--success)' }}>
             {(result.roi_matrix ?? []).reduce((s, r) => s + (r.estimated_gain_ms ?? 0), 0)}ms
           </div>
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Max Revenue Recovery</div>
-          <div style={{ fontWeight: 800, fontSize: 22, color: '#22c55e' }}>
+          <div style={{ fontWeight: 800, fontSize: 22, color: 'var(--success)' }}>
             ${(result.roi_matrix ?? []).reduce((s, r) => s + (r.revenue_impact_usd ?? 0), 0).toLocaleString()}/mo
           </div>
         </div>
         <div style={card}>
           <div style={{ color: 'var(--muted)', fontSize: 11 }}>Sprint 1 Fixes</div>
-          <div style={{ fontWeight: 800, fontSize: 26, color: '#6366f1' }}>
+          <div style={{ fontWeight: 800, fontSize: 26, color: "var(--brand)" }}>
             {(result.roi_matrix ?? []).filter((r) => r.sprint === 1).length}
           </div>
         </div>
@@ -6620,7 +6627,7 @@ function RoiTab({ result, card, isOfflinePreview }: PerfTabProps) {
               value: r.priority_score ?? 0,
               max: 100,
               suffix: ` (${r.effort})`,
-              color: (r.priority_score ?? 0) >= 85 ? '#22c55e' : (r.priority_score ?? 0) >= 70 ? '#f59e0b' : '#6366f1',
+              color: (r.priority_score ?? 0) >= 85 ? 'var(--success)' : (r.priority_score ?? 0) >= 70 ? 'var(--warning)' : "var(--brand)",
             }))}
         />
       </div>
@@ -6636,7 +6643,7 @@ function RoiTab({ result, card, isOfflinePreview }: PerfTabProps) {
               value: r.revenue_impact_usd ?? 0,
               max: 5000,
               suffix: '/mo',
-              color: '#22c55e',
+              color: 'var(--success)',
             }))}
         />
       </div>
@@ -6695,17 +6702,17 @@ function RoiTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: 12 }}>
-                    <div style={{ color: '#22c55e', fontWeight: 700 }}>-{row.estimated_gain_ms}ms</div>
+                    <div style={{ color: 'var(--success)', fontWeight: 700 }}>-{row.estimated_gain_ms}ms</div>
                     <div style={{ color: 'var(--muted)', fontSize: 11 }}>perf gain</div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: 12 }}>
-                    <div style={{ color: '#22c55e', fontWeight: 700 }}>
+                    <div style={{ color: 'var(--success)', fontWeight: 700 }}>
                       ${(row.revenue_impact_usd ?? 0).toLocaleString()}
                     </div>
                     <div style={{ color: 'var(--muted)', fontSize: 11 }}>/mo</div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: 12 }}>
-                    <div style={{ fontWeight: 700, color: (row.priority_score ?? 0) >= 85 ? '#22c55e' : '#f59e0b' }}>
+                    <div style={{ fontWeight: 700, color: (row.priority_score ?? 0) >= 85 ? 'var(--success)' : 'var(--warning)' }}>
                       {row.priority_score}
                     </div>
                     <div style={{ color: 'var(--muted)', fontSize: 11 }}>score</div>
@@ -6717,12 +6724,12 @@ function RoiTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       fontSize: 10,
                       background:
                         row.impact_level === 'high'
-                          ? '#14532d44'
+                          ? 'var(--success-soft)'
                           : row.impact_level === 'medium'
-                            ? '#78350f44'
-                            : '#1e1b4b44',
+                            ? 'var(--warning-soft)'
+                            : 'var(--info-soft)',
                       color:
-                        row.impact_level === 'high' ? '#15803d' : row.impact_level === 'medium' ? '#b45309' : '#6366f1',
+                        row.impact_level === 'high' ? 'var(--success-ink)' : row.impact_level === 'medium' ? 'var(--warning-ink)' : "var(--brand)",
                     }}
                   >
                     {row.impact_level}
@@ -6771,7 +6778,7 @@ function CopilotTab({ result, card, isOfflinePreview }: PerfTabProps) {
               style={{
                 fontWeight: 800,
                 fontSize: 28,
-                color: (result.performance_copilot?.ai_confidence ?? 0) >= 80 ? '#22c55e' : '#f59e0b',
+                color: (result.performance_copilot?.ai_confidence ?? 0) >= 80 ? 'var(--success)' : 'var(--warning)',
               }}
             >
               {result.performance_copilot?.ai_confidence ?? 0}%
@@ -6796,12 +6803,12 @@ function CopilotTab({ result, card, isOfflinePreview }: PerfTabProps) {
         }}
       >
         {[
-          { title: 'What Changed', items: result.performance_copilot?.what_changed ?? [], color: '#6366f1' },
-          { title: 'Why It Happened', items: result.performance_copilot?.why_it_happened ?? [], color: '#f59e0b' },
+          { title: 'What Changed', items: result.performance_copilot?.what_changed ?? [], color: "var(--brand)" },
+          { title: 'Why It Happened', items: result.performance_copilot?.why_it_happened ?? [], color: 'var(--warning)' },
           {
             title: 'Recommended Actions',
             items: result.performance_copilot?.recommended_actions ?? [],
-            color: '#22c55e',
+            color: 'var(--success)',
           },
         ].map((section) => (
           <div key={section.title} style={card}>
@@ -6855,7 +6862,7 @@ function CopilotTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     width: 10,
                     height: 10,
                     borderRadius: '50%',
-                    background: ct.impact === 'positive' ? '#22c55e' : '#ef4444',
+                    background: ct.impact === 'positive' ? 'var(--success)' : 'var(--danger)',
                     border: '2px solid var(--bg)',
                   }}
                 />
@@ -6876,7 +6883,7 @@ function CopilotTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     style={{
                       fontSize: 12,
                       fontWeight: 700,
-                      color: ct.impact === 'positive' ? '#22c55e' : '#ef4444',
+                      color: ct.impact === 'positive' ? 'var(--success)' : 'var(--danger)',
                       flexShrink: 0,
                     }}
                   >
@@ -6901,7 +6908,7 @@ function CopilotTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 style={{
                   ...card,
                   padding: 10,
-                  borderLeft: `3px solid ${h.priority === 'critical' ? '#ef4444' : h.priority === 'high' ? '#f59e0b' : '#6366f1'}`,
+                  borderLeft: `3px solid ${h.priority === 'critical' ? 'var(--danger)' : h.priority === 'high' ? 'var(--warning)' : 'var(--info)'}`,
                 }}
               >
                 <div
@@ -6918,14 +6925,14 @@ function CopilotTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     {h.file}
                   </code>
                   <span style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11, flexShrink: 0 }}>
-                    <span style={{ color: '#22c55e' }}>-{h.savings_ms}ms</span>
+                    <span style={{ color: 'var(--success)' }}>-{h.savings_ms}ms</span>
                     <span
                       style={{
                         borderRadius: 999,
                         padding: '2px 8px',
                         background:
-                          h.priority === 'critical' ? '#7f1d1d44' : h.priority === 'high' ? '#78350f44' : '#1e1b4b44',
-                        color: h.priority === 'critical' ? '#dc2626' : h.priority === 'high' ? '#b45309' : '#6366f1',
+                          h.priority === 'critical' ? 'var(--danger-soft)' : h.priority === 'high' ? 'var(--warning-soft)' : 'var(--info-soft)',
+                        color: h.priority === 'critical' ? 'var(--danger)' : h.priority === 'high' ? 'var(--warning-ink)' : "var(--brand)",
                       }}
                     >
                       {h.priority}
@@ -6949,7 +6956,7 @@ function CopilotTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 <span>
                   <strong>{r.area}</strong> — {r.risk}
                 </span>
-                <span style={{ color: (r.probability ?? 0) > 0.6 ? '#ef4444' : '#f59e0b', fontWeight: 700 }}>
+                <span style={{ color: (r.probability ?? 0) > 0.6 ? 'var(--danger)' : 'var(--warning)', fontWeight: 700 }}>
                   {((r.probability ?? 0) * 100).toFixed(0)}%
                 </span>
               </div>
@@ -6958,7 +6965,7 @@ function CopilotTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   style={{
                     width: `${(r.probability ?? 0) * 100}%`,
                     height: '100%',
-                    background: (r.probability ?? 0) > 0.6 ? '#ef4444' : '#f59e0b',
+                    background: (r.probability ?? 0) > 0.6 ? 'var(--danger)' : 'var(--warning)',
                     borderRadius: 3,
                   }}
                 />
@@ -6974,9 +6981,9 @@ function CopilotTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Execution Playbook</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 200px), 1fr))', gap: 12 }}>
             {[
-              { label: 'Now', items: result.execution_playbook?.now ?? [], color: '#ef4444' },
-              { label: 'Next Sprint', items: result.execution_playbook?.next ?? [], color: '#f59e0b' },
-              { label: 'Later', items: result.execution_playbook?.later ?? [], color: '#6366f1' },
+              { label: 'Now', items: result.execution_playbook?.now ?? [], color: 'var(--danger)' },
+              { label: 'Next Sprint', items: result.execution_playbook?.next ?? [], color: 'var(--warning)' },
+              { label: 'Later', items: result.execution_playbook?.later ?? [], color: "var(--brand)" },
             ].map((phase) => (
               <div key={phase.label}>
                 <div
@@ -7034,7 +7041,7 @@ function OpportunitiesTab({ result, card, isOfflinePreview, autoFixing, optimize
           type="button"
           onClick={optimizeSite}
           disabled={autoFixing}
-          style={{ ...btn(true), background: '#6366f1', color: '#fff' }}
+          style={{ ...btn(true), background: "var(--brand)", color: 'var(--on-brand)' }}
         >
           {autoFixing ? 'Applying...' : 'Fix All Automatically'}
         </button>
@@ -7054,17 +7061,17 @@ function OpportunitiesTab({ result, card, isOfflinePreview, autoFixing, optimize
           {
             label: 'Total Gain',
             value: `${(result.opportunities ?? []).reduce((s, o) => s + (o.estimated_gain_ms ?? 0), 0)}ms`,
-            color: '#22c55e',
+            color: 'var(--success)',
           },
           {
             label: 'Revenue Potential',
             value: `$${(result.opportunities ?? []).reduce((s, o) => s + (o.revenue_gain_usd ?? 0), 0).toLocaleString()}/mo`,
-            color: '#22c55e',
+            color: 'var(--success)',
           },
           {
             label: 'Quick Wins (low effort)',
             value: String((result.opportunities ?? []).filter((o) => o.effort === 'low').length),
-            color: '#6366f1',
+            color: "var(--brand)",
           },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
@@ -7149,7 +7156,7 @@ function OpportunitiesTab({ result, card, isOfflinePreview, autoFixing, optimize
                         <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexShrink: 0 }}>
                           {(item.estimated_gain_ms ?? 0) > 0 && (
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontWeight: 700, color: '#22c55e', fontSize: 13 }}>
+                              <div style={{ fontWeight: 700, color: 'var(--success)', fontSize: 13 }}>
                                 -{item.estimated_gain_ms}ms
                               </div>
                               <div style={{ fontSize: 10, color: 'var(--muted)' }}>perf gain</div>
@@ -7157,7 +7164,7 @@ function OpportunitiesTab({ result, card, isOfflinePreview, autoFixing, optimize
                           )}
                           {(item.revenue_gain_usd ?? 0) > 0 && (
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontWeight: 700, color: '#22c55e', fontSize: 13 }}>
+                              <div style={{ fontWeight: 700, color: 'var(--success)', fontSize: 13 }}>
                                 ${(item.revenue_gain_usd ?? 0).toLocaleString()}
                               </div>
                               <div style={{ fontSize: 10, color: 'var(--muted)' }}>/mo revenue</div>
@@ -7214,7 +7221,7 @@ function AiFixesTab({
           type="button"
           onClick={optimizeSite}
           disabled={autoFixing}
-          style={{ ...btn(true), background: '#6366f1', color: '#fff' }}
+          style={{ ...btn(true), background: "var(--brand)", color: 'var(--on-brand)' }}
         >
           {autoFixing ? 'Optimizing...' : '⚡ Apply All Fixes'}
         </button>
@@ -7254,7 +7261,7 @@ function AiFixesTab({
             >
               <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>{m.label}</div>
               {m.gainOnly ? (
-                <div style={{ fontWeight: 800, fontSize: 22, color: '#22c55e' }}>
+                <div style={{ fontWeight: 800, fontSize: 22, color: 'var(--success)' }}>
                   {m.projected}
                   {m.suffix ?? ''}
                 </div>
@@ -7266,7 +7273,7 @@ function AiFixesTab({
                     {m.current}
                     {m.suffix ?? ''}
                   </span>
-                  <span style={{ fontWeight: 800, fontSize: 22, color: '#22c55e' }}>
+                  <span style={{ fontWeight: 800, fontSize: 22, color: 'var(--success)' }}>
                     → {m.projected}
                     {m.suffix ?? ''}
                   </span>
@@ -7287,7 +7294,7 @@ function AiFixesTab({
               const cat = (c.verification ?? 'Other').split('_')[0];
               cats[cat] = (cats[cat] ?? 0) + 1;
             });
-            const colors = ['#6366f1', '#22c55e', '#f59e0b', '#6366f1', '#ef4444', '#ec4899'];
+            const colors = ['var(--info)', 'var(--success)', 'var(--warning)', 'var(--info)', 'var(--danger)', 'var(--series-5)'];
             return Object.entries(cats).map(([k, v], i) => ({
               label: k,
               value: v,
@@ -7301,28 +7308,28 @@ function AiFixesTab({
 
       {/* Applied fixes result */}
       {autoFixResult && (
-        <div style={{ ...card, background: '#14532d22', border: '1px solid #22c55e44' }}>
-          <div style={{ fontWeight: 700, color: '#22c55e', marginBottom: 8 }}>Optimization Results</div>
+        <div style={{ ...card, background: 'var(--success-soft)', border: '1px solid color-mix(in oklab, var(--success) 27%, transparent)' }}>
+          <div style={{ fontWeight: 700, color: 'var(--success)', marginBottom: 8 }}>Optimization Results</div>
           <div style={{ display: 'grid', gap: 6 }}>
             {autoFixResult.fixes_applied.map((fix) => (
               <div key={fix.fix_id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12 }}>
-                <span style={{ color: fix.status === 'applied' ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                <span style={{ color: fix.status === 'applied' ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
                   {fix.status === 'applied' ? '✓' : '✗'}
                 </span>
                 <span style={{ flex: 1 }}>{fix.title}</span>
                 {fix.actual_gain_ms > 0 && (
-                  <span style={{ color: '#22c55e', fontWeight: 700 }}>-{fix.actual_gain_ms}ms</span>
+                  <span style={{ color: 'var(--success)', fontWeight: 700 }}>-{fix.actual_gain_ms}ms</span>
                 )}
-                <span style={badge(fix.status === 'applied' ? '#22c55e' : '#ef4444')}>{fix.status}</span>
+                <span style={badge(fix.status === 'applied' ? 'var(--success)' : 'var(--danger)')}>{fix.status}</span>
               </div>
             ))}
           </div>
           <div style={{ marginTop: 10, fontSize: 12, display: 'flex', gap: 16 }}>
             <div>
-              Total gain: <strong style={{ color: '#22c55e' }}>{autoFixResult.total_gain_ms}ms</strong>
+              Total gain: <strong style={{ color: 'var(--success)' }}>{autoFixResult.total_gain_ms}ms</strong>
             </div>
             <div>
-              New score: <strong style={{ color: '#22c55e' }}>{autoFixResult.new_performance_score}</strong>
+              New score: <strong style={{ color: 'var(--success)' }}>{autoFixResult.new_performance_score}</strong>
             </div>
           </div>
         </div>
@@ -7334,7 +7341,7 @@ function AiFixesTab({
           const isFixed = fixedItems.has(candidate.title ?? '');
           const isFixingThis = fixingItem === candidate.title;
           const confPct = Math.round((candidate.confidence ?? 0) * 100);
-          const riskColor = confPct >= 90 ? '#22c55e' : confPct >= 70 ? '#f59e0b' : '#ef4444';
+          const riskColor = confPct >= 90 ? 'var(--success)' : confPct >= 70 ? 'var(--warning)' : 'var(--danger)';
           const riskLabel = confPct >= 90 ? 'low-risk' : confPct >= 70 ? 'medium-risk' : 'high-risk';
           return (
             <div
@@ -7352,17 +7359,17 @@ function AiFixesTab({
               >
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                    {isFixed && <span style={{ color: '#22c55e', fontWeight: 700, fontSize: 11 }}>✓ Fixed</span>}
+                    {isFixed && <span style={{ color: 'var(--success)', fontWeight: 700, fontSize: 11 }}>✓ Fixed</span>}
                     <span style={{ fontWeight: 700, fontSize: 13 }}>{candidate.title}</span>
                     <span style={badge(riskColor)}>{riskLabel}</span>
-                    <span style={badge('#6366f1')}>{candidate.verification ?? 'general'}</span>
+                    <span style={badge('var(--info)')}>{candidate.verification ?? 'general'}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--muted)', flexWrap: 'wrap' }}>
                     <span>
                       Confidence: <strong style={{ color: riskColor }}>{confPct}%</strong>
                     </span>
                     <span>
-                      Est. gain: <strong style={{ color: '#22c55e' }}>-{candidate.estimated_gain_ms ?? 0}ms</strong>
+                      Est. gain: <strong style={{ color: 'var(--success)' }}>-{candidate.estimated_gain_ms ?? 0}ms</strong>
                     </span>
                     <span>Verify: {candidate.verification}</span>
                   </div>
@@ -7439,27 +7446,27 @@ function ImagesTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
             {[
               { label: 'Total Images', value: String(result.image_audit.total_images ?? 0), color: 'var(--text)' },
-              { label: 'Unoptimised', value: String(result.image_audit.unoptimized ?? 0), color: '#ef4444' },
-              { label: 'Missing Alt', value: String(result.image_audit.missing_alt ?? 0), color: '#f59e0b' },
+              { label: 'Unoptimised', value: String(result.image_audit.unoptimized ?? 0), color: 'var(--danger)' },
+              { label: 'Missing Alt', value: String(result.image_audit.missing_alt ?? 0), color: 'var(--warning)' },
               {
                 label: 'Bandwidth Wasted',
                 value: `${result.image_audit.bandwidth_wasted_mb ?? 0} MB`,
-                color: '#ef4444',
+                color: 'var(--danger)',
               },
               {
                 label: 'Lazy Loaded',
                 value: `${((result.image_audit.lazy_loaded_pct ?? 0) * 100).toFixed(0)}%`,
-                color: '#6366f1',
+                color: "var(--brand)",
               },
               {
                 label: 'Next-gen Format',
                 value: `${((result.image_audit.next_gen_adoption_pct ?? 0) * 100).toFixed(0)}%`,
-                color: (result.image_audit.next_gen_adoption_pct ?? 0) >= 0.8 ? '#22c55e' : '#f59e0b',
+                color: (result.image_audit.next_gen_adoption_pct ?? 0) >= 0.8 ? 'var(--success)' : 'var(--warning)',
               },
               {
                 label: 'CDN Coverage',
                 value: `${((result.image_audit.cdn_coverage_pct ?? 0) * 100).toFixed(0)}%`,
-                color: '#6366f1',
+                color: "var(--brand)",
               },
             ].map((kpi) => (
               <div key={kpi.label} style={card}>
@@ -7471,7 +7478,7 @@ function ImagesTab({ result, card, isOfflinePreview }: PerfTabProps) {
 
           {/* LCP image callout */}
           {result.image_audit.lcp_image && (
-            <div style={{ ...card, borderLeft: '3px solid #f59e0b', padding: 12 }}>
+            <div style={{ ...card, borderLeft: '3px solid var(--warning)', padding: 12 }}>
               <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>LCP Image Candidate</div>
               <div
                 style={{
@@ -7482,11 +7489,11 @@ function ImagesTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   flexWrap: 'wrap',
                 }}
               >
-                <code style={{ fontSize: 11, color: '#f59e0b' }}>{result.image_audit.lcp_image}</code>
+                <code style={{ fontSize: 11, color: 'var(--warning)' }}>{result.image_audit.lcp_image}</code>
                 <div style={{ display: 'flex', gap: 10, fontSize: 11 }}>
-                  <span style={{ color: '#ef4444' }}>Missing fetchpriority=&quot;high&quot;</span>
+                  <span style={{ color: 'var(--danger)' }}>Missing fetchpriority=&quot;high&quot;</span>
                   <span>·</span>
-                  <span style={{ color: '#f59e0b' }}>Serving JPEG — upgrade to AVIF</span>
+                  <span style={{ color: 'var(--warning)' }}>Serving JPEG — upgrade to AVIF</span>
                 </div>
               </div>
             </div>
@@ -7547,14 +7554,14 @@ function ImagesTab({ result, card, isOfflinePreview }: PerfTabProps) {
                           </span>
                         </td>
                         <td style={{ padding: '7px 10px', fontWeight: 700 }}>{img.size_kb} KB</td>
-                        <td style={{ padding: '7px 10px', color: '#22c55e', fontWeight: 700 }}>
+                        <td style={{ padding: '7px 10px', color: 'var(--success)', fontWeight: 700 }}>
                           {img.recommended_format}
                         </td>
-                        <td style={{ padding: '7px 10px', color: '#22c55e', fontWeight: 700 }}>-{img.savings_kb} KB</td>
-                        <td style={{ padding: '7px 10px', color: '#22c55e' }}>{img.savings_pct}%</td>
+                        <td style={{ padding: '7px 10px', color: 'var(--success)', fontWeight: 700 }}>-{img.savings_kb} KB</td>
+                        <td style={{ padding: '7px 10px', color: 'var(--success)' }}>{img.savings_pct}%</td>
                         <td style={{ padding: '7px 10px' }}>{img.decode_time_ms}ms</td>
                         <td style={{ padding: '7px 10px' }}>
-                          {img.lcp_candidate ? <span style={{ color: '#f59e0b', fontWeight: 700 }}>LCP</span> : '—'}
+                          {img.lcp_candidate ? <span style={{ color: 'var(--warning)', fontWeight: 700 }}>LCP</span> : '—'}
                         </td>
                       </tr>
                     ))}
@@ -7573,7 +7580,7 @@ function ImagesTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   items={Object.entries(result.image_audit.format_breakdown ?? {}).map(([fmt, cnt]) => ({
                     label: fmt.toUpperCase(),
                     value: cnt,
-                    color: fmt === 'webp' || fmt === 'avif' ? '#22c55e' : '#f59e0b',
+                    color: fmt === 'webp' || fmt === 'avif' ? 'var(--success)' : 'var(--warning)',
                     max: result.image_audit?.total_images ?? 1,
                   }))}
                 />
@@ -7603,7 +7610,7 @@ function ImagesTab({ result, card, isOfflinePreview }: PerfTabProps) {
                         <td
                           style={{
                             padding: '6px 8px',
-                            color: (p.missing_alt ?? 0) > 0 ? '#f59e0b' : '#22c55e',
+                            color: (p.missing_alt ?? 0) > 0 ? 'var(--warning)' : 'var(--success)',
                             fontWeight: 700,
                           }}
                         >
@@ -7612,7 +7619,7 @@ function ImagesTab({ result, card, isOfflinePreview }: PerfTabProps) {
                         <td
                           style={{
                             padding: '6px 8px',
-                            color: (p.unoptimized ?? 0) > 0 ? '#ef4444' : '#22c55e',
+                            color: (p.unoptimized ?? 0) > 0 ? 'var(--danger)' : 'var(--success)',
                             fontWeight: 700,
                           }}
                         >
@@ -7668,7 +7675,7 @@ function SecurityTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div
             style={{
               ...card,
-              borderLeft: `4px solid ${(result.security_audit.threat_score ?? 0) >= 70 ? '#ef4444' : (result.security_audit.threat_score ?? 0) >= 40 ? '#f59e0b' : '#22c55e'}`,
+              borderLeft: `4px solid ${(result.security_audit.threat_score ?? 0) >= 70 ? 'var(--danger)' : (result.security_audit.threat_score ?? 0) >= 40 ? 'var(--warning)' : 'var(--success)'}`,
               display: 'flex',
               alignItems: 'center',
               gap: 20,
@@ -7684,10 +7691,10 @@ function SecurityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   lineHeight: 1,
                   color:
                     (result.security_audit.threat_score ?? 0) >= 70
-                      ? '#ef4444'
+                      ? 'var(--danger)'
                       : (result.security_audit.threat_score ?? 0) >= 40
-                        ? '#f59e0b'
-                        : '#22c55e',
+                        ? 'var(--warning)'
+                        : 'var(--success)',
                 }}
               >
                 {result.security_audit.threat_score ?? 0}
@@ -7721,7 +7728,7 @@ function SecurityTab({ result, card, isOfflinePreview }: PerfTabProps) {
               ].map((k) => (
                 <div key={k.label} style={{ ...card, padding: 8 }}>
                   <div style={{ fontSize: 10, color: 'var(--muted)' }}>{k.label}</div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: k.ok ? '#22c55e' : '#ef4444', marginTop: 2 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: k.ok ? 'var(--success)' : 'var(--danger)', marginTop: 2 }}>
                     {k.value}
                   </div>
                 </div>
@@ -7765,26 +7772,26 @@ function SecurityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     label: 'Secure flag',
                     val: result.security_audit.cookies.secure ?? 0,
                     total: result.security_audit.cookies.total ?? 0,
-                    color: '#22c55e',
+                    color: 'var(--success)',
                   },
                   {
                     label: 'HttpOnly flag',
                     val: result.security_audit.cookies.httponly ?? 0,
                     total: result.security_audit.cookies.total ?? 0,
-                    color: '#6366f1',
+                    color: "var(--brand)",
                   },
                   {
                     label: 'SameSite set',
                     val: result.security_audit.cookies.samesite ?? 0,
                     total: result.security_audit.cookies.total ?? 0,
-                    color: '#6366f1',
+                    color: "var(--brand)",
                   },
                 ].map((c) => {
                   const pct = Math.round((c.val / Math.max(c.total, 1)) * 100);
                   return (
                     <div key={c.label} style={card}>
                       <div style={{ fontSize: 11, color: 'var(--muted)' }}>{c.label}</div>
-                      <div style={{ fontWeight: 700, fontSize: 16, color: pct < 100 ? '#f59e0b' : c.color }}>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: pct < 100 ? 'var(--warning)' : c.color }}>
                         {c.val}/{c.total}
                       </div>
                       <div
@@ -7800,7 +7807,7 @@ function SecurityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                           style={{
                             width: `${pct}%`,
                             height: '100%',
-                            background: pct < 100 ? '#f59e0b' : c.color,
+                            background: pct < 100 ? 'var(--warning)' : c.color,
                             borderRadius: 2,
                           }}
                         />
@@ -7839,9 +7846,9 @@ function SecurityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 </thead>
                 <tbody>
                   {(result.security_audit.csp_directives ?? []).map((d, i) => {
-                    const riskColor = d.risk === 'high' ? '#ef4444' : d.risk === 'medium' ? '#f59e0b' : '#22c55e';
+                    const riskColor = d.risk === 'high' ? 'var(--danger)' : d.risk === 'medium' ? 'var(--warning)' : 'var(--success)';
                     const statusColor =
-                      d.status === 'missing' ? '#ef4444' : d.status === 'weak' ? '#f59e0b' : '#22c55e';
+                      d.status === 'missing' ? 'var(--danger)' : d.status === 'weak' ? 'var(--warning)' : 'var(--success)';
                     return (
                       <tr key={`csp-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                         <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700 }}>
@@ -7880,7 +7887,7 @@ function SecurityTab({ result, card, isOfflinePreview }: PerfTabProps) {
             <div style={card}>
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>CORS Policy Issues</div>
               {(result.security_audit.cors_issues ?? []).map((c, i) => {
-                const rc = c.risk === 'high' ? '#ef4444' : c.risk === 'medium' ? '#f59e0b' : '#22c55e';
+                const rc = c.risk === 'high' ? 'var(--danger)' : c.risk === 'medium' ? 'var(--warning)' : 'var(--success)';
                 return (
                   <div
                     key={`cors-${i}`}
@@ -7920,12 +7927,12 @@ function SecurityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     key={`sri-${i}`}
                     style={{
                       padding: '5px 10px',
-                      background: '#7f1d1d22',
-                      border: '1px solid #ef444433',
+                      background: 'var(--danger-soft)',
+                      border: '1px solid color-mix(in oklab, var(--danger) 20%, transparent)',
                       borderRadius: 6,
                       fontFamily: 'monospace',
                       fontSize: 11,
-                      color: '#dc2626',
+                      color: 'var(--danger)',
                     }}
                   >
                     {s}
@@ -7985,8 +7992,8 @@ function SecurityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                               fontSize: 10,
                               borderRadius: 4,
                               padding: '2px 6px',
-                              background: '#1e1b4b44',
-                              color: '#6366f1',
+                              background: 'var(--info-soft)',
+                              color: "var(--brand)",
                             }}
                           >
                             {v.cve}
@@ -8023,15 +8030,15 @@ function JavascriptTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
             {[
               { label: 'Total JS', value: `${result.js_audit.total_kb ?? 0} KB`, color: 'var(--text)' },
-              { label: 'Unused JS', value: `${result.js_audit.unused_kb ?? 0} KB`, color: '#ef4444' },
-              { label: 'Unused %', value: `${(result.js_audit.unused_pct ?? 0).toFixed(1)}%`, color: '#ef4444' },
-              { label: 'Parse Time', value: `${result.js_audit.parse_time_ms ?? 0}ms`, color: '#f59e0b' },
-              { label: 'Exec Time', value: `${result.js_audit.execution_time_ms ?? 0}ms`, color: '#f59e0b' },
-              { label: 'Third-party JS', value: `${result.js_audit.third_party_kb ?? 0} KB`, color: '#6366f1' },
+              { label: 'Unused JS', value: `${result.js_audit.unused_kb ?? 0} KB`, color: 'var(--danger)' },
+              { label: 'Unused %', value: `${(result.js_audit.unused_pct ?? 0).toFixed(1)}%`, color: 'var(--danger)' },
+              { label: 'Parse Time', value: `${result.js_audit.parse_time_ms ?? 0}ms`, color: 'var(--warning)' },
+              { label: 'Exec Time', value: `${result.js_audit.execution_time_ms ?? 0}ms`, color: 'var(--warning)' },
+              { label: 'Third-party JS', value: `${result.js_audit.third_party_kb ?? 0} KB`, color: "var(--brand)" },
               {
                 label: 'Main Thread Cost',
                 value: `${result.js_audit.main_thread_cost_ms ?? 0}ms`,
-                color: (result.js_audit.main_thread_cost_ms ?? 0) > 1500 ? '#ef4444' : '#22c55e',
+                color: (result.js_audit.main_thread_cost_ms ?? 0) > 1500 ? 'var(--danger)' : 'var(--success)',
               },
             ].map((kpi) => (
               <div key={kpi.label} style={card}>
@@ -8047,9 +8054,9 @@ function JavascriptTab({ result, card, isOfflinePreview }: PerfTabProps) {
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Compression Savings</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 8 }}>
                 {[
-                  { label: 'Raw', value: result.js_audit.compression.raw_kb, color: '#ef4444' },
-                  { label: 'Gzip', value: result.js_audit.compression.gzip_kb, color: '#f59e0b' },
-                  { label: 'Brotli', value: result.js_audit.compression.brotli_kb, color: '#22c55e' },
+                  { label: 'Raw', value: result.js_audit.compression.raw_kb, color: 'var(--danger)' },
+                  { label: 'Gzip', value: result.js_audit.compression.gzip_kb, color: 'var(--warning)' },
+                  { label: 'Brotli', value: result.js_audit.compression.brotli_kb, color: 'var(--success)' },
                 ].map((c) => {
                   const rawKb = result.js_audit?.compression?.raw_kb ?? 1;
                   const pct = Math.round(((c.value ?? 0) / Math.max(rawKb, 1)) * 100); // NOSONAR
@@ -8122,18 +8129,18 @@ function JavascriptTab({ result, card, isOfflinePreview }: PerfTabProps) {
                                 style={{
                                   width: `${m.unused_pct ?? 0}%`,
                                   height: '100%',
-                                  background: (m.unused_pct ?? 0) > 50 ? '#ef4444' : '#f59e0b',
+                                  background: (m.unused_pct ?? 0) > 50 ? 'var(--danger)' : 'var(--warning)',
                                   borderRadius: 2,
                                 }}
                               />
                             </div>
-                            <span style={{ color: (m.unused_pct ?? 0) > 50 ? '#ef4444' : 'var(--text)' }}>
+                            <span style={{ color: (m.unused_pct ?? 0) > 50 ? 'var(--danger)' : 'var(--text)' }}>
                               {m.unused_pct}%
                             </span>
                           </div>
                         </td>
                         <td style={{ padding: '6px 10px' }}>
-                          <span style={{ color: m.tree_shakeable ? '#22c55e' : '#ef4444' }}>
+                          <span style={{ color: m.tree_shakeable ? 'var(--success)' : 'var(--danger)' }}>
                             {m.tree_shakeable ? 'Yes' : 'No'}
                           </span>
                         </td>
@@ -8181,14 +8188,14 @@ function JavascriptTab({ result, card, isOfflinePreview }: PerfTabProps) {
                           Culprit: {t.culprit} · starts at {t.start_ms}ms
                         </div>
                       </div>
-                      <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 13 }}>{t.duration_ms}ms</span>
+                      <span style={{ color: 'var(--danger)', fontWeight: 700, fontSize: 13 }}>{t.duration_ms}ms</span>
                     </div>
                     <div style={{ height: 4, background: 'var(--line)', borderRadius: 2, overflow: 'hidden' }}>
                       <div
                         style={{
                           width: `${Math.min((t.duration_ms ?? 0) / 5, 100)}%`,
                           height: '100%',
-                          background: '#ef4444',
+                          background: 'var(--danger)',
                           borderRadius: 2,
                         }}
                       />
@@ -8209,11 +8216,11 @@ function JavascriptTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     key={s}
                     style={{
                       padding: '6px 10px',
-                      background: '#7f1d1d22',
-                      border: '1px solid #ef444444',
+                      background: 'var(--danger-soft)',
+                      border: '1px solid color-mix(in oklab, var(--danger) 27%, transparent)',
                       borderRadius: 6,
                       fontSize: 12,
-                      color: '#dc2626',
+                      color: 'var(--danger)',
                       fontFamily: 'monospace',
                     }}
                   >
@@ -8241,8 +8248,8 @@ function JavascriptTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     }}
                   >
                     <div style={{ fontWeight: 600 }}>{op.title}</div>
-                    {(op.savings_kb ?? 0) > 0 && <div style={{ color: '#22c55e' }}>↓{op.savings_kb} KB</div>}
-                    {(op.savings_ms ?? 0) > 0 && <div style={{ color: '#6366f1' }}>-{op.savings_ms}ms</div>}
+                    {(op.savings_kb ?? 0) > 0 && <div style={{ color: 'var(--success)' }}>↓{op.savings_kb} KB</div>}
+                    {(op.savings_ms ?? 0) > 0 && <div style={{ color: "var(--brand)" }}>-{op.savings_ms}ms</div>}
                   </div>
                 ))}
               </div>
@@ -8270,25 +8277,25 @@ function CssTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 140px), 1fr))', gap: 10 }}>
             {[
               { label: 'Total CSS', value: `${result.css_audit.total_kb ?? 0} KB`, color: 'var(--text)' },
-              { label: 'Unused CSS', value: `${result.css_audit.unused_kb ?? 0} KB`, color: '#f59e0b' },
-              { label: 'Unused %', value: `${(result.css_audit.unused_pct ?? 0).toFixed(1)}%`, color: '#f59e0b' },
+              { label: 'Unused CSS', value: `${result.css_audit.unused_kb ?? 0} KB`, color: 'var(--warning)' },
+              { label: 'Unused %', value: `${(result.css_audit.unused_pct ?? 0).toFixed(1)}%`, color: 'var(--warning)' },
               { label: 'Critical Path', value: `${result.css_audit.critical_path_kb ?? 0} KB`, color: 'var(--text)' },
               {
                 label: 'Critical Inline',
                 value: `${result.css_audit.critical_inline_pct ?? 0}%`,
-                color: (result.css_audit.critical_inline_pct ?? 0) >= 60 ? '#22c55e' : '#f59e0b',
+                color: (result.css_audit.critical_inline_pct ?? 0) >= 60 ? 'var(--success)' : 'var(--warning)',
               },
               { label: 'Selectors', value: String(result.css_audit.selector_count ?? 0), color: 'var(--text)' },
               { label: 'Rules', value: String(result.css_audit.rule_count ?? 0), color: 'var(--text)' },
               {
                 label: '@font-face',
                 value: String(result.css_audit.font_face_count ?? 0),
-                color: (result.css_audit.font_face_count ?? 0) > 6 ? '#f59e0b' : 'var(--text)',
+                color: (result.css_audit.font_face_count ?? 0) > 6 ? 'var(--warning)' : 'var(--text)',
               },
               {
                 label: 'Blocking Files',
                 value: String((result.css_audit.render_blocking ?? []).length),
-                color: (result.css_audit.render_blocking ?? []).length > 0 ? '#ef4444' : '#22c55e',
+                color: (result.css_audit.render_blocking ?? []).length > 0 ? 'var(--danger)' : 'var(--success)',
               },
             ].map((kpi) => (
               <div key={kpi.label} style={card}>
@@ -8306,7 +8313,7 @@ function CssTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 style={{
                   width: `${result.css_audit.critical_inline_pct ?? 0}%`,
                   height: '100%',
-                  background: (result.css_audit.critical_inline_pct ?? 0) >= 60 ? '#22c55e' : '#f59e0b',
+                  background: (result.css_audit.critical_inline_pct ?? 0) >= 60 ? 'var(--success)' : 'var(--warning)',
                   borderRadius: 4,
                 }}
               />
@@ -8345,7 +8352,7 @@ function CssTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       <tr key={`cssf-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                         <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontSize: 11 }}>{f.file}</td>
                         <td style={{ padding: '6px 10px', fontWeight: 700 }}>{f.total_kb}</td>
-                        <td style={{ padding: '6px 10px', color: '#f59e0b' }}>{f.unused_kb}</td>
+                        <td style={{ padding: '6px 10px', color: 'var(--warning)' }}>{f.unused_kb}</td>
                         <td style={{ padding: '6px 10px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <div
@@ -8361,7 +8368,7 @@ function CssTab({ result, card, isOfflinePreview }: PerfTabProps) {
                                 style={{
                                   width: `${f.unused_pct ?? 0}%`,
                                   height: '100%',
-                                  background: (f.unused_pct ?? 0) > 60 ? '#ef4444' : '#f59e0b',
+                                  background: (f.unused_pct ?? 0) > 60 ? 'var(--danger)' : 'var(--warning)',
                                   borderRadius: 2,
                                 }}
                               />
@@ -8371,9 +8378,9 @@ function CssTab({ result, card, isOfflinePreview }: PerfTabProps) {
                         </td>
                         <td style={{ padding: '6px 10px' }}>
                           {f.render_blocking ? (
-                            <span style={badge('#ef4444')}>Blocking</span>
+                            <span style={badge('var(--danger)')}>Blocking</span>
                           ) : (
-                            <span style={{ color: '#22c55e' }}>No</span>
+                            <span style={{ color: 'var(--success)' }}>No</span>
                           )}
                         </td>
                       </tr>
@@ -8392,9 +8399,9 @@ function CssTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 {(result.css_audit.animation_jank_risks ?? []).map((r, i) => (
                   <div
                     key={`jank-${i}`}
-                    style={{ ...card, padding: 10, borderLeft: '3px solid #f59e0b', fontSize: 12 }}
+                    style={{ ...card, padding: 10, borderLeft: '3px solid var(--warning)', fontSize: 12 }}
                   >
-                    <span style={badge('#f59e0b')}>jank</span>
+                    <span style={badge('var(--warning)')}>jank</span>
                     <span style={{ marginLeft: 8 }}>{r}</span>
                   </div>
                 ))}
@@ -8412,11 +8419,11 @@ function CssTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     key={s}
                     style={{
                       padding: '6px 10px',
-                      background: '#7f1d1d22',
-                      border: '1px solid #ef444444',
+                      background: 'var(--danger-soft)',
+                      border: '1px solid color-mix(in oklab, var(--danger) 27%, transparent)',
                       borderRadius: 6,
                       fontSize: 12,
-                      color: '#dc2626',
+                      color: 'var(--danger)',
                       fontFamily: 'monospace',
                     }}
                   >
@@ -8444,8 +8451,8 @@ function CssTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     }}
                   >
                     <div style={{ fontWeight: 600 }}>{op.title}</div>
-                    {(op.savings_kb ?? 0) > 0 && <div style={{ color: '#22c55e' }}>↓{op.savings_kb} KB</div>}
-                    {(op.savings_ms ?? 0) > 0 && <div style={{ color: '#6366f1' }}>-{op.savings_ms}ms</div>}
+                    {(op.savings_kb ?? 0) > 0 && <div style={{ color: 'var(--success)' }}>↓{op.savings_kb} KB</div>}
+                    {(op.savings_ms ?? 0) > 0 && <div style={{ color: "var(--brand)" }}>-{op.savings_ms}ms</div>}
                   </div>
                 ))}
               </div>
@@ -8483,33 +8490,33 @@ function InputValidationTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 color:
                   (result.input_validation_audit.csrf_protected ?? 0) ===
                   (result.input_validation_audit.forms_found ?? 0)
-                    ? '#22c55e'
-                    : '#f59e0b',
+                    ? 'var(--success)'
+                    : 'var(--warning)',
               },
               {
                 label: 'Server Validated',
                 value: `${result.input_validation_audit.server_side_validated ?? 0}/${result.input_validation_audit.forms_found ?? 0}`,
-                color: '#6366f1',
+                color: "var(--brand)",
               },
               {
                 label: 'Sanitization %',
                 value: `${result.input_validation_audit.sanitization_pct ?? 0}%`,
-                color: (result.input_validation_audit.sanitization_pct ?? 0) >= 80 ? '#22c55e' : '#f59e0b',
+                color: (result.input_validation_audit.sanitization_pct ?? 0) >= 80 ? 'var(--success)' : 'var(--warning)',
               },
               {
                 label: 'XSS Risks',
                 value: String(result.input_validation_audit.xss_risks ?? 0),
-                color: (result.input_validation_audit.xss_risks ?? 0) > 0 ? '#ef4444' : '#22c55e',
+                color: (result.input_validation_audit.xss_risks ?? 0) > 0 ? 'var(--danger)' : 'var(--success)',
               },
               {
                 label: 'Injection Risks',
                 value: String(result.input_validation_audit.injection_risks ?? 0),
-                color: (result.input_validation_audit.injection_risks ?? 0) > 0 ? '#ef4444' : '#22c55e',
+                color: (result.input_validation_audit.injection_risks ?? 0) > 0 ? 'var(--danger)' : 'var(--success)',
               },
               {
                 label: 'Open Redirects',
                 value: String(result.input_validation_audit.open_redirect_risks ?? 0),
-                color: (result.input_validation_audit.open_redirect_risks ?? 0) > 0 ? '#ef4444' : '#22c55e',
+                color: (result.input_validation_audit.open_redirect_risks ?? 0) > 0 ? 'var(--danger)' : 'var(--success)',
               },
             ].map((kpi) => (
               <div key={kpi.label} style={card}>
@@ -8545,15 +8552,15 @@ function InputValidationTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   </thead>
                   <tbody>
                     {(result.input_validation_audit.owasp_coverage ?? []).map((o, i) => {
-                      const statusCol = o.status === 'pass' ? '#22c55e' : o.status === 'warn' ? '#f59e0b' : '#ef4444';
+                      const statusCol = o.status === 'pass' ? 'var(--success)' : o.status === 'warn' ? 'var(--warning)' : 'var(--danger)';
                       const riskCol =
                         o.risk_level === 'critical'
-                          ? '#ef4444'
+                          ? 'var(--danger)'
                           : o.risk_level === 'high'
-                            ? '#f97316'
+                            ? 'var(--warning)'
                             : o.risk_level === 'medium'
-                              ? '#f59e0b'
-                              : '#22c55e';
+                              ? 'var(--warning)'
+                              : 'var(--success)';
                       return (
                         <tr key={`owasp-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                           <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700 }}>
@@ -8601,7 +8608,7 @@ function InputValidationTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   </thead>
                   <tbody>
                     {(result.input_validation_audit.form_audit ?? []).map((f, i) => {
-                      const rc = f.risk === 'high' ? '#ef4444' : f.risk === 'medium' ? '#f59e0b' : '#22c55e';
+                      const rc = f.risk === 'high' ? 'var(--danger)' : f.risk === 'medium' ? 'var(--warning)' : 'var(--success)';
                       return (
                         <tr key={`form-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                           <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontSize: 11 }}>{f.form_id}</td>
@@ -8616,17 +8623,17 @@ function InputValidationTab({ result, card, isOfflinePreview }: PerfTabProps) {
                             {f.action}
                           </td>
                           <td style={{ padding: '6px 10px' }}>
-                            <span style={{ color: f.csrf ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                            <span style={{ color: f.csrf ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
                               {f.csrf ? 'Yes' : 'No'}
                             </span>
                           </td>
                           <td style={{ padding: '6px 10px' }}>
-                            <span style={{ color: f.client_val ? '#22c55e' : '#f59e0b' }}>
+                            <span style={{ color: f.client_val ? 'var(--success)' : 'var(--warning)' }}>
                               {f.client_val ? 'Yes' : 'No'}
                             </span>
                           </td>
                           <td style={{ padding: '6px 10px' }}>
-                            <span style={{ color: f.server_val ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                            <span style={{ color: f.server_val ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
                               {f.server_val ? 'Yes' : 'No'}
                             </span>
                           </td>
@@ -8692,17 +8699,17 @@ function LatencyTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     {
                       label: 'Hit Rate',
                       value: `${((result.latency_audit.cache_stats.hit_rate ?? 0) * 100).toFixed(0)}%`,
-                      color: (result.latency_audit.cache_stats.hit_rate ?? 0) >= 0.8 ? '#22c55e' : '#f59e0b',
+                      color: (result.latency_audit.cache_stats.hit_rate ?? 0) >= 0.8 ? 'var(--success)' : 'var(--warning)',
                     },
                     {
                       label: 'Miss Penalty',
                       value: `${result.latency_audit.cache_stats.miss_penalty_ms ?? 0}ms`,
-                      color: '#ef4444',
+                      color: 'var(--danger)',
                     },
                     {
                       label: 'Stale Rate',
                       value: `${((result.latency_audit.cache_stats.stale_rate ?? 0) * 100).toFixed(0)}%`,
-                      color: '#f59e0b',
+                      color: 'var(--warning)',
                     },
                     {
                       label: 'Cache-Control',
@@ -8734,21 +8741,21 @@ function LatencyTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     {
                       label: 'Brotli',
                       value: result.latency_audit.compression_stats.brotli_pct ?? 0,
-                      color: '#22c55e',
+                      color: 'var(--success)',
                       max: 100,
                       suffix: '%',
                     },
                     {
                       label: 'Gzip',
                       value: result.latency_audit.compression_stats.gzip_pct ?? 0,
-                      color: '#6366f1',
+                      color: "var(--brand)",
                       max: 100,
                       suffix: '%',
                     },
                     {
                       label: 'None',
                       value: result.latency_audit.compression_stats.none_pct ?? 0,
-                      color: '#ef4444',
+                      color: 'var(--danger)',
                       max: 100,
                       suffix: '%',
                     },
@@ -8770,13 +8777,14 @@ function LatencyTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 return wf.map((entry, i) => {
                   const startPct = ((entry.start_ms ?? 0) / maxEnd) * 100;
                   const widthPct = ((entry.duration_ms ?? 0) / maxEnd) * 100;
+                  // Resource kinds are categories, not states.
                   const typeColor: Record<string, string> = {
-                    document: '#6366f1',
-                    script: '#f59e0b',
-                    css: '#6366f1',
-                    image: '#22c55e',
-                    font: '#a855f7',
-                    api: '#f97316',
+                    document: 'var(--series-1)',
+                    script: 'var(--series-2)',
+                    css: 'var(--series-3)',
+                    image: 'var(--series-4)',
+                    font: 'var(--series-5)',
+                    api: 'var(--series-6)',
                   };
                   const col = typeColor[entry.type ?? 'api'] ?? 'var(--muted)';
                   return (
@@ -8871,10 +8879,10 @@ function LatencyTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   <div key={`ep-${i}`} style={{ borderBottom: '1px solid var(--line)', paddingBottom: 10 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12 }}>
                       <span style={{ fontWeight: 700 }}>
-                        <span style={{ color: '#6366f1', marginRight: 6 }}>{ep.method}</span>
+                        <span style={{ color: "var(--brand)", marginRight: 6 }}>{ep.method}</span>
                         {ep.url}
                       </span>
-                      <span style={{ color: (ep.error_rate ?? 0) > 0.01 ? '#ef4444' : '#22c55e', fontWeight: 700 }}>
+                      <span style={{ color: (ep.error_rate ?? 0) > 0.01 ? 'var(--danger)' : 'var(--success)', fontWeight: 700 }}>
                         err {((ep.error_rate ?? 0) * 100).toFixed(1)}%
                       </span>
                     </div>
@@ -8894,7 +8902,7 @@ function LatencyTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 items={(result.latency_audit.db_query_distribution ?? []).map((q) => ({
                   label: (q.query ?? '').slice(0, 28),
                   value: q.p95 ?? 0,
-                  color: (q.p95 ?? 0) > 100 ? '#f97316' : '#6366f1',
+                  color: (q.p95 ?? 0) > 100 ? 'var(--warning)' : "var(--brand)",
                   suffix: 'ms p95',
                 }))}
               />
@@ -8934,7 +8942,7 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   fontWeight: 900,
                   fontSize: 44,
                   lineHeight: 1,
-                  color: (result.outdated_audit.security_risk_score ?? 0) >= 60 ? '#ef4444' : '#f59e0b',
+                  color: (result.outdated_audit.security_risk_score ?? 0) >= 60 ? 'var(--danger)' : 'var(--warning)',
                 }}
               >
                 {result.outdated_audit.security_risk_score ?? 0}
@@ -8946,9 +8954,9 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
             >
               {[
                 { label: 'Total Deps', value: result.outdated_audit.total_deps ?? 0, color: 'var(--text)' },
-                { label: 'Outdated', value: result.outdated_audit.outdated_count ?? 0, color: '#f59e0b' },
-                { label: 'Critical', value: result.outdated_audit.critical_outdated ?? 0, color: '#ef4444' },
-                { label: 'CVEs Found', value: result.outdated_audit.cve_count ?? 0, color: '#ef4444' },
+                { label: 'Outdated', value: result.outdated_audit.outdated_count ?? 0, color: 'var(--warning)' },
+                { label: 'Critical', value: result.outdated_audit.critical_outdated ?? 0, color: 'var(--danger)' },
+                { label: 'CVEs Found', value: result.outdated_audit.cve_count ?? 0, color: 'var(--danger)' },
               ].map((kpi) => (
                 <div
                   key={kpi.label}
@@ -8991,12 +8999,12 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     {(result.outdated_audit.cves ?? []).map((c, i) => {
                       const sc =
                         c.severity === 'critical'
-                          ? '#ef4444'
+                          ? 'var(--danger)'
                           : c.severity === 'high'
-                            ? '#f97316'
+                            ? 'var(--warning)'
                             : c.severity === 'medium'
-                              ? '#f59e0b'
-                              : '#22c55e';
+                              ? 'var(--warning)'
+                              : 'var(--success)';
                       return (
                         <tr key={`cve-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                           <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700 }}>
@@ -9009,8 +9017,8 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                                 fontSize: 10,
                                 borderRadius: 4,
                                 padding: '2px 6px',
-                                background: '#1e1b4b44',
-                                color: '#6366f1',
+                                background: 'var(--info-soft)',
+                                color: "var(--brand)",
                               }}
                             >
                               {c.cve}
@@ -9020,7 +9028,7 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                             <span style={badge(sc)}>{c.severity}</span>
                           </td>
                           <td style={{ padding: '6px 10px', fontWeight: 700, color: sc }}>{c.cvss}</td>
-                          <td style={{ padding: '6px 10px', color: '#22c55e', fontFamily: 'monospace', fontSize: 11 }}>
+                          <td style={{ padding: '6px 10px', color: 'var(--success)', fontFamily: 'monospace', fontSize: 11 }}>
                             {c.patched_in}
                           </td>
                         </tr>
@@ -9061,7 +9069,7 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   <tbody>
                     {(result.outdated_audit.upgrade_matrix ?? []).map((u, i) => {
                       const effortColor =
-                        u.effort === 'high' ? '#ef4444' : u.effort === 'medium' ? '#f59e0b' : '#22c55e';
+                        u.effort === 'high' ? 'var(--danger)' : u.effort === 'medium' ? 'var(--warning)' : 'var(--success)';
                       return (
                         <tr key={`um-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                           <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700 }}>
@@ -9082,7 +9090,7 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                               padding: '6px 10px',
                               fontFamily: 'monospace',
                               fontSize: 10,
-                              color: '#22c55e',
+                              color: 'var(--success)',
                               fontWeight: 700,
                             }}
                           >
@@ -9091,7 +9099,7 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                           <td
                             style={{
                               padding: '6px 10px',
-                              color: (u.breaking_changes ?? 0) > 0 ? '#f59e0b' : '#22c55e',
+                              color: (u.breaking_changes ?? 0) > 0 ? 'var(--warning)' : 'var(--success)',
                             }}
                           >
                             {u.breaking_changes}
@@ -9100,7 +9108,7 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                             <span style={badge(effortColor)}>{u.effort}</span>
                           </td>
                           <td style={{ padding: '6px 10px' }}>
-                            {u.security_fix ? <span style={{ color: '#22c55e', fontWeight: 700 }}>Yes</span> : '—'}
+                            {u.security_fix ? <span style={{ color: 'var(--success)', fontWeight: 700 }}>Yes</span> : '—'}
                           </td>
                         </tr>
                       );
@@ -9139,8 +9147,8 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                           fontSize: 10,
                           borderRadius: 4,
                           padding: '1px 5px',
-                          background: '#450a0a44',
-                          color: '#dc2626',
+                          background: 'var(--danger-soft)',
+                          color: 'var(--danger)',
                         }}
                       >
                         CVE
@@ -9148,7 +9156,7 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     )}
                   </div>
                   <span>
-                    {d.current} → <strong style={{ color: '#6366f1' }}>{d.latest}</strong>
+                    {d.current} → <strong style={{ color: "var(--brand)" }}>{d.latest}</strong>
                   </span>
                   <span style={{ color: 'var(--muted)', fontSize: 10 }}>
                     {d.versions_behind ?? '?'} versions behind
@@ -9177,7 +9185,7 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Deprecated APIs</div>
               {(result.outdated_audit.deprecated_apis ?? []).map((a, i) => (
                 <div key={`api-${i}`} style={{ marginBottom: 10, fontSize: 12 }}>
-                  <div style={{ fontWeight: 700, color: '#f97316' }}>{a.api}</div>
+                  <div style={{ fontWeight: 700, color: 'var(--warning)' }}>{a.api}</div>
                   <div style={{ color: 'var(--muted)' }}>
                     Used in: {a.used_in} · EOL: {a.eol}
                   </div>
@@ -9198,7 +9206,7 @@ function OutdatedTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 <div key={`pat-${i}`} style={{ marginBottom: 10, fontSize: 12 }}>
                   <div style={{ fontWeight: 700 }}>{p.pattern}</div>
                   <div style={{ color: 'var(--muted)' }}>{p.file}</div>
-                  <div style={{ color: '#6366f1' }}>→ {p.recommendation}</div>
+                  <div style={{ color: "var(--brand)" }}>→ {p.recommendation}</div>
                 </div>
               ))}
             </div>
@@ -9252,7 +9260,7 @@ function WorkflowTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 {
                   label: 'Test Coverage',
                   value: `${result.workflow_audit.test_coverage_pct ?? 0}%`,
-                  color: (result.workflow_audit.test_coverage_pct ?? 0) >= 80 ? '#22c55e' : '#f59e0b',
+                  color: (result.workflow_audit.test_coverage_pct ?? 0) >= 80 ? 'var(--success)' : 'var(--warning)',
                 },
                 {
                   label: 'Mean Deploy',
@@ -9262,12 +9270,12 @@ function WorkflowTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 {
                   label: 'Mean Recovery (MTTR)',
                   value: `${result.workflow_audit.mean_recovery_mins ?? 0}m`,
-                  color: (result.workflow_audit.mean_recovery_mins ?? 0) > 60 ? '#ef4444' : '#22c55e',
+                  color: (result.workflow_audit.mean_recovery_mins ?? 0) > 60 ? 'var(--danger)' : 'var(--success)',
                 },
                 {
                   label: 'Flaky Tests',
                   value: String((result.workflow_audit.flaky_tests ?? []).length),
-                  color: (result.workflow_audit.flaky_tests ?? []).length > 0 ? '#f59e0b' : '#22c55e',
+                  color: (result.workflow_audit.flaky_tests ?? []).length > 0 ? 'var(--warning)' : 'var(--success)',
                 },
               ].map((kpi) => (
                 <div
@@ -9289,7 +9297,7 @@ function WorkflowTab({ result, card, isOfflinePreview }: PerfTabProps) {
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Build Trend (7 days)</div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 80 }}>
                 {(result.workflow_audit.build_trend ?? []).map((b, i) => {
-                  const barColor = b.status === 'fail' ? '#ef4444' : b.status === 'warn' ? '#f59e0b' : '#22c55e';
+                  const barColor = b.status === 'fail' ? 'var(--danger)' : b.status === 'warn' ? 'var(--warning)' : 'var(--success)';
                   const maxMins = Math.max(
                     ...(result.workflow_audit?.build_trend ?? []).map((x) => x.duration_mins ?? 0)
                   );
@@ -9325,7 +9333,7 @@ function WorkflowTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 style={{
                   fontWeight: 700,
                   fontSize: 16,
-                  color: (result.workflow_audit.test_coverage_pct ?? 0) >= 80 ? '#22c55e' : '#f59e0b',
+                  color: (result.workflow_audit.test_coverage_pct ?? 0) >= 80 ? 'var(--success)' : 'var(--warning)',
                 }}
               >
                 {result.workflow_audit.test_coverage_pct ?? 0}%
@@ -9336,7 +9344,7 @@ function WorkflowTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 style={{
                   width: `${result.workflow_audit.test_coverage_pct ?? 0}%`,
                   height: '100%',
-                  background: (result.workflow_audit.test_coverage_pct ?? 0) >= 80 ? '#22c55e' : '#f59e0b',
+                  background: (result.workflow_audit.test_coverage_pct ?? 0) >= 80 ? 'var(--success)' : 'var(--warning)',
                   borderRadius: 4,
                 }}
               />
@@ -9376,7 +9384,7 @@ function WorkflowTab({ result, card, isOfflinePreview }: PerfTabProps) {
                             {t.suite} · last failed {t.last_failed}
                           </div>
                         </div>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: flakePct >= 15 ? '#ef4444' : '#f59e0b' }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: flakePct >= 15 ? 'var(--danger)' : 'var(--warning)' }}>
                           {flakePct}% flaky
                         </div>
                       </div>
@@ -9385,7 +9393,7 @@ function WorkflowTab({ result, card, isOfflinePreview }: PerfTabProps) {
                           style={{
                             width: `${flakePct}%`,
                             height: '100%',
-                            background: flakePct >= 15 ? '#ef4444' : '#f59e0b',
+                            background: flakePct >= 15 ? 'var(--danger)' : 'var(--warning)',
                             borderRadius: 2,
                           }}
                         />
@@ -9420,9 +9428,9 @@ function WorkflowTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, alignItems: 'center' }}
                 >
                   <span>
-                    {c.check} {c.required && <span style={{ color: '#ef4444', fontSize: 10 }}>(required)</span>}
+                    {c.check} {c.required && <span style={{ color: 'var(--danger)', fontSize: 10 }}>(required)</span>}
                   </span>
-                  <span style={{ fontWeight: 700, color: c.status === 'pass' ? '#22c55e' : '#ef4444' }}>
+                  <span style={{ fontWeight: 700, color: c.status === 'pass' ? 'var(--success)' : 'var(--danger)' }}>
                     {c.status?.toUpperCase()}
                   </span>
                 </div>
@@ -9449,7 +9457,7 @@ function WorkflowTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   <span style={{ color: 'var(--muted)' }}>
                     {d.deployed_at ? new Date(d.deployed_at).toLocaleString() : ''}
                   </span>
-                  <span style={{ color: d.rollback ? '#ef4444' : '#22c55e', fontWeight: 700 }}>
+                  <span style={{ color: d.rollback ? 'var(--danger)' : 'var(--success)', fontWeight: 700 }}>
                     {d.rollback ? 'rolled back' : d.status}
                   </span>
                   <span style={{ fontWeight: 700, color: perfDeltaColor(d.perf_delta_ms) }}>
@@ -9517,22 +9525,22 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   {
                     label: 'Impressions',
                     value: (result.data_analysis.search_console.impressions ?? 0).toLocaleString(),
-                    color: '#6366f1',
+                    color: "var(--brand)",
                   },
                   {
                     label: 'Clicks',
                     value: (result.data_analysis.search_console.clicks ?? 0).toLocaleString(),
-                    color: '#22c55e',
+                    color: 'var(--success)',
                   },
                   {
                     label: 'CTR',
                     value: `${(result.data_analysis.search_console.ctr_pct ?? 0).toFixed(1)}%`,
-                    color: '#6366f1',
+                    color: "var(--brand)",
                   },
                   {
                     label: 'Avg Position',
                     value: (result.data_analysis.search_console.avg_position ?? 0).toFixed(1),
-                    color: '#f59e0b',
+                    color: 'var(--warning)',
                   },
                 ].map((kpi) => (
                   <div
@@ -9571,9 +9579,9 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
                         <tr key={`q-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                           <td style={{ padding: '5px 8px', fontWeight: 600 }}>{q.query}</td>
                           <td style={{ padding: '5px 8px' }}>—</td>
-                          <td style={{ padding: '5px 8px', color: '#22c55e' }}>{q.clicks}</td>
+                          <td style={{ padding: '5px 8px', color: 'var(--success)' }}>{q.clicks}</td>
                           <td style={{ padding: '5px 8px' }}>—</td>
-                          <td style={{ padding: '5px 8px', color: (q.position ?? 99) <= 3 ? '#22c55e' : '#f59e0b' }}>
+                          <td style={{ padding: '5px 8px', color: (q.position ?? 99) <= 3 ? 'var(--success)' : 'var(--warning)' }}>
                             {(q.position ?? 0).toFixed(1)}
                           </td>
                         </tr>
@@ -9612,9 +9620,9 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 </thead>
                 <tbody>
                   {(result.data_analysis.retention ?? []).map((r, i) => {
-                    const d1c = (r.d1_pct ?? 0) >= 50 ? '#22c55e' : (r.d1_pct ?? 0) >= 30 ? '#f59e0b' : '#ef4444';
-                    const d7c = (r.d7_pct ?? 0) >= 20 ? '#22c55e' : (r.d7_pct ?? 0) >= 10 ? '#f59e0b' : '#ef4444';
-                    const d30c = (r.d30_pct ?? 0) >= 10 ? '#22c55e' : (r.d30_pct ?? 0) >= 5 ? '#f59e0b' : '#ef4444';
+                    const d1c = (r.d1_pct ?? 0) >= 50 ? 'var(--success)' : (r.d1_pct ?? 0) >= 30 ? 'var(--warning)' : 'var(--danger)';
+                    const d7c = (r.d7_pct ?? 0) >= 20 ? 'var(--success)' : (r.d7_pct ?? 0) >= 10 ? 'var(--warning)' : 'var(--danger)';
+                    const d30c = (r.d30_pct ?? 0) >= 10 ? 'var(--success)' : (r.d30_pct ?? 0) >= 5 ? 'var(--warning)' : 'var(--danger)';
                     return (
                       <tr key={`ret-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                         <td style={{ padding: '6px 10px', fontWeight: 600 }}>{r.week}</td>
@@ -9639,7 +9647,7 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 items={(result.data_analysis.revenue_by_channel ?? []).map((c) => ({
                   label: c.channel ?? '',
                   value: c.revenue_usd ?? 0,
-                  color: '#22c55e',
+                  color: 'var(--success)',
                   max: Math.max(...(result.data_analysis?.revenue_by_channel ?? []).map((x) => x.revenue_usd ?? 0)),
                   suffix: ' USD',
                 }))}
@@ -9667,11 +9675,11 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   {(result.data_analysis.revenue_by_channel ?? []).map((c, i) => (
                     <tr key={`rev-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                       <td style={{ padding: '5px 8px', fontWeight: 600 }}>{c.channel}</td>
-                      <td style={{ padding: '5px 8px', color: '#22c55e', fontWeight: 700 }}>
+                      <td style={{ padding: '5px 8px', color: 'var(--success)', fontWeight: 700 }}>
                         ${(c.revenue_usd ?? 0).toLocaleString()}
                       </td>
                       <td style={{ padding: '5px 8px' }}>{(c.sessions ?? 0).toLocaleString()}</td>
-                      <td style={{ padding: '5px 8px', color: '#6366f1' }}>{((c.conv_rate ?? 0) * 100).toFixed(1)}%</td>
+                      <td style={{ padding: '5px 8px', color: "var(--brand)" }}>{((c.conv_rate ?? 0) * 100).toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -9690,7 +9698,7 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
               <AreaChart
                 points={(result.data_analysis.cohort_trend ?? []).map((c) => c.score ?? 0)}
                 labels={(result.data_analysis.cohort_trend ?? []).map((c) => c.period ?? '')}
-                color="#6366f1"
+                color="var(--info)"
                 height={80}
               />
               <div style={{ marginTop: 10 }}>
@@ -9698,7 +9706,7 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 <AreaChart
                   points={(result.data_analysis.cohort_trend ?? []).map((c) => c.lcp ?? 0)}
                   labels={(result.data_analysis.cohort_trend ?? []).map((c) => c.period ?? '')}
-                  color="#f97316"
+                  color="var(--warning)"
                   height={72}
                 />
               </div>
@@ -9733,7 +9741,7 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       </div>
                       <div style={{ width: 60, fontWeight: 700 }}>{(step.users ?? 0).toLocaleString()}</div>
                       {i > 0 && (
-                        <div style={{ width: 64, color: '#ef4444', fontSize: 11 }}>-{step.drop_pct?.toFixed(1)}%</div>
+                        <div style={{ width: 64, color: 'var(--danger)', fontSize: 11 }}>-{step.drop_pct?.toFixed(1)}%</div>
                       )}
                     </div>
                   );
@@ -9760,15 +9768,15 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     marginBottom: 8,
                   }}
                 >
-                  <span style={{ fontWeight: 700, color: '#f97316' }}>{a.metric}</span>
+                  <span style={{ fontWeight: 700, color: 'var(--warning)' }}>{a.metric}</span>
                   <span>Detected: {a.ts ? new Date(a.ts).toLocaleString() : 'n/a'}</span>
                   <span>
                     Actual: <strong>{a.value}</strong> · Expected: <strong>{a.expected}</strong>
                   </span>
                   <span
                     style={{
-                      background: a.severity === 'high' ? '#ef4444' : '#f59e0b',
-                      color: '#fff',
+                      background: a.severity === 'high' ? 'var(--danger)' : 'var(--warning)',
+                      color: 'var(--on-status)',
                       borderRadius: 4,
                       padding: '1px 7px',
                       fontSize: 10,
@@ -9812,7 +9820,7 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 style={{
                   fontWeight: 800,
                   fontSize: 22,
-                  color: (result.data_analysis.bot_traffic_pct ?? 0) > 15 ? '#ef4444' : '#f59e0b',
+                  color: (result.data_analysis.bot_traffic_pct ?? 0) > 15 ? 'var(--danger)' : 'var(--warning)',
                 }}
               >
                 {result.data_analysis.bot_traffic_pct}%
@@ -9828,7 +9836,7 @@ function DataAnalysisTab({ result, card, isOfflinePreview }: PerfTabProps) {
               }}
             >
               <div style={{ fontSize: 11, color: 'var(--muted)' }}>Crawl Efficiency</div>
-              <div style={{ fontWeight: 800, fontSize: 22, color: '#22c55e' }}>
+              <div style={{ fontWeight: 800, fontSize: 22, color: 'var(--success)' }}>
                 {result.data_analysis.crawl_efficiency}%
               </div>
             </div>
@@ -9854,12 +9862,12 @@ function CoreSeoTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
           {[
-            { label: 'Overall Score', value: `${result.core_seo_suite?.overall_score ?? 91}%`, color: '#22c55e' },
-            { label: 'Top-3 Keywords', value: '14', color: '#22c55e' },
-            { label: 'Rising Keywords', value: '8', color: '#6366f1' },
-            { label: 'Backlinks', value: '2,340', color: '#6366f1' },
-            { label: 'Domain Authority', value: '54', color: '#22c55e' },
-            { label: 'E-E-A-T Score', value: '78/100', color: '#f59e0b' },
+            { label: 'Overall Score', value: `${result.core_seo_suite?.overall_score ?? 91}%`, color: 'var(--success)' },
+            { label: 'Top-3 Keywords', value: '14', color: 'var(--success)' },
+            { label: 'Rising Keywords', value: '8', color: "var(--brand)" },
+            { label: 'Backlinks', value: '2,340', color: "var(--brand)" },
+            { label: 'Domain Authority', value: '54', color: 'var(--success)' },
+            { label: 'E-E-A-T Score', value: '78/100', color: 'var(--warning)' },
           ].map((kpi) => (
             <div
               key={kpi.label}
@@ -9876,9 +9884,9 @@ function CoreSeoTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Keyword Coverage by Type</div>
         <MiniBarChart
           items={[
-            { label: 'Head (1–2 words)', value: 68, color: '#6366f1', max: 100, suffix: '%' },
-            { label: 'Body (3–4 words)', value: 82, color: '#6366f1', max: 100, suffix: '%' },
-            { label: 'Long-tail (5+)', value: 91, color: '#22c55e', max: 100, suffix: '%' },
+            { label: 'Head (1–2 words)', value: 68, color: "var(--brand)", max: 100, suffix: '%' },
+            { label: 'Body (3–4 words)', value: 82, color: "var(--brand)", max: 100, suffix: '%' },
+            { label: 'Long-tail (5+)', value: 91, color: 'var(--success)', max: 100, suffix: '%' },
           ]}
         />
       </div>
@@ -9900,12 +9908,12 @@ function ContentBloggingTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
           {[
-            { label: 'Overall Score', value: `${result.content_blog_suite?.overall_score ?? 79}%`, color: '#f59e0b' },
+            { label: 'Overall Score', value: `${result.content_blog_suite?.overall_score ?? 79}%`, color: 'var(--warning)' },
             { label: 'Published Articles', value: '147', color: 'var(--text)' },
-            { label: 'Refresh Backlog', value: '23', color: '#ef4444' },
-            { label: 'Publish SLA Met', value: '89%', color: '#22c55e' },
-            { label: 'AI-assisted Posts', value: '62%', color: '#6366f1' },
-            { label: 'CMS Sync', value: 'Healthy', color: '#22c55e' },
+            { label: 'Refresh Backlog', value: '23', color: 'var(--danger)' },
+            { label: 'Publish SLA Met', value: '89%', color: 'var(--success)' },
+            { label: 'AI-assisted Posts', value: '62%', color: "var(--brand)" },
+            { label: 'CMS Sync', value: 'Healthy', color: 'var(--success)' },
           ].map((kpi) => (
             <div
               key={kpi.label}
@@ -9931,7 +9939,7 @@ function ContentBloggingTab({ result, card, isOfflinePreview }: PerfTabProps) {
               style={{
                 ...card,
                 padding: 10,
-                borderLeft: `3px solid ${a.risk === 'high' ? '#ef4444' : '#f59e0b'}`,
+                borderLeft: `3px solid ${a.risk === 'high' ? 'var(--danger)' : 'var(--warning)'}`,
                 display: 'grid',
                 gridTemplateColumns: '1fr auto auto',
                 gap: 10,
@@ -9943,8 +9951,8 @@ function ContentBloggingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 {a.title}
                 <span style={{ color: 'var(--muted)', marginLeft: 8, fontSize: 10 }}>({a.age} old)</span>
               </div>
-              <span style={{ color: '#ef4444', fontWeight: 700 }}>-{a.traffic_drop}</span>
-              <span style={badge(a.risk === 'high' ? '#ef4444' : '#f59e0b')}>{a.risk}</span>
+              <span style={{ color: 'var(--danger)', fontWeight: 700 }}>-{a.traffic_drop}</span>
+              <span style={badge(a.risk === 'high' ? 'var(--danger)' : 'var(--warning)')}>{a.risk}</span>
             </div>
           ))}
         </div>
@@ -9968,13 +9976,13 @@ function AiOptimizationTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {
               label: 'AIO Readiness',
               value: `${result.ai_optimization_suite?.overall_score ?? 86}%`,
-              color: '#22c55e',
+              color: 'var(--success)',
             },
-            { label: 'Featured Snippet Capture', value: '18%', color: '#6366f1' },
-            { label: 'AI Citations', value: '42', color: '#6366f1' },
-            { label: 'LLMO Coverage', value: '73%', color: '#f59e0b' },
-            { label: 'GEO Score', value: '68%', color: '#f59e0b' },
-            { label: 'AEO Score', value: '71%', color: '#f59e0b' },
+            { label: 'Featured Snippet Capture', value: '18%', color: "var(--brand)" },
+            { label: 'AI Citations', value: '42', color: "var(--brand)" },
+            { label: 'LLMO Coverage', value: '73%', color: 'var(--warning)' },
+            { label: 'GEO Score', value: '68%', color: 'var(--warning)' },
+            { label: 'AEO Score', value: '71%', color: 'var(--warning)' },
           ].map((kpi) => (
             <div
               key={kpi.label}
@@ -9991,10 +9999,10 @@ function AiOptimizationTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>AI Optimization Coverage</div>
         <MiniBarChart
           items={[
-            { label: 'LLMO', value: 73, color: '#6366f1', max: 100, suffix: '%' },
-            { label: 'GEO', value: 68, color: '#6366f1', max: 100, suffix: '%' },
-            { label: 'AEO', value: 71, color: '#22c55e', max: 100, suffix: '%' },
-            { label: 'SAGEO', value: 55, color: '#f59e0b', max: 100, suffix: '%' },
+            { label: 'LLMO', value: 73, color: "var(--brand)", max: 100, suffix: '%' },
+            { label: 'GEO', value: 68, color: "var(--brand)", max: 100, suffix: '%' },
+            { label: 'AEO', value: 71, color: 'var(--success)', max: 100, suffix: '%' },
+            { label: 'SAGEO', value: 55, color: 'var(--warning)', max: 100, suffix: '%' },
           ]}
         />
       </div>
@@ -10017,13 +10025,13 @@ function SearchExperienceTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {
               label: 'Overall Score',
               value: `${result.search_experience_suite?.overall_score ?? 83}%`,
-              color: '#22c55e',
+              color: 'var(--success)',
             },
-            { label: 'Rich Snippets', value: '34%', color: '#6366f1' },
-            { label: 'PAA Coverage', value: '28%', color: '#6366f1' },
-            { label: 'Featured Snippets', value: '12%', color: '#f59e0b' },
-            { label: 'Search Intent Match', value: '81%', color: '#22c55e' },
-            { label: 'CWV (search LPs)', value: 'Good', color: '#22c55e' },
+            { label: 'Rich Snippets', value: '34%', color: "var(--brand)" },
+            { label: 'PAA Coverage', value: '28%', color: "var(--brand)" },
+            { label: 'Featured Snippets', value: '12%', color: 'var(--warning)' },
+            { label: 'Search Intent Match', value: '81%', color: 'var(--success)' },
+            { label: 'CWV (search LPs)', value: 'Good', color: 'var(--success)' },
           ].map((kpi) => (
             <div
               key={kpi.label}
@@ -10040,10 +10048,10 @@ function SearchExperienceTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>SERP Feature Coverage</div>
         <MiniBarChart
           items={[
-            { label: 'Rich Snippets', value: 34, color: '#6366f1', max: 100, suffix: '%' },
-            { label: 'People Also Ask', value: 28, color: '#6366f1', max: 100, suffix: '%' },
-            { label: 'Featured Snippet', value: 12, color: '#22c55e', max: 100, suffix: '%' },
-            { label: 'Shopping/Local', value: 8, color: '#f59e0b', max: 100, suffix: '%' },
+            { label: 'Rich Snippets', value: 34, color: "var(--brand)", max: 100, suffix: '%' },
+            { label: 'People Also Ask', value: 28, color: "var(--brand)", max: 100, suffix: '%' },
+            { label: 'Featured Snippet', value: 12, color: 'var(--success)', max: 100, suffix: '%' },
+            { label: 'Shopping/Local', value: 8, color: 'var(--warning)', max: 100, suffix: '%' },
           ]}
         />
       </div>
@@ -10097,10 +10105,10 @@ function AccessibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 style={{
                   color:
                     result.accessibility_audit?.legal_risk === 'high'
-                      ? '#ef4444'
+                      ? 'var(--danger)'
                       : result.accessibility_audit?.legal_risk === 'medium'
-                        ? '#f59e0b'
-                        : '#22c55e',
+                        ? 'var(--warning)'
+                        : 'var(--success)',
                   fontWeight: 700,
                 }}
               >
@@ -10126,19 +10134,19 @@ function AccessibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
           }}
         >
           {[
-            { label: 'Level A Violations', value: result.accessibility_audit?.violations_a ?? 0, color: '#ef4444' },
-            { label: 'Level AA Violations', value: result.accessibility_audit?.violations_aa ?? 0, color: '#f97316' },
-            { label: 'Level AAA Violations', value: result.accessibility_audit?.violations_aaa ?? 0, color: '#f59e0b' },
+            { label: 'Level A Violations', value: result.accessibility_audit?.violations_a ?? 0, color: 'var(--danger)' },
+            { label: 'Level AA Violations', value: result.accessibility_audit?.violations_aa ?? 0, color: 'var(--warning)' },
+            { label: 'Level AAA Violations', value: result.accessibility_audit?.violations_aaa ?? 0, color: 'var(--warning)' },
             {
               label: 'Contrast Failures',
               value: result.accessibility_audit?.color_contrast_failures ?? 0,
-              color: '#8b5cf6',
+              color: "var(--brand)",
             },
-            { label: 'ARIA Issues', value: result.accessibility_audit?.aria_issues ?? 0, color: '#6366f1' },
+            { label: 'ARIA Issues', value: result.accessibility_audit?.aria_issues ?? 0, color: "var(--brand)" },
             {
               label: 'Keyboard Nav Issues',
               value: result.accessibility_audit?.keyboard_nav_issues ?? 0,
-              color: '#06b6d4',
+              color: 'var(--info)',
             },
           ].map((m) => (
             <div
@@ -10166,17 +10174,17 @@ function AccessibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '10px 12px', fontSize: 12 }}
                 >
                   <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontFamily: 'monospace', color: '#8b5cf6', fontWeight: 700 }}>{issue.wcag}</span>
+                    <span style={{ fontFamily: 'monospace', color: "var(--brand)", fontWeight: 700 }}>{issue.wcag}</span>
                     <span
                       style={{
                         background:
                           issue.impact === 'critical'
-                            ? '#ef444420'
+                            ? 'color-mix(in oklab, var(--danger) 13%, transparent)'
                             : issue.impact === 'serious'
-                              ? '#f9741620'
-                              : '#f59e0b20',
+                              ? 'color-mix(in oklab, var(--warning) 13%, transparent)'
+                              : 'color-mix(in oklab, var(--warning) 13%, transparent)',
                         color:
-                          issue.impact === 'critical' ? '#ef4444' : issue.impact === 'serious' ? '#f97316' : '#f59e0b',
+                          issue.impact === 'critical' ? 'var(--danger)' : issue.impact === 'serious' ? 'var(--warning)' : 'var(--warning)',
                         padding: '1px 6px',
                         borderRadius: 4,
                         fontSize: 10,
@@ -10187,7 +10195,7 @@ function AccessibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     </span>
                   </div>
                   <div style={{ color: 'var(--muted)', marginBottom: 4 }}>{issue.description}</div>
-                  <div style={{ color: '#22c55e', fontSize: 11 }}>Fix: {issue.remediation}</div>
+                  <div style={{ color: 'var(--success)', fontSize: 11 }}>Fix: {issue.remediation}</div>
                 </div>
               ))}
             </div>
@@ -10219,9 +10227,9 @@ function AccessibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
               {(result.accessibility_audit?.failing_criteria ?? []).map((c, i) => (
                 <div
                   key={`item-${i}`}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#ef4444' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--danger)' }}
                 >
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--danger)', flexShrink: 0 }} />
                   {c}
                 </div>
               ))}
@@ -10231,9 +10239,9 @@ function AccessibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
               {(result.accessibility_audit?.passing_criteria ?? []).map((c, i) => (
                 <div
                   key={`item-${i}`}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#22c55e' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--success)' }}
                 >
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', flexShrink: 0 }} />
                   {c}
                 </div>
               ))}
@@ -10263,14 +10271,14 @@ function CompetitorIntelTab({ result, card, isOfflinePreview }: PerfTabProps) {
           }}
         >
           {[
-            { label: 'Keyword Gap', value: result.competitor_intel?.keyword_gap ?? 0, color: '#ef4444' },
-            { label: 'Content Gap', value: result.competitor_intel?.content_gap ?? 0, color: '#f97316' },
+            { label: 'Keyword Gap', value: result.competitor_intel?.keyword_gap ?? 0, color: 'var(--danger)' },
+            { label: 'Content Gap', value: result.competitor_intel?.content_gap ?? 0, color: 'var(--warning)' },
             {
               label: 'Backlink Gap',
               value: (result.competitor_intel?.backlink_gap ?? 0).toLocaleString(),
-              color: '#f59e0b',
+              color: 'var(--warning)',
             },
-            { label: 'SERP Overlap', value: `${result.competitor_intel?.serp_overlap_pct ?? 0}%`, color: '#6366f1' },
+            { label: 'SERP Overlap', value: `${result.competitor_intel?.serp_overlap_pct ?? 0}%`, color: "var(--brand)" },
           ].map((m) => (
             <div
               key={m.label}
@@ -10326,17 +10334,17 @@ function CompetitorIntelTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 {
                   label: 'Thin Pages',
                   value: result.competitor_intel?.content_audit?.thin_pages ?? 0,
-                  color: '#f59e0b',
+                  color: 'var(--warning)',
                 },
                 {
                   label: 'Duplicate Pages',
                   value: result.competitor_intel?.content_audit?.duplicate_pages ?? 0,
-                  color: '#f97316',
+                  color: 'var(--warning)',
                 },
                 {
                   label: 'Decaying Pages',
                   value: result.competitor_intel?.content_audit?.decaying_pages ?? 0,
-                  color: '#ef4444',
+                  color: 'var(--danger)',
                 },
                 {
                   label: 'Avg Freshness',
@@ -10375,7 +10383,7 @@ function CompetitorIntelTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     borderBottom: '1px solid var(--line)',
                   }}
                 >
-                  <span style={{ color: '#6366f1', fontWeight: 700, flexShrink: 0 }}>#{i + 1}</span>
+                  <span style={{ color: "var(--brand)", fontWeight: 700, flexShrink: 0 }}>#{i + 1}</span>
                   <span>{opp}</span>
                 </div>
               ))}
@@ -10413,20 +10421,20 @@ function SchemaEntitiesTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {
               label: 'JSON-LD Coverage',
               value: `${result.schema_entities?.json_ld_coverage_pct ?? 0}%`,
-              color: '#6366f1',
+              color: "var(--brand)",
             },
             {
               label: 'Validated Schemas',
               value: `${result.schema_entities?.validated ?? 0}/${result.schema_entities?.total_schemas ?? 0}`,
-              color: '#22c55e',
+              color: 'var(--success)',
             },
-            { label: 'Schema Errors', value: result.schema_entities?.errors ?? 0, color: '#ef4444' },
+            { label: 'Schema Errors', value: result.schema_entities?.errors ?? 0, color: 'var(--danger)' },
             {
               label: 'Link Equity Score',
               value: result.schema_entities?.internal_link_equity_score ?? 0,
               color: scoreColor(result.schema_entities?.internal_link_equity_score ?? 0),
             },
-            { label: 'Orphan Pages', value: result.schema_entities?.orphan_pages?.length ?? 0, color: '#f59e0b' },
+            { label: 'Orphan Pages', value: result.schema_entities?.orphan_pages?.length ?? 0, color: 'var(--warning)' },
           ].map((m) => (
             <div
               key={m.label}
@@ -10467,8 +10475,8 @@ function SchemaEntitiesTab({ result, card, isOfflinePreview }: PerfTabProps) {
                         fontSize: 10,
                         padding: '2px 6px',
                         borderRadius: 4,
-                        background: s.present ? '#22c55e20' : '#ef444420',
-                        color: s.present ? '#22c55e' : '#ef4444',
+                        background: s.present ? 'color-mix(in oklab, var(--success) 13%, transparent)' : 'color-mix(in oklab, var(--danger) 13%, transparent)',
+                        color: s.present ? 'var(--success)' : 'var(--danger)',
                         fontWeight: 700,
                       }}
                     >
@@ -10480,8 +10488,8 @@ function SchemaEntitiesTab({ result, card, isOfflinePreview }: PerfTabProps) {
                           fontSize: 10,
                           padding: '2px 6px',
                           borderRadius: 4,
-                          background: '#6366f120',
-                          color: '#6366f1',
+                          background: 'color-mix(in oklab, var(--info) 13%, transparent)',
+                          color: "var(--brand)",
                           fontWeight: 700,
                         }}
                       >
@@ -10511,8 +10519,8 @@ function SchemaEntitiesTab({ result, card, isOfflinePreview }: PerfTabProps) {
                         fontSize: 10,
                         padding: '1px 5px',
                         borderRadius: 3,
-                        background: e.knowledge_panel ? '#22c55e20' : '#ef444420',
-                        color: e.knowledge_panel ? '#22c55e' : '#ef4444',
+                        background: e.knowledge_panel ? 'color-mix(in oklab, var(--success) 13%, transparent)' : 'color-mix(in oklab, var(--danger) 13%, transparent)',
+                        color: e.knowledge_panel ? 'var(--success)' : 'var(--danger)',
                       }}
                     >
                       KP {e.knowledge_panel ? '\u2713' : '\u2717'}
@@ -10522,8 +10530,8 @@ function SchemaEntitiesTab({ result, card, isOfflinePreview }: PerfTabProps) {
                         fontSize: 10,
                         padding: '1px 5px',
                         borderRadius: 3,
-                        background: e.wikidata ? '#6366f120' : '#ef444420',
-                        color: e.wikidata ? '#6366f1' : '#ef4444',
+                        background: e.wikidata ? 'color-mix(in oklab, var(--info) 13%, transparent)' : 'color-mix(in oklab, var(--danger) 13%, transparent)',
+                        color: e.wikidata ? "var(--brand)" : 'var(--danger)',
                       }}
                     >
                       Wikidata {e.wikidata ? '\u2713' : '\u2717'}
@@ -10541,7 +10549,7 @@ function SchemaEntitiesTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div>
             <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8 }}>Orphan Pages</div>
             {(result.schema_entities?.orphan_pages ?? []).length === 0 ? (
-              <div style={{ fontSize: 12, color: '#22c55e' }}>No orphan pages detected</div>
+              <div style={{ fontSize: 12, color: 'var(--success)' }}>No orphan pages detected</div>
             ) : (
               <div style={{ display: 'grid', gap: 4 }}>
                 {(result.schema_entities?.orphan_pages ?? []).map((p, i) => (
@@ -10549,11 +10557,11 @@ function SchemaEntitiesTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     key={`item-${i}`}
                     style={{
                       padding: '6px 10px',
-                      background: '#ef444410',
+                      background: 'color-mix(in oklab, var(--danger) 6%, transparent)',
                       borderRadius: 6,
                       fontSize: 11,
                       fontFamily: 'monospace',
-                      color: '#ef4444',
+                      color: 'var(--danger)',
                     }}
                   >
                     {p.url} — {p.inbound_links} inbound links
@@ -10605,20 +10613,20 @@ function TechnicalDeepTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {
               label: 'Budget Used',
               value: `${result.technical_deep?.crawl_budget_used_pct ?? 0}%`,
-              color: (result.technical_deep?.crawl_budget_used_pct ?? 0) > 90 ? '#ef4444' : '#f59e0b',
+              color: (result.technical_deep?.crawl_budget_used_pct ?? 0) > 90 ? 'var(--danger)' : 'var(--warning)',
             },
-            { label: 'Wasted Crawl Slots', value: result.technical_deep?.wasted_crawl_slots ?? 0, color: '#f97316' },
+            { label: 'Wasted Crawl Slots', value: result.technical_deep?.wasted_crawl_slots ?? 0, color: 'var(--warning)' },
             {
               label: 'Googlebot (7d)',
               value: (result.technical_deep?.googlebot_visits_last7d ?? 0).toLocaleString(),
-              color: '#6366f1',
+              color: "var(--brand)",
             },
             {
               label: 'Avg Crawl Interval',
               value: `${result.technical_deep?.avg_crawl_interval_hrs ?? 0}h`,
               color: 'var(--fg)',
             },
-            { label: 'Redirect Chains', value: result.technical_deep?.redirect_chains?.length ?? 0, color: '#f59e0b' },
+            { label: 'Redirect Chains', value: result.technical_deep?.redirect_chains?.length ?? 0, color: 'var(--warning)' },
           ].map((m) => (
             <div
               key={m.label}
@@ -10642,7 +10650,7 @@ function TechnicalDeepTab({ result, card, isOfflinePreview }: PerfTabProps) {
               items={(result.technical_deep?.crawl_budget ?? []).map((b) => ({
                 label: b.url_type ?? '',
                 value: b.budget_pct ?? 0,
-                color: b.wasted ? '#ef4444' : '#6366f1',
+                color: b.wasted ? 'var(--danger)' : "var(--brand)",
                 suffix: '%',
               }))}
             />
@@ -10654,7 +10662,7 @@ function TechnicalDeepTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 <div key={`item-${i}`} style={{ fontSize: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
                     <span style={{ fontWeight: c.gap ? 400 : 600 }}>{c.topic}</span>
-                    <span style={{ color: c.gap ? '#ef4444' : '#22c55e', fontWeight: 700 }}>
+                    <span style={{ color: c.gap ? 'var(--danger)' : 'var(--success)', fontWeight: 700 }}>
                       {c.coverage_pct}%{c.gap ? ' GAP' : ''}
                     </span>
                   </div>
@@ -10663,7 +10671,7 @@ function TechnicalDeepTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       style={{
                         width: `${c.coverage_pct}%`,
                         height: '100%',
-                        background: c.gap ? '#ef4444' : '#22c55e',
+                        background: c.gap ? 'var(--danger)' : 'var(--success)',
                         borderRadius: 3,
                       }}
                     />
@@ -10717,11 +10725,11 @@ function TechnicalDeepTab({ result, card, isOfflinePreview }: PerfTabProps) {
                           fontWeight: 700,
                           background:
                             ev.severity === 'high'
-                              ? '#ef444420'
+                              ? 'color-mix(in oklab, var(--danger) 13%, transparent)'
                               : ev.severity === 'warning'
-                                ? '#f59e0b20'
-                                : '#6366f120',
-                          color: ev.severity === 'high' ? '#ef4444' : ev.severity === 'warning' ? '#f59e0b' : '#6366f1',
+                                ? 'color-mix(in oklab, var(--warning) 13%, transparent)'
+                                : 'color-mix(in oklab, var(--info) 13%, transparent)',
+                          color: ev.severity === 'high' ? 'var(--danger)' : ev.severity === 'warning' ? 'var(--warning)' : "var(--brand)",
                         }}
                       >
                         {ev.severity}
@@ -10769,18 +10777,18 @@ function TrustRevenueTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {
               label: 'Review Score',
               value: result.trust_revenue?.review_aggregate_score?.toFixed(1) ?? '0.0',
-              color: '#f59e0b',
+              color: 'var(--warning)',
             },
             {
               label: 'SEO Revenue',
               value: `$${((result.trust_revenue?.seo_revenue_total_usd ?? 0) / 1000).toFixed(0)}k`,
-              color: '#22c55e',
+              color: 'var(--success)',
             },
-            { label: 'Attributed %', value: `${result.trust_revenue?.seo_attributed_pct ?? 0}%`, color: '#6366f1' },
+            { label: 'Attributed %', value: `${result.trust_revenue?.seo_attributed_pct ?? 0}%`, color: "var(--brand)" },
             {
               label: 'Safe Browsing',
               value: result.trust_revenue?.safe_browsing_clean ? '\u2713 Clean' : '\u2717 Flagged',
-              color: result.trust_revenue?.safe_browsing_clean ? '#22c55e' : '#ef4444',
+              color: result.trust_revenue?.safe_browsing_clean ? 'var(--success)' : 'var(--danger)',
             },
           ].map((m) => (
             <div
@@ -10817,11 +10825,11 @@ function TrustRevenueTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 >
                   <span style={{ fontWeight: 600 }}>{r.platform}</span>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <span style={{ color: '#f59e0b', fontWeight: 700 }}>\u2605 {r.score?.toFixed(1)}</span>
+                    <span style={{ color: 'var(--warning)', fontWeight: 700 }}>\u2605 {r.score?.toFixed(1)}</span>
                     <span style={{ color: 'var(--muted)' }}>{r.count?.toLocaleString()} reviews</span>
                     <span
                       style={{
-                        color: r.trend === 'up' ? '#22c55e' : r.trend === 'down' ? '#ef4444' : 'var(--muted)',
+                        color: r.trend === 'up' ? 'var(--success)' : r.trend === 'down' ? 'var(--danger)' : 'var(--muted)',
                         fontSize: 11,
                       }}
                     >
@@ -10863,10 +10871,10 @@ function TrustRevenueTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 {(result.trust_revenue?.top_revenue_keywords ?? []).map((k, i) => (
                   <tr key={`item-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                     <td style={{ padding: '7px 10px', fontWeight: 600 }}>{k.keyword}</td>
-                    <td style={{ padding: '7px 10px', color: '#22c55e', fontWeight: 700 }}>#{k.position}</td>
+                    <td style={{ padding: '7px 10px', color: 'var(--success)', fontWeight: 700 }}>#{k.position}</td>
                     <td style={{ padding: '7px 10px' }}>{k.sessions?.toLocaleString()}</td>
                     <td style={{ padding: '7px 10px' }}>{k.conversions}</td>
-                    <td style={{ padding: '7px 10px', color: '#22c55e', fontWeight: 700 }}>
+                    <td style={{ padding: '7px 10px', color: 'var(--success)', fontWeight: 700 }}>
                       ${k.revenue_usd?.toLocaleString()}
                     </td>
                   </tr>
@@ -10906,9 +10914,9 @@ function UxConversionTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {
               label: 'Friction Score',
               value: result.ux_conversion?.friction_score ?? 0,
-              color: (result.ux_conversion?.friction_score ?? 0) > 50 ? '#ef4444' : '#f59e0b',
+              color: (result.ux_conversion?.friction_score ?? 0) > 50 ? 'var(--danger)' : 'var(--warning)',
             },
-            { label: 'CTA Coverage', value: `${result.ux_conversion?.cta_coverage_pct ?? 0}%`, color: '#6366f1' },
+            { label: 'CTA Coverage', value: `${result.ux_conversion?.cta_coverage_pct ?? 0}%`, color: "var(--brand)" },
             {
               label: 'Form Completion',
               value: `${result.ux_conversion?.form_completion_avg_pct ?? 0}%`,
@@ -10919,7 +10927,7 @@ function UxConversionTab({ result, card, isOfflinePreview }: PerfTabProps) {
               value: result.ux_conversion?.brand_voice_score ?? 0,
               color: scoreColor(result.ux_conversion?.brand_voice_score ?? 0),
             },
-            { label: 'OG Coverage', value: `${result.ux_conversion?.og_coverage_pct ?? 0}%`, color: '#8b5cf6' },
+            { label: 'OG Coverage', value: `${result.ux_conversion?.og_coverage_pct ?? 0}%`, color: "var(--brand)" },
           ].map((m) => (
             <div
               key={m.label}
@@ -10954,7 +10962,7 @@ function UxConversionTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <span style={{ fontWeight: 600 }}>{c.cta_text}</span>
                     <span style={{ fontSize: 10, color: 'var(--muted)' }}>{c.placement}</span>
-                    {!c.contrast_ok && <span style={{ fontSize: 10, color: '#ef4444' }}>Low contrast</span>}
+                    {!c.contrast_ok && <span style={{ fontSize: 10, color: 'var(--danger)' }}>Low contrast</span>}
                   </div>
                 </div>
               ))}
@@ -10970,14 +10978,14 @@ function UxConversionTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                     <span style={{ fontWeight: 600 }}>{f.form_id}</span>
-                    <span style={{ color: (f.friction_score ?? 0) > 40 ? '#ef4444' : '#f59e0b', fontWeight: 700 }}>
+                    <span style={{ color: (f.friction_score ?? 0) > 40 ? 'var(--danger)' : 'var(--warning)', fontWeight: 700 }}>
                       Friction {f.friction_score}
                     </span>
                   </div>
                   <div style={{ color: 'var(--muted)', marginBottom: 2 }}>
                     {f.fields} fields · {f.avg_completion_pct}% completion
                   </div>
-                  <div style={{ color: '#f59e0b', fontSize: 11 }}>Drop-off: {f.drop_field}</div>
+                  <div style={{ color: 'var(--warning)', fontSize: 11 }}>Drop-off: {f.drop_field}</div>
                 </div>
               ))}
             </div>
@@ -10987,7 +10995,7 @@ function UxConversionTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 key={`item-${i}`}
                 style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, display: 'flex', gap: 6 }}
               >
-                <span style={{ color: '#6366f1' }}>→</span>
+                <span style={{ color: "var(--brand)" }}>→</span>
                 {r}
               </div>
             ))}
@@ -11010,14 +11018,14 @@ function UxConversionTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 >
                   <div style={{ fontFamily: 'monospace', fontSize: 11, marginBottom: 4 }}>{sc.url}</div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <span style={{ color: sc.og_complete ? '#22c55e' : '#ef4444', fontSize: 11 }}>
+                    <span style={{ color: sc.og_complete ? 'var(--success)' : 'var(--danger)', fontSize: 11 }}>
                       OG {sc.og_complete ? '\u2713' : '\u2717'}
                     </span>
-                    <span style={{ color: sc.twitter_complete ? '#22c55e' : '#ef4444', fontSize: 11 }}>
+                    <span style={{ color: sc.twitter_complete ? 'var(--success)' : 'var(--danger)', fontSize: 11 }}>
                       Twitter {sc.twitter_complete ? '\u2713' : '\u2717'}
                     </span>
                     {(sc.missing ?? []).length > 0 && (
-                      <span style={{ color: '#f59e0b', fontSize: 10 }}>Missing: {sc.missing?.join(', ')}</span>
+                      <span style={{ color: 'var(--warning)', fontSize: 10 }}>Missing: {sc.missing?.join(', ')}</span>
                     )}
                   </div>
                 </div>
@@ -11044,7 +11052,7 @@ function UxConversionTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   >
                     <span
                       style={{
-                        color: m.alt_present ? (m.alt_descriptive ? '#22c55e' : '#f59e0b') : '#ef4444',
+                        color: m.alt_present ? (m.alt_descriptive ? 'var(--success)' : 'var(--warning)') : 'var(--danger)',
                         fontWeight: 700,
                       }}
                     >
@@ -11084,15 +11092,15 @@ function GrowthLandingTab({ result, card, isOfflinePreview }: PerfTabProps) {
         </div>
         <div
           style={{
-            background: '#6366f110',
-            border: '1px solid #6366f120',
+            background: 'color-mix(in oklab, var(--info) 6%, transparent)',
+            border: '1px solid color-mix(in oklab, var(--info) 13%, transparent)',
             borderRadius: 8,
             padding: '10px 14px',
             marginBottom: 16,
             fontSize: 12,
           }}
         >
-          <span style={{ fontWeight: 700, color: '#6366f1' }}>Top Priority: </span>
+          <span style={{ fontWeight: 700, color: "var(--brand)" }}>Top Priority: </span>
           {result.growth_landing?.top_priority}
         </div>
         <div
@@ -11109,13 +11117,13 @@ function GrowthLandingTab({ result, card, isOfflinePreview }: PerfTabProps) {
               value: result.growth_landing?.playbook_score ?? 0,
               color: scoreColor(result.growth_landing?.playbook_score ?? 0),
             },
-            { label: 'Landing Pages', value: result.growth_landing?.landing_pages?.length ?? 0, color: '#6366f1' },
+            { label: 'Landing Pages', value: result.growth_landing?.landing_pages?.length ?? 0, color: "var(--brand)" },
             {
               label: 'Multi-Channel',
               value: `${result.growth_landing?.multi_channel_score ?? 0}`,
               color: scoreColor(result.growth_landing?.multi_channel_score ?? 0),
             },
-            { label: 'Quick Wins', value: result.growth_landing?.quick_wins?.length ?? 0, color: '#22c55e' },
+            { label: 'Quick Wins', value: result.growth_landing?.quick_wins?.length ?? 0, color: 'var(--success)' },
           ].map((m) => (
             <div
               key={m.label}
@@ -11142,8 +11150,8 @@ function GrowthLandingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 <span
                   style={{
                     padding: '3px 8px',
-                    background: '#6366f120',
-                    color: '#6366f1',
+                    background: 'color-mix(in oklab, var(--info) 13%, transparent)',
+                    color: "var(--brand)",
                     borderRadius: 4,
                     fontSize: 11,
                     fontWeight: 700,
@@ -11171,8 +11179,8 @@ function GrowthLandingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       style={{
                         padding: '1px 5px',
                         borderRadius: 3,
-                        background: a.priority === 'P0' ? '#ef444420' : a.priority === 'P1' ? '#f59e0b20' : '#22c55e20',
-                        color: a.priority === 'P0' ? '#ef4444' : a.priority === 'P1' ? '#f59e0b' : '#22c55e',
+                        background: a.priority === 'P0' ? 'color-mix(in oklab, var(--danger) 13%, transparent)' : a.priority === 'P1' ? 'color-mix(in oklab, var(--warning) 13%, transparent)' : 'color-mix(in oklab, var(--success) 13%, transparent)',
+                        color: a.priority === 'P0' ? 'var(--danger)' : a.priority === 'P1' ? 'var(--warning)' : 'var(--success)',
                         fontWeight: 700,
                         fontSize: 10,
                         flexShrink: 0,
@@ -11184,7 +11192,7 @@ function GrowthLandingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, marginBottom: 2 }}>{a.action}</div>
                       <div style={{ display: 'flex', gap: 10, color: 'var(--muted)', fontSize: 11 }}>
-                        <span style={{ color: '#22c55e' }}>{a.impact}</span>
+                        <span style={{ color: 'var(--success)' }}>{a.impact}</span>
                         <span>Effort: {a.effort}</span>
                         <span>{a.timeline}</span>
                       </div>
@@ -11220,7 +11228,7 @@ function GrowthLandingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     </span>
                   </div>
                   {(lp.suggestions ?? []).slice(0, 1).map((s, si) => (
-                    <div key={si} style={{ color: '#6366f1', fontSize: 11 }}>
+                    <div key={si} style={{ color: "var(--brand)", fontSize: 11 }}>
                       \u2192 {s}
                     </div>
                   ))}
@@ -11234,7 +11242,7 @@ function GrowthLandingTab({ result, card, isOfflinePreview }: PerfTabProps) {
               items={(result.growth_landing?.channels ?? []).map((c) => ({
                 label: c.channel ?? '',
                 value: c.coverage_pct ?? 0,
-                color: c.active ? '#22c55e' : '#6b7280',
+                color: c.active ? 'var(--success)' : 'var(--neutral)',
                 suffix: '%',
               }))}
             />
@@ -11242,7 +11250,7 @@ function GrowthLandingTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {(result.growth_landing?.quick_wins ?? []).map((w, i) => (
               <div
                 key={`item-${i}`}
-                style={{ fontSize: 12, color: '#22c55e', marginBottom: 4, display: 'flex', gap: 6 }}
+                style={{ fontSize: 12, color: 'var(--success)', marginBottom: 4, display: 'flex', gap: 6 }}
               >
                 <span>\u2713</span>
                 {w}
@@ -11278,16 +11286,16 @@ function LiveIntelligenceTab({ result, card, isOfflinePreview }: PerfTabProps) {
             {
               label: 'Avg Position',
               value: result.live_intelligence?.avg_position?.toFixed(1) ?? '\u2014',
-              color: '#6366f1',
+              color: "var(--brand)",
             },
             {
               label: 'Total Keywords',
               value: (result.live_intelligence?.total_keywords ?? 0).toLocaleString(),
               color: 'var(--fg)',
             },
-            { label: 'Top 3 Keywords', value: result.live_intelligence?.keywords_top3 ?? 0, color: '#22c55e' },
-            { label: 'Gained (7d)', value: `+${result.live_intelligence?.positions_gained_7d ?? 0}`, color: '#22c55e' },
-            { label: 'Lost (7d)', value: `-${result.live_intelligence?.positions_lost_7d ?? 0}`, color: '#ef4444' },
+            { label: 'Top 3 Keywords', value: result.live_intelligence?.keywords_top3 ?? 0, color: 'var(--success)' },
+            { label: 'Gained (7d)', value: `+${result.live_intelligence?.positions_gained_7d ?? 0}`, color: 'var(--success)' },
+            { label: 'Lost (7d)', value: `-${result.live_intelligence?.positions_lost_7d ?? 0}`, color: 'var(--danger)' },
             {
               label: 'RAG Readiness',
               value: result.live_intelligence?.rag_readiness_score ?? 0,
@@ -11345,7 +11353,7 @@ function LiveIntelligenceTab({ result, card, isOfflinePreview }: PerfTabProps) {
                         style={{
                           padding: '6px 8px',
                           color:
-                            (k.position ?? 0) <= 3 ? '#22c55e' : (k.position ?? 0) <= 10 ? '#6366f1' : 'var(--muted)',
+                            (k.position ?? 0) <= 3 ? 'var(--success)' : (k.position ?? 0) <= 10 ? "var(--brand)" : 'var(--muted)',
                           fontWeight: 700,
                         }}
                       >
@@ -11354,13 +11362,13 @@ function LiveIntelligenceTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       <td
                         style={{
                           padding: '6px 8px',
-                          color: (k.delta ?? 0) > 0 ? '#22c55e' : '#ef4444',
+                          color: (k.delta ?? 0) > 0 ? 'var(--success)' : 'var(--danger)',
                           fontWeight: 700,
                         }}
                       >
                         {(k.delta ?? 0) > 0 ? `+${k.delta}` : k.delta}
                       </td>
-                      <td style={{ padding: '6px 8px', fontSize: 10, color: '#8b5cf6' }}>
+                      <td style={{ padding: '6px 8px', fontSize: 10, color: "var(--brand)" }}>
                         {k.serp_feature !== 'none' ? k.serp_feature : '\u2014'}
                       </td>{' '}
                       {/* NOSONAR */}
@@ -11385,7 +11393,7 @@ function LiveIntelligenceTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   style={{ padding: '7px 10px', background: 'var(--bg-soft)', borderRadius: 7, fontSize: 12 }}
                 >
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 3 }}>
-                    <span style={{ color: ac.answered ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                    <span style={{ color: ac.answered ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
                       {ac.answered ? '\u2713' : '\u2717'}
                     </span>
                     <span style={{ flex: 1 }}>{ac.query}</span>
@@ -11412,8 +11420,8 @@ function LiveIntelligenceTab({ result, card, isOfflinePreview }: PerfTabProps) {
                   alignItems: 'flex-start',
                   padding: '10px 14px',
                   background:
-                    alert.severity === 'high' ? '#ef444410' : alert.severity === 'warning' ? '#f59e0b10' : '#6366f110',
-                  border: `1px solid ${alert.severity === 'high' ? '#ef444430' : alert.severity === 'warning' ? '#f59e0b30' : '#6366f130'}`,
+                    alert.severity === 'high' ? 'color-mix(in oklab, var(--danger) 6%, transparent)' : alert.severity === 'warning' ? 'color-mix(in oklab, var(--warning) 6%, transparent)' : 'color-mix(in oklab, var(--info) 6%, transparent)',
+                  border: `1px solid ${alert.severity === 'high' ? 'color-mix(in oklab, var(--danger) 19%, transparent)' : alert.severity === 'warning' ? 'color-mix(in oklab, var(--warning) 19%, transparent)' : 'color-mix(in oklab, var(--info) 19%, transparent)'}`,
                   borderRadius: 8,
                   fontSize: 12,
                 }}
@@ -11426,7 +11434,7 @@ function LiveIntelligenceTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       borderRadius: '50%',
                       display: 'block',
                       background:
-                        alert.severity === 'high' ? '#ef4444' : alert.severity === 'warning' ? '#f59e0b' : '#6366f1',
+                        alert.severity === 'high' ? 'var(--danger)' : alert.severity === 'warning' ? 'var(--warning)' : "var(--brand)",
                     }}
                   />
                 </div>
@@ -11477,7 +11485,7 @@ function HistoryTab({
           <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
             Trend: <strong>{result.history?.trend ?? 'n/a'}</strong>
             {result.history?.regression_detected && (
-              <span style={{ color: '#ef4444', marginLeft: 8 }}>Regression detected</span>
+              <span style={{ color: 'var(--danger)', marginLeft: 8 }}>Regression detected</span>
             )}
           </div>
         </div>
@@ -11492,7 +11500,7 @@ function HistoryTab({
             labels={(result.history?.runs ?? []).map((r) =>
               r.ts ? new Date(r.ts).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : ''
             )}
-            color="#6366f1"
+            color="var(--info)"
             height={80}
           />
         </div>
@@ -11693,7 +11701,7 @@ function MonitoringTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
             {loadingMonitors ? 'Refreshing...' : 'Refresh Monitors'}
           </button>
         </div>
-        {monitorError && <div style={{ marginTop: 8, color: '#dc2626', fontSize: 12 }}>{monitorError}</div>}
+        {monitorError && <div style={{ marginTop: 8, color: 'var(--danger)', fontSize: 12 }}>{monitorError}</div>}
       </div>
 
       <div style={card}>
@@ -11724,7 +11732,7 @@ function MonitoringTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={badge(m.status === 'active' ? '#22c55e' : '#f59e0b')}>{m.status ?? 'active'}</span>
+                  <span style={badge(m.status === 'active' ? 'var(--success)' : 'var(--warning)')}>{m.status ?? 'active'}</span>
                   <button
                     type="button"
                     onClick={() => void runMonitorNow(m.monitor_id)}
@@ -11750,7 +11758,7 @@ function MonitoringTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
               <div key={event.event_id} style={{ ...card, padding: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
                   <div style={{ fontWeight: 700, fontSize: 12 }}>{event.url}</div>
-                  <span style={badge(event.status === 'triggered' ? '#ef4444' : '#22c55e')}>{event.status}</span>
+                  <span style={badge(event.status === 'triggered' ? 'var(--danger)' : 'var(--success)')}>{event.status}</span>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
                   {event.created_at ? new Date(event.created_at).toLocaleString() : 'n/a'}
@@ -11774,7 +11782,7 @@ function MonitoringTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
           Alert Monitoring
           {result.alerts?.status && (
-            <span style={badge(result.alerts.status === 'healthy' ? '#22c55e' : '#ef4444')}>
+            <span style={badge(result.alerts.status === 'healthy' ? 'var(--success)' : 'var(--danger)')}>
               {result.alerts.status}
             </span>
           )}
@@ -11789,7 +11797,7 @@ function MonitoringTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
               return (
                 <div
                   key={`${rule.metric}-${i}`}
-                  style={{ ...card, padding: 12, borderLeft: `3px solid ${ok ? '#22c55e' : '#ef4444'}` }}
+                  style={{ ...card, padding: 12, borderLeft: `3px solid ${ok ? 'var(--success)' : 'var(--danger)'}` }}
                 >
                   <div
                     style={{
@@ -11803,7 +11811,7 @@ function MonitoringTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
                   >
                     <div>
                       <span style={{ fontWeight: 700, fontSize: 13 }}>{rule.metric}</span>
-                      <span style={badge(ok ? '#22c55e' : '#ef4444')}>{rule.state ?? 'unknown'}</span>
+                      <span style={badge(ok ? 'var(--success)' : 'var(--danger)')}>{rule.state ?? 'unknown'}</span>
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                       Current: <strong>{rule.current ?? 'n/a'}</strong> / Threshold: <strong>{rule.threshold}</strong>
@@ -11814,7 +11822,7 @@ function MonitoringTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
                       style={{
                         width: `${pct}%`,
                         height: '100%',
-                        background: ok ? '#22c55e' : '#ef4444',
+                        background: ok ? 'var(--success)' : 'var(--danger)',
                         borderRadius: 3,
                       }}
                     />
@@ -11833,7 +11841,7 @@ function MonitoringTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
             type="button"
             onClick={optimizeSite}
             disabled={autoFixing}
-            style={{ ...btn(true), background: '#6366f1', color: '#fff' }}
+            style={{ ...btn(true), background: "var(--brand)", color: 'var(--on-brand)' }}
           >
             {autoFixing ? 'Auto-fixing SEO modules...' : 'Auto-Fix All SEO Modules'}
           </button>
@@ -12109,14 +12117,14 @@ function GtmetrixApiTab({ result, card, isOfflinePreview, autoFixing, autoFixRes
           </button>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
-          <span style={badge(coveragePct >= 100 ? '#22c55e' : coveragePct >= 80 ? '#f59e0b' : '#ef4444')}>
+          <span style={badge(coveragePct >= 100 ? 'var(--success)' : coveragePct >= 80 ? 'var(--warning)' : 'var(--danger)')}>
             Coverage {coveragePct.toFixed(2)}%
           </span>
           <span style={{ fontSize: 12, color: 'var(--muted)' }}>
             {capabilities.length} capability checks · {vendors.length} integrated vendors
           </span>
         </div>
-        {intelError && <div style={{ color: '#dc2626', fontSize: 12, marginBottom: 8 }}>{intelError}</div>}
+        {intelError && <div style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{intelError}</div>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 8 }}>
           {vendors.slice(0, 9).map((v, idx) => (
             <div key={`${v.name}-${idx}`} style={{ ...card, padding: 10 }}>
@@ -12134,9 +12142,9 @@ function GtmetrixApiTab({ result, card, isOfflinePreview, autoFixing, autoFixRes
             {runningAsyncTest ? 'Running Async Test...' : 'Run Async Test'}
           </button>
           {asyncTestId && <span style={{ fontSize: 12, color: 'var(--muted)' }}>Test ID: {asyncTestId}</span>}
-          {asyncStatus && <span style={badge(asyncStatus === 'completed' ? '#22c55e' : '#f59e0b')}>{asyncStatus}</span>}
+          {asyncStatus && <span style={badge(asyncStatus === 'completed' ? 'var(--success)' : 'var(--warning)')}>{asyncStatus}</span>}
         </div>
-        {asyncError && <div style={{ marginTop: 8, color: '#dc2626', fontSize: 12 }}>{asyncError}</div>}
+        {asyncError && <div style={{ marginTop: 8, color: 'var(--danger)', fontSize: 12 }}>{asyncError}</div>}
         {asyncResult && (
           <div style={{ ...card, marginTop: 10, padding: 10 }}>
             <div style={{ fontSize: 12 }}>
@@ -12197,7 +12205,7 @@ function GtmetrixApiTab({ result, card, isOfflinePreview, autoFixing, autoFixRes
               <strong>{shareLookupResult.module ?? 'n/a'}</strong>
             </div>
           )}
-          {shareError && <div style={{ color: '#dc2626', fontSize: 12 }}>{shareError}</div>}
+          {shareError && <div style={{ color: 'var(--danger)', fontSize: 12 }}>{shareError}</div>}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 8 }}>
             <div>
@@ -12223,11 +12231,11 @@ function GtmetrixApiTab({ result, card, isOfflinePreview, autoFixing, autoFixRes
               </button>
             </div>
           </div>
-          {compareError && <div style={{ color: '#dc2626', fontSize: 12 }}>{compareError}</div>}
+          {compareError && <div style={{ color: 'var(--danger)', fontSize: 12 }}>{compareError}</div>}
           {compareResult && (
             <div style={{ ...card, padding: 10, fontSize: 12 }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={badge(compareResult.regression_detected ? '#ef4444' : '#22c55e')}>
+                <span style={badge(compareResult.regression_detected ? 'var(--danger)' : 'var(--success)')}>
                   {compareResult.summary ?? 'comparison'}
                 </span>
                 <span>
@@ -12274,7 +12282,7 @@ function GtmetrixApiTab({ result, card, isOfflinePreview, autoFixing, autoFixRes
             <AreaChart
               points={cruxPoints.map((p) => p.lcp_p75_ms ?? 0)}
               labels={cruxPoints.map((p) => p.month ?? '')}
-              color="#6366f1"
+              color="var(--info)"
               height={80}
             />
             <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
@@ -12303,13 +12311,13 @@ function KeywordsTab({ result, card, isOfflinePreview }: PerfTabProps) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
           { label: 'Total Tracked', value: '1,842', color: 'var(--text)' },
-          { label: 'Top-3 Rank', value: '147', color: '#22c55e' },
-          { label: 'Top-10 Rank', value: '384', color: '#6366f1' },
-          { label: 'Rising (+5)', value: '63', color: '#22c55e' },
-          { label: 'Falling (-5)', value: '28', color: '#ef4444' },
-          { label: 'Avg. Difficulty', value: '48', color: '#f59e0b' },
-          { label: 'Avg. Search Vol.', value: '2,340', color: '#6366f1' },
-          { label: 'Avg. CPC ($)', value: '$1.84', color: '#ec4899' },
+          { label: 'Top-3 Rank', value: '147', color: 'var(--success)' },
+          { label: 'Top-10 Rank', value: '384', color: "var(--brand)" },
+          { label: 'Rising (+5)', value: '63', color: 'var(--success)' },
+          { label: 'Falling (-5)', value: '28', color: 'var(--danger)' },
+          { label: 'Avg. Difficulty', value: '48', color: 'var(--warning)' },
+          { label: 'Avg. Search Vol.', value: '2,340', color: "var(--brand)" },
+          { label: 'Avg. CPC ($)', value: '$1.84', color: 'var(--series-5)' },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -12321,10 +12329,10 @@ function KeywordsTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Keyword Distribution by Intent</div>
         <MiniBarChart
           items={[
-            { label: 'Informational', value: 680, color: '#6366f1', max: 1842, suffix: ' kws' },
-            { label: 'Navigational', value: 240, color: '#6366f1', max: 1842, suffix: ' kws' },
-            { label: 'Commercial', value: 520, color: '#f59e0b', max: 1842, suffix: ' kws' },
-            { label: 'Transactional', value: 402, color: '#22c55e', max: 1842, suffix: ' kws' },
+            { label: 'Informational', value: 680, color: "var(--brand)", max: 1842, suffix: ' kws' },
+            { label: 'Navigational', value: 240, color: "var(--brand)", max: 1842, suffix: ' kws' },
+            { label: 'Commercial', value: 520, color: 'var(--warning)', max: 1842, suffix: ' kws' },
+            { label: 'Transactional', value: 402, color: 'var(--success)', max: 1842, suffix: ' kws' },
           ]}
         />
       </div>
@@ -12422,7 +12430,7 @@ function KeywordsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       style={{
                         padding: '7px 8px',
                         fontWeight: 800,
-                        color: k.rank <= 3 ? '#22c55e' : k.rank <= 10 ? '#6366f1' : 'var(--text)',
+                        color: k.rank <= 3 ? 'var(--success)' : k.rank <= 10 ? "var(--brand)" : 'var(--text)',
                       }}
                     >
                       #{k.rank}
@@ -12432,7 +12440,7 @@ function KeywordsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       style={{
                         padding: '7px 8px',
                         fontWeight: 700,
-                        color: delta > 0 ? '#22c55e' : delta < 0 ? '#ef4444' : 'var(--muted)',
+                        color: delta > 0 ? 'var(--success)' : delta < 0 ? 'var(--danger)' : 'var(--muted)',
                       }}
                     >
                       {delta > 0 ? `+${delta}` : delta === 0 ? '—' : delta}
@@ -12445,7 +12453,7 @@ function KeywordsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                             style={{
                               width: `${k.diff}%`,
                               height: '100%',
-                              background: k.diff > 60 ? '#ef4444' : k.diff > 40 ? '#f59e0b' : '#22c55e',
+                              background: k.diff > 60 ? 'var(--danger)' : k.diff > 40 ? 'var(--warning)' : 'var(--success)',
                               borderRadius: 2,
                             }}
                           />
@@ -12455,9 +12463,9 @@ function KeywordsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                     </td>
                     <td style={{ padding: '7px 8px' }}>${k.cpc.toFixed(2)}</td>
                     <td style={{ padding: '7px 8px' }}>
-                      <span style={badge('#6366f1')}>{k.intent}</span>
+                      <span style={badge('var(--info)')}>{k.intent}</span>
                     </td>
-                    <td style={{ padding: '7px 8px', color: '#8b5cf6', fontSize: 11 }}>{k.feat}</td>
+                    <td style={{ padding: '7px 8px', color: "var(--brand)", fontSize: 11 }}>{k.feat}</td>
                   </tr>
                 );
               })}
@@ -12469,10 +12477,10 @@ function KeywordsTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Keyword Opportunity Matrix</div>
         <MiniBarChart
           items={[
-            { label: 'Quick Wins (low diff, top 20)', value: 84, color: '#22c55e', max: 200, suffix: ' kws' },
-            { label: 'High Value (CPC > $3)', value: 128, color: '#f59e0b', max: 200, suffix: ' kws' },
-            { label: 'Featured Snippet Targets', value: 47, color: '#6366f1', max: 200, suffix: ' kws' },
-            { label: 'Near-Page-1 (pos 11–20)', value: 192, color: '#6366f1', max: 200, suffix: ' kws' },
+            { label: 'Quick Wins (low diff, top 20)', value: 84, color: 'var(--success)', max: 200, suffix: ' kws' },
+            { label: 'High Value (CPC > $3)', value: 128, color: 'var(--warning)', max: 200, suffix: ' kws' },
+            { label: 'Featured Snippet Targets', value: 47, color: "var(--brand)", max: 200, suffix: ' kws' },
+            { label: 'Near-Page-1 (pos 11–20)', value: 192, color: "var(--brand)", max: 200, suffix: ' kws' },
           ]}
         />
       </div>
@@ -12486,14 +12494,14 @@ function SeoRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
     <section style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
-          { label: 'Domain Authority', value: '54', color: '#22c55e' },
-          { label: 'Page Authority Avg', value: '42', color: '#6366f1' },
+          { label: 'Domain Authority', value: '54', color: 'var(--success)' },
+          { label: 'Page Authority Avg', value: '42', color: "var(--brand)" },
           { label: 'Pages Ranked', value: '284', color: 'var(--text)' },
-          { label: 'Top-3 Pages', value: '38', color: '#22c55e' },
-          { label: 'Featured Snippets', value: '12', color: '#6366f1' },
-          { label: 'Winners 30d', value: '+47', color: '#22c55e' },
-          { label: 'Losers 30d', value: '-19', color: '#ef4444' },
-          { label: 'Avg. Position', value: '14.2', color: '#f59e0b' },
+          { label: 'Top-3 Pages', value: '38', color: 'var(--success)' },
+          { label: 'Featured Snippets', value: '12', color: "var(--brand)" },
+          { label: 'Winners 30d', value: '+47', color: 'var(--success)' },
+          { label: 'Losers 30d', value: '-19', color: 'var(--danger)' },
+          { label: 'Avg. Position', value: '14.2', color: 'var(--warning)' },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -12505,11 +12513,11 @@ function SeoRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Rank Distribution</div>
         <MiniBarChart
           items={[
-            { label: 'Position 1–3', value: 38, color: '#22c55e', max: 284, suffix: ' pages' },
-            { label: 'Position 4–10', value: 96, color: '#6366f1', max: 284, suffix: ' pages' },
-            { label: 'Position 11–20', value: 72, color: '#f59e0b', max: 284, suffix: ' pages' },
-            { label: 'Position 21–50', value: 54, color: '#6366f1', max: 284, suffix: ' pages' },
-            { label: 'Position 51–100', value: 24, color: '#ef4444', max: 284, suffix: ' pages' },
+            { label: 'Position 1–3', value: 38, color: 'var(--success)', max: 284, suffix: ' pages' },
+            { label: 'Position 4–10', value: 96, color: "var(--brand)", max: 284, suffix: ' pages' },
+            { label: 'Position 11–20', value: 72, color: 'var(--warning)', max: 284, suffix: ' pages' },
+            { label: 'Position 21–50', value: 54, color: "var(--brand)", max: 284, suffix: ' pages' },
+            { label: 'Position 51–100', value: 24, color: 'var(--danger)', max: 284, suffix: ' pages' },
           ]}
         />
       </div>
@@ -12580,26 +12588,26 @@ function SeoRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 },
               ].map((p, i) => (
                 <tr key={`rp-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
-                  <td style={{ padding: '7px 8px', fontFamily: 'monospace', fontSize: 11, color: '#6366f1' }}>
+                  <td style={{ padding: '7px 8px', fontFamily: 'monospace', fontSize: 11, color: "var(--brand)" }}>
                     {p.page}
                   </td>
                   <td
                     style={{
                       padding: '7px 8px',
                       fontWeight: 800,
-                      color: p.pos <= 3 ? '#22c55e' : p.pos <= 10 ? '#6366f1' : 'var(--text)',
+                      color: p.pos <= 3 ? 'var(--success)' : p.pos <= 10 ? "var(--brand)" : 'var(--text)',
                     }}
                   >
                     #{p.pos}
                   </td>
-                  <td style={{ padding: '7px 8px', fontWeight: 700, color: p.delta > 0 ? '#22c55e' : '#ef4444' }}>
+                  <td style={{ padding: '7px 8px', fontWeight: 700, color: p.delta > 0 ? 'var(--success)' : 'var(--danger)' }}>
                     {p.delta > 0 ? `+${p.delta}` : p.delta}
                   </td>
                   <td style={{ padding: '7px 8px' }}>{p.traffic.toLocaleString()}</td>
                   <td style={{ padding: '7px 8px' }}>{p.kws}</td>
                   <td style={{ padding: '7px 8px' }}>{p.impr.toLocaleString()}</td>
-                  <td style={{ padding: '7px 8px', color: p.ctr > 6 ? '#22c55e' : '#f59e0b' }}>{p.ctr}%</td>
-                  <td style={{ padding: '7px 8px', color: '#8b5cf6', fontSize: 11 }}>{p.feat}</td>
+                  <td style={{ padding: '7px 8px', color: p.ctr > 6 ? 'var(--success)' : 'var(--warning)' }}>{p.ctr}%</td>
+                  <td style={{ padding: '7px 8px', color: "var(--brand)", fontSize: 11 }}>{p.feat}</td>
                 </tr>
               ))}
             </tbody>
@@ -12612,7 +12620,7 @@ function SeoRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <AreaChart
             points={[18.4, 17.2, 16.8, 15.9, 15.1, 14.8, 14.2]}
             labels={['Apr 1', 'Apr 6', 'Apr 11', 'Apr 16', 'Apr 21', 'Apr 26', 'May 1']}
-            color="#22c55e"
+            color="var(--success)"
             height={70}
           />
         </div>
@@ -12620,10 +12628,10 @@ function SeoRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Competitor Gap</div>
           <MiniBarChart
             items={[
-              { label: 'You', value: 54, color: '#6366f1', max: 100, suffix: ' DA' },
-              { label: 'Competitor A', value: 68, color: '#ef4444', max: 100, suffix: ' DA' },
-              { label: 'Competitor B', value: 61, color: '#f59e0b', max: 100, suffix: ' DA' },
-              { label: 'Competitor C', value: 49, color: '#22c55e', max: 100, suffix: ' DA' },
+              { label: 'You', value: 54, color: "var(--brand)", max: 100, suffix: ' DA' },
+              { label: 'Competitor A', value: 68, color: 'var(--danger)', max: 100, suffix: ' DA' },
+              { label: 'Competitor B', value: 61, color: 'var(--warning)', max: 100, suffix: ' DA' },
+              { label: 'Competitor C', value: 49, color: 'var(--success)', max: 100, suffix: ' DA' },
             ]}
           />
         </div>
@@ -12636,7 +12644,7 @@ function SeoRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
 function AiModelsRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
   return (
     <section style={{ display: 'grid', gap: 12 }}>
-      <div style={{ ...card, borderLeft: '4px solid #6366f1' }}>
+      <div style={{ ...card, borderLeft: "4px solid var(--brand)" }}>
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>AI Search Visibility</div>
         <div style={{ fontSize: 12, color: 'var(--muted)' }}>
           How often AI models (ChatGPT, Gemini, Perplexity, Claude) cite and surface your content in responses.
@@ -12644,15 +12652,18 @@ function AiModelsRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
-          { label: 'Overall AI Score', value: '71/100', color: '#6366f1' },
-          { label: 'Total Citations', value: '428', color: '#22c55e' },
-          { label: 'ChatGPT Mentions', value: '184', color: '#10b981' },
-          { label: 'Perplexity Rank', value: '#3', color: '#6366f1' },
-          { label: 'Gemini Citations', value: '112', color: '#f59e0b' },
-          { label: 'Claude Citations', value: '132', color: '#8b5cf6' },
+          { label: 'Overall AI Score', value: '71/100', color: "var(--brand)" },
+          { label: 'Total Citations', value: '428', color: 'var(--success)' },
+          { label: 'ChatGPT Mentions', value: '184', color: 'var(--success)' },
+          { label: 'Perplexity Rank', value: '#3', color: "var(--brand)" },
+          { label: 'Gemini Citations', value: '112', color: 'var(--warning)' },
+          { label: 'Claude Citations', value: '132', color: "var(--brand)" },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
-            <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--muted)' }}>
+              <ProviderMark name={kpi.label} size={14} decorative />
+              {kpi.label}
+            </div>
             <div style={{ fontWeight: 800, fontSize: 18, color: kpi.color, marginTop: 4 }}>{kpi.value}</div>
           </div>
         ))}
@@ -12661,10 +12672,10 @@ function AiModelsRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Citation Share by AI Model</div>
         <MiniBarChart
           items={[
-            { label: 'ChatGPT (GPT-4o)', value: 184, color: '#10b981', max: 428, suffix: ' cites' },
-            { label: 'Claude 3.5 Sonnet', value: 132, color: '#8b5cf6', max: 428, suffix: ' cites' },
-            { label: 'Gemini 2.5 Pro', value: 112, color: '#f59e0b', max: 428, suffix: ' cites' },
-            { label: 'Perplexity', value: 0, color: '#6366f1', max: 428, suffix: ' cites' },
+            { label: 'ChatGPT (GPT-4o)', value: 184, color: 'var(--success)', max: 428, suffix: ' cites' },
+            { label: 'Claude 3.5 Sonnet', value: 132, color: "var(--brand)", max: 428, suffix: ' cites' },
+            { label: 'Gemini 2.5 Pro', value: 112, color: 'var(--warning)', max: 428, suffix: ' cites' },
+            { label: 'Perplexity', value: 0, color: "var(--brand)", max: 428, suffix: ' cites' },
           ]}
         />
       </div>
@@ -12685,7 +12696,10 @@ function AiModelsRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                       fontWeight: 600,
                     }}
                   >
-                    {h}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <ProviderMark name={h} size={14} decorative />
+                      {h}
+                    </span>
                   </th>
                 ))}
               </tr>
@@ -12741,24 +12755,24 @@ function AiModelsRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 <tr key={`ai-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                   <td style={{ padding: '7px 8px', fontWeight: 600 }}>{r.topic}</td>
                   <td style={{ padding: '7px 8px', textAlign: 'center' }}>
-                    <span style={{ color: r.gpt ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{r.gpt ? '✓' : '✗'}</span>
+                    <span style={{ color: r.gpt ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>{r.gpt ? '✓' : '✗'}</span>
                   </td>
                   <td style={{ padding: '7px 8px', textAlign: 'center' }}>
-                    <span style={{ color: r.gem ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{r.gem ? '✓' : '✗'}</span>
+                    <span style={{ color: r.gem ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>{r.gem ? '✓' : '✗'}</span>
                   </td>
                   <td style={{ padding: '7px 8px', textAlign: 'center' }}>
-                    <span style={{ color: r.claude ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                    <span style={{ color: r.claude ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
                       {r.claude ? '✓' : '✗'}
                     </span>
                   </td>
                   <td style={{ padding: '7px 8px', textAlign: 'center' }}>
-                    <span style={{ color: r.pplx ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{r.pplx ? '✓' : '✗'}</span>
+                    <span style={{ color: r.pplx ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>{r.pplx ? '✓' : '✗'}</span>
                   </td>
                   <td style={{ padding: '7px 8px', fontWeight: 700 }}>#{r.pos}</td>
                   <td
                     style={{
                       padding: '7px 8px',
-                      color: r.trend.startsWith('+') ? '#22c55e' : r.trend.startsWith('-') ? '#ef4444' : 'var(--muted)',
+                      color: r.trend.startsWith('+') ? 'var(--success)' : r.trend.startsWith('-') ? 'var(--danger)' : 'var(--muted)',
                       fontWeight: 700,
                     }}
                   >
@@ -12792,7 +12806,7 @@ function AiModelsRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 fontSize: 12,
               }}
             >
-              <span style={badge(r.priority === 'high' ? '#ef4444' : '#f59e0b')}>{r.priority}</span>
+              <span style={badge(r.priority === 'high' ? 'var(--danger)' : 'var(--warning)')}>{r.priority}</span>
               <span>{r.tip}</span>
             </div>
           ))}
@@ -12809,11 +12823,11 @@ function HashtagsTab({ result, card, isOfflinePreview }: PerfTabProps) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
           { label: 'Tracked Hashtags', value: '248', color: 'var(--text)' },
-          { label: 'Trending Now', value: '14', color: '#22c55e' },
-          { label: 'Avg. Reach', value: '84K', color: '#6366f1' },
-          { label: 'Engagement Rate', value: '3.8%', color: '#f59e0b' },
-          { label: 'Brand Mentions', value: '1,240', color: '#6366f1' },
-          { label: 'Competitor Tags', value: '38', color: '#ef4444' },
+          { label: 'Trending Now', value: '14', color: 'var(--success)' },
+          { label: 'Avg. Reach', value: '84K', color: "var(--brand)" },
+          { label: 'Engagement Rate', value: '3.8%', color: 'var(--warning)' },
+          { label: 'Brand Mentions', value: '1,240', color: "var(--brand)" },
+          { label: 'Competitor Tags', value: '38', color: 'var(--danger)' },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -12901,16 +12915,16 @@ function HashtagsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 },
               ].map((r, i) => (
                 <tr key={`ht-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
-                  <td style={{ padding: '7px 8px', fontWeight: 700, color: '#6366f1' }}>{r.tag}</td>
+                  <td style={{ padding: '7px 8px', fontWeight: 700, color: "var(--brand)" }}>{r.tag}</td>
                   <td style={{ padding: '7px 8px' }}>
-                    <span style={badge('#6366f1')}>{r.platform}</span>
+                    <span style={badge('var(--info)')}>{r.platform}</span>
                   </td>
                   <td style={{ padding: '7px 8px' }}>{r.posts}</td>
                   <td style={{ padding: '7px 8px' }}>{r.reach}</td>
-                  <td style={{ padding: '7px 8px', color: '#22c55e', fontWeight: 700 }}>{r.eng}</td>
-                  <td style={{ padding: '7px 8px', color: '#22c55e', fontWeight: 700 }}>{r.growth}</td>
+                  <td style={{ padding: '7px 8px', color: 'var(--success)', fontWeight: 700 }}>{r.eng}</td>
+                  <td style={{ padding: '7px 8px', color: 'var(--success)', fontWeight: 700 }}>{r.growth}</td>
                   <td style={{ padding: '7px 8px' }}>
-                    <span style={badge('#22c55e')}>{r.rec}</span>
+                    <span style={badge('var(--success)')}>{r.rec}</span>
                   </td>
                 </tr>
               ))}
@@ -12925,7 +12939,7 @@ function HashtagsTab({ result, card, isOfflinePreview }: PerfTabProps) {
             { label: 'X (Twitter)', value: 3500000, color: '#1d9bf0', max: 9000000, suffix: '' },
             { label: 'LinkedIn', value: 2040000, color: '#0077b5', max: 9000000, suffix: '' },
             { label: 'TikTok', value: 8400000, color: '#ff0050', max: 9000000, suffix: '' },
-            { label: 'YouTube', value: 480000, color: '#ff0000', max: 9000000, suffix: '' },
+            { label: 'YouTube', value: 480000, color: 'var(--danger)', max: 9000000, suffix: '' },
             { label: 'Instagram', value: 1200000, color: '#e1306c', max: 9000000, suffix: '' },
           ]}
         />
@@ -12941,7 +12955,7 @@ function VisibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
       <div
         style={{
           ...card,
-          borderLeft: '4px solid #6366f1',
+          borderLeft: "4px solid var(--brand)",
           display: 'flex',
           alignItems: 'center',
           gap: 20,
@@ -12950,20 +12964,20 @@ function VisibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
       >
         <div>
           <div style={{ fontSize: 11, color: 'var(--muted)' }}>Brand Visibility Score</div>
-          <div style={{ fontWeight: 900, fontSize: 48, color: '#6366f1', lineHeight: 1 }}>74</div>
+          <div style={{ fontWeight: 900, fontSize: 48, color: "var(--brand)", lineHeight: 1 }}>74</div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>/ 100 — Good</div>
         </div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontSize: 12, marginBottom: 6 }}>
-            Organic visibility drives <strong style={{ color: '#22c55e' }}>68%</strong> of total traffic. AI channel
-            growing <strong style={{ color: '#6366f1' }}>+44%</strong> MoM.
+            Organic visibility drives <strong style={{ color: 'var(--success)' }}>68%</strong> of total traffic. AI channel
+            growing <strong style={{ color: "var(--brand)" }}>+44%</strong> MoM.
           </div>
           <div style={{ height: 8, background: 'var(--line)', borderRadius: 4 }}>
             <div
               style={{
                 width: '74%',
                 height: '100%',
-                background: 'linear-gradient(90deg,#6366f1,#22c55e)',
+                background: "linear-gradient(90deg,var(--brand),var(--success))",
                 borderRadius: 4,
               }}
             />
@@ -12972,12 +12986,12 @@ function VisibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
-          { label: 'Organic Search', value: '68%', color: '#22c55e' },
-          { label: 'Paid / PPC', value: '12%', color: '#f59e0b' },
-          { label: 'Social Organic', value: '8%', color: '#6366f1' },
-          { label: 'AI Answers', value: '6%', color: '#6366f1' },
-          { label: 'Direct', value: '4%', color: '#ec4899' },
-          { label: 'Referral', value: '2%', color: '#10b981' },
+          { label: 'Organic Search', value: '68%', color: 'var(--success)' },
+          { label: 'Paid / PPC', value: '12%', color: 'var(--warning)' },
+          { label: 'Social Organic', value: '8%', color: "var(--brand)" },
+          { label: 'AI Answers', value: '6%', color: "var(--brand)" },
+          { label: 'Direct', value: '4%', color: 'var(--series-5)' },
+          { label: 'Referral', value: '2%', color: 'var(--success)' },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -12989,11 +13003,11 @@ function VisibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Visibility Share by Channel</div>
         <MiniBarChart
           items={[
-            { label: 'Google Organic', value: 68, color: '#22c55e', max: 100, suffix: '%' },
-            { label: 'Google Paid', value: 12, color: '#f59e0b', max: 100, suffix: '%' },
-            { label: 'Social Organic', value: 8, color: '#6366f1', max: 100, suffix: '%' },
-            { label: 'AI Engines', value: 6, color: '#6366f1', max: 100, suffix: '%' },
-            { label: 'Bing Organic', value: 4, color: '#10b981', max: 100, suffix: '%' },
+            { label: 'Google Organic', value: 68, color: 'var(--success)', max: 100, suffix: '%' },
+            { label: 'Google Paid', value: 12, color: 'var(--warning)', max: 100, suffix: '%' },
+            { label: 'Social Organic', value: 8, color: "var(--brand)", max: 100, suffix: '%' },
+            { label: 'AI Engines', value: 6, color: "var(--brand)", max: 100, suffix: '%' },
+            { label: 'Bing Organic', value: 4, color: 'var(--success)', max: 100, suffix: '%' },
           ]}
         />
       </div>
@@ -13003,7 +13017,7 @@ function VisibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <AreaChart
             points={[58, 60, 62, 64, 63, 66, 68, 70, 69, 72, 73, 74]}
             labels={['Feb', '', '', 'Mar', '', '', 'Apr', '', '', 'May', '', '']}
-            color="#6366f1"
+            color="var(--info)"
             height={70}
           />
         </div>
@@ -13011,10 +13025,10 @@ function VisibilityTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>SERP Feature Presence</div>
           <MiniBarChart
             items={[
-              { label: 'Featured Snippet', value: 12, color: '#22c55e', max: 50, suffix: ' pages' },
-              { label: 'People Also Ask', value: 38, color: '#6366f1', max: 50, suffix: ' pages' },
-              { label: 'Sitelinks', value: 8, color: '#6366f1', max: 50, suffix: ' pages' },
-              { label: 'Image Pack', value: 22, color: '#f59e0b', max: 50, suffix: ' pages' },
+              { label: 'Featured Snippet', value: 12, color: 'var(--success)', max: 50, suffix: ' pages' },
+              { label: 'People Also Ask', value: 38, color: "var(--brand)", max: 50, suffix: ' pages' },
+              { label: 'Sitelinks', value: 8, color: "var(--brand)", max: 50, suffix: ' pages' },
+              { label: 'Image Pack', value: 22, color: 'var(--warning)', max: 50, suffix: ' pages' },
             ]}
           />
         </div>
@@ -13029,14 +13043,14 @@ function LeadsTab({ result, card, isOfflinePreview }: PerfTabProps) {
     <section style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
-          { label: 'Total Leads (30d)', value: '1,284', color: '#22c55e' },
-          { label: 'MQLs', value: '348', color: '#6366f1' },
-          { label: 'SQLs', value: '124', color: '#6366f1' },
-          { label: 'Lead → MQL Rate', value: '27%', color: '#f59e0b' },
-          { label: 'MQL → SQL Rate', value: '36%', color: '#f59e0b' },
-          { label: 'Avg. CPA', value: '$18.40', color: '#ec4899' },
-          { label: 'Leads from Organic', value: '68%', color: '#22c55e' },
-          { label: 'Form Fill Rate', value: '4.2%', color: '#10b981' },
+          { label: 'Total Leads (30d)', value: '1,284', color: 'var(--success)' },
+          { label: 'MQLs', value: '348', color: "var(--brand)" },
+          { label: 'SQLs', value: '124', color: "var(--brand)" },
+          { label: 'Lead → MQL Rate', value: '27%', color: 'var(--warning)' },
+          { label: 'MQL → SQL Rate', value: '36%', color: 'var(--warning)' },
+          { label: 'Avg. CPA', value: '$18.40', color: 'var(--series-5)' },
+          { label: 'Leads from Organic', value: '68%', color: 'var(--success)' },
+          { label: 'Form Fill Rate', value: '4.2%', color: 'var(--success)' },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -13048,11 +13062,11 @@ function LeadsTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Lead Source Attribution</div>
         <MiniBarChart
           items={[
-            { label: 'Organic Search', value: 874, color: '#22c55e', max: 1284, suffix: ' leads' },
-            { label: 'Paid Search', value: 196, color: '#f59e0b', max: 1284, suffix: ' leads' },
-            { label: 'Social Organic', value: 128, color: '#6366f1', max: 1284, suffix: ' leads' },
-            { label: 'Referral', value: 56, color: '#6366f1', max: 1284, suffix: ' leads' },
-            { label: 'AI Referral', value: 30, color: '#8b5cf6', max: 1284, suffix: ' leads' },
+            { label: 'Organic Search', value: 874, color: 'var(--success)', max: 1284, suffix: ' leads' },
+            { label: 'Paid Search', value: 196, color: 'var(--warning)', max: 1284, suffix: ' leads' },
+            { label: 'Social Organic', value: 128, color: "var(--brand)", max: 1284, suffix: ' leads' },
+            { label: 'Referral', value: 56, color: "var(--brand)", max: 1284, suffix: ' leads' },
+            { label: 'AI Referral', value: 30, color: "var(--brand)", max: 1284, suffix: ' leads' },
           ]}
         />
       </div>
@@ -13087,19 +13101,19 @@ function LeadsTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 { page: '/tools/lighthouse-checker', sessions: 9600, leads: 144, rate: 1.5, cpa: 28.6, trend: '-4%' }, // NOSONAR
               ].map((p, i) => (
                 <tr key={`lp-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
-                  <td style={{ padding: '7px 8px', fontFamily: 'monospace', fontSize: 11, color: '#6366f1' }}>
+                  <td style={{ padding: '7px 8px', fontFamily: 'monospace', fontSize: 11, color: "var(--brand)" }}>
                     {p.page}
                   </td>
                   <td style={{ padding: '7px 8px' }}>{p.sessions.toLocaleString()}</td>
                   <td style={{ padding: '7px 8px', fontWeight: 700 }}>{p.leads}</td>
-                  <td style={{ padding: '7px 8px', color: p.rate > 3 ? '#22c55e' : '#f59e0b', fontWeight: 700 }}>
+                  <td style={{ padding: '7px 8px', color: p.rate > 3 ? 'var(--success)' : 'var(--warning)', fontWeight: 700 }}>
                     {p.rate}%
                   </td>
                   <td style={{ padding: '7px 8px' }}>${p.cpa.toFixed(2)}</td>
                   <td
                     style={{
                       padding: '7px 8px',
-                      color: p.trend.startsWith('+') ? '#22c55e' : '#ef4444',
+                      color: p.trend.startsWith('+') ? 'var(--success)' : 'var(--danger)',
                       fontWeight: 700,
                     }}
                   >
@@ -13119,7 +13133,7 @@ function LeadsTab({ result, card, isOfflinePreview }: PerfTabProps) {
             104, 98, 108,
           ]}
           labels={[]}
-          color="#22c55e"
+          color="var(--success)"
           height={70}
         />
       </div>
@@ -13133,14 +13147,14 @@ function ClicksTab({ result, card, isOfflinePreview }: PerfTabProps) {
     <section style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
-          { label: 'Total Clicks (30d)', value: '284K', color: '#22c55e' },
-          { label: 'Impressions', value: '4.2M', color: '#6366f1' },
-          { label: 'Avg. CTR', value: '6.8%', color: '#6366f1' },
-          { label: 'Avg. Position', value: '14.2', color: '#f59e0b' },
-          { label: 'CTR top-3 pos', value: '28%', color: '#22c55e' },
-          { label: 'Click Loss to Snippet', value: '18%', color: '#ef4444' },
-          { label: 'Mobile Click Share', value: '62%', color: '#ec4899' },
-          { label: 'YoY Click Growth', value: '+34%', color: '#22c55e' },
+          { label: 'Total Clicks (30d)', value: '284K', color: 'var(--success)' },
+          { label: 'Impressions', value: '4.2M', color: "var(--brand)" },
+          { label: 'Avg. CTR', value: '6.8%', color: "var(--brand)" },
+          { label: 'Avg. Position', value: '14.2', color: 'var(--warning)' },
+          { label: 'CTR top-3 pos', value: '28%', color: 'var(--success)' },
+          { label: 'Click Loss to Snippet', value: '18%', color: 'var(--danger)' },
+          { label: 'Mobile Click Share', value: '62%', color: 'var(--series-5)' },
+          { label: 'YoY Click Growth', value: '+34%', color: 'var(--success)' },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -13153,11 +13167,11 @@ function ClicksTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>CTR by Position</div>
           <MiniBarChart
             items={[
-              { label: 'Position 1', value: 31, color: '#22c55e', max: 35, suffix: '% CTR' },
-              { label: 'Position 2', value: 24, color: '#6366f1', max: 35, suffix: '% CTR' },
-              { label: 'Position 3', value: 18, color: '#6366f1', max: 35, suffix: '% CTR' },
-              { label: 'Position 4–7', value: 9, color: '#f59e0b', max: 35, suffix: '% CTR' },
-              { label: 'Position 8–10', value: 5, color: '#ef4444', max: 35, suffix: '% CTR' },
+              { label: 'Position 1', value: 31, color: 'var(--success)', max: 35, suffix: '% CTR' },
+              { label: 'Position 2', value: 24, color: "var(--brand)", max: 35, suffix: '% CTR' },
+              { label: 'Position 3', value: 18, color: "var(--brand)", max: 35, suffix: '% CTR' },
+              { label: 'Position 4–7', value: 9, color: 'var(--warning)', max: 35, suffix: '% CTR' },
+              { label: 'Position 8–10', value: 5, color: 'var(--danger)', max: 35, suffix: '% CTR' },
             ]}
           />
         </div>
@@ -13165,9 +13179,9 @@ function ClicksTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Click Share by Device</div>
           <MiniBarChart
             items={[
-              { label: 'Mobile', value: 62, color: '#ec4899', max: 100, suffix: '%' },
-              { label: 'Desktop', value: 31, color: '#6366f1', max: 100, suffix: '%' },
-              { label: 'Tablet', value: 7, color: '#6366f1', max: 100, suffix: '%' },
+              { label: 'Mobile', value: 62, color: 'var(--series-5)', max: 100, suffix: '%' },
+              { label: 'Desktop', value: 31, color: "var(--brand)", max: 100, suffix: '%' },
+              { label: 'Tablet', value: 7, color: "var(--brand)", max: 100, suffix: '%' },
             ]}
           />
         </div>
@@ -13203,17 +13217,17 @@ function ClicksTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 { page: '/demo', clicks: 18800, impr: 248000, ctr: 7.6, pos: 3.6, mom: '+6%' },
               ].map((p, i) => (
                 <tr key={`cp-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
-                  <td style={{ padding: '7px 8px', fontFamily: 'monospace', fontSize: 11, color: '#6366f1' }}>
+                  <td style={{ padding: '7px 8px', fontFamily: 'monospace', fontSize: 11, color: "var(--brand)" }}>
                     {p.page}
                   </td>
                   <td style={{ padding: '7px 8px', fontWeight: 700 }}>{p.clicks.toLocaleString()}</td>
                   <td style={{ padding: '7px 8px' }}>{p.impr.toLocaleString()}</td>
-                  <td style={{ padding: '7px 8px', color: '#22c55e', fontWeight: 700 }}>{p.ctr}%</td>
+                  <td style={{ padding: '7px 8px', color: 'var(--success)', fontWeight: 700 }}>{p.ctr}%</td>
                   <td style={{ padding: '7px 8px' }}>#{p.pos}</td>
                   <td
                     style={{
                       padding: '7px 8px',
-                      color: p.mom.startsWith('+') ? '#22c55e' : '#ef4444',
+                      color: p.mom.startsWith('+') ? 'var(--success)' : 'var(--danger)',
                       fontWeight: 700,
                     }}
                   >
@@ -13233,7 +13247,7 @@ function ClicksTab({ result, card, isOfflinePreview }: PerfTabProps) {
             10400, 10800, 10600, 11000, 11400, 11200, 11600, 12000, 11800, 12200, 12600, 12400, 13000,
           ]}
           labels={[]}
-          color="#22c55e"
+          color="var(--success)"
           height={70}
         />
       </div>
@@ -13245,7 +13259,7 @@ function ClicksTab({ result, card, isOfflinePreview }: PerfTabProps) {
 function TrendsVsPlatformTab({ result, card, isOfflinePreview }: PerfTabProps) {
   return (
     <section style={{ display: 'grid', gap: 12 }}>
-      <div style={{ ...card, borderLeft: '4px solid #6366f1' }}>
+      <div style={{ ...card, borderLeft: "4px solid var(--brand)" }}>
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Trends vs Platform Comparison</div>
         <div style={{ fontSize: 12, color: 'var(--muted)' }}>
           Search volume trends cross-referenced with platform engagement data (Google, TikTok, LinkedIn, X, YouTube).
@@ -13253,12 +13267,12 @@ function TrendsVsPlatformTab({ result, card, isOfflinePreview }: PerfTabProps) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
-          { label: 'Google Trends Score', value: '82', color: '#22c55e' },
+          { label: 'Google Trends Score', value: '82', color: 'var(--success)' },
           { label: 'TikTok Momentum', value: '+148%', color: '#ff0050' },
           { label: 'LinkedIn Engagement', value: '+34%', color: '#0077b5' },
           { label: 'X Conversation Vol.', value: '42K', color: '#1d9bf0' },
-          { label: 'YouTube Search Vol.', value: '+28%', color: '#ff0000' },
-          { label: 'Cross-platform Score', value: '74/100', color: '#6366f1' },
+          { label: 'YouTube Search Vol.', value: '+28%', color: 'var(--danger)' },
+          { label: 'Cross-platform Score', value: '74/100', color: "var(--brand)" },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -13271,9 +13285,9 @@ function TrendsVsPlatformTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <MiniBarChart
           items={[
             { label: 'TikTok', value: 148, color: '#ff0050', max: 200, suffix: '% MoM' },
-            { label: 'YouTube Shorts', value: 84, color: '#ff0000', max: 200, suffix: '% MoM' },
+            { label: 'YouTube Shorts', value: 84, color: 'var(--danger)', max: 200, suffix: '% MoM' },
             { label: 'LinkedIn', value: 34, color: '#0077b5', max: 200, suffix: '% MoM' },
-            { label: 'Google Search', value: 22, color: '#22c55e', max: 200, suffix: '% MoM' },
+            { label: 'Google Search', value: 22, color: 'var(--success)', max: 200, suffix: '% MoM' },
             { label: 'X (Twitter)', value: 18, color: '#1d9bf0', max: 200, suffix: '% MoM' },
             { label: 'Instagram', value: 12, color: '#e1306c', max: 200, suffix: '% MoM' },
           ]}
@@ -13342,13 +13356,13 @@ function TrendsVsPlatformTab({ result, card, isOfflinePreview }: PerfTabProps) {
               ].map((r, i) => (
                 <tr key={`tv-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                   <td style={{ padding: '7px 8px', fontWeight: 600 }}>{r.topic}</td>
-                  <td style={{ padding: '7px 8px', color: '#22c55e' }}>{r.goog}</td>
+                  <td style={{ padding: '7px 8px', color: 'var(--success)' }}>{r.goog}</td>
                   <td style={{ padding: '7px 8px', color: '#ff0050', fontWeight: 700 }}>{r.tiktok}</td>
                   <td style={{ padding: '7px 8px', color: '#0077b5' }}>{r.li}</td>
                   <td style={{ padding: '7px 8px', color: '#1d9bf0' }}>{r.x}</td>
-                  <td style={{ padding: '7px 8px', color: '#ff0000' }}>{r.yt}</td>
+                  <td style={{ padding: '7px 8px', color: 'var(--danger)' }}>{r.yt}</td>
                   <td style={{ padding: '7px 8px' }}>
-                    <span style={badge(r.opp === 'high' ? '#22c55e' : r.opp === 'medium' ? '#f59e0b' : '#6366f1')}>
+                    <span style={badge(r.opp === 'high' ? 'var(--success)' : r.opp === 'medium' ? 'var(--warning)' : 'var(--info)')}>
                       {r.opp}
                     </span>
                   </td>
@@ -13379,7 +13393,7 @@ function PowerRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
         <div
           style={{
             fontSize: 12,
-            color: '#6366f1',
+            color: "var(--brand)",
             marginBottom: 8,
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
@@ -13387,21 +13401,21 @@ function PowerRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
         >
           Composite Power Ranking
         </div>
-        <div style={{ fontWeight: 900, fontSize: 72, lineHeight: 1, color: '#6366f1' }}>78</div>
-        <div style={{ fontSize: 14, color: '#6366f1', marginTop: 4 }}>/ 100 — Strong Performer</div>
+        <div style={{ fontWeight: 900, fontSize: 72, lineHeight: 1, color: "var(--brand)" }}>78</div>
+        <div style={{ fontSize: 14, color: "var(--brand)", marginTop: 4 }}>/ 100 — Strong Performer</div>
         <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
           Ranks <strong style={{ color: '#fff' }}>#3</strong> in your niche · Top 15% globally
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 180px), 1fr))', gap: 10 }}>
         {[
-          { label: 'Technical SEO', score: 82, color: '#22c55e' },
-          { label: 'Content Quality', score: 74, color: '#6366f1' },
-          { label: 'Authority / DA', score: 54, color: '#f59e0b' },
-          { label: 'AI Visibility', score: 71, color: '#6366f1' },
-          { label: 'UX / CWV', score: 68, color: '#ec4899' },
-          { label: 'Social Signals', score: 62, color: '#10b981' },
-          { label: 'Security', score: 88, color: '#22c55e' },
+          { label: 'Technical SEO', score: 82, color: 'var(--success)' },
+          { label: 'Content Quality', score: 74, color: "var(--brand)" },
+          { label: 'Authority / DA', score: 54, color: 'var(--warning)' },
+          { label: 'AI Visibility', score: 71, color: "var(--brand)" },
+          { label: 'UX / CWV', score: 68, color: 'var(--series-5)' },
+          { label: 'Social Signals', score: 62, color: 'var(--success)' },
+          { label: 'Security', score: 88, color: 'var(--success)' },
           {
             label: 'Performance',
             score: result.performance_score ?? 62,
@@ -13423,7 +13437,7 @@ function PowerRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <AreaChart
             points={[64, 66, 65, 68, 70, 72, 71, 74, 73, 75, 77, 78]}
             labels={['Feb', '', '', 'Mar', '', '', 'Apr', '', '', 'May', '', '']}
-            color="#6366f1"
+            color="var(--info)"
             height={70}
           />
         </div>
@@ -13431,11 +13445,11 @@ function PowerRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Niche Ranking vs Competitors</div>
           <MiniBarChart
             items={[
-              { label: 'Competitor A', value: 86, color: '#ef4444', max: 100, suffix: '/100' },
-              { label: 'Competitor B', value: 82, color: '#f59e0b', max: 100, suffix: '/100' },
-              { label: 'You', value: 78, color: '#6366f1', max: 100, suffix: '/100' },
-              { label: 'Competitor C', value: 71, color: '#22c55e', max: 100, suffix: '/100' },
-              { label: 'Competitor D', value: 64, color: '#6366f1', max: 100, suffix: '/100' },
+              { label: 'Competitor A', value: 86, color: 'var(--danger)', max: 100, suffix: '/100' },
+              { label: 'Competitor B', value: 82, color: 'var(--warning)', max: 100, suffix: '/100' },
+              { label: 'You', value: 78, color: "var(--brand)", max: 100, suffix: '/100' },
+              { label: 'Competitor C', value: 71, color: 'var(--success)', max: 100, suffix: '/100' },
+              { label: 'Competitor D', value: 64, color: "var(--brand)", max: 100, suffix: '/100' },
             ]}
           />
         </div>
@@ -13470,9 +13484,9 @@ function PowerRankingTab({ result, card, isOfflinePreview }: PerfTabProps) {
                 fontSize: 12,
               }}
             >
-              <span style={{ color: '#22c55e', fontWeight: 800, fontSize: 14, minWidth: 52 }}>{p.impact}</span>
+              <span style={{ color: 'var(--success)', fontWeight: 800, fontSize: 14, minWidth: 52 }}>{p.impact}</span>
               <span style={{ flex: 1 }}>{p.action}</span>
-              <span style={badge(p.effort === 'high' ? '#ef4444' : p.effort === 'medium' ? '#f59e0b' : '#22c55e')}>
+              <span style={badge(p.effort === 'high' ? 'var(--danger)' : p.effort === 'medium' ? 'var(--warning)' : 'var(--success)')}>
                 {p.effort} effort
               </span>
             </div>
@@ -13490,7 +13504,7 @@ function AutonomousTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
       <div
         style={{
           ...card,
-          borderLeft: '4px solid #6366f1',
+          borderLeft: "4px solid var(--brand)",
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -13508,7 +13522,7 @@ function AutonomousTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
           type="button"
           onClick={optimizeSite}
           disabled={autoFixing}
-          style={{ ...btn(true), background: '#6366f1', color: '#fff' }}
+          style={{ ...btn(true), background: "var(--brand)", color: 'var(--on-brand)' }}
         >
           {autoFixing ? 'Agents Running...' : '🤖 Trigger Full Autonomous Run'}
         </button>
@@ -13516,14 +13530,14 @@ function AutonomousTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
       {/* Agent fleet status */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
         {[
-          { label: 'Active Agents', value: '12', color: '#22c55e' },
-          { label: 'Tasks Queued', value: '48', color: '#f59e0b' },
-          { label: 'Tasks Completed 7d', value: '284', color: '#6366f1' },
-          { label: 'Avg. Task Duration', value: '4.2m', color: '#6366f1' },
-          { label: 'Success Rate', value: '94%', color: '#22c55e' },
-          { label: 'Auto-Published Posts', value: '8', color: '#ec4899' },
-          { label: 'Fixes Applied Auto', value: '62', color: '#10b981' },
-          { label: 'Revenue Impact', value: '+$12.4K', color: '#22c55e' },
+          { label: 'Active Agents', value: '12', color: 'var(--success)' },
+          { label: 'Tasks Queued', value: '48', color: 'var(--warning)' },
+          { label: 'Tasks Completed 7d', value: '284', color: "var(--brand)" },
+          { label: 'Avg. Task Duration', value: '4.2m', color: "var(--brand)" },
+          { label: 'Success Rate', value: '94%', color: 'var(--success)' },
+          { label: 'Auto-Published Posts', value: '8', color: 'var(--series-5)' },
+          { label: 'Fixes Applied Auto', value: '62', color: 'var(--success)' },
+          { label: 'Revenue Impact', value: '+$12.4K', color: 'var(--success)' },
         ].map((kpi) => (
           <div key={kpi.label} style={card}>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>{kpi.label}</div>
@@ -13598,7 +13612,7 @@ function AutonomousTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
               style={{
                 ...card,
                 padding: 10,
-                borderLeft: `3px solid ${t.status === 'running' ? '#22c55e' : t.status === 'done' ? '#6366f1' : '#f59e0b'}`,
+                borderLeft: `3px solid ${t.status === 'running' ? 'var(--success)' : t.status === 'done' ? 'var(--info)' : 'var(--warning)'}`,
               }}
             >
               <div
@@ -13612,9 +13626,9 @@ function AutonomousTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
               >
                 <div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
-                    <span style={{ fontWeight: 700, fontSize: 11, color: '#6366f1' }}>{t.agent}</span>
+                    <span style={{ fontWeight: 700, fontSize: 11, color: "var(--brand)" }}>{t.agent}</span>
                     <span
-                      style={badge(t.status === 'running' ? '#22c55e' : t.status === 'done' ? '#6366f1' : '#f59e0b')}
+                      style={badge(t.status === 'running' ? 'var(--success)' : t.status === 'done' ? 'var(--info)' : 'var(--warning)')}
                     >
                       {t.status}
                     </span>
@@ -13629,7 +13643,7 @@ function AutonomousTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
                     style={{
                       width: `${t.progress}%`,
                       height: '100%',
-                      background: t.status === 'done' ? '#6366f1' : '#22c55e',
+                      background: t.status === 'done' ? "var(--brand)" : 'var(--success)',
                       borderRadius: 2,
                     }}
                   />
@@ -13644,34 +13658,34 @@ function AutonomousTab({ result, card, isOfflinePreview, autoFixing, autoFixResu
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Automation Coverage by Module</div>
         <MiniBarChart
           items={[
-            { label: 'Technical SEO', value: 91, color: '#22c55e', max: 100, suffix: '% auto' },
-            { label: 'Content Refresh', value: 74, color: '#6366f1', max: 100, suffix: '% auto' },
-            { label: 'Link Building', value: 48, color: '#f59e0b', max: 100, suffix: '% auto' },
-            { label: 'Schema / Structured Data', value: 86, color: '#6366f1', max: 100, suffix: '% auto' },
-            { label: 'Performance Fixes', value: 68, color: '#ec4899', max: 100, suffix: '% auto' },
-            { label: 'Security Patching', value: 82, color: '#10b981', max: 100, suffix: '% auto' },
-            { label: 'Monitoring & Alerts', value: 96, color: '#22c55e', max: 100, suffix: '% auto' },
+            { label: 'Technical SEO', value: 91, color: 'var(--success)', max: 100, suffix: '% auto' },
+            { label: 'Content Refresh', value: 74, color: "var(--brand)", max: 100, suffix: '% auto' },
+            { label: 'Link Building', value: 48, color: 'var(--warning)', max: 100, suffix: '% auto' },
+            { label: 'Schema / Structured Data', value: 86, color: "var(--brand)", max: 100, suffix: '% auto' },
+            { label: 'Performance Fixes', value: 68, color: 'var(--series-5)', max: 100, suffix: '% auto' },
+            { label: 'Security Patching', value: 82, color: 'var(--success)', max: 100, suffix: '% auto' },
+            { label: 'Monitoring & Alerts', value: 96, color: 'var(--success)', max: 100, suffix: '% auto' },
           ]}
         />
       </div>
       {/* Autonomous results */}
       {autoFixResult && (
-        <div style={{ ...card, background: '#14532d22', border: '1px solid #22c55e44' }}>
-          <div style={{ fontWeight: 700, color: '#22c55e', marginBottom: 8 }}>Last Autonomous Run Results</div>
+        <div style={{ ...card, background: 'var(--success-soft)', border: '1px solid color-mix(in oklab, var(--success) 27%, transparent)' }}>
+          <div style={{ fontWeight: 700, color: 'var(--success)', marginBottom: 8 }}>Last Autonomous Run Results</div>
           <div style={{ display: 'grid', gap: 6 }}>
             {autoFixResult.fixes_applied.map((fix) => (
               <div key={fix.fix_id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12 }}>
-                <span style={{ color: fix.status === 'applied' ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                <span style={{ color: fix.status === 'applied' ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
                   {fix.status === 'applied' ? '✓' : '✗'}
                 </span>
                 <span style={{ flex: 1 }}>{fix.title}</span>
-                {fix.actual_gain_ms > 0 && <span style={{ color: '#22c55e' }}>-{fix.actual_gain_ms}ms</span>}
+                {fix.actual_gain_ms > 0 && <span style={{ color: 'var(--success)' }}>-{fix.actual_gain_ms}ms</span>}
               </div>
             ))}
           </div>
           <div style={{ marginTop: 10, fontSize: 12, color: 'var(--muted)' }}>
             Run at: {new Date(autoFixResult.applied_at).toLocaleString()} · Total gain:{' '}
-            <strong style={{ color: '#22c55e' }}>{autoFixResult.total_gain_ms}ms</strong>
+            <strong style={{ color: 'var(--success)' }}>{autoFixResult.total_gain_ms}ms</strong>
           </div>
         </div>
       )}
@@ -14189,7 +14203,7 @@ export default function PerformanceAuditPage() {
                 type="button"
                 onClick={optimizeSite}
                 disabled={autoFixing}
-                style={{ ...btn(true), background: '#6366f1', color: '#fff' }}
+                style={{ ...btn(true), background: "var(--brand)", color: 'var(--on-brand)' }}
               >
                 {autoFixing ? 'Optimizing...' : 'Optimize Site'}
               </button>
@@ -14316,10 +14330,10 @@ export default function PerformanceAuditPage() {
             {error && (
               <div
                 style={{
-                  color: isOfflinePreview ? '#92400e' : '#dc2626',
+                  color: isOfflinePreview ? 'var(--warning-ink)' : 'var(--danger)',
                   fontSize: 12,
                   padding: '6px 10px',
-                  background: isOfflinePreview ? '#78350f33' : '#7f1d1d22',
+                  background: isOfflinePreview ? 'var(--warning-soft)' : 'var(--danger-soft)',
                   borderRadius: 6,
                   display: 'flex',
                   alignItems: 'center',
@@ -14373,14 +14387,14 @@ export default function PerformanceAuditPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {result.analysis_mode && (
-                    <span style={badge(result.analysis_mode === 'llm' ? '#22c55e' : 'var(--muted)')}>
+                    <span style={badge(result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)')}>
                       {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                     </span>
                   )}
-                  {result.cached && <span style={badge('#38bdf8')}>Cached result</span>}
-                  {isOfflinePreview && <span style={badge('#f59e0b')}>Offline Preview</span>}
-                  {result.history?.regression_detected && <span style={badge('#ef4444')}>Regression Detected</span>}
-                  {result.alerts?.status === 'healthy' && <span style={badge('#22c55e')}>All alerts healthy</span>}
+                  {result.cached && <span style={badge('var(--info)')}>Cached result</span>}
+                  {isOfflinePreview && <span style={badge('var(--warning)')}>Offline Preview</span>}
+                  {result.history?.regression_detected && <span style={badge('var(--danger)')}>Regression Detected</span>}
+                  {result.alerts?.status === 'healthy' && <span style={badge('var(--success)')}>All alerts healthy</span>}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -14400,7 +14414,7 @@ export default function PerformanceAuditPage() {
 
             {/* Auto-fix banner */}
             {autoFixResult && (
-              <section style={{ ...card, marginBottom: 16, background: '#14532d22', border: '1px solid #22c55e44' }}>
+              <section style={{ ...card, marginBottom: 16, background: 'var(--success-soft)', border: '1px solid color-mix(in oklab, var(--success) 27%, transparent)' }}>
                 <div
                   style={{
                     display: 'flex',
@@ -14411,7 +14425,7 @@ export default function PerformanceAuditPage() {
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 700, color: '#22c55e', marginBottom: 4 }}>Site Optimization Applied</div>
+                    <div style={{ fontWeight: 700, color: 'var(--success)', marginBottom: 4 }}>Site Optimization Applied</div>
                     <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                       {autoFixResult.fixes_applied.filter((f) => f.status === 'applied').length} fixes applied &middot;
                       Total gain: {autoFixResult.total_gain_ms}ms &middot; New score:{' '}
@@ -14427,8 +14441,8 @@ export default function PerformanceAuditPage() {
               </section>
             )}
             {autoFixError && (
-              <section style={{ ...card, marginBottom: 16, background: '#7f1d1d22' }}>
-                <div style={{ color: '#dc2626', fontSize: 12 }}>{autoFixError}</div>
+              <section style={{ ...card, marginBottom: 16, background: 'var(--danger-soft)' }}>
+                <div style={{ color: 'var(--danger)', fontSize: 12 }}>{autoFixError}</div>
               </section>
             )}
 
@@ -14579,7 +14593,7 @@ export default function PerformanceAuditPage() {
                     borderRadius: 8,
                     border: '1px solid var(--line)',
                     background: tab === t.id ? 'var(--brand)' : 'var(--bg)',
-                    color: tab === t.id ? '#00101e' : 'var(--text)',
+                    color: tab === t.id ? 'var(--on-brand)' : 'var(--text)',
                     fontWeight: 700,
                     fontSize: 12,
                     cursor: 'pointer',

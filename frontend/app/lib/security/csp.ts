@@ -1,5 +1,28 @@
 const isDev = process.env.NODE_ENV !== 'production';
 
+function configuredConnectOrigins(): string[] {
+  const origins = new Set<string>();
+
+  for (const value of [
+    process.env.NEXT_PUBLIC_FASTAPI_URL,
+    process.env.FASTAPI_URL,
+    process.env.DJANGO_API_URL,
+  ]) {
+    if (!value) continue;
+
+    try {
+      const url = new URL(value);
+      if (url.protocol === 'http:' || url.protocol === 'https:') {
+        origins.add(url.origin);
+      }
+    } catch {
+      // Invalid endpoint configuration is rejected by the API client itself.
+    }
+  }
+
+  return [...origins].sort();
+}
+
 /**
  * Builds a per-request Content-Security-Policy. `script-src` must carry a
  * fresh nonce every request — a static `script-src 'self'` (the previous
@@ -17,6 +40,8 @@ const isDev = process.env.NODE_ENV !== 'production';
  * standard pairing for nonce-based CSP with framework-injected scripts.
  */
 export function buildContentSecurityPolicy(nonce: string): string {
+  const connectOrigins = configuredConnectOrigins();
+
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
@@ -29,7 +54,7 @@ export function buildContentSecurityPolicy(nonce: string): string {
     // explicit media-src, this falls back to default-src 'self', which does not
     // cover the blob: scheme, and the browser silently refuses to load it.
     "media-src 'self' blob:",
-    "connect-src 'self'",
+    `connect-src 'self'${connectOrigins.length ? ` ${connectOrigins.join(' ')}` : ''}`,
     "worker-src 'self' blob:",
     "frame-ancestors 'none'",
     "form-action 'self'",

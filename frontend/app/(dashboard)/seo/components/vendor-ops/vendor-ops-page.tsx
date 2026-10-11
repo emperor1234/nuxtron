@@ -1,5 +1,6 @@
 'use client';
 
+import type { Route } from 'next';
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -83,7 +84,7 @@ function ViewNav({ vendor, view }: { vendor: VendorSpec; view: VendorOpsView }) 
       {vendor.views.map((item) => (
         <Link
           key={item}
-          href={`/seo/${vendor.slug}-${item}`}
+          href={`/seo/${vendor.slug}-${item}` as Route}
           className={`${styles.navLink} ${item === view ? styles.navLinkActive : ''}`}
           aria-current={item === view ? 'page' : undefined}
         >

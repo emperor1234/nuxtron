@@ -1,5 +1,6 @@
 'use client';
 
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPost, DEFAULT_TENANT_ID, setSuperAdminKeySession } from '@/app/lib/api-client';
@@ -84,43 +85,43 @@ const IRA_ASSISTANCE_LINKS: IraAssistanceLink[] = [
     title: 'AI Social Studio',
     href: '/studio/social-studio',
     description: 'Launch the operator hub for publishing, trends, inbox, and content generation.',
-    accent: '#22c55e',
+    accent: 'var(--success)',
   },
   {
     title: 'Automation Engine',
     href: '/studio/social-automation',
     description: 'Manage queue controls, pause-all safety, and rule-based automation.',
-    accent: '#14b8a6',
+    accent: 'var(--info)',
   },
   {
     title: 'Smart Inbox',
     href: '/studio/social-inbox',
     description: 'Claim conversations, use saved replies, and inspect message history.',
-    accent: '#6366f1',
+    accent: 'var(--info)',
   },
   {
     title: 'Campaign Calendar',
     href: '/studio/social-calendar',
     description: 'Review scheduled posts and control publishing cadence.',
-    accent: '#a855f7',
+    accent: 'var(--info)',
   },
   {
     title: 'Review Management',
     href: '/studio/social-reviews',
     description: 'Track review replies, escalations, and care cases.',
-    accent: '#f97316',
+    accent: 'var(--warning)',
   },
   {
     title: 'Influencer CRM',
     href: '/studio/social-influencers',
     description: 'Search creators, shortlist matches, and manage partner discovery.',
-    accent: '#8b5cf6',
+    accent: 'var(--info)',
   },
   {
     title: 'Employee Advocacy',
     href: '/studio/social-advocacy',
     description: 'Publish ready-to-share advocacy assets for internal amplification.',
-    accent: '#16a34a',
+    accent: 'var(--success-ink)',
   },
 ];
 
@@ -623,7 +624,7 @@ export default function IraControlCenterPage() {
           {IRA_ASSISTANCE_LINKS.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
+              href={item.href as Route}
               className="card kpi-card"
               style={{
                 textDecoration: 'none',

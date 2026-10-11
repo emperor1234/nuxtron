@@ -93,6 +93,21 @@ describe('fastapi route fallback internals', () => {
     expect(upstreams).not.toContain('http://localhost:8001');
   });
 
+  it('rejects forced synthetic business fallback in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NUXTRON_PROXY_FORCE_FALLBACK', 'true');
+
+    const response = __test__.maybeBuildForcedFallbackResponse(
+      'POST',
+      ['ads-control-tower', 'campaigns'],
+      'org-production',
+      JSON.stringify({ campaign_name: 'must-not-be-created' })
+    );
+
+    expect(response?.status).toBe(503);
+    await expect(response?.json()).resolves.toEqual({ detail: 'Forced fallback is disabled in production.' });
+  });
+
   it('keeps localhost fallbacks outside production', () => {
     vi.stubEnv('NODE_ENV', 'development');
 

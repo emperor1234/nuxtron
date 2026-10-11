@@ -17,21 +17,21 @@ const DEFAULT_TENANT = (
 ).trim();
 
 const ENGINE_META: Record<string, { color: string; glow: string; accent: string }> = {
-  auth: { color: '#38bdf8', glow: 'rgba(56,189,248,0.25)', accent: '#0ea5e9' },
-  cc: { color: '#a78bfa', glow: 'rgba(167,139,250,0.25)', accent: '#6366f1' },
-  analytics: { color: '#34d399', glow: 'rgba(52,211,153,0.25)', accent: '#059669' },
-  e01: { color: '#f472b6', glow: 'rgba(244,114,182,0.25)', accent: '#db2777' },
-  e02: { color: '#fb923c', glow: 'rgba(251,146,60,0.25)', accent: '#ea580c' },
-  e03: { color: '#60a5fa', glow: 'rgba(96,165,250,0.25)', accent: '#6366f1' },
-  e04: { color: '#f87171', glow: 'rgba(248,113,113,0.25)', accent: '#dc2626' },
-  e05: { color: '#c084fc', glow: 'rgba(192,132,252,0.25)', accent: '#9333ea' },
-  e06: { color: '#4ade80', glow: 'rgba(74,222,128,0.25)', accent: '#16a34a' },
-  e07: { color: '#fbbf24', glow: 'rgba(251,191,36,0.25)', accent: '#d97706' },
-  e08: { color: '#f43f5e', glow: 'rgba(244,63,94,0.25)', accent: '#e11d48' },
-  e09: { color: '#f97316', glow: 'rgba(249,115,22,0.25)', accent: '#c2410c' },
-  e10: { color: '#22d3ee', glow: 'rgba(34,211,238,0.25)', accent: '#0891b2' },
-  e11: { color: '#6366f1', glow: 'rgba(99,102,241,0.25)', accent: '#6366f1' },
-  e12: { color: '#e879f9', glow: 'rgba(232,121,249,0.25)', accent: '#c026d3' },
+  auth: { color: 'var(--info)', glow: 'rgba(56,189,248,0.25)', accent: 'var(--info)' },
+  cc: { color: 'var(--info)', glow: 'rgba(167,139,250,0.25)', accent: 'var(--info)' },
+  analytics: { color: 'var(--success)', glow: 'rgba(52,211,153,0.25)', accent: 'var(--success-ink)' },
+  e01: { color: 'var(--series-5)', glow: 'rgba(244,114,182,0.25)', accent: 'var(--series-5)' },
+  e02: { color: 'var(--warning)', glow: 'rgba(251,146,60,0.25)', accent: 'var(--warning)' },
+  e03: { color: 'var(--info)', glow: 'rgba(96,165,250,0.25)', accent: 'var(--info)' },
+  e04: { color: 'var(--danger)', glow: 'rgba(248,113,113,0.25)', accent: 'var(--danger)' },
+  e05: { color: 'var(--info)', glow: 'rgba(192,132,252,0.25)', accent: 'var(--info)' },
+  e06: { color: 'var(--success)', glow: 'rgba(74,222,128,0.25)', accent: 'var(--success-ink)' },
+  e07: { color: 'var(--warning)', glow: 'rgba(251,191,36,0.25)', accent: 'var(--warning)' },
+  e08: { color: 'var(--danger)', glow: 'rgba(244,63,94,0.25)', accent: 'var(--danger)' },
+  e09: { color: 'var(--warning)', glow: 'rgba(249,115,22,0.25)', accent: 'var(--warning)' },
+  e10: { color: 'var(--info)', glow: 'rgba(34,211,238,0.25)', accent: 'var(--info-ink)' },
+  e11: { color: "var(--brand)", glow: 'rgba(99,102,241,0.25)', accent: 'var(--info)' },
+  e12: { color: 'var(--series-5)', glow: 'rgba(232,121,249,0.25)', accent: 'var(--series-5)' },
 };
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
@@ -99,8 +99,8 @@ function Card({
   return (
     <section
       style={{
-        border: `1px solid ${m.color}30`,
-        boxShadow: `0 0 32px ${m.glow}, inset 0 1px 0 ${m.color}15`,
+        border: `1px solid color-mix(in srgb, ${m.color} 18.82%, transparent)`,
+        boxShadow: `0 0 32px ${m.glow}, inset 0 1px 0 color-mix(in srgb, ${m.color} 8.24%, transparent)`,
         background: 'linear-gradient(135deg, rgba(10,10,20,0.95) 0%, rgba(15,10,30,0.97) 100%)',
         borderRadius: 16,
         padding: 'clamp(16px, 2.2vw, 28px) clamp(16px, 2.2vw, 28px) clamp(14px, 2vw, 24px)',
@@ -150,8 +150,8 @@ function CardTitle({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: `${m.color}18`,
-          border: `1px solid ${m.color}40`,
+          background: `color-mix(in srgb, ${m.color} 9.41%, transparent)`,
+          border: `1px solid color-mix(in srgb, ${m.color} 25.1%, transparent)`,
           borderRadius: 12,
           flexShrink: 0,
         }}
@@ -178,9 +178,9 @@ function CardTitle({
             fontWeight: 700,
             padding: '4px 11px',
             borderRadius: 999,
-            background: `${m.color}18`,
+            background: `color-mix(in srgb, ${m.color} 9.41%, transparent)`,
             color: m.color,
-            border: `1px solid ${m.color}40`,
+            border: `1px solid color-mix(in srgb, ${m.color} 25.1%, transparent)`,
             letterSpacing: '0.06em',
             textTransform: 'uppercase' as const,
           }}
@@ -211,7 +211,7 @@ function Field({
   rows?: number;
   engineKey?: keyof typeof ENGINE_META;
 }) {
-  const color = engineKey ? ENGINE_META[engineKey].color : '#a78bfa';
+  const color = engineKey ? ENGINE_META[engineKey].color : 'var(--info)';
   const shared = {
     width: '100%',
     background: 'rgba(0,0,0,0.4)',
@@ -219,7 +219,7 @@ function Field({
     borderRadius: 10,
     padding: '11px 14px',
     fontSize: 14,
-    color: '#f1f5f9',
+    color: 'var(--text)',
     outline: 'none',
     boxSizing: 'border-box' as const,
     transition: 'border-color 0.2s',
@@ -232,7 +232,7 @@ function Field({
           display: 'block',
           fontSize: 12,
           fontWeight: 600,
-          color: '#94a3b8',
+          color: 'var(--neutral)',
           marginBottom: 5,
           letterSpacing: '0.04em',
           textTransform: 'uppercase' as const,
@@ -298,7 +298,7 @@ function Btn({
     fontWeight: 700,
     borderRadius: 11,
     cursor: loading ? 'not-allowed' : 'pointer',
-    transition: 'all 0.18s ease',
+    transition: 'background 160ms ease, box-shadow 160ms ease, transform 160ms var(--ease-out)',
     border: 'none',
     letterSpacing: '0.02em',
     position: 'relative' as const,
@@ -308,19 +308,19 @@ function Btn({
     primary: {
       ...base,
       background: loading ? 'rgba(100,100,120,0.3)' : `linear-gradient(135deg, ${m.color} 0%, ${m.accent} 100%)`,
-      color: '#fff',
-      boxShadow: loading ? 'none' : `0 4px 20px ${m.glow}, 0 0 0 1px ${m.color}30 inset`,
+      color: 'var(--on-status)',
+      boxShadow: loading ? 'none' : `0 4px 20px ${m.glow}, 0 0 0 1px color-mix(in srgb, ${m.color} 18.82%, transparent) inset`,
     },
     outline: {
       ...base,
       background: 'transparent',
       color: m.color,
-      border: `1px solid ${m.color}50`,
+      border: `1px solid color-mix(in srgb, ${m.color} 31.37%, transparent)`,
       boxShadow: loading ? 'none' : `0 0 12px ${m.glow}`,
     },
     ghost: {
       ...base,
-      background: `${m.color}12`,
+      background: `color-mix(in srgb, ${m.color} 7.06%, transparent)`,
       color: m.color,
     },
   };
@@ -333,7 +333,7 @@ function Btn({
       onMouseEnter={(e) => {
         if (!loading) {
           if (variant === 'primary') e.currentTarget.style.transform = 'translateY(-1px)';
-          if (variant === 'outline') e.currentTarget.style.background = `${m.color}15`;
+          if (variant === 'outline') e.currentTarget.style.background = `color-mix(in srgb, ${m.color} 8.24%, transparent)`;
         }
       }}
       onMouseLeave={(e) => {
@@ -348,7 +348,7 @@ function Btn({
               width: 12,
               height: 12,
               border: '2px solid rgba(255,255,255,0.3)',
-              borderTopColor: '#fff',
+              borderTopColor: 'var(--on-status)',
               borderRadius: '50%',
               display: 'inline-block',
               animation: 'spin 0.7s linear infinite',
@@ -391,7 +391,7 @@ function ResultBox({ data, success }: { data: AnyObject | null; success?: boolea
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: '0.08em',
-            color: success ? '#34d399' : '#64748b',
+            color: success ? 'var(--success)' : "var(--muted)",
             textTransform: 'uppercase',
           }}
         >
@@ -401,7 +401,7 @@ function ResultBox({ data, success }: { data: AnyObject | null; success?: boolea
           onClick={() => void navigator.clipboard.writeText(json)}
           style={{
             fontSize: 11,
-            color: '#64748b',
+            color: "var(--muted)",
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
@@ -416,7 +416,7 @@ function ResultBox({ data, success }: { data: AnyObject | null; success?: boolea
           margin: 0,
           padding: '12px 14px',
           fontSize: 12,
-          color: '#86efac',
+          color: 'var(--success)',
           maxHeight: 320,
           overflowY: 'auto',
           lineHeight: 1.6,
@@ -440,7 +440,7 @@ function ErrorMsg({ msg }: { msg: string }) {
         borderRadius: 8,
         background: 'rgba(248,113,113,0.1)',
         border: '1px solid rgba(248,113,113,0.3)',
-        color: '#f87171',
+        color: 'var(--danger)',
         fontSize: 12,
       }}
     >
@@ -454,7 +454,7 @@ function Divider({ engineKey }: { engineKey: keyof typeof ENGINE_META }) {
     <div
       style={{
         height: 1,
-        background: `linear-gradient(90deg, transparent, ${ENGINE_META[engineKey].color}30, transparent)`,
+        background: `linear-gradient(90deg, transparent, color-mix(in srgb, ${ENGINE_META[engineKey].color} 18.82%, transparent), transparent)`,
         margin: '18px 0',
       }}
     />
@@ -481,8 +481,8 @@ function SubPanel({ children, engineKey }: { children: ReactNode; engineKey: key
         marginTop: 18,
         padding: '16px 18px',
         borderRadius: 12,
-        border: `1px solid ${m.color}20`,
-        background: `${m.color}06`,
+        border: `1px solid color-mix(in srgb, ${m.color} 12.55%, transparent)`,
+        background: `color-mix(in srgb, ${m.color} 2.35%, transparent)`,
       }}
     >
       {children}
@@ -493,11 +493,11 @@ function SubPanel({ children, engineKey }: { children: ReactNode; engineKey: key
 function IdBadge({ label, id }: { label: string; id: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-      <span style={{ fontSize: 11, color: '#94a3b8' }}>{label}:</span>
+      <span style={{ fontSize: 11, color: 'var(--neutral)' }}>{label}:</span>
       <code
         style={{
           fontSize: 12,
-          color: '#fbbf24',
+          color: 'var(--warning)',
           background: 'rgba(251,191,36,0.1)',
           border: '1px solid rgba(251,191,36,0.3)',
           borderRadius: 6,
@@ -686,7 +686,7 @@ export default function VSEPage() {
           minHeight: '100vh',
           background:
             'radial-gradient(ellipse 80% 60% at 50% -20%, rgba(120,40,200,0.18) 0%, transparent 70%), #080810',
-          color: '#f1f5f9',
+          color: 'var(--text)',
           padding: 'clamp(20px, 3.2vw, 40px) clamp(12px, 2vw, 20px) clamp(24px, 4vw, 60px)',
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
         }}
@@ -709,7 +709,7 @@ export default function VSEPage() {
                 fontWeight: 700,
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                color: '#a78bfa',
+                color: 'var(--info)',
                 background: 'rgba(167,139,250,0.12)',
                 border: '1px solid rgba(167,139,250,0.3)',
                 borderRadius: 999,
@@ -722,7 +722,7 @@ export default function VSEPage() {
                   width: 6,
                   height: 6,
                   borderRadius: '50%',
-                  background: '#a78bfa',
+                  background: 'var(--info)',
                   animation: 'pulse-glow 2s ease infinite',
                 }}
               />
@@ -734,7 +734,7 @@ export default function VSEPage() {
                 fontWeight: 900,
                 letterSpacing: '-0.03em',
                 lineHeight: 1.1,
-                background: 'linear-gradient(135deg, #f8fafc 0%, #a78bfa 50%, #60a5fa 100%)',
+                background: 'linear-gradient(135deg, var(--bg-soft) 0%, var(--info) 50%, var(--info) 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 margin: isShortViewport ? '0 0 8px' : '0 0 12px',
@@ -742,7 +742,7 @@ export default function VSEPage() {
             >
               ⚡ Viral Singularity Engine
             </h1>
-            <p style={{ color: '#94a3b8', fontSize: isShortViewport ? 13 : 15, margin: 0 }}>
+            <p style={{ color: 'var(--neutral)', fontSize: isShortViewport ? 13 : 15, margin: 0 }}>
               12 Engines · 47 Sub-systems · 247 Neurological Triggers
             </p>
             {!isShortViewport ? (
@@ -760,12 +760,12 @@ export default function VSEPage() {
                 }}
               >
                 {[
-                  { label: 'Engines', value: '12', color: '#a78bfa' },
-                  { label: 'Sub-systems', value: '47', color: '#60a5fa' },
-                  { label: 'Psych Triggers', value: '247', color: '#f472b6' },
-                  { label: 'Influencer DB', value: '12M', color: '#34d399' },
-                  { label: 'Trend Sources', value: '150M', color: '#fb923c' },
-                  { label: 'ROAS Target', value: '40x', color: '#fbbf24' },
+                  { label: 'Engines', value: '12', color: 'var(--info)' },
+                  { label: 'Sub-systems', value: '47', color: 'var(--info)' },
+                  { label: 'Psych Triggers', value: '247', color: 'var(--series-5)' },
+                  { label: 'Influencer DB', value: '12M', color: 'var(--success)' },
+                  { label: 'Trend Sources', value: '150M', color: 'var(--warning)' },
+                  { label: 'ROAS Target', value: '40x', color: 'var(--warning)' },
                 ].map((s) => (
                   <div
                     key={s.label}
@@ -789,7 +789,7 @@ export default function VSEPage() {
                     <div
                       style={{
                         fontSize: 11,
-                        color: '#64748b',
+                        color: "var(--muted)",
                         marginTop: 2,
                         textTransform: 'uppercase',
                         letterSpacing: '0.06em',
@@ -806,7 +806,7 @@ export default function VSEPage() {
           {/* ── Authentication ── */}
           <Card engineKey="auth">
             <CardTitle icon="🔑" title="Authentication" badge="LOCAL PROXY" engineKey="auth" />
-            <p style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
               Local mode uses server proxy credentials automatically. API Key is optional.
             </p>
             <Grid2>
@@ -1534,7 +1534,7 @@ export default function VSEPage() {
                 alignItems: 'center',
                 gap: 8,
                 fontSize: 12,
-                color: '#94a3b8',
+                color: 'var(--neutral)',
                 marginBottom: 14,
                 cursor: 'pointer',
               }}
@@ -1544,7 +1544,7 @@ export default function VSEPage() {
                 type="checkbox"
                 checked={cfAvoidDups}
                 onChange={(e) => setCfAvoidDups(e.target.checked)}
-                style={{ accentColor: '#fbbf24', width: 14, height: 14 }}
+                style={{ accentColor: 'var(--warning)', width: 14, height: 14 }}
               />
               Avoid Duplicate Content (anti-dedup fingerprint)
             </label>
@@ -1578,10 +1578,10 @@ export default function VSEPage() {
             <ResultBox data={vseContentGen.result} success={vseContentGen.success} />
 
             <SubPanel engineKey="e07">
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 4 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--warning)', marginBottom: 4 }}>
                 ✨ Multi-Variant Generator — Anti-Duplication Batch
               </p>
-              <p style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>
+              <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 12 }}>
                 Generates N unique variants in a single call. Intra-batch deduplication applied via topic
                 fingerprinting. Reuses Topic, Platform, Objective, Emotional Vector, Format, and Uniqueness Boost.
               </p>
@@ -1626,7 +1626,7 @@ export default function VSEPage() {
                   const items = payload.variants ?? payload.all_variants ?? [];
                   return (
                     <div style={{ marginTop: 14 }}>
-                      <p style={{ fontSize: 11, color: '#a78bfa', marginBottom: 8 }}>
+                      <p style={{ fontSize: 11, color: 'var(--info)', marginBottom: 8 }}>
                         Variants returned: <strong>{items.length}</strong>
                       </p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1652,7 +1652,7 @@ export default function VSEPage() {
                                   borderBottom: '1px solid rgba(251,191,36,0.15)',
                                   fontSize: 11,
                                   fontWeight: 700,
-                                  color: '#fbbf24',
+                                  color: 'var(--warning)',
                                 }}
                               >
                                 Variant {i + 1}
@@ -1663,7 +1663,7 @@ export default function VSEPage() {
                                   margin: 0,
                                   padding: '10px 12px',
                                   fontSize: 11,
-                                  color: '#86efac',
+                                  color: 'var(--success)',
                                   maxHeight: 200,
                                   overflow: 'auto',
                                   whiteSpace: 'pre-wrap',

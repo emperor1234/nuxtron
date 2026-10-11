@@ -1,108 +1,116 @@
-import { Check } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { ArrowUpRight } from "lucide-react";
+import Link from "next/link";
+import type { ReactNode } from "react";
+import type { ProductLine } from "@/app/lib/product-line";
+import { AuthProductProvider, ProductPoints, ProductText } from "./product-switch";
 
-type AuthLayoutProps = {
-  /** Short heading above the form, e.g. "Sign in to Nuxtron". */
-  heading: string;
-  /** One-line supporting copy under the heading. */
+/** Copy that changes with the product the visitor is signing in to. */
+export type AuthProductCopy = Readonly<
+  Record<
+    ProductLine,
+    {
+      subheading: string;
+      panelTitle: string;
+      panelPoints: readonly string[];
+    }
+  >
+>;
+
+type StaticCopyProps = {
   subheading: string;
-  /** Brand-panel headline (left side). */
   panelTitle: string;
-  /** Three short value-prop bullets for the brand panel. */
   panelPoints: readonly string[];
-  /** The form. */
-  children: ReactNode;
+  initialProduct?: never;
+  copy?: never;
 };
 
-/**
- * Two-column auth shell matching the marketing site's Salix-derived identity:
- * white canvas, blue/cyan/pink gradient accent, bordered form card.
- */
-export function AuthLayout({ heading, subheading, panelTitle, panelPoints, children }: AuthLayoutProps) {
+type ProductCopyProps = {
+  /** `?product=` from the page's searchParams, already narrowed (or null). */
+  initialProduct: ProductLine | null;
+  copy: AuthProductCopy;
+  subheading?: never;
+  panelTitle?: never;
+  panelPoints?: never;
+};
+
+type AuthLayoutProps = { heading: string; children: ReactNode } & (StaticCopyProps | ProductCopyProps);
+
+function pick<K extends keyof AuthProductCopy[ProductLine]>(copy: AuthProductCopy, key: K) {
+  return { seo: copy.seo[key], marketing: copy.marketing[key] };
+}
+
+function StaticPoints({ points }: { points: readonly string[] }) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-4 pb-16 pt-28 sm:px-6 sm:pt-32">
-      {/* Ambient background — same faint dot grid + gradient glow as the marketing pages */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: 'radial-gradient(rgba(24,24,24,0.06) 1px, transparent 1px)',
-            backgroundSize: '28px 28px',
-            maskImage: 'radial-gradient(circle at 50% 0%, black 0%, transparent 55%)',
-            WebkitMaskImage: 'radial-gradient(circle at 50% 0%, black 0%, transparent 55%)',
-          }}
-        />
-        <div
-          className="absolute left-1/2 top-0 h-[500px] w-[900px] -translate-x-1/2"
-          style={{
-            background: 'linear-gradient(90deg, #21ccee, #466cf3, #f83d69)',
-            opacity: 0.08,
-            filter: 'blur(160px)',
-          }}
-        />
-      </div>
-
-      <div className="relative z-10 grid w-full max-w-[1100px] grid-cols-1 overflow-hidden rounded-3xl border border-[#18181814] bg-white shadow-[0_40px_120px_rgba(24,24,24,0.1)] lg:grid-cols-2 lg:items-stretch">
-        {/* Brand panel */}
-        <section
-          aria-hidden
-          className="relative hidden flex-col justify-between overflow-hidden border-[#18181814] bg-[#181818] p-12 lg:flex lg:border-r"
-        >
-          <div
-            className="pointer-events-none absolute inset-0 opacity-90"
-            style={{ background: 'radial-gradient(70% 60% at 20% 0%, rgba(70,108,243,0.25), transparent 70%)' }}
-          />
-          <div className="relative">
-            <div className="mb-12 flex items-center gap-2">
-              <img src="/brand/nuxtron-icon-square.svg" alt="" width={22} height={22} className="rounded-sm" />
-              <span className="[font-family:var(--font-geist-sans)] text-lg font-bold tracking-tight text-white">
-                Nuxtron
-              </span>
-            </div>
-            <h2 className="max-w-[18ch] text-3xl font-semibold leading-tight tracking-tight text-white [font-family:var(--font-geist-sans)]">
-              {panelTitle}
-            </h2>
-          </div>
-          <ul className="relative mt-10 space-y-4">
-            {panelPoints.map((point) => (
-              <li key={point} className="flex items-start gap-3 text-zinc-300">
-                <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#466cf3]" strokeWidth={2.5} aria-hidden="true" />
-                <span className="leading-relaxed">{point}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* Form card */}
-        <section className="bg-white p-8 sm:p-10 lg:p-12">
-          <h1 className="text-2xl font-semibold tracking-tight text-[#181818] [font-family:var(--font-geist-sans)]">
-            {heading}
-          </h1>
-          <p className="mt-2 text-[#46484d]">{subheading}</p>
-          <div className="mt-8">{children}</div>
-        </section>
-      </div>
-    </main>
+    <ul>
+      {points.map((point, index) => (
+        <li key={point}>
+          <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+          {point}
+        </li>
+      ))}
+    </ul>
   );
 }
 
-/** Shared primary submit button for auth forms. */
-export function AuthSubmit({ busy, children }: { busy: boolean; children: ReactNode }) {
+/**
+ * Server-rendered shell for the auth pages. With `copy` + `initialProduct`
+ * (/login, /register) the product-aware pieces are small client islands that
+ * read the product switch's context, so the copy follows the switch without
+ * a navigation. With plain strings (/reset-password) it renders static copy.
+ */
+export function AuthLayout(props: AuthLayoutProps) {
+  const { heading, children } = props;
+  const productAware = props.copy !== undefined;
+
+  const shell = (
+    <div className="auth-surface">
+      <div className="auth-composition">
+        <section className="auth-story" aria-label="About Nuxtron">
+          <p className="mk-eyebrow">YOUR CONNECTED WORKSPACE</p>
+          <h2>{productAware ? <ProductText text={pick(props.copy, "panelTitle")} /> : props.panelTitle}</h2>
+          {productAware ? (
+            <ProductPoints points={pick(props.copy, "panelPoints")} />
+          ) : (
+            <StaticPoints points={props.panelPoints} />
+          )}
+          <Link href="/features">
+            Explore the platform <ArrowUpRight size={16} aria-hidden="true" />
+          </Link>
+        </section>
+        <section className="auth-form-panel" aria-labelledby="auth-heading">
+          <h1 id="auth-heading">{heading}</h1>
+          <p>{productAware ? <ProductText text={pick(props.copy, "subheading")} /> : props.subheading}</p>
+          <div className="auth-fields">{children}</div>
+        </section>
+      </div>
+    </div>
+  );
+
+  return productAware ? (
+    <AuthProductProvider initialProduct={props.initialProduct}>{shell}</AuthProductProvider>
+  ) : (
+    shell
+  );
+}
+export function AuthSubmit({
+  busy,
+  children,
+}: {
+  busy: boolean;
+  children: ReactNode;
+}) {
   return (
     <button
       type="submit"
       disabled={busy}
       aria-busy={busy}
-      className="inline-flex w-full items-center justify-center rounded-xl bg-[#181818] px-6 py-3 text-base font-bold text-white transition-all duration-200 hover:bg-black hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+      className="auth-submit"
     >
       {children}
     </button>
   );
 }
-
-/** Footer link row under an auth form. */
 export function AuthAltLinks({ children }: { children: ReactNode }) {
-  return <p className="mt-6 text-center text-sm text-[#8a8d93]">{children}</p>;
+  return <p className="auth-alt-links">{children}</p>;
 }
-
-export const authLink = 'font-semibold text-[#466cf3] underline-offset-4 hover:underline';
+export const authLink = "auth-link";

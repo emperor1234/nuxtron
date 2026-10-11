@@ -240,7 +240,7 @@ export default function ManychatPage() {
           <Link href="/studio/social-studio" style={styles.backLink}>
             ← Back to Social Studio
           </Link>
-          <h1 style={styles.title}>Manychat Automation Workspace</h1>
+          <h1 style={styles.title}>ManyChat integration</h1>
           <p style={styles.subtitle}>
             Manage audience tags, segments, keyword automations, flows, broadcasts, and drip sequences with live API
             wiring.
@@ -468,14 +468,14 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     minHeight: '100vh',
     padding: '28px 24px 56px',
-    background: 'linear-gradient(160deg, #eef0f4 0%, #eef0f4 45%, #14213d 100%)',
+    background: "linear-gradient(160deg, var(--line-soft) 0%, var(--line-soft) 45%, #14213d 100%)",
     color: 'var(--text)',
   },
   header: { marginBottom: 20 },
   backLink: { color: 'var(--brand)', textDecoration: 'none', display: 'inline-block', marginBottom: 10 },
   title: { margin: '0 0 8px', fontSize: 30 },
   subtitle: { margin: 0, color: 'var(--muted)', maxWidth: 900 },
-  error: { padding: 12, borderRadius: 10, background: '#fee2e2', marginBottom: 16 },
+  error: { padding: 12, borderRadius: 10, background: 'var(--danger-soft)', marginBottom: 16 },
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
@@ -507,8 +507,8 @@ const styles: Record<string, React.CSSProperties> = {
   button: {
     borderRadius: 10,
     border: 0,
-    background: '#6366f1',
-    color: '#fff',
+    background: "var(--brand)",
+    color: 'var(--on-brand)',
     padding: '10px 14px',
     cursor: 'pointer',
   },
@@ -516,8 +516,8 @@ const styles: Record<string, React.CSSProperties> = {
     marginLeft: 8,
     borderRadius: 8,
     border: 0,
-    background: '#0ea5e9',
-    color: '#fff',
+    background: 'var(--info)',
+    color: 'var(--on-status)',
     padding: '5px 8px',
     cursor: 'pointer',
   },

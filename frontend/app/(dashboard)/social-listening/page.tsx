@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { ProviderMark } from '@/app/(dashboard)/_ui/provider-mark';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -70,27 +72,31 @@ const API_BASE = '/api/fastapi';
 const DEFAULT_TENANT = (process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || 'default').trim();
 
 const SENTIMENT_COLORS: Record<Sentiment, string> = {
-  positive: '#26d78e',
-  neutral: '#1bc7ff',
-  negative: '#f87171',
+  positive: 'var(--success)',
+  neutral: 'var(--info)',
+  negative: 'var(--danger)',
 };
 
 const CRISIS_COLORS: Record<CrisisLevel, string> = {
-  none: '#26d78e',
-  watch: '#f59e0b',
-  high: '#f97316',
-  critical: '#ef4444',
+  none: 'var(--success)',
+  watch: 'var(--warning)',
+  high: 'var(--warning)',
+  critical: 'var(--danger)',
 };
 
-const PLATFORM_ICONS: Record<string, string> = {
-  linkedin: '💼',
-  x: '𝕏',
-  instagram: '📸',
-  facebook: '👥',
-  reddit: '🟠',
-  youtube: '▶️',
-  news: '📰',
+const PLATFORM_LABELS: Record<Platform, string> = {
+  linkedin: 'LinkedIn',
+  x: 'X',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  reddit: 'Reddit',
+  youtube: 'YouTube',
+  news: 'News',
 };
+
+function platformLabel(platform: string) {
+  return PLATFORM_LABELS[platform.toLowerCase() as Platform] ?? platform;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -293,7 +299,7 @@ function BarRow({
   max,
   color,
   extra,
-}: Readonly<{ label: string; value: number; max: number; color: string; extra?: string }>) {
+}: Readonly<{ label: ReactNode; value: number; max: number; color: string; extra?: string }>) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div style={{ marginBottom: 10 }}>
@@ -493,11 +499,11 @@ export default function SocialListeningPage() {
     borderRadius: '8px 8px 0 0',
     border: 'none',
     background: active ? 'var(--brand)' : 'transparent',
-    color: active ? '#000' : 'var(--muted)',
+    color: active ? 'var(--on-brand)' : 'var(--muted)',
     fontWeight: active ? 700 : 500,
     fontSize: 13,
     cursor: 'pointer',
-    transition: 'all 0.15s',
+    transition: 'background-color 150ms ease, color 150ms ease',
   });
 
   const input: React.CSSProperties = {
@@ -519,7 +525,7 @@ export default function SocialListeningPage() {
     borderRadius: 8,
     border: 'none',
     background: 'var(--brand)',
-    color: '#000',
+    color: 'var(--on-brand)',
     fontWeight: 700,
     fontSize: 13,
     cursor: loading ? 'not-allowed' : 'pointer',
@@ -558,7 +564,7 @@ export default function SocialListeningPage() {
                 width: 40,
                 height: 40,
                 borderRadius: 10,
-                background: 'linear-gradient(135deg, #1bc7ff, #26d78e)',
+                background: 'linear-gradient(135deg, var(--info), var(--success))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -599,9 +605,9 @@ export default function SocialListeningPage() {
               padding: '10px 16px',
               borderRadius: 8,
               marginBottom: 16,
-              background: error ? '#ef444422' : '#26d78e22',
-              border: `1px solid ${error ? '#ef4444' : '#26d78e'}55`,
-              color: error ? '#ef4444' : '#26d78e',
+              background: error ? 'color-mix(in oklab, var(--danger) 13%, transparent)' : 'color-mix(in oklab, var(--success) 13%, transparent)',
+              border: `1px solid ${error ? 'var(--danger)' : 'var(--success)'}55`,
+              color: error ? 'var(--danger)' : 'var(--success)',
               fontSize: 13,
             }}
           >
@@ -632,7 +638,7 @@ export default function SocialListeningPage() {
             label="Critical Alerts"
             value={criticalAlerts.length}
             sub={`${openAlerts.length} total open`}
-            accent={criticalAlerts.length > 0 ? '#ef4444' : 'var(--brand-2)'}
+            accent={criticalAlerts.length > 0 ? 'var(--danger)' : 'var(--brand-2)'}
           />
         </div>
 
@@ -650,8 +656,8 @@ export default function SocialListeningPage() {
                 <span
                   style={{
                     marginLeft: 6,
-                    background: '#ef4444',
-                    color: '#fff',
+                    background: 'var(--danger)',
+                    color: 'var(--on-status)',
                     borderRadius: 99,
                     fontSize: 10,
                     padding: '1px 5px',
@@ -715,7 +721,12 @@ export default function SocialListeningPage() {
                     .map(([platform, count]) => (
                       <BarRow
                         key={platform}
-                        label={`${PLATFORM_ICONS[platform] ?? '🌐'} ${platform}`}
+                        label={(
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            <ProviderMark name={platform} size={15} decorative />
+                            {platformLabel(platform)}
+                          </span>
+                        )}
                         value={count}
                         max={platformMax}
                         color="var(--brand)"
@@ -786,7 +797,10 @@ export default function SocialListeningPage() {
                         <tr key={`item-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
                           <td style={{ padding: '8px 12px' }}>{c.query}</td>
                           <td style={{ padding: '8px 12px' }}>
-                            {PLATFORM_ICONS[c.platform] ?? '🌐'} {c.platform}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <ProviderMark name={c.platform} size={15} decorative />
+                              {platformLabel(c.platform)}
+                            </span>
                           </td>
                           <td style={{ padding: '8px 12px' }}>
                             <Pill
@@ -839,7 +853,10 @@ export default function SocialListeningPage() {
                       >
                         <span style={{ fontWeight: 600, fontSize: 13 }}>{m.author_handle}</span>
                         <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-                          {PLATFORM_ICONS[m.platform] ?? '🌐'} {m.platform}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                            <ProviderMark name={m.platform} size={14} decorative />
+                            {platformLabel(m.platform)}
+                          </span>
                         </span>
                         <Pill label={m.sentiment} color={SENTIMENT_COLORS[m.sentiment]} small />
                         {m.engagement_count > 0 && (
@@ -876,8 +893,8 @@ export default function SocialListeningPage() {
                     padding: '12px 14px',
                     borderRadius: 8,
                     marginBottom: 10,
-                    background: a.severity === 'high' ? '#ef444411' : '#f59e0b11',
-                    border: `1px solid ${a.severity === 'high' ? '#ef444444' : '#f59e0b44'}`,
+                    background: a.severity === 'high' ? 'color-mix(in oklab, var(--danger) 7%, transparent)' : 'color-mix(in oklab, var(--warning) 7%, transparent)',
+                    border: `1px solid ${a.severity === 'high' ? 'color-mix(in oklab, var(--danger) 27%, transparent)' : 'color-mix(in oklab, var(--warning) 27%, transparent)'}`,
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',
@@ -889,7 +906,7 @@ export default function SocialListeningPage() {
                       style={{
                         fontWeight: 700,
                         fontSize: 13,
-                        color: a.severity === 'high' ? '#ef4444' : '#f59e0b',
+                        color: a.severity === 'high' ? 'var(--danger)' : 'var(--warning)',
                         marginBottom: 2,
                       }}
                     >
@@ -899,7 +916,7 @@ export default function SocialListeningPage() {
                       Mention #{a.mention_id} · {timeAgo(a.created_at)}
                     </div>
                   </div>
-                  <Pill label={a.status} color={a.status === 'open' ? '#ef4444' : '#26d78e'} small />
+                  <Pill label={a.status} color={a.status === 'open' ? 'var(--danger)' : 'var(--success)'} small />
                 </div>
               ))
             )}
@@ -991,7 +1008,7 @@ export default function SocialListeningPage() {
                     <div style={{ marginTop: 4 }}>
                       <Pill
                         label={r.enabled ? 'Active' : 'Disabled'}
-                        color={r.enabled ? '#26d78e' : 'var(--muted)'}
+                        color={r.enabled ? 'var(--success)' : 'var(--muted)'}
                         small
                       />
                     </div>
@@ -1018,7 +1035,7 @@ export default function SocialListeningPage() {
             >
               {(['linkedin', 'x', 'instagram', 'facebook', 'reddit', 'youtube', 'news'] as Platform[]).map((p) => (
                 <option key={p} value={p}>
-                  {PLATFORM_ICONS[p]} {p}
+                  {platformLabel(p)}
                 </option>
               ))}
             </select>

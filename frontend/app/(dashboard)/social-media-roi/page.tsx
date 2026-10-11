@@ -190,7 +190,7 @@ export default function SocialMediaRoiPage() {
           </p>
         </section>
 
-        {error && <section style={{ ...panel, color: '#ef4444' }}>{error}</section>}
+        {error && <section style={{ ...panel, color: 'var(--danger)' }}>{error}</section>}
 
         <section style={panel}>
           <label htmlFor="tenant-id" style={{ display: 'block', fontSize: 12, marginBottom: 6 }}>

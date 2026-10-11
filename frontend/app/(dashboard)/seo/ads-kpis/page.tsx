@@ -32,15 +32,15 @@ function KpiCard({
   return (
     <div
       style={{
-        background: 'var(--bg-soft, #111)',
-        border: '1px solid var(--line, #333)',
+        background: 'var(--bg-soft)',
+        border: '1px solid var(--line)',
         borderRadius: 16,
         padding: '16px 18px',
       }}
     >
-      <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
-      <div style={{ fontSize: 30, fontWeight: 900, marginTop: 8, color: color ?? 'var(--text, #f1f5f9)' }}>{value}</div>
-      {subtext && <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>{subtext}</div>}
+      <div style={{ fontSize: 11, color: "var(--muted)", textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+      <div style={{ fontSize: 30, fontWeight: 900, marginTop: 8, color: color ?? 'var(--text)' }}>{value}</div>
+      {subtext && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>{subtext}</div>}
     </div>
   );
 }
@@ -71,7 +71,7 @@ function BarChart({
                 <span>{item.label}</span>
                 <span style={{ fontWeight: 700 }}>{item.value.toLocaleString()}</span>
               </div>
-              <div style={{ height: 8, background: '#eef0f4', borderRadius: 999 }}>
+              <div style={{ height: 8, background: "var(--line-soft)", borderRadius: 999 }}>
                 <div
                   style={{
                     height: 8,
@@ -140,10 +140,10 @@ export default function AdsKpiPage() {
   const eng = kpis?.engagement;
 
   return (
-    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg, #0a0a0a)', color: 'var(--text, #f1f5f9)' }}>
+    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <h1 style={{ margin: 0, fontSize: 26 }}>Ads KPI & Analytics</h1>
-        <p style={{ color: '#64748b', marginTop: 6, marginBottom: 0, fontSize: 14 }}>
+        <p style={{ color: "var(--muted)", marginTop: 6, marginBottom: 0, fontSize: 14 }}>
           Cross-network performance overview, forecasting, and credit balances.
         </p>
 
@@ -153,9 +153,9 @@ export default function AdsKpiPage() {
               marginTop: 12,
               padding: 12,
               borderRadius: 10,
-              border: '1px solid #ef4444',
-              color: '#dc2626',
-              background: '#7f1d1d22',
+              border: '1px solid var(--danger)',
+              color: 'var(--danger)',
+              background: 'var(--danger-soft)',
               fontSize: 13,
             }}
           >
@@ -164,7 +164,7 @@ export default function AdsKpiPage() {
         )}
 
         {loading ? (
-          <div style={{ marginTop: 40, textAlign: 'center', color: '#64748b' }}>Loading KPIs…</div>
+          <div style={{ marginTop: 40, textAlign: 'center', color: "var(--muted)" }}>Loading KPIs…</div>
         ) : (
           <>
             {/* Primary KPI grid */}
@@ -184,7 +184,7 @@ export default function AdsKpiPage() {
               <KpiCard
                 label="ROI"
                 value={`${(s?.roi_pct ?? 0).toFixed(1)}%`}
-                color={(s?.roi_pct ?? 0) >= 0 ? '#22c55e' : '#ef4444'}
+                color={(s?.roi_pct ?? 0) >= 0 ? 'var(--success)' : 'var(--danger)'}
                 subtext="Revenue vs spend"
               />
               <KpiCard
@@ -193,7 +193,7 @@ export default function AdsKpiPage() {
                 subtext="Conversions / clicks"
               />
               <KpiCard label="Spend" value={`$${(s?.spend ?? 0).toLocaleString()}`} />
-              <KpiCard label="Revenue" value={`$${(s?.revenue ?? 0).toLocaleString()}`} color="#22c55e" />
+              <KpiCard label="Revenue" value={`$${(s?.revenue ?? 0).toLocaleString()}`} color="var(--success)" />
               <KpiCard label="CPA" value={`$${(s?.cpa ?? 0).toFixed(2)}`} subtext="Cost per acquisition" />
               <KpiCard label="CPC" value={`$${(s?.cpc ?? 0).toFixed(2)}`} subtext="Cost per click" />
               <KpiCard label="CTR" value={`${(s?.ctr_pct ?? 0).toFixed(2)}%`} subtext="Click-through rate" />
@@ -205,8 +205,8 @@ export default function AdsKpiPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div
                   style={{
-                    background: 'var(--bg-soft, #111)',
-                    border: '1px solid var(--line, #333)',
+                    background: 'var(--bg-soft)',
+                    border: '1px solid var(--line)',
                     borderRadius: 16,
                     padding: 18,
                   }}
@@ -222,15 +222,15 @@ export default function AdsKpiPage() {
                       { label: 'Comments', value: eng?.comments ?? 0 },
                     ]}
                     max={Math.max(eng?.impressions ?? 1, 1)}
-                    color="#6366f1"
+                    color="var(--info)"
                   />
                 </div>
 
                 {/* Forecast */}
                 <div
                   style={{
-                    background: 'var(--bg-soft, #111)',
-                    border: '1px solid var(--line, #333)',
+                    background: 'var(--bg-soft)',
+                    border: '1px solid var(--line)',
                     borderRadius: 16,
                     padding: 18,
                   }}
@@ -248,9 +248,9 @@ export default function AdsKpiPage() {
                             borderRadius: 8,
                             fontSize: 12,
                             fontWeight: 700,
-                            border: forecastDays === d ? '1px solid #6366f1' : '1px solid var(--line, #333)',
-                            color: forecastDays === d ? '#93c5fd' : '#64748b',
-                            background: forecastDays === d ? '#6366f122' : 'transparent',
+                            border: forecastDays === d ? "1px solid var(--brand)" : '1px solid var(--line)',
+                            color: forecastDays === d ? 'var(--info-line)' : "var(--muted)",
+                            background: forecastDays === d ? 'color-mix(in oklab, var(--info) 13%, transparent)' : 'transparent',
                             cursor: loadingForecast ? 'not-allowed' : 'pointer',
                           }}
                         >
@@ -263,7 +263,7 @@ export default function AdsKpiPage() {
                   {forecast && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 12, marginTop: 14 }}>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase' }}>
+                        <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase' }}>
                           Projected Spend
                         </div>
                         <div style={{ fontWeight: 900, fontSize: 22, marginTop: 4 }}>
@@ -271,20 +271,20 @@ export default function AdsKpiPage() {
                         </div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase' }}>Projected ROI</div>
+                        <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase' }}>Projected ROI</div>
                         <div
                           style={{
                             fontWeight: 900,
                             fontSize: 22,
                             marginTop: 4,
-                            color: forecast.projected_roi_pct >= 0 ? '#22c55e' : '#ef4444',
+                            color: forecast.projected_roi_pct >= 0 ? 'var(--success)' : 'var(--danger)',
                           }}
                         >
                           {forecast.projected_roi_pct.toFixed(1)}%
                         </div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase' }}>
+                        <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase' }}>
                           Projected Clicks
                         </div>
                         <div style={{ fontWeight: 900, fontSize: 22, marginTop: 4 }}>
@@ -292,7 +292,7 @@ export default function AdsKpiPage() {
                         </div>
                       </div>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase' }}>
+                        <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase' }}>
                           Projected Conversions
                         </div>
                         <div style={{ fontWeight: 900, fontSize: 22, marginTop: 4 }}>
@@ -308,8 +308,8 @@ export default function AdsKpiPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div
                   style={{
-                    background: 'var(--bg-soft, #111)',
-                    border: '1px solid var(--line, #333)',
+                    background: 'var(--bg-soft)',
+                    border: '1px solid var(--line)',
                     borderRadius: 16,
                     padding: 18,
                   }}
@@ -319,7 +319,7 @@ export default function AdsKpiPage() {
                     <>
                       <div style={{ display: 'flex', gap: 20, marginBottom: 14 }}>
                         <div>
-                          <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase' }}>
+                          <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase' }}>
                             Portfolio Total
                           </div>
                           <div style={{ fontWeight: 900, fontSize: 22 }}>
@@ -327,8 +327,8 @@ export default function AdsKpiPage() {
                           </div>
                         </div>
                         <div>
-                          <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase' }}>Remaining</div>
-                          <div style={{ fontWeight: 900, fontSize: 22, color: '#22c55e' }}>
+                          <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase' }}>Remaining</div>
+                          <div style={{ fontWeight: 900, fontSize: 22, color: 'var(--success)' }}>
                             ${credits.portfolio_credit_remaining.toLocaleString()}
                           </div>
                         </div>
@@ -339,7 +339,7 @@ export default function AdsKpiPage() {
                           .filter((a) => a.connected)
                           .map((a) => ({ label: a.account_name || a.platform, value: a.credit_remaining }))}
                         max={credits.portfolio_credit_total || 1}
-                        color="#22c55e"
+                        color="var(--success)"
                       />
                     </>
                   )}
@@ -348,8 +348,8 @@ export default function AdsKpiPage() {
                 {/* Budget pacing */}
                 <div
                   style={{
-                    background: 'var(--bg-soft, #111)',
-                    border: '1px solid var(--line, #333)',
+                    background: 'var(--bg-soft)',
+                    border: '1px solid var(--line)',
                     borderRadius: 16,
                     padding: 18,
                   }}
@@ -371,11 +371,11 @@ export default function AdsKpiPage() {
                           ${(s?.spend ?? 0).toFixed(0)} / ${(s?.budget_daily ?? 0).toFixed(0)}
                         </span>
                       </div>
-                      <div style={{ height: 10, background: '#eef0f4', borderRadius: 999 }}>
+                      <div style={{ height: 10, background: "var(--line-soft)", borderRadius: 999 }}>
                         <div
                           style={{
                             height: 10,
-                            background: '#f59e0b',
+                            background: 'var(--warning)',
                             borderRadius: 999,
                             width: `${s?.budget_daily ? Math.min(100, (s.spend / s.budget_daily) * 100) : 0}%`,
                             transition: 'width 0.5s',
@@ -398,11 +398,11 @@ export default function AdsKpiPage() {
                           ${(s?.spend ?? 0).toFixed(0)} / ${(s?.budget_total ?? 0).toFixed(0)}
                         </span>
                       </div>
-                      <div style={{ height: 10, background: '#eef0f4', borderRadius: 999 }}>
+                      <div style={{ height: 10, background: "var(--line-soft)", borderRadius: 999 }}>
                         <div
                           style={{
                             height: 10,
-                            background: '#6366f1',
+                            background: "var(--brand)",
                             borderRadius: 999,
                             width: `${s?.budget_total ? Math.min(100, (s.spend / s.budget_total) * 100) : 0}%`,
                             transition: 'width 0.5s',

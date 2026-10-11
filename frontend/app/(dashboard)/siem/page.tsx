@@ -437,7 +437,7 @@ export default function SiemPage() {
     .map(([label, value], index) => ({
       label,
       value,
-      color: index === 0 ? '#ef4444' : index === 1 ? '#f59e0b' : index === 2 ? '#6366f1' : '#22c55e',
+      color: index === 0 ? 'var(--danger)' : index === 1 ? 'var(--warning)' : index === 2 ? "var(--brand)" : 'var(--success)',
     }));
 
   return (
@@ -495,10 +495,10 @@ export default function SiemPage() {
             severityRing.length
               ? severityRing
               : [
-                  { label: 'Critical', value: 4, color: '#ef4444' },
-                  { label: 'High', value: 6, color: '#f59e0b' },
-                  { label: 'Medium', value: 8, color: '#6366f1' },
-                  { label: 'Low', value: 10, color: '#22c55e' },
+                  { label: 'Critical', value: 4, color: 'var(--danger)' },
+                  { label: 'High', value: 6, color: 'var(--warning)' },
+                  { label: 'Medium', value: 8, color: "var(--brand)" },
+                  { label: 'Low', value: 10, color: 'var(--success)' },
                 ]
           }
         />
@@ -508,8 +508,8 @@ export default function SiemPage() {
             style={{
               ...card,
               marginBottom: 12,
-              borderColor: error ? '#ef444488' : '#22c55e88',
-              color: error ? '#f87171' : '#4ade80',
+              borderColor: error ? 'color-mix(in oklab, var(--danger) 53%, transparent)' : 'color-mix(in oklab, var(--success) 53%, transparent)',
+              color: error ? 'var(--danger)' : 'var(--success)',
             }}
           >
             {error || statusMessage}
@@ -682,7 +682,7 @@ export default function SiemPage() {
                   borderRadius: 8,
                   padding: '8px 12px',
                   background: 'var(--brand)',
-                  color: '#00101e',
+                  color: 'var(--on-brand)',
                   fontWeight: 700,
                 }}
               >
@@ -754,7 +754,7 @@ export default function SiemPage() {
                   borderRadius: 8,
                   padding: '8px 12px',
                   background: 'var(--brand)',
-                  color: '#00101e',
+                  color: 'var(--on-brand)',
                   fontWeight: 700,
                 }}
               >
@@ -912,7 +912,7 @@ export default function SiemPage() {
                 borderRadius: 8,
                 padding: '8px 12px',
                 background: 'var(--brand)',
-                color: '#00101e',
+                color: 'var(--on-brand)',
                 fontWeight: 700,
               }}
             >

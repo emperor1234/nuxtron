@@ -12,8 +12,9 @@ from __future__ import annotations
 import logging
 import os
 
-from celery import Celery
 from celery.utils.log import get_task_logger
+
+from .celery_app import celery_app
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
@@ -40,12 +41,6 @@ AI_VOICE_HARD_LIMIT = _env_int("AI_VOICE_HARD_TIME_LIMIT_SECONDS", 360, AI_VOICE
 # ---------------------------------------------------------------------------
 # App config
 # ---------------------------------------------------------------------------
-celery_app = Celery(
-    "nuxtron",
-    broker=REDIS_URL,
-    backend=REDIS_URL,
-)
-
 celery_app.conf.update(
     task_serializer="json",
     result_serializer="json",
@@ -104,6 +99,10 @@ celery_app.conf.update(
 task_logger = get_task_logger(__name__)
 logger = logging.getLogger("nuxtron.worker")
 
+# Import task modules so the same canonical app used by producers registers
+# workforce tasks when the documented worker entrypoint is loaded.
+from .tasks import workforce_tasks as _workforce_tasks  # noqa: F401,E402
+
 
 # ---------------------------------------------------------------------------
 # Tasks
@@ -111,24 +110,23 @@ logger = logging.getLogger("nuxtron.worker")
 
 @celery_app.task(name="nuxtron.tasks.analytics.compute_metrics", bind=True, max_retries=3)  # type: ignore[untyped-decorator]
 def compute_analytics_metrics(self, org_id: str, period: str = "7d") -> dict:  # type: ignore[misc]
-    """Recompute aggregated analytics metrics for an org (background)."""
+    """Recompute aggregated analytics metrics for an organization."""
     task_logger.info("Computing analytics metrics org=%s period=%s", org_id, period)
-    # Placeholder — wire real DB queries here
-    return {"org_id": org_id, "period": period, "status": "queued"}
+    raise RuntimeError("Analytics metrics worker is not configured with a durable analytics repository.")
 
 
 @celery_app.task(name="nuxtron.tasks.seo.refresh_scores", bind=True, max_retries=3)  # type: ignore[untyped-decorator]
 def refresh_seo_scores(self, url: str) -> dict:  # type: ignore[misc]
     """Refresh SEO scores for a URL in the background."""
     task_logger.info("Refreshing SEO scores url=%s", url)
-    return {"url": url, "status": "queued"}
+    raise RuntimeError("SEO score worker is not configured with a durable crawl repository.")
 
 
 @celery_app.task(name="nuxtron.tasks.notifications.send_digest", bind=True, max_retries=3)  # type: ignore[untyped-decorator]
 def send_notification_digest(self, user_id: str) -> dict:  # type: ignore[misc]
     """Send daily digest notification for a user."""
     task_logger.info("Sending notification digest user_id=%s", user_id)
-    return {"user_id": user_id, "status": "queued"}
+    raise RuntimeError("Notification digest worker is not configured with a durable delivery repository.")
 
 
 def _run_ai_task(media_type: str, payload: dict) -> dict:

@@ -37,10 +37,6 @@ def _ensure_agent_analytics_store_writable() -> None:
         raise HTTPException(status_code=503, detail=MEMORY_STORE_UNAVAILABLE)
 
 
-def get_tenant_id() -> str:
-    """Placeholder for tenant extraction"""
-    return "default_tenant"
-
 @router.post('/log-event')
 async def log_bot_event(
     event_data: dict[str, Any],

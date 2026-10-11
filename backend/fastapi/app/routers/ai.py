@@ -45,6 +45,7 @@ WHISPERX_BASE_URL = os.getenv("WHISPERX_BASE_URL", "http://localhost:9005")
 OPENVOICE_WORKER_URL = os.getenv("OPENVOICE_WORKER_URL", "http://localhost:9011")
 BARK_WORKER_URL = os.getenv("BARK_WORKER_URL", "http://localhost:9012")
 RVC_WORKER_URL = os.getenv("RVC_WORKER_URL", "http://localhost:9013")
+VIDEO_WORKER_URL = os.getenv("VIDEO_WORKER_URL", "").strip()
 
 # ─── In-memory async job store ────────────────────────────────────────────────
 # Maps job_id -> {status, result, error}
@@ -432,6 +433,9 @@ def create_ai_router(enforce_rate_limit, audit_log_memory, credit_ledger_memory)
         """Poll status of a background image generation job."""
         job = await _load_ai_job(job_id)
         if job is None:
+            return AIGenerationResponse(status="error", error="Job not found.")
+        owner_tenant_id = str(job.get("tenant_id") or "").strip()
+        if owner_tenant_id and owner_tenant_id != auth.tenant_id:
             return AIGenerationResponse(status="error", error="Job not found.")
 
         if job.get("execution_mode") == "celery" and job.get("status") == "pending":
@@ -1613,19 +1617,66 @@ def _compose_generation_prompt(payload: AIGenerationRequest) -> str:
 
 
 async def _generate_video(payload: AIGenerationRequest) -> AIGenerationResponse:
-    """Generate video using ComfyUI (SVD, FILM interpolation)."""
-    try:
-        resolved_prompt = _compose_generation_prompt(payload)
-        # Placeholder: would integrate with ComfyUI video nodes
-        return AIGenerationResponse(
-            status="success",
-            content=f"Generated video from: {resolved_prompt}",
-            media_url=f"data:video/mp4;base64,{await _placeholder_video()}",
-        )
-    except Exception as e:
+    """Generate video through the configured video worker.
+
+    Video generation is an asynchronous, infrastructure-backed capability. It
+    must never report success with fabricated media when the worker is absent.
+    Deployments provide ``VIDEO_WORKER_URL`` and the worker returns a JSON
+    object containing ``media_url`` (and optionally ``content``). Keeping this
+    boundary explicit makes queue failures observable and prevents clients from
+    persisting an invalid MP4 data URL.
+    """
+    if not VIDEO_WORKER_URL:
         return AIGenerationResponse(
             status="error",
-            error=f"Video generation failed: {str(e)}",
+            error="Video generation is unavailable: VIDEO_WORKER_URL is not configured.",
+        )
+
+    resolved_prompt = _compose_generation_prompt(payload)
+    request_timeout = httpx.Timeout(
+        connect=10.0,
+        read=float(os.getenv("VIDEO_WORKER_READ_TIMEOUT_SECONDS", "120")),
+        write=30.0,
+        pool=10.0,
+    )
+    try:
+        async with httpx.AsyncClient(timeout=request_timeout) as client:
+            response = await client.post(
+                f"{VIDEO_WORKER_URL.rstrip('/')}/v1/generate",
+                json={
+                    "prompt": resolved_prompt,
+                    "model": payload.model or None,
+                    "aspect_ratio": payload.aspect_ratio,
+                    "resolution": payload.resolution,
+                    "reference_videos": payload.reference_videos,
+                    "return_last_frame": payload.return_last_frame,
+                },
+            )
+            response.raise_for_status()
+            result = response.json()
+
+        media_url = result.get("media_url") if isinstance(result, dict) else None
+        if not isinstance(media_url, str) or not media_url.strip():
+            return AIGenerationResponse(
+                status="error",
+                error="Video worker returned no media_url.",
+            )
+        return AIGenerationResponse(
+            status="success",
+            content=str(result.get("content") or "Video generated successfully."),
+            media_url=media_url,
+        )
+    except httpx.HTTPStatusError as exc:
+        logger.warning("Video worker rejected generation: status=%s", exc.response.status_code)
+        return AIGenerationResponse(
+            status="error",
+            error=f"Video worker rejected the request with HTTP {exc.response.status_code}.",
+        )
+    except (httpx.HTTPError, ValueError) as exc:
+        logger.warning("Video worker unavailable: %s", type(exc).__name__)
+        return AIGenerationResponse(
+            status="error",
+            error="Video generation failed because the video worker is unavailable or returned invalid JSON.",
         )
 
 
@@ -1804,9 +1855,3 @@ async def _generate_text(payload: AIGenerationRequest) -> AIGenerationResponse:
             status="error",
             error=f"Text generation failed: {type(e).__name__}: {e}",
         )
-
-
-async def _placeholder_video() -> str:
-    """Generate a simple placeholder video in base64."""
-    # Minimal MP4 header (not a valid video, just a placeholder)
-    return "AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAACKmtYXBsAAACAGZyZWU="

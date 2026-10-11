@@ -7,6 +7,10 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 CREATE EXTENSION IF NOT EXISTS "btree_gin";
 
+CREATE OR REPLACE FUNCTION public.get_current_user_id() RETURNS UUID AS $$
+  SELECT NULLIF(current_setting('app.current_user_id', true), '')::UUID;
+$$ LANGUAGE SQL STABLE;
+
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'campaign_status') THEN
@@ -34,7 +38,7 @@ END
 $$;
 
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   username TEXT UNIQUE NOT NULL,
   display_name TEXT NOT NULL,
   avatar_url TEXT,
@@ -406,44 +410,43 @@ ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS profiles_select ON public.profiles;
 CREATE POLICY profiles_select ON public.profiles
   FOR SELECT USING (
-    id = auth.uid()
+    id = public.get_current_user_id()
     OR EXISTS (
       SELECT 1 FROM public.organization_members m
       WHERE m.user_id = public.profiles.id
         AND m.org_id IN (
-          SELECT org_id FROM public.organization_members WHERE user_id = auth.uid()
+          SELECT org_id FROM public.organization_members WHERE user_id = public.get_current_user_id()
         )
     )
   );
-
 DROP POLICY IF EXISTS profiles_update ON public.profiles;
 CREATE POLICY profiles_update ON public.profiles
-  FOR UPDATE USING (id = auth.uid());
+  FOR UPDATE USING (id = public.get_current_user_id());
 
 DROP POLICY IF EXISTS orgs_select ON public.organizations;
 CREATE POLICY orgs_select ON public.organizations
   FOR SELECT USING (
-    id IN (SELECT org_id FROM public.organization_members WHERE user_id = auth.uid())
+    id IN (SELECT org_id FROM public.organization_members WHERE user_id = public.get_current_user_id())
   );
 
 DROP POLICY IF EXISTS orgs_insert ON public.organizations;
 CREATE POLICY orgs_insert ON public.organizations
-  FOR INSERT WITH CHECK (owner_id = auth.uid());
+  FOR INSERT WITH CHECK (owner_id = public.get_current_user_id());
 
 DROP POLICY IF EXISTS orgs_update ON public.organizations;
 CREATE POLICY orgs_update ON public.organizations
   FOR UPDATE USING (
-    owner_id = auth.uid()
+    owner_id = public.get_current_user_id()
     OR id IN (
       SELECT org_id FROM public.organization_members
-      WHERE user_id = auth.uid() AND role IN ('owner','admin')
+      WHERE user_id = public.get_current_user_id() AND role IN ('owner','admin')
     )
   );
 
 DROP POLICY IF EXISTS campaigns_select ON public.campaigns;
 CREATE POLICY campaigns_select ON public.campaigns
   FOR SELECT USING (
-    org_id IN (SELECT org_id FROM public.organization_members WHERE user_id = auth.uid())
+    org_id IN (SELECT org_id FROM public.organization_members WHERE user_id = public.get_current_user_id())
   );
 
 DROP POLICY IF EXISTS campaigns_insert ON public.campaigns;
@@ -451,7 +454,7 @@ CREATE POLICY campaigns_insert ON public.campaigns
   FOR INSERT WITH CHECK (
     org_id IN (
       SELECT org_id FROM public.organization_members
-      WHERE user_id = auth.uid() AND role IN ('owner','admin','member')
+      WHERE user_id = public.get_current_user_id() AND role IN ('owner','admin','member')
     )
   );
 
@@ -460,7 +463,7 @@ CREATE POLICY campaigns_update ON public.campaigns
   FOR UPDATE USING (
     org_id IN (
       SELECT org_id FROM public.organization_members
-      WHERE user_id = auth.uid() AND role IN ('owner','admin','member')
+      WHERE user_id = public.get_current_user_id() AND role IN ('owner','admin','member')
     )
   );
 
@@ -469,16 +472,16 @@ CREATE POLICY campaigns_delete ON public.campaigns
   FOR DELETE USING (
     org_id IN (
       SELECT org_id FROM public.organization_members
-      WHERE user_id = auth.uid() AND role IN ('owner','admin')
+      WHERE user_id = public.get_current_user_id() AND role IN ('owner','admin')
     )
   );
 
 DROP POLICY IF EXISTS referrals_select ON public.referrals;
 CREATE POLICY referrals_select ON public.referrals
   FOR SELECT USING (
-    referrer_id = auth.uid()
-    OR referee_id = auth.uid()
-    OR org_id IN (SELECT org_id FROM public.organization_members WHERE user_id = auth.uid())
+    referrer_id = public.get_current_user_id()
+    OR referee_id = public.get_current_user_id()
+    OR org_id IN (SELECT org_id FROM public.organization_members WHERE user_id = public.get_current_user_id())
   );
 
 DROP POLICY IF EXISTS referrals_insert ON public.referrals;
@@ -488,7 +491,7 @@ CREATE POLICY referrals_insert ON public.referrals
 DROP POLICY IF EXISTS share_events_select ON public.share_events;
 CREATE POLICY share_events_select ON public.share_events
   FOR SELECT USING (
-    org_id IN (SELECT org_id FROM public.organization_members WHERE user_id = auth.uid())
+    org_id IN (SELECT org_id FROM public.organization_members WHERE user_id = public.get_current_user_id())
   );
 
 DROP POLICY IF EXISTS share_events_insert ON public.share_events;
@@ -498,31 +501,18 @@ CREATE POLICY share_events_insert ON public.share_events
 DROP POLICY IF EXISTS viral_metrics_select ON public.viral_metrics;
 CREATE POLICY viral_metrics_select ON public.viral_metrics
   FOR SELECT USING (
-    org_id IN (SELECT org_id FROM public.organization_members WHERE user_id = auth.uid())
+    org_id IN (SELECT org_id FROM public.organization_members WHERE user_id = public.get_current_user_id())
   );
 
 DROP POLICY IF EXISTS reward_claims_select ON public.reward_claims;
 CREATE POLICY reward_claims_select ON public.reward_claims
   FOR SELECT USING (
-    user_id = auth.uid()
+    user_id = public.get_current_user_id()
     OR campaign_id IN (
       SELECT id FROM public.campaigns
       WHERE org_id IN (
-        SELECT org_id FROM public.organization_members WHERE user_id = auth.uid()
+        SELECT org_id FROM public.organization_members WHERE user_id = public.get_current_user_id()
       )
     )
   );
-
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.campaigns;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.share_events;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.referrals;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.viral_metrics;
-  END IF;
-EXCEPTION
-  WHEN duplicate_object THEN
-    NULL;
-END
-$$;
+-- End of VSE foundation schema.

@@ -92,6 +92,27 @@ class TestSwDbFunctions:
         )
         assert _sw_db_enabled(st) is True
 
+    def test_social_workspace_rejects_memory_backing_in_real_production(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from backend.fastapi.app.routers.social_workspace import create_social_workspace_router
+
+        monkeypatch.setenv('ENVIRONMENT', 'production')
+        monkeypatch.delenv('PYTEST_CURRENT_TEST', raising=False)
+        with pytest.raises(RuntimeError, match='durable PostgreSQL backing'):
+            create_social_workspace_router(
+                enforce_rate_limit=lambda *args: None,
+                audit_log_memory=[],
+                social_accounts_memory=[],
+                brand_profiles_memory=[],
+                inbox_messages_memory=[],
+                competitor_profiles_memory=[],
+                competitor_snapshots_memory=[],
+                notifications_memory=[],
+                scheduled_posts_memory=[],
+                viralpost_post_history_memory=[],
+                db_ready_fn=lambda: False,
+                db_dsn_fn=lambda: '',
+            )
+
     def test_sw_ensure_brand_profile_table(self) -> None:
         """Lines 810-821: _sw_ensure_brand_profile_table creates table via psycopg."""
         from backend.fastapi.app.routers.social_workspace import _SocialWorkspaceState, _sw_ensure_brand_profile_table
@@ -417,7 +438,7 @@ class TestFetchBrandFromWebsite:
         """Lines 1435-1479: POST /social/brand-profile/fetch-from-website."""
         mock_html = "<html><head><title>TestCo - AI Solutions</title></head><body><h1>AI Platform</h1></body></html>"
 
-        with patch("backend.fastapi.app.routers.social_workspace._fetch_html", return_value=mock_html):
+        with patch("backend.fastapi.app.domains.social.services.website._fetch_html", return_value=mock_html):
             r = client.post("/social/brand-profile/fetch-from-website", headers=H, json={
                 "website_url": "https://testco.example.com",
             })
@@ -425,7 +446,7 @@ class TestFetchBrandFromWebsite:
 
     def test_fetch_from_website_no_html(self, client: TestClient) -> None:
         """Fetch from website that returns no HTML → empty content fallback."""
-        with patch("backend.fastapi.app.routers.social_workspace._fetch_html", return_value=""):
+        with patch("backend.fastapi.app.domains.social.services.website._fetch_html", return_value=""):
             r = client.post("/social/brand-profile/fetch-from-website", headers=H, json={
                 "website_url": "https://testco-empty.example.com",
             })
@@ -438,7 +459,7 @@ class TestFetchBrandFromWebsite:
         mock_html = "<html><head><title>DBCo</title></head><body><h1>DB Company</h1></body></html>"
         mock_conn, _ = _make_mock_conn()
 
-        with patch("backend.fastapi.app.routers.social_workspace._fetch_html", return_value=mock_html):
+        with patch("backend.fastapi.app.domains.social.services.website._fetch_html", return_value=mock_html):
             with patch.object(lm, "_db_ready", True):
                 with patch("psycopg.connect", return_value=mock_conn):
                     r = client.post("/social/brand-profile/fetch-from-website", headers=H, json={

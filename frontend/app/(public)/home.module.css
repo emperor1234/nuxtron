@@ -1,0 +1,710 @@
+.home {
+  color: var(--mk-ink);
+}
+.hero {
+  max-width: 1320px;
+  margin: auto;
+  padding: 110px 48px 0;
+}
+.heroRule {
+  display: flex;
+  justify-content: space-between;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--mk-line);
+  font-size: 10px;
+  letter-spacing: 0.11em;
+  color: var(--mk-muted);
+}
+.heroCopy {
+  text-align: center;
+  padding: 64px 0 46px;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 24px;
+}
+.heroCopy .eyebrow {
+  justify-content: center;
+}
+.eyebrow > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mk-blue);
+}
+.heroCopy h1 {
+  font-size: clamp(3.2rem, 7.6vw, 7rem);
+  line-height: 1.02;
+  font-weight: 500;
+  letter-spacing: -0.065em;
+  margin: 0;
+}
+.heroCopy h1 > span {
+  color: var(--mk-blue);
+}
+.intro {
+  font-size: clamp(16px, 1.6vw, 19px);
+  color: var(--mk-muted);
+  margin: 26px auto;
+  max-width: 580px;
+  line-height: 1.65;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.smallNote {
+  font-size: 11px;
+  color: var(--mk-muted);
+  margin: 16px 0 0;
+}
+.productStage {
+  padding: 26px 60px 0;
+  background: var(--surface-glass-strong);
+  border: 1px solid var(--line);
+  border-radius: 10px 10px 0 0;
+  position: relative;
+}
+.stageCaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  color: var(--ink-2);
+  font-size: 11px;
+}
+.productWindow {
+  background: var(--mk-surface);
+  border: 1px solid var(--mk-line-strong);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.windowTop {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--mk-line);
+  font-size: 11px;
+  color: var(--mk-muted);
+}
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--mk-ink);
+}
+.brandMark {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: var(--mk-ink);
+  color: white;
+  font-size: 20px;
+}
+.windowTop > span:nth-child(2) {
+  margin-left: auto;
+}
+.windowTop button {
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  min-width: 32px;
+  min-height: 32px;
+}
+.tourBody {
+  display: grid;
+  grid-template-columns: 225px minmax(0, 1fr);
+  min-height: 360px;
+}
+.tourBody .tourTabs {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  height: auto;
+  padding: 28px 12px;
+  gap: 8px;
+  border-right: 1px solid var(--mk-line);
+  border-radius: 0;
+  background: var(--mk-canvas-alt);
+}
+.tourTabs .tourTab {
+  gap: 10px;
+  justify-content: flex-start;
+  padding: 12px 10px;
+  font-size: 12px;
+  border: 1px solid transparent;
+  white-space: normal;
+  text-align: left;
+}
+.tourTab small {
+  margin-left: auto;
+  opacity: 0.55;
+}
+.tourTab svg {
+  flex-shrink: 0;
+}
+.tourTabs .tourTab[data-state="active"] {
+  color: var(--mk-blue);
+  border-color: var(--mk-line);
+  box-shadow: var(--shadow-sm);
+}
+.tourPanels {
+  min-width: 0;
+}
+.tourPanel {
+  padding: 28px 36px 24px;
+  margin: 0;
+}
+.tourEyebrow {
+  color: var(--mk-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 8px;
+}
+.tourPanel h2 {
+  font-size: 22px;
+  font-weight: 550;
+  letter-spacing: -0.035em;
+}
+.prompt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0;
+  padding: 12px;
+  border: 1px solid var(--mk-line);
+  border-radius: 6px;
+  font-size: 12px;
+  background: var(--mk-canvas-alt);
+}
+.promptMark {
+  color: var(--mk-blue);
+  font-size: 20px;
+}
+.tourChecklist {
+  display: grid;
+  gap: 0;
+}
+.tourChecklist > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--mk-line);
+  padding: 10px 0;
+}
+.tourChecklist > div > span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  background: var(--success-soft);
+  color: var(--success);
+  border-radius: 50%;
+  flex: none;
+}
+.tourChecklist p {
+  font-size: 12px;
+  margin: 0;
+  flex: 1;
+}
+.tourChecklist > div > svg {
+  color: var(--mk-muted);
+}
+.tourDetail {
+  font-size: 11px;
+  color: var(--mk-muted);
+  margin: 16px 0 0;
+}
+.capabilityStrip {
+  border-block: 1px solid var(--mk-line);
+  padding: 26px 30px;
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.capabilityStrip > span {
+  color: var(--mk-muted);
+  font-size: 11px;
+}
+.capabilityStrip strong {
+  font-weight: 500;
+}
+.section {
+  max-width: 1200px;
+  margin: auto;
+  padding: 100px 48px;
+}
+.sectionHeading {
+  max-width: 680px;
+}
+.section h2,
+.workflow h2 {
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.13;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  margin: 0 0 20px;
+}
+.sectionHeading > p:last-child {
+  color: var(--mk-muted);
+  max-width: 530px;
+  font-size: 16px;
+}
+.capabilities {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+  margin-top: 48px;
+}
+.capability {
+  border-top: 1px solid var(--mk-line-strong);
+  padding-top: 22px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.capabilityTop {
+  display: flex;
+  justify-content: space-between;
+  color: var(--mk-blue);
+  align-items: center;
+  margin-bottom: 36px;
+  font-size: 11px;
+}
+.capability h3 {
+  font-size: 21px;
+  font-weight: 550;
+  letter-spacing: -0.03em;
+}
+.capability p {
+  color: var(--mk-muted);
+  font-size: 14px;
+  margin: 4px 0 22px;
+}
+.capability a,
+.workflow a,
+.trustRow a,
+.faqLayout a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 550;
+}
+.capability a {
+  margin-top: auto;
+}
+.workflow {
+  background: var(--ink-surface);
+  color: var(--on-ink);
+}
+.workflowInner {
+  max-width: 1200px;
+  margin: auto;
+  padding: 88px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 100px;
+}
+.workflow h2 {
+  color: var(--on-ink-strong);
+}
+.workflow .eyebrow {
+  color: var(--on-ink-accent);
+}
+.workflow p:not(.eyebrow) {
+  color: var(--on-ink-muted);
+  font-size: 15px;
+  line-height: 1.75;
+}
+.workflow a {
+  margin-top: 20px;
+}
+.workSteps {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.workSteps li {
+  display: flex;
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--ink-line);
+}
+.workSteps li > span {
+  font-size: 11px;
+  color: var(--on-ink-accent);
+  padding-top: 6px;
+}
+.workSteps h3 {
+  color: var(--on-ink-strong);
+  font-size: 19px;
+  font-weight: 500;
+}
+.workSteps p {
+  margin: 8px 0 0;
+}
+.trustRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-bottom: 60px;
+  border-bottom: 1px solid var(--mk-line);
+}
+.trustRow > svg {
+  flex: none;
+  color: var(--mk-blue);
+}
+.trustRow h2 {
+  font-size: 24px;
+  margin: 0 0 8px;
+}
+.trustRow p {
+  color: var(--mk-muted);
+  font-size: 13px;
+  margin: 0;
+}
+.trustRow a {
+  margin-left: auto;
+  flex: none;
+}
+.faqLayout {
+  padding-top: 72px;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 64px;
+}
+.faqLayout h2 {
+  font-size: 32px;
+}
+.faq {
+  border-bottom: 1px solid var(--mk-line);
+  padding: 20px 0;
+}
+.faq:first-child {
+  padding-top: 0;
+}
+.faq summary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 550;
+}
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+.faq summary svg {
+  flex: none;
+}
+.faq[open] summary svg {
+  transform: rotate(180deg);
+}
+.faq p {
+  color: var(--mk-muted);
+  font-size: 14px;
+  margin: 16px 0 0;
+}
+.closing {
+  text-align: center;
+  padding: 80px 24px;
+  background: var(--surface-glass-strong);
+  border-block: 1px solid var(--line);
+}
+.closing .eyebrow {
+  justify-content: center;
+}
+.closing h2 {
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+  margin-bottom: 28px;
+}
+.pricingLink {
+  display: block;
+  margin-top: 18px;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+@keyframes storyEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tourPanels[data-animate="true"] .tourChecklist > div {
+    animation: storyEnter 450ms var(--ease-out) backwards;
+  }
+}
+@media (max-width: 900px) {
+  .hero {
+    padding-inline: 24px;
+  }
+  .productStage {
+    padding-inline: 24px;
+  }
+  .tourBody {
+    grid-template-columns: 190px minmax(0, 1fr);
+  }
+  .tourPanel {
+    padding: 24px;
+  }
+  .capabilityStrip {
+    gap: 22px;
+  }
+  .workflowInner {
+    gap: 40px;
+  }
+  .trustRow {
+    flex-wrap: wrap;
+  }
+  .trustRow a {
+    margin-left: 54px;
+  }
+}
+@media (max-width: 640px) {
+  .hero {
+    padding: 84px 16px 0;
+  }
+  .heroRule {
+    font-size: 8px;
+  }
+  .heroRule > span:last-child {
+    display: none;
+  }
+  .heroCopy {
+    padding: 44px 0 36px;
+  }
+  .heroCopy h1 {
+    font-size: clamp(43px, 12vw, 70px);
+  }
+  .desktopBreak {
+    display: none;
+  }
+  .heroCopy .eyebrow {
+    font-size: 9px;
+  }
+  .productStage {
+    padding: 16px 10px 0;
+  }
+  .stageCaption {
+    font-size: 9px;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .windowTop {
+    padding: 12px;
+    gap: 8px;
+  }
+  .windowTop > span:nth-child(2) {
+    display: none;
+  }
+  .windowTop button {
+    margin-left: auto;
+  }
+  .tourBody {
+    grid-template-columns: 1fr;
+  }
+  .tourBody .tourTabs {
+    flex-direction: row;
+    padding: 8px;
+    gap: 4px;
+    border-right: 0;
+    border-bottom: 1px solid var(--mk-line);
+  }
+  .tourTabs .tourTab {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 4px;
+    font-size: 10px;
+  }
+  .tourTab small,
+  .tourTab svg {
+    display: none;
+  }
+  .tourPanel {
+    padding: 22px 18px;
+  }
+  .tourPanel h2 {
+    font-size: 20px;
+  }
+  .capabilityStrip {
+    gap: 16px;
+    padding: 24px 16px;
+    font-size: 11px;
+  }
+  .capabilityStrip > span {
+    flex-basis: 100%;
+    text-align: center;
+  }
+  .section {
+    padding: 64px 24px;
+  }
+  .capabilities {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .capabilityTop {
+    margin-bottom: 18px;
+  }
+  .workflowInner {
+    padding: 56px 24px;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .faqLayout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding-top: 48px;
+  }
+  .trustRow {
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .trustRow > div {
+    flex: 1;
+  }
+  .trustRow a {
+    margin-left: 0;
+  }
+  .closing {
+    padding-block: 60px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Hero and product-tour motion.
+
+   The tour auto-advances on a timer, so the active step carries a progress
+   track: without it the panel changes with no warning and no way to read how
+   long a step lasts. The track is a CSS animation (off the main thread, so it
+   stays smooth while the rest of the page is still loading) and is linear,
+   because constant motion should not ease. --tour-step must stay in sync with
+   the 3200ms advance timer in product-story.tsx.
+   --------------------------------------------------------------------------- */
+.productStage {
+  --tour-step: 3200ms;
+}
+.tourTabs .tourTab {
+  position: relative;
+  padding-bottom: 16px;
+}
+.tourTabProgress {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--mk-line);
+  overflow: hidden;
+  opacity: 0;
+}
+.tourTabProgress::after {
+  content: "";
+  display: block;
+  height: 100%;
+  background: var(--brand);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+@keyframes tourProgress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes heroEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Only the step currently counting down shows a track. */
+  .tourTabs[data-playing="true"] .tourTab[data-state="active"] .tourTabProgress {
+    opacity: 1;
+  }
+  .tourTabs[data-playing="true"]
+    .tourTab[data-state="active"]
+    .tourTabProgress::after {
+    animation: tourProgress var(--tour-step, 3200ms) linear forwards;
+  }
+
+  /* The whole panel arrives as one sequenced change, not four at once. */
+  .tourPanels[data-animate="true"] .tourEyebrow {
+    animation: storyEnter 380ms var(--ease-out) backwards;
+  }
+  .tourPanels[data-animate="true"] .tourPanel h2 {
+    animation: storyEnter 380ms 50ms var(--ease-out) backwards;
+  }
+  .tourPanels[data-animate="true"] .prompt {
+    animation: storyEnter 380ms 100ms var(--ease-out) backwards;
+  }
+  .tourPanels[data-animate="true"] .tourChecklist > div {
+    animation: storyEnter 450ms var(--ease-out) backwards;
+    animation-delay: calc(150ms + var(--row-index, 0) * 60ms);
+  }
+  .tourPanels[data-animate="true"] .tourDetail {
+    animation: storyEnter 380ms 340ms var(--ease-out) backwards;
+  }
+
+  /* First paint: the hero resolves top-to-bottom. Pure CSS, so the content is
+     present and readable without JS and ends in its natural state. */
+  .heroCopy > * {
+    animation: heroEnter 620ms var(--ease-out) backwards;
+  }
+  .heroCopy > :nth-child(2) {
+    animation-delay: 70ms;
+  }
+  .heroCopy > :nth-child(3) {
+    animation-delay: 140ms;
+  }
+  .heroCopy > :nth-child(4) {
+    animation-delay: 210ms;
+  }
+  .heroCopy > :nth-child(5) {
+    animation-delay: 280ms;
+  }
+  .productStage {
+    animation: heroEnter 760ms 340ms var(--ease-out) backwards;
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "_comment": "Dashboard routes that moved. Each old URL permanently redirects to its new home (next.config.ts) and stays searchable as an alias (scripts/build-route-index.mjs). Vendor-named routes were renamed to Nuxtron names; duplicate pages were folded into the one canonical tool. app/lib/route-renames.test.ts checks every target exists.",
+  "redirects": [
+    {
+      "from": "/studio/lately",
+      "to": "/studio/content-hub",
+      "subpaths": true
+    },
+    {
+      "from": "/studio/prompt-volumes",
+      "to": "/seo/prompt-research"
+    },
+    {
+      "from": "/buffer-create",
+      "to": "/studio/social-studio/ideas"
+    },
+    {
+      "from": "/buffer-publish",
+      "to": "/studio/social-studio/queue"
+    },
+    {
+      "from": "/buffer-community",
+      "to": "/studio/social-studio/community"
+    },
+    {
+      "from": "/buffer-analyze",
+      "to": "/studio/social-studio/audience"
+    },
+    {
+      "from": "/buffer-collaborate",
+      "to": "/studio/team"
+    },
+    {
+      "from": "/buffer-startpage",
+      "to": "/studio/social-studio/link-in-bio"
+    },
+    {
+      "from": "/platform/owly-writer-ai",
+      "to": "/studio/copywriter"
+    },
+    {
+      "from": "/social-scheduling",
+      "to": "/studio/social-studio/posts"
+    },
+    {
+      "from": "/studio/scheduler",
+      "to": "/studio/social-studio/posts"
+    },
+    {
+      "from": "/reviews",
+      "to": "/studio/social-studio/reviews"
+    },
+    {
+      "from": "/seo/one2target",
+      "to": "/seo/audience-intelligence"
+    }
+  ]
+}

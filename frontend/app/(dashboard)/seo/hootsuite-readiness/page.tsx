@@ -124,7 +124,7 @@ export default function HootsuiteReadinessPage() {
             {loading ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
-        {error ? <p style={{ color: '#f87171' }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)' }}>{error}</p> : null}
         <div
           style={{
             display: 'grid',

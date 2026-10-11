@@ -3,12 +3,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiSend } from '@/app/lib/platform-api';
 
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -146,8 +140,8 @@ const INPUT_STYLE: React.CSSProperties = {
   fontSize: 14,
 };
 const BTN_PRIMARY: React.CSSProperties = {
-  backgroundColor: '#06B6D4',
-  color: '#eef0f4',
+  backgroundColor: 'var(--info)',
+  color: "var(--line-soft)",
   border: 'none',
   borderRadius: 6,
   padding: '9px 18px',
@@ -165,8 +159,8 @@ const BTN_SM: React.CSSProperties = {
   fontSize: 12,
 };
 const BADGE_DOFOLLOW: React.CSSProperties = {
-  backgroundColor: '#d1fae5',
-  color: '#10B981',
+  backgroundColor: 'var(--success-line)',
+  color: 'var(--success)',
   borderRadius: 4,
   padding: '2px 7px',
   fontSize: 11,
@@ -181,24 +175,24 @@ const BADGE_NOFOLLOW: React.CSSProperties = {
   fontWeight: 600,
 };
 const BADGE_TOXIC: React.CSSProperties = {
-  backgroundColor: '#fee2e2',
-  color: '#dc2626',
+  backgroundColor: 'var(--danger-soft)',
+  color: 'var(--danger)',
   borderRadius: 4,
   padding: '2px 7px',
   fontSize: 11,
   fontWeight: 600,
 };
 const BADGE_SUSPICIOUS: React.CSSProperties = {
-  backgroundColor: '#fef3c7',
-  color: '#FB923C',
+  backgroundColor: 'var(--warning-line)',
+  color: 'var(--warning)',
   borderRadius: 4,
   padding: '2px 7px',
   fontSize: 11,
   fontWeight: 600,
 };
 const BADGE_HEALTHY: React.CSSProperties = {
-  backgroundColor: '#dcfce7',
-  color: '#34D399',
+  backgroundColor: 'var(--success-soft)',
+  color: 'var(--success)',
   borderRadius: 4,
   padding: '2px 7px',
   fontSize: 11,
@@ -243,7 +237,7 @@ function ScoreRing({ score, color, size = 120 }: { score: number; color: string;
   const offset = circ * (1 - score / 100);
   return (
     <svg width={size} height={size}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef0f4" strokeWidth={10} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--neutral-soft)" strokeWidth={10} />
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -284,7 +278,7 @@ function MetricCard({
   label,
   value,
   sub,
-  color = '#06B6D4',
+  color = 'var(--info)',
 }: {
   label: string;
   value: string | number;
@@ -295,7 +289,7 @@ function MetricCard({
     <div style={CARD}>
       <div style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 4 }}>{label}</div>
       <div style={{ color, fontSize: 26, fontWeight: 700 }}>{value}</div>
-      {sub && <div style={{ color: '#e7e9ef', fontSize: 12, marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ color: "var(--line)", fontSize: 12, marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -307,10 +301,9 @@ function MetricCard({
 export default function BacklinkIntelligencePage() {
   const [tab, setTab] = useState<Tab>('Overview');
   const [overview, setOverview] = useState<Overview | null>(null);
-  const [ovLoading, setOvLoading] = useState(false);
+  const [ovLoading, setOvLoading] = useState(true);
 
   const fetchOverview = useCallback(async () => {
-    setOvLoading(true);
     try {
       const d = await apiGet<OverviewResponse>('/backlink-intel/overview');
       setOverview(d.overview ?? null);
@@ -321,18 +314,29 @@ export default function BacklinkIntelligencePage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchOverview();
+  const refreshOverview = useCallback(() => {
+    setOvLoading(true);
+    void fetchOverview();
   }, [fetchOverview]);
 
-  const authorityColor = (score: number) => (score >= 60 ? '#10B981' : score >= 35 ? '#F59E0B' : '#dc2626');
+  useEffect(() => {
+    let active = true;
+    globalThis.queueMicrotask(() => {
+      if (active) void fetchOverview();
+    });
+    return () => {
+      active = false;
+    };
+  }, [fetchOverview]);
+
+  const authorityColor = (score: number) => (score >= 60 ? 'var(--success)' : score >= 35 ? 'var(--warning)' : 'var(--danger)');
 
   return (
     <div style={BG_PAGE}>
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #eef0f4 0%, #eef0f4 100%)',
+          background: "linear-gradient(135deg, var(--line-soft) 0%, var(--line-soft) 100%)",
           borderBottom: '1px solid var(--line)',
           padding: '28px 40px 0',
         }}
@@ -342,8 +346,7 @@ export default function BacklinkIntelligencePage() {
           <div>
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text)' }}>Backlink Intelligence</h1>
             <p style={{ margin: 0, color: 'var(--muted)', fontSize: 14 }}>
-              Semrush-grade backlink analytics: 43T-link database, Authority Score, toxicity audit, gap analysis &amp;
-              link building
+              Analyze referring domains, link quality, authority signals, content gaps, and link-building opportunities.
             </p>
           </div>
         </div>
@@ -354,8 +357,8 @@ export default function BacklinkIntelligencePage() {
               key={t}
               onClick={() => setTab(t)}
               style={{
-                background: tab === t ? '#06B6D4' : 'transparent',
-                color: tab === t ? '#eef0f4' : 'var(--muted)',
+                background: tab === t ? 'var(--info)' : 'transparent',
+                color: tab === t ? "var(--line-soft)" : 'var(--muted)',
                 border: 'none',
                 borderRadius: '6px 6px 0 0',
                 padding: '10px 18px',
@@ -363,7 +366,7 @@ export default function BacklinkIntelligencePage() {
                 cursor: 'pointer',
                 fontSize: 13,
                 whiteSpace: 'nowrap',
-                transition: 'all 0.15s',
+                transition: 'background-color 150ms ease, color 150ms ease',
               }}
             >
               {t}
@@ -379,7 +382,7 @@ export default function BacklinkIntelligencePage() {
             overview={overview}
             loading={ovLoading}
             authorityColor={authorityColor}
-            onRefresh={fetchOverview}
+            onRefresh={refreshOverview}
           />
         )}
         {tab === 'Backlinks' && <BacklinksTab />}
@@ -389,7 +392,7 @@ export default function BacklinkIntelligencePage() {
         {tab === 'Analytics' && <AnalyticsTab />}
         {tab === 'Authority Score' && <AuthorityScoreTab />}
         {tab === 'Disavow' && <DisavowTab />}
-        {tab === 'Domains' && <DomainsTab onDomainChange={fetchOverview} />}
+        {tab === 'Domains' && <DomainsTab onDomainChange={refreshOverview} />}
       </div>
     </div>
   );
@@ -414,7 +417,7 @@ function OverviewTab({
     return (
       <div style={PANEL}>
         <div style={{ color: 'var(--text)', fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Domain Overview</div>
-        <div style={{ color: '#dc2626', fontSize: 13 }}>Live backlink overview is unavailable in fail-closed mode.</div>
+        <div style={{ color: 'var(--danger)', fontSize: 13 }}>Live backlink overview is unavailable in fail-closed mode.</div>
       </div>
     );
   }
@@ -447,7 +450,7 @@ function OverviewTab({
           <div style={{ color: 'var(--muted)', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Authority Score</div>
           <ScoreRing score={ov.authority_score} color={color} size={130} />
           <div style={{ color, fontWeight: 700, fontSize: 15 }}>{ov.authority_score_label}</div>
-          <div style={{ color: '#e7e9ef', fontSize: 12, textAlign: 'center' }}>Based on backlink profile quality</div>
+          <div style={{ color: "var(--line)", fontSize: 12, textAlign: 'center' }}>Based on backlink profile quality</div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 160px), 1fr))', gap: 14 }}>
           <MetricCard
@@ -465,21 +468,21 @@ function OverviewTab({
             label="Dofollow %"
             value={`${ov.dofollow_pct}%`}
             sub={`${ov.dofollow_count} dofollow links`}
-            color="#10B981"
+            color="var(--success)"
           />
-          <MetricCard label="New (30d)" value={`+${ov.new_backlinks_30d}`} sub="New backlinks" color="#34D399" />
-          <MetricCard label="Lost (30d)" value={`-${ov.lost_backlinks_30d}`} sub="Lost backlinks" color="#dc2626" />
+          <MetricCard label="New (30d)" value={`+${ov.new_backlinks_30d}`} sub="New backlinks" color="var(--success)" />
+          <MetricCard label="Lost (30d)" value={`-${ov.lost_backlinks_30d}`} sub="Lost backlinks" color="var(--danger)" />
           <MetricCard
             label="Toxic Links"
             value={ov.toxic_count}
             sub={`${ov.suspicious_count} suspicious`}
-            color="#dc2626"
+            color="var(--danger)"
           />
           <MetricCard
             label="Avg Source Authority"
             value={ov.avg_source_authority}
             sub="Avg linking domain score"
-            color="#F59E0B"
+            color="var(--warning)"
           />
           <MetricCard label="Tracked Domains" value={ov.tracked_domains} sub="Monitored domains" color="var(--brand)" />
         </div>
@@ -492,11 +495,11 @@ function OverviewTab({
           {
             label: 'Healthy',
             count: ov.active_backlinks - ov.toxic_count - ov.suspicious_count,
-            color: '#10B981',
+            color: 'var(--success)',
             total: ov.active_backlinks,
           },
-          { label: 'Suspicious', count: ov.suspicious_count, color: '#F59E0B', total: ov.active_backlinks },
-          { label: 'Toxic', count: ov.toxic_count, color: '#dc2626', total: ov.active_backlinks },
+          { label: 'Suspicious', count: ov.suspicious_count, color: 'var(--warning)', total: ov.active_backlinks },
+          { label: 'Toxic', count: ov.toxic_count, color: 'var(--danger)', total: ov.active_backlinks },
         ].map(({ label, count, color: c, total }) => (
           <div key={label} style={{ marginBottom: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -523,7 +526,7 @@ function OverviewTab({
         <div style={{ ...PANEL, padding: 20 }}>
           <div style={{ color: 'var(--muted)', fontSize: 12, fontWeight: 600, marginBottom: 12 }}>FOLLOW TYPE SPLIT</div>
           {[
-            { label: 'Dofollow', count: ov.dofollow_count, color: '#10B981' },
+            { label: 'Dofollow', count: ov.dofollow_count, color: 'var(--success)' },
             { label: 'Nofollow', count: ov.nofollow_count, color: 'var(--brand)' },
           ].map(({ label, count, color: c }) => (
             <div
@@ -548,7 +551,7 @@ function OverviewTab({
                 key={a}
                 style={{
                   fontSize: 13,
-                  color: '#06B6D4',
+                  color: 'var(--info)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -575,14 +578,13 @@ function BacklinksTab() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [followFilter, setFollowFilter] = useState('');
 
   const fetchBacklinks = useCallback(
     async (p: number) => {
-      setLoading(true);
       try {
         const params = new URLSearchParams({ page: String(p), page_size: '20' });
         if (search) params.set('search', search);
@@ -603,7 +605,13 @@ function BacklinksTab() {
   );
 
   useEffect(() => {
-    fetchBacklinks(1);
+    let active = true;
+    globalThis.queueMicrotask(() => {
+      if (active) void fetchBacklinks(1);
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchBacklinks]);
 
   const updateStatus = async (id: string, status: string) => {
@@ -687,7 +695,7 @@ function BacklinksTab() {
                       href={bl.source_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#06B6D4', textDecoration: 'none' }}
+                      style={{ color: 'var(--info)', textDecoration: 'none' }}
                     >
                       {bl.source_domain}
                     </a>
@@ -713,7 +721,7 @@ function BacklinksTab() {
                     style={{
                       ...TABLE_TD,
                       fontWeight: 700,
-                      color: bl.source_authority >= 60 ? '#10B981' : bl.source_authority >= 35 ? '#F59E0B' : '#dc2626',
+                      color: bl.source_authority >= 60 ? 'var(--success)' : bl.source_authority >= 35 ? 'var(--warning)' : 'var(--danger)',
                     }}
                   >
                     {bl.source_authority}
@@ -726,7 +734,7 @@ function BacklinksTab() {
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button
                         onClick={() => updateStatus(bl.id, bl.status === 'toxic' ? 'healthy' : 'toxic')}
-                        style={{ ...BTN_SM, color: bl.status === 'toxic' ? '#34D399' : '#dc2626' }}
+                        style={{ ...BTN_SM, color: bl.status === 'toxic' ? 'var(--success)' : 'var(--danger)' }}
                       >
                         {bl.status === 'toxic' ? '✓ Clear' : '⚠ Flag'}
                       </button>
@@ -786,7 +794,7 @@ function AuditTab() {
   };
 
   const riskColor = (level: string) =>
-    level === 'Critical' ? '#dc2626' : level === 'Moderate' ? '#F59E0B' : '#10B981';
+    level === 'Critical' ? 'var(--danger)' : level === 'Moderate' ? 'var(--warning)' : 'var(--success)';
 
   return (
     <div>
@@ -834,15 +842,15 @@ function AuditTab() {
                   </div>
                   <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ color: '#dc2626', fontWeight: 700 }}>{a.toxic_count}</div>
+                      <div style={{ color: 'var(--danger)', fontWeight: 700 }}>{a.toxic_count}</div>
                       <div style={{ fontSize: 11, color: 'var(--muted)' }}>Toxic</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ color: '#F59E0B', fontWeight: 700 }}>{a.suspicious_count}</div>
+                      <div style={{ color: 'var(--warning)', fontWeight: 700 }}>{a.suspicious_count}</div>
                       <div style={{ fontSize: 11, color: 'var(--muted)' }}>Suspicious</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ color: '#10B981', fontWeight: 700 }}>{a.healthy_count}</div>
+                      <div style={{ color: 'var(--success)', fontWeight: 700 }}>{a.healthy_count}</div>
                       <div style={{ fontSize: 11, color: 'var(--muted)' }}>Healthy</div>
                     </div>
                     <span
@@ -850,7 +858,7 @@ function AuditTab() {
                         ...BADGE_TOXIC,
                         ...(a.risk_level !== 'Critical' ? {} : {}),
                         backgroundColor:
-                          a.risk_level === 'Critical' ? '#fee2e2' : a.risk_level === 'Moderate' ? '#fef3c7' : '#dcfce7',
+                          a.risk_level === 'Critical' ? 'var(--danger-soft)' : a.risk_level === 'Moderate' ? 'var(--warning-line)' : 'var(--success-soft)',
                         color: riskColor(a.risk_level),
                       }}
                     >
@@ -876,14 +884,14 @@ function AuditTab() {
               <span style={{ color: riskColor(audit.risk_level), fontWeight: 700 }}>{audit.risk_level} Risk</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 14 }}>
-              <MetricCard label="Toxic Links" value={audit.toxic_count} color="#dc2626" sub="Recommend disavow" />
+              <MetricCard label="Toxic Links" value={audit.toxic_count} color="var(--danger)" sub="Recommend disavow" />
               <MetricCard
                 label="Suspicious Links"
                 value={audit.suspicious_count}
-                color="#F59E0B"
+                color="var(--warning)"
                 sub="Monitor closely"
               />
-              <MetricCard label="Healthy Links" value={audit.healthy_count} color="#10B981" sub="Safe links" />
+              <MetricCard label="Healthy Links" value={audit.healthy_count} color="var(--success)" sub="Safe links" />
             </div>
           </div>
 
@@ -930,7 +938,7 @@ function AuditTab() {
                       style={{
                         ...TABLE_TD,
                         fontWeight: 700,
-                        color: bl.toxic_score >= 60 ? '#dc2626' : bl.toxic_score >= 30 ? '#F59E0B' : '#10B981',
+                        color: bl.toxic_score >= 60 ? 'var(--danger)' : bl.toxic_score >= 30 ? 'var(--warning)' : 'var(--success)',
                       }}
                     >
                       {bl.toxic_score}
@@ -958,7 +966,7 @@ function AuditTab() {
 
 function GapAnalysisTab() {
   const [yourDomain, setYourDomain] = useState('yourdomain.com');
-  const [competitors, setCompetitors] = useState(['ahrefs.com', 'moz.com', '', '']);
+  const [competitors, setCompetitors] = useState(['', '', '', '']);
   const [result, setResult] = useState<GapResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -1063,9 +1071,9 @@ function GapAnalysisTab() {
               marginBottom: 24,
             }}
           >
-            <div style={{ ...CARD, borderColor: '#06B6D4' }}>
+            <div style={{ ...CARD, borderColor: 'var(--info)' }}>
               <div style={{ color: 'var(--muted)', fontSize: 11, fontWeight: 600, marginBottom: 4 }}>YOUR DOMAIN</div>
-              <div style={{ color: '#06B6D4', fontWeight: 700, fontSize: 15 }}>{result.your_domain}</div>
+              <div style={{ color: 'var(--info)', fontWeight: 700, fontSize: 15 }}>{result.your_domain}</div>
               <div style={{ marginTop: 8 }}>
                 <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>{result.your_authority_score}</div>
                 <div style={{ color: 'var(--muted)', fontSize: 12 }}>Authority Score</div>
@@ -1085,7 +1093,7 @@ function GapAnalysisTab() {
                 <div style={{ marginTop: 8, fontSize: 12, color: 'var(--muted)' }}>
                   {c.referring_domains} referring domains
                   <br />
-                  <span style={{ color: '#dc2626' }}>{c.exclusive_domains} links you don&apos;t have</span>
+                  <span style={{ color: 'var(--danger)' }}>{c.exclusive_domains} links you don&apos;t have</span>
                 </div>
               </div>
             ))}
@@ -1125,7 +1133,7 @@ function GapAnalysisTab() {
                         href={`https://${op.domain}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ color: '#06B6D4', textDecoration: 'none' }}
+                        style={{ color: 'var(--info)', textDecoration: 'none' }}
                       >
                         {op.domain}
                       </a>
@@ -1134,7 +1142,7 @@ function GapAnalysisTab() {
                       style={{
                         ...TABLE_TD,
                         fontWeight: 700,
-                        color: op.authority_score >= 60 ? '#10B981' : op.authority_score >= 35 ? '#F59E0B' : '#dc2626',
+                        color: op.authority_score >= 60 ? 'var(--success)' : op.authority_score >= 35 ? 'var(--warning)' : 'var(--danger)',
                       }}
                     >
                       {op.authority_score}
@@ -1159,13 +1167,12 @@ function GapAnalysisTab() {
 
 function ProspectsTab() {
   const [prospects, setProspects] = useState<Prospect[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ domain: '', target_page: '', contact_email: '', notes: '' });
 
   const fetchProspects = useCallback(async () => {
-    setLoading(true);
     try {
       const params = statusFilter ? `?status=${statusFilter}` : '';
       const d = await apiGet<ProspectsResponse>(`/backlink-intel/prospects${params}`);
@@ -1178,7 +1185,13 @@ function ProspectsTab() {
   }, [statusFilter]);
 
   useEffect(() => {
-    fetchProspects();
+    let active = true;
+    globalThis.queueMicrotask(() => {
+      if (active) void fetchProspects();
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchProspects]);
 
   const addProspect = async () => {
@@ -1198,9 +1211,9 @@ function ProspectsTab() {
   const statusColor: Record<string, string> = {
     new: 'var(--muted)',
     contacted: 'var(--brand)',
-    replied: '#F59E0B',
-    won: '#10B981',
-    rejected: '#dc2626',
+    replied: 'var(--warning)',
+    won: 'var(--success)',
+    rejected: 'var(--danger)',
   };
 
   return (
@@ -1255,7 +1268,7 @@ function ProspectsTab() {
             style={{
               ...BTN_SM,
               color: s ? statusColor[s] : 'var(--muted)',
-              borderColor: statusFilter === s ? '#06B6D4' : '#e7e9ef',
+              borderColor: statusFilter === s ? 'var(--info)' : "var(--line)",
             }}
           >
             {s || 'All'} {s && `(${prospects.filter((p) => !s || p.status === s).length})`}
@@ -1296,7 +1309,7 @@ function ProspectsTab() {
                       href={`https://${p.domain}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#06B6D4', textDecoration: 'none' }}
+                      style={{ color: 'var(--info)', textDecoration: 'none' }}
                     >
                       {p.domain}
                     </a>
@@ -1305,7 +1318,7 @@ function ProspectsTab() {
                     style={{
                       ...TABLE_TD,
                       fontWeight: 700,
-                      color: p.authority_score >= 60 ? '#10B981' : p.authority_score >= 35 ? '#F59E0B' : '#dc2626',
+                      color: p.authority_score >= 60 ? 'var(--success)' : p.authority_score >= 35 ? 'var(--warning)' : 'var(--danger)',
                     }}
                   >
                     {p.authority_score}
@@ -1324,7 +1337,7 @@ function ProspectsTab() {
                       ))}
                     </select>
                   </td>
-                  <td style={{ ...TABLE_TD, color: p.pitch_sent ? '#10B981' : 'var(--muted)' }}>
+                  <td style={{ ...TABLE_TD, color: p.pitch_sent ? 'var(--success)' : 'var(--muted)' }}>
                     {p.pitch_sent ? '✓ Yes' : 'No'}
                   </td>
                   <td style={TABLE_TD}>
@@ -1371,8 +1384,8 @@ function AnalyticsTab() {
               onClick={() => setDays(d)}
               style={{
                 ...BTN_SM,
-                borderColor: days === d ? '#06B6D4' : '#e7e9ef',
-                color: days === d ? '#06B6D4' : 'var(--muted)',
+                borderColor: days === d ? 'var(--info)' : "var(--line)",
+                color: days === d ? 'var(--info)' : 'var(--muted)',
               }}
             >
               {d}d
@@ -1387,7 +1400,7 @@ function AnalyticsTab() {
           NEW vs LOST BACKLINKS (WEEKLY)
         </div>
         {analytics.timeseries.length === 0 ? (
-          <div style={{ color: '#e7e9ef', textAlign: 'center', padding: 24 }}>No timeseries data for this period.</div>
+          <div style={{ color: "var(--line)", textAlign: 'center', padding: 24 }}>No timeseries data for this period.</div>
         ) : (
           <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 120, overflowX: 'auto' }}>
             {analytics.timeseries.map((t, i) => (
@@ -1399,7 +1412,7 @@ function AnalyticsTab() {
                   style={{
                     width: 14,
                     height: Math.max(2, (t.new_backlinks / maxNew) * 90),
-                    backgroundColor: '#06B6D4',
+                    backgroundColor: 'var(--info)',
                     borderRadius: '2px 2px 0 0',
                   }}
                   title={`+${t.new_backlinks}`}
@@ -1408,7 +1421,7 @@ function AnalyticsTab() {
                   style={{
                     width: 14,
                     height: Math.max(2, (t.lost_backlinks / maxNew) * 90),
-                    backgroundColor: '#dc2626',
+                    backgroundColor: 'var(--danger)',
                     borderRadius: '0 0 2px 2px',
                   }}
                   title={`-${t.lost_backlinks}`}
@@ -1416,7 +1429,7 @@ function AnalyticsTab() {
                 <div
                   style={{
                     fontSize: 9,
-                    color: '#e7e9ef',
+                    color: "var(--line)",
                     writingMode: 'vertical-rl',
                     transform: 'rotate(180deg)',
                     height: 40,
@@ -1430,10 +1443,10 @@ function AnalyticsTab() {
         )}
         <div style={{ display: 'flex', gap: 16, marginTop: 12, justifyContent: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--muted)' }}>
-            <div style={{ width: 10, height: 10, backgroundColor: '#06B6D4', borderRadius: 2 }} /> New
+            <div style={{ width: 10, height: 10, backgroundColor: 'var(--info)', borderRadius: 2 }} /> New
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--muted)' }}>
-            <div style={{ width: 10, height: 10, backgroundColor: '#dc2626', borderRadius: 2 }} /> Lost
+            <div style={{ width: 10, height: 10, backgroundColor: 'var(--danger)', borderRadius: 2 }} /> Lost
           </div>
         </div>
       </div>
@@ -1457,12 +1470,12 @@ function AnalyticsTab() {
                 >
                   {anchor}
                 </span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#06B6D4' }}>{count}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--info)' }}>{count}</span>
               </div>
               <div style={{ background: 'var(--card)', borderRadius: 3, height: 5 }}>
                 <div
                   style={{
-                    background: '#06B6D4',
+                    background: 'var(--info)',
                     borderRadius: 3,
                     height: 5,
                     width: `${(count / Math.max(1, analytics.anchor_distribution[0]?.count ?? 1)) * 100}%`,
@@ -1503,7 +1516,7 @@ function AnalyticsTab() {
           {Object.entries(analytics.follow_distribution).map(([type, count]) => (
             <div key={type} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
               <span style={{ color: 'var(--muted)' }}>{type}</span>
-              <span style={{ fontWeight: 600, color: '#06B6D4' }}>{count}</span>
+              <span style={{ fontWeight: 600, color: 'var(--info)' }}>{count}</span>
             </div>
           ))}
         </div>
@@ -1540,7 +1553,7 @@ function AuthorityScoreTab() {
     }
   };
 
-  const scoreColor = (s: number) => (s >= 60 ? '#10B981' : s >= 35 ? '#F59E0B' : '#dc2626');
+  const scoreColor = (s: number) => (s >= 60 ? 'var(--success)' : s >= 35 ? 'var(--warning)' : 'var(--danger)');
 
   return (
     <div>
@@ -1554,7 +1567,7 @@ function AuthorityScoreTab() {
           <input
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
-            placeholder="Enter any domain, e.g. moz.com"
+            placeholder="Enter a domain to check"
             style={{ ...INPUT_STYLE, maxWidth: 340 }}
             onKeyDown={(e) => e.key === 'Enter' && lookup()}
           />
@@ -1578,7 +1591,7 @@ function AuthorityScoreTab() {
           >
             <div style={{ color: 'var(--muted)', fontSize: 12, fontWeight: 600 }}>YOUR DOMAIN</div>
             <ScoreRing score={result.your_score} color={scoreColor(result.your_score)} size={140} />
-            <div style={{ color: result.delta > 0 ? '#dc2626' : '#10B981', fontWeight: 700, fontSize: 15 }}>
+            <div style={{ color: result.delta > 0 ? 'var(--danger)' : 'var(--success)', fontWeight: 700, fontSize: 15 }}>
               {result.delta > 0
                 ? `↑ ${result.delta} points stronger`
                 : result.delta < 0
@@ -1605,13 +1618,17 @@ function DisavowTab() {
   useEffect(() => {
     apiGet<BacklinksResponse>('/backlink-intel/backlinks?status=toxic&page_size=50')
       .then((d) => setBacklinks(d.backlinks ?? []))
-      .catch(() => {});
+      .catch(() => setBacklinks([]));
   }, []);
 
   const toggle = (id: string) => {
     setSelected((s) => {
       const n = new Set(s);
-      n.has(id) ? n.delete(id) : n.add(id);
+      if (n.has(id)) {
+        n.delete(id);
+      } else {
+        n.add(id);
+      }
       return n;
     });
   };
@@ -1659,7 +1676,7 @@ function DisavowTab() {
           Generate Disavow File
         </button>
         {generated && (
-          <button onClick={download} style={{ ...BTN_SM, color: '#10B981', borderColor: '#10B981' }}>
+          <button onClick={download} style={{ ...BTN_SM, color: 'var(--success)', borderColor: 'var(--success)' }}>
             ⬇ Download disavow.txt
           </button>
         )}
@@ -1685,7 +1702,7 @@ function DisavowTab() {
             </thead>
             <tbody>
               {backlinks.map((bl) => (
-                <tr key={bl.id} style={{ backgroundColor: selected.has(bl.id) ? '#1E0A0A22' : 'transparent' }}>
+                <tr key={bl.id} style={{ backgroundColor: selected.has(bl.id) ? 'var(--danger-soft)' : 'transparent' }}>
                   <td style={{ ...TABLE_TD, width: 40 }}>
                     <input
                       type="checkbox"
@@ -1696,7 +1713,7 @@ function DisavowTab() {
                   </td>
                   <td style={TABLE_TD}>{bl.source_domain}</td>
                   <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{bl.anchor_text || '—'}</td>
-                  <td style={{ ...TABLE_TD, fontWeight: 700, color: '#dc2626' }}>{bl.toxic_score}</td>
+                  <td style={{ ...TABLE_TD, fontWeight: 700, color: 'var(--danger)' }}>{bl.toxic_score}</td>
                   <td style={TABLE_TD}>
                     <StatusBadge status={bl.status} />
                   </td>
@@ -1713,7 +1730,7 @@ function DisavowTab() {
             GENERATED DISAVOW FILE PREVIEW
           </div>
           <pre
-            style={{ color: '#10B981', fontSize: 12, overflowX: 'auto', margin: 0, maxHeight: 300, overflowY: 'auto' }}
+            style={{ color: 'var(--success)', fontSize: 12, overflowX: 'auto', margin: 0, maxHeight: 300, overflowY: 'auto' }}
           >
             {disavowContent}
           </pre>
@@ -1733,10 +1750,9 @@ function DomainsTab({ onDomainChange }: { onDomainChange: () => void }) {
   >([]);
   const [newDomain, setNewDomain] = useState('');
   const [newLabel, setNewLabel] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetch = async () => {
-    setLoading(true);
     try {
       const d = await apiGet<DomainsResponse>('/backlink-intel/domains');
       setDomains(d.domains ?? []);
@@ -1746,7 +1762,7 @@ function DomainsTab({ onDomainChange }: { onDomainChange: () => void }) {
   };
 
   useEffect(() => {
-    fetch();
+    void fetch();
   }, []);
 
   const addDomain = async () => {
@@ -1821,7 +1837,7 @@ function DomainsTab({ onDomainChange }: { onDomainChange: () => void }) {
                       href={`https://${d.domain}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#06B6D4', textDecoration: 'none' }}
+                      style={{ color: 'var(--info)', textDecoration: 'none' }}
                     >
                       {d.domain}
                     </a>
@@ -1831,14 +1847,14 @@ function DomainsTab({ onDomainChange }: { onDomainChange: () => void }) {
                     style={{
                       ...TABLE_TD,
                       fontWeight: 700,
-                      color: d.authority_score >= 60 ? '#10B981' : d.authority_score >= 35 ? '#F59E0B' : '#dc2626',
+                      color: d.authority_score >= 60 ? 'var(--success)' : d.authority_score >= 35 ? 'var(--warning)' : 'var(--danger)',
                     }}
                   >
                     {d.authority_score}
                   </td>
                   <td style={{ ...TABLE_TD, color: 'var(--muted)', fontSize: 12 }}>{d.created_at?.slice(0, 10)}</td>
                   <td style={TABLE_TD}>
-                    <button onClick={() => removeDomain(d.id)} style={{ ...BTN_SM, color: '#dc2626' }}>
+                    <button onClick={() => removeDomain(d.id)} style={{ ...BTN_SM, color: 'var(--danger)' }}>
                       Remove
                     </button>
                   </td>

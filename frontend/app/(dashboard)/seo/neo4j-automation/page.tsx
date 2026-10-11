@@ -139,7 +139,7 @@ export default function Neo4jAutomationPage() {
             {loading ? 'Running...' : 'Run GraphRAG Demo'}
           </button>
         </div>
-        {error ? <p style={{ color: '#f87171' }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)' }}>{error}</p> : null}
       </section>
 
       <section className="grid" style={{ marginTop: 20 }}>

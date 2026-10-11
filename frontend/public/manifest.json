@@ -1,16 +1,16 @@
 {
-  "name": "Nuxtron Platform",
+  "name": "Nuxtron — Search, AI & Marketing",
   "short_name": "Nuxtron",
-  "description": "The Nuxtron platform — AI content, analytics, integrations and automation in one place.",
+  "description": "Nuxtron SEO and Nuxtron Marketing: search visibility, content planning and publishing in two focused workspaces.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4f7ff",
-  "theme_color": "#22cdea",
+  "background_color": "#f9f7f3",
+  "theme_color": "#2563c9",
   "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/brand/nuxtron-icon-square.png",
-      "sizes": "192x192 512x512",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }

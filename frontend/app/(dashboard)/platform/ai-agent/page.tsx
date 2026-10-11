@@ -101,18 +101,18 @@ interface AgentAuditResponse {
 const C = {
   bg: 'var(--bg)',
   card: 'var(--card)',
-  card2: '#f6f7fa',
+  card2: 'var(--bg-soft)',
   border: 'var(--line)',
   text: 'var(--text)',
   muted: 'var(--muted)',
-  green: '#16a34a',
-  amber: '#f59e0b',
-  red: '#ef4444',
-  blue: '#6366f1',
-  purple: '#8b5cf6',
-  cyan: '#06b6d4',
-  pink: '#ec4899',
-  indigo: '#6366f1',
+  green: 'var(--success-ink)',
+  amber: 'var(--warning)',
+  red: 'var(--danger)',
+  blue: 'var(--info)',
+  purple: 'var(--info)',
+  cyan: 'var(--info)',
+  pink: 'var(--series-5)',
+  indigo: 'var(--info)',
 };
 
 const STACK_LAYERS = [
@@ -122,7 +122,7 @@ const STACK_LAYERS = [
   { label: 'Backend', color: C.green, icon: '⚙️', purposeKey: 'backend' as const },
   { label: 'Context Store', color: C.amber, icon: '🗃️', purposeKey: 'context_store' as const },
   { label: 'Auth', color: C.indigo, icon: '🔐', purposeKey: 'auth' as const },
-  { label: 'Observability', color: '#f97316', icon: '📊', purposeKey: 'observability' as const },
+  { label: 'Observability', color: 'var(--warning)', icon: '📊', purposeKey: 'observability' as const },
   { label: 'Audit', color: C.red, icon: '📋', purposeKey: 'audit' as const },
 ] as const;
 
@@ -246,7 +246,7 @@ function SectionTitle({ children, sub }: Readonly<{ children: React.ReactNode; s
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
-export default function KodeeAgentPage() {
+export default function AgentArchitecturePage() {
   const [configData, setConfigData] = useState<AgentConfigResponse | null>(null);
   const [toolsData, setToolsData] = useState<AgentToolsResponse | null>(null);
   const [auditData, setAuditData] = useState<AgentAuditResponse | null>(null);
@@ -305,7 +305,7 @@ export default function KodeeAgentPage() {
         },
         {
           key: 'phase3',
-          label: 'Full Kodee-Class',
+          label: 'Full agent platform',
           status: 'planned',
           description: 'MCP tool registry, multi-agent orchestration, 350+ actions',
         },
@@ -343,7 +343,7 @@ export default function KodeeAgentPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
             <div style={{ fontSize: 40 }}>🤖</div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900 }}>Kodee-Class AI Agent</h1>
+              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900 }}>AI Agent Architecture</h1>
               <p style={{ margin: '4px 0 0', fontSize: 13, color: C.muted, maxWidth: 500 }}>
                 Self-hosted, open-source agent that <strong style={{ color: C.text }}>takes real actions</strong> via
                 MCP tools — with full context, security, and multi-agent orchestration.
@@ -506,7 +506,7 @@ export default function KodeeAgentPage() {
                   'Tool Protocol': ['MCP (Model Context Protocol)', 'Custom Tool Registry'],
                   Backend: ['FastAPI'],
                   'Context Store': ['PostgreSQL + pgvector', 'OpenSearch'],
-                  Auth: ['Keycloak', 'Supabase Auth'],
+                  Auth: ['Keycloak', 'JWT'],
                   Observability: ['Prometheus', 'Grafana', 'Loki'],
                   Audit: ['PostgreSQL', 'OpenSearch'],
                 };
@@ -718,7 +718,7 @@ export default function KodeeAgentPage() {
 
           {/* MVP Phases */}
           <Card style={{ marginBottom: 24 }}>
-            <SectionTitle sub="Phased rollout — from internal agent to full Kodee-class">MVP Roadmap</SectionTitle>
+            <SectionTitle sub="Phased rollout — from internal agent to full agent platform">MVP Roadmap</SectionTitle>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
               {phases.map((p, i) => {
                 const isCurrent = p.status === 'current';
@@ -1012,7 +1012,7 @@ export default function KodeeAgentPage() {
         }}
       >
         <div style={{ fontSize: 10, color: C.muted }}>
-          Kodee-Class AI Agent · MCP + AutoGen + LangChain + DeepSeek R1 + FastAPI + Next.js · 100% Open Source
+          Nuxtron AI Agent · MCP + AutoGen + LangChain + DeepSeek R1 + FastAPI + Next.js · 100% Open Source
         </div>
         {lastRefresh && <div style={{ fontSize: 10, color: C.muted }}>Refreshed {lastRefresh} · auto 60s</div>}
       </div>

@@ -23,35 +23,35 @@ const NAV_ITEMS = [
     icon: '🔌',
     title: 'Ad Network Connectors',
     description: 'Connect Google, Microsoft, Amazon, Apple, and YouTube Ads via OAuth.',
-    color: '#6366f1',
+    color: "var(--brand)",
   },
   {
     href: '/seo/ads-campaigns' as Route,
     icon: '📋',
     title: 'Campaign Manager',
     description: 'Create, publish, and manage campaigns with full CRUD across all connected networks.',
-    color: '#22c55e',
+    color: 'var(--success)',
   },
   {
     href: '/seo/ads-metrics' as Route,
     icon: '📊',
     title: 'Metrics & Tracking',
     description: 'Patch likes, shares, clicks, conversions, spend, revenue, ROI, and success ratio per campaign.',
-    color: '#f59e0b',
+    color: 'var(--warning)',
   },
   {
     href: '/seo/ads-calendar' as Route,
     icon: '📅',
     title: 'Campaign Calendar',
     description: 'Visualize scheduled campaigns. Drag events to reschedule them automatically.',
-    color: '#a855f7',
+    color: "var(--brand)",
   },
   {
     href: '/seo/ads-kpis' as Route,
     icon: '📈',
     title: 'KPIs & Analytics',
     description: 'Cross-network performance overview, engagement breakdown, forecasting, and credit balances.',
-    color: '#ef4444',
+    color: 'var(--danger)',
   },
   {
     href: '/seo/ads-smart-schedule' as Route,
@@ -59,15 +59,15 @@ const NAV_ITEMS = [
     title: 'Smart Schedule & Approval',
     description:
       'Best-time heatmap, human review windows, approval workflow, A/B creative tests, and audience insights.',
-    color: '#06b6d4',
+    color: 'var(--info)',
   },
 ];
 
 const PRIORITY_COLORS: Record<string, string> = {
-  success: '#22c55e',
-  warning: '#f59e0b',
-  info: '#6366f1',
-  error: '#ef4444',
+  success: 'var(--success)',
+  warning: 'var(--warning)',
+  info: 'var(--info)',
+  error: 'var(--danger)',
 };
 
 export default function UnifiedAdsControlTowerPage() {
@@ -89,10 +89,10 @@ export default function UnifiedAdsControlTowerPage() {
   }, []);
 
   return (
-    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg, #0a0a0a)', color: 'var(--text, #f1f5f9)' }}>
+    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         {/* Back */}
-        <Link href={'/seo' as Route} style={{ color: '#6366f1', textDecoration: 'none', fontSize: 13 }}>
+        <Link href={'/seo' as Route} style={{ color: "var(--brand)", textDecoration: 'none', fontSize: 13 }}>
           ← Back to SEO Platform
         </Link>
 
@@ -145,7 +145,7 @@ export default function UnifiedAdsControlTowerPage() {
                   <div style={{ fontSize: 10, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     {item.label}
                   </div>
-                  <div style={{ fontWeight: 900, fontSize: 24, color: item.ok ? '#15803d' : '#dc2626', marginTop: 4 }}>
+                  <div style={{ fontWeight: 900, fontSize: 24, color: item.ok ? 'var(--success-ink)' : 'var(--danger)', marginTop: 4 }}>
                     {item.value}
                   </div>
                 </div>
@@ -153,12 +153,12 @@ export default function UnifiedAdsControlTowerPage() {
             </div>
           )}
           {!health && error && (
-            <div style={{ marginTop: 14, fontSize: 13, color: '#dc2626' }}>
+            <div style={{ marginTop: 14, fontSize: 13, color: 'var(--danger)' }}>
               {error} — some features may be unavailable.
             </div>
           )}
           {!health && !error && (
-            <div style={{ marginTop: 14, fontSize: 13, color: '#64748b' }}>Connecting to backend…</div>
+            <div style={{ marginTop: 14, fontSize: 13, color: "var(--muted)" }}>Connecting to backend…</div>
           )}
         </section>
 
@@ -187,16 +187,16 @@ export default function UnifiedAdsControlTowerPage() {
                   <div
                     style={{
                       background: isHovered
-                        ? `linear-gradient(135deg, ${item.color}14 0%, var(--card) 75%)`
-                        : 'var(--bg-soft, #111)',
-                      border: isHovered ? `1px solid ${item.color}` : `1px solid ${item.color}44`,
+                        ? `linear-gradient(135deg, color-mix(in srgb, ${item.color} 7.84%, transparent) 0%, var(--card) 75%)`
+                        : 'var(--bg-soft)',
+                      border: isHovered ? `1px solid ${item.color}` : `1px solid color-mix(in srgb, ${item.color} 26.67%, transparent)`,
                       borderRadius: 16,
                       padding: 18,
                       height: '100%',
                       cursor: 'pointer',
                       transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
                       boxShadow: isHovered
-                        ? `0 14px 28px ${item.color}33, 0 0 0 1px ${item.color}22 inset`
+                        ? `0 14px 28px color-mix(in srgb, ${item.color} 20.0%, transparent), 0 0 0 1px color-mix(in srgb, ${item.color} 13.33%, transparent) inset`
                         : '0 2px 8px rgba(2, 6, 23, 0.25)',
                       transition:
                         'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.2s ease',
@@ -230,7 +230,7 @@ export default function UnifiedAdsControlTowerPage() {
                     <div
                       style={{
                         fontSize: 12,
-                        color: isHovered ? 'var(--muted)' : '#64748b',
+                        color: isHovered ? 'var(--muted)' : "var(--muted)",
                         marginTop: 6,
                         lineHeight: 1.55,
                         transition: 'color 0.18s ease',
@@ -250,8 +250,8 @@ export default function UnifiedAdsControlTowerPage() {
           <section
             style={{
               marginTop: 24,
-              background: 'var(--bg-soft, #111)',
-              border: '1px solid var(--line, #333)',
+              background: 'var(--bg-soft)',
+              border: '1px solid var(--line)',
               borderRadius: 16,
               padding: 18,
             }}
@@ -261,7 +261,7 @@ export default function UnifiedAdsControlTowerPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {notifs.notifications.map((n) => {
-                const color = PRIORITY_COLORS[n.priority] ?? '#64748b';
+                const color = PRIORITY_COLORS[n.priority] ?? 'var(--neutral)';
                 return (
                   <div
                     key={n.id}
@@ -270,7 +270,7 @@ export default function UnifiedAdsControlTowerPage() {
                       gap: 12,
                       alignItems: 'flex-start',
                       padding: '8px 12px',
-                      background: 'var(--bg, #0a0a0a)',
+                      background: 'var(--bg)',
                       borderRadius: 10,
                     }}
                   >
@@ -279,9 +279,9 @@ export default function UnifiedAdsControlTowerPage() {
                     />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 13 }}>{n.title}</div>
-                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{n.message}</div>
+                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{n.message}</div>
                     </div>
-                    <div style={{ fontSize: 11, color: '#475569', flexShrink: 0 }}>
+                    <div style={{ fontSize: 11, color: 'var(--ink-2)', flexShrink: 0 }}>
                       {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
@@ -304,7 +304,7 @@ export default function UnifiedAdsControlTowerPage() {
           {[
             {
               title: 'Execution Lanes',
-              color: '#6366f1',
+              color: "var(--brand)",
               items: [
                 'Normalize campaign objects into a shared cross-network schema.',
                 'Push mutations through connector abstractions, not platform-specific UI logic.',
@@ -314,17 +314,17 @@ export default function UnifiedAdsControlTowerPage() {
             },
             {
               title: 'Stack',
-              color: '#22c55e',
+              color: 'var(--success)',
               items: [
                 'Next.js 15 — Control Tower UI (pages router, React 18)',
                 'FastAPI — Campaign orchestration and connector OAuth layer',
-                'PostgreSQL + Supabase — Control plane and audit persistence',
+                'PostgreSQL — Control plane and audit persistence',
                 'Redis + Celery — Async execution fabric and pacing workers',
               ],
             },
             {
               title: 'Operating Model',
-              color: '#a855f7',
+              color: "var(--brand)",
               items: [
                 'Control tower orchestrates; ad networks remain the system of record for delivery.',
                 'API approvals, quotas, and editorial rules are first-class operational constraints.',
@@ -335,8 +335,8 @@ export default function UnifiedAdsControlTowerPage() {
             <div
               key={section.title}
               style={{
-                background: 'var(--bg-soft, #111)',
-                border: '1px solid var(--line, #333)',
+                background: 'var(--bg-soft)',
+                border: '1px solid var(--line)',
                 borderRadius: 16,
                 padding: 18,
               }}

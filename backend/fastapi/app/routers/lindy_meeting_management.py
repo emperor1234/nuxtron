@@ -25,21 +25,23 @@ from ..models_lindy_meeting import (
     MeetingTemplate,
     SchedulingPreference,
 )
-from ..services_lindy_email import (
+from ..domains.meetings.services.email_service import (
     DraftGenerationRequest,
     EmailManagementService,
     decrypt_credential,
     encrypt_credential,
 )
-from ..services_lindy_meeting import (
+from ..domains.meetings.services.meeting_service import (
     GoogleCalendarService,
     MeetingPrepService,
     OutlookCalendarService,
     SmartScheduler,
 )
-from ..services_lindy_recap import RecapManagementService
-from ..services_lindy_recording import RecordingManagementService
-from ..services_lindy_transcription import TranscriptionManagementService
+from ..domains.meetings.services.recap_service import RecapManagementService
+from ..domains.meetings.services.recording_service import RecordingManagementService
+from ..domains.meetings.services.recording_service import RecordingCapabilityUnavailable
+from ..domains.meetings.services.transcription_service import TranscriptionManagementService
+from ..domains.identity.async_egress import resolve_outbound_target_async
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["meetings"])
@@ -96,23 +98,23 @@ def _attendees_to_status_map(attendees: Any) -> dict[str, dict[str, str]]:
 
 
 def _normalize_meeting_payload(meeting: Any) -> dict[str, Any]:
-    attendees = _safe_json_loads(_obj_get(meeting, 'attendees'), [])
+    attendees = _safe_json_loads(_obj_get(meeting, "attendees"), [])
     if isinstance(attendees, dict):
         attendee_list = list(attendees.keys())
     else:
         attendee_list = _attendees_to_email_list(attendees)
-    scheduled_start = _obj_get(meeting, 'scheduled_start') or _obj_get(meeting, 'scheduled_time')
-    scheduled_end = _obj_get(meeting, 'scheduled_end') or _obj_get(meeting, 'end_time')
+    scheduled_start = _obj_get(meeting, "scheduled_start") or _obj_get(meeting, "scheduled_time")
+    scheduled_end = _obj_get(meeting, "scheduled_end") or _obj_get(meeting, "end_time")
     return {
-        'id': _obj_get(meeting, 'id'),
-        'title': _obj_get(meeting, 'title', ''),
-        'description': _obj_get(meeting, 'description', ''),
-        'attendees': attendee_list,
-        'timezone': _obj_get(meeting, 'timezone', 'America/New_York'),
-        'scheduled_start': scheduled_start,
-        'scheduled_end': scheduled_end,
-        'duration_minutes': _obj_get(meeting, 'duration_minutes', 60),
-        'calendar_provider': _obj_get(meeting, 'calendar_provider') or _obj_get(meeting, 'calendar_type', 'google'),
+        "id": _obj_get(meeting, "id"),
+        "title": _obj_get(meeting, "title", ""),
+        "description": _obj_get(meeting, "description", ""),
+        "attendees": attendee_list,
+        "timezone": _obj_get(meeting, "timezone", "America/New_York"),
+        "scheduled_start": scheduled_start,
+        "scheduled_end": scheduled_end,
+        "duration_minutes": _obj_get(meeting, "duration_minutes", 60),
+        "calendar_provider": _obj_get(meeting, "calendar_provider") or _obj_get(meeting, "calendar_type", "google"),
     }
 
 
@@ -126,13 +128,20 @@ def _coerce_optional_int(value: Any) -> int | None:
 
 
 def _ensure_extra_data(meeting: Any) -> dict[str, Any]:
-    extra_data = _obj_get(meeting, 'extra_data')
+    extra_data = _obj_get(meeting, "extra_data")
     if isinstance(extra_data, dict):
         return extra_data
     if isinstance(extra_data, str):
         parsed = _safe_json_loads(extra_data, {})
         return parsed if isinstance(parsed, dict) else {}
     return {}
+
+
+def _has_explicit_participant_recording_consent(extra_data: dict[str, Any]) -> bool:
+    consent = extra_data.get("participant_consent")
+    if not isinstance(consent, dict) or not consent.get("participant_email"):
+        return False
+    return all(consent.get(name) is True for name in ("recording", "transcription", "ai_processing"))
 
 
 async def _call_calendar_create_event(calendar_service: Any, event_body: dict[str, Any], **legacy_kwargs):
@@ -142,7 +151,9 @@ async def _call_calendar_create_event(calendar_service: Any, event_body: dict[st
         return await calendar_service.create_event(**legacy_kwargs)
 
 
-async def _call_calendar_update_event(calendar_service: Any, event_id: str, event_body: dict[str, Any], **legacy_kwargs):
+async def _call_calendar_update_event(
+    calendar_service: Any, event_id: str, event_body: dict[str, Any], **legacy_kwargs
+):
     try:
         return await calendar_service.update_event(event_id, event_body)
     except TypeError:
@@ -151,15 +162,15 @@ async def _call_calendar_update_event(calendar_service: Any, event_id: str, even
 
 def _normalize_briefing_result(result: Any) -> tuple[str, float]:
     if isinstance(result, dict):
-        briefing = result.get('briefing') or result.get('summary') or ''
-        confidence = float(result.get('confidence', result.get('confidence_score', 0.85)) or 0.85)
+        briefing = result.get("briefing") or result.get("summary") or ""
+        confidence = float(result.get("confidence", result.get("confidence_score", 0.85)) or 0.85)
         return briefing, confidence
-    return str(result or ''), 0.85
+    return str(result or ""), 0.85
 
 
 def _normalize_talking_points_result(result: Any) -> list[str]:
     if isinstance(result, dict):
-        points = result.get('points') or result.get('talking_points') or []
+        points = result.get("points") or result.get("talking_points") or []
         if isinstance(points, list):
             return [str(point) for point in points if point]
         return [str(points)] if points else []
@@ -169,10 +180,10 @@ def _normalize_talking_points_result(result: Any) -> list[str]:
 
 
 def _parse_iso_datetime(value: Any) -> datetime:
-    raw = str(value or '').strip()
+    raw = str(value or "").strip()
     if not raw:
-        raise ValueError('datetime value required')
-    if raw.endswith('Z'):
+        raise ValueError("datetime value required")
+    if raw.endswith("Z"):
         raw = f"{raw[:-1]}+00:00"
     return datetime.fromisoformat(raw)
 
@@ -193,23 +204,27 @@ def _load_recap_action_items(recap: Any) -> list[dict[str, Any]]:
             owner = str(item.get("owner") or item.get("assignee") or item.get("email") or "").strip()
             due = item.get("due_date") or item.get("due")
             priority = str(item.get("priority") or "medium")
-            normalized.append({
-                "id": f"ai_{idx + 1}",
-                "task": task,
-                "owner": owner,
-                "due_date": due,
-                "priority": priority,
-                "raw": item,
-            })
+            normalized.append(
+                {
+                    "id": f"ai_{idx + 1}",
+                    "task": task,
+                    "owner": owner,
+                    "due_date": due,
+                    "priority": priority,
+                    "raw": item,
+                }
+            )
         else:
-            normalized.append({
-                "id": f"ai_{idx + 1}",
-                "task": str(item),
-                "owner": "",
-                "due_date": None,
-                "priority": "medium",
-                "raw": {"task": str(item)},
-            })
+            normalized.append(
+                {
+                    "id": f"ai_{idx + 1}",
+                    "task": str(item),
+                    "owner": "",
+                    "due_date": None,
+                    "priority": "medium",
+                    "raw": {"task": str(item)},
+                }
+            )
     return normalized
 
 
@@ -224,7 +239,7 @@ def _compute_due_state(due_date: Any) -> str:
 
 
 def _to_attendee_payload(attendees: list[str], provider: str) -> list[dict[str, Any]]:
-    if provider == 'outlook':
+    if provider == "outlook":
         return [{"emailAddress": {"address": attendee}, "type": "required"} for attendee in attendees]
     return [{"email": attendee} for attendee in attendees]
 
@@ -247,10 +262,12 @@ def _build_public_slots(
         while slot_start + timedelta(minutes=duration_minutes) <= slot_end_boundary:
             slot_end = slot_start + timedelta(minutes=duration_minutes)
             if slot_start > window_start:
-                slots.append({
-                    'start': slot_start.isoformat(),
-                    'end': slot_end.isoformat(),
-                })
+                slots.append(
+                    {
+                        "start": slot_start.isoformat(),
+                        "end": slot_end.isoformat(),
+                    }
+                )
             if len(slots) >= max_slots:
                 return slots
             slot_start = slot_start + timedelta(minutes=slot_step)
@@ -276,35 +293,32 @@ async def _post_context(session, url: str, data: dict):
 # OAUTH ENDPOINTS - Calendar Connection
 # ============================================================================
 
+
 @router.post("/calendar/oauth/initialize/{provider}")
-async def initialize_calendar_oauth(
-    provider: str,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def initialize_calendar_oauth(provider: str, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Initialize calendar OAuth flow for Google Calendar or Outlook
-    
+
     Args:
         provider: 'google' or 'outlook'
         user_id: Authenticated user ID
-    
+
     Returns:
         OAuth authorization URL and state token
     """
     if provider not in ["google", "outlook"]:
         raise HTTPException(status_code=400, detail="Invalid provider. Must be 'google' or 'outlook'")
-    
+
     try:
         # Generate OAuth state token and store in Redis for CSRF protection
         import secrets
 
         import redis
-        
+
         state_token = secrets.token_urlsafe(32)
         redis_client = redis.Redis(host="localhost", port=6379, db=0)
         redis_client.setex(f"oauth_state:{state_token}", 600, f"{user_id}:{provider}")
-        
+
         # Generate authorization URL
         if provider == "google":
             oauth_url = (
@@ -327,141 +341,123 @@ async def initialize_calendar_oauth(
                 "response_type=code&"
                 f"state={state_token}"
             )
-        
+
         logger.info(f"OAuth flow initiated for {provider} by user {user_id}")
-        
-        return {
-            "oauth_url": oauth_url,
-            "state": state_token,
-            "provider": provider
-        }
-    
+
+        return {"oauth_url": oauth_url, "state": state_token, "provider": provider}
+
     except Exception as e:
-        logger.error(f"OAuth initialization error: {str(e)}")
+        logger.error("OAuth initialization failed: %s", type(e).__name__)
         raise HTTPException(status_code=500, detail="Failed to initialize OAuth flow")
 
 
 @router.post("/calendar/oauth/callback")
 async def handle_calendar_oauth_callback(
-    code: str = Query(...),
-    state: str = Query(...),
-    db: Session = Depends(get_db)
+    code: str = Query(...), state: str = Query(...), db: Session = Depends(get_db)
 ):
     """
     Handle OAuth callback and store encrypted calendar credentials
-    
+
     Args:
         code: Authorization code from provider
         state: State token for CSRF validation
-    
+
     Returns:
         Success status and provider info
     """
     try:
-
         import aiohttp
         import redis
-        
+
         redis_client = redis.Redis(host="localhost", port=6379, db=0)
-        
+
         # Validate state token
         state_data = redis_client.get(f"oauth_state:{state}")
         if not state_data:
             raise HTTPException(status_code=400, detail="Invalid or expired state token")
-        
+
         user_id, provider = state_data.decode().split(":")
-        
+
         # Clean up used state token
         redis_client.delete(f"oauth_state:{state}")
-        
+
         # Exchange code for access token
         async with aiohttp.ClientSession() as session:
             if provider == "google":
                 token_url = "https://oauth2.googleapis.com/token"
                 token_data = {
                     "code": code,
-                    "client_id": __import__('os').getenv('GOOGLE_CALENDAR_CLIENT_ID'),
-                    "client_secret": __import__('os').getenv('GOOGLE_CALENDAR_CLIENT_SECRET'),
-                    "redirect_uri": __import__('os').getenv('GOOGLE_CALENDAR_REDIRECT_URI'),
-                    "grant_type": "authorization_code"
+                    "client_id": __import__("os").getenv("GOOGLE_CALENDAR_CLIENT_ID"),
+                    "client_secret": __import__("os").getenv("GOOGLE_CALENDAR_CLIENT_SECRET"),
+                    "redirect_uri": __import__("os").getenv("GOOGLE_CALENDAR_REDIRECT_URI"),
+                    "grant_type": "authorization_code",
                 }
             else:  # outlook
                 token_url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
                 token_data = {
                     "code": code,
-                    "client_id": __import__('os').getenv('OUTLOOK_CALENDAR_CLIENT_ID'),
-                    "client_secret": __import__('os').getenv('OUTLOOK_CALENDAR_CLIENT_SECRET'),
-                    "redirect_uri": __import__('os').getenv('OUTLOOK_CALENDAR_REDIRECT_URI'),
+                    "client_id": __import__("os").getenv("OUTLOOK_CALENDAR_CLIENT_ID"),
+                    "client_secret": __import__("os").getenv("OUTLOOK_CALENDAR_CLIENT_SECRET"),
+                    "redirect_uri": __import__("os").getenv("OUTLOOK_CALENDAR_REDIRECT_URI"),
                     "grant_type": "authorization_code",
-                    "scope": "Calendars.Read Calendars.ReadWrite"
+                    "scope": "Calendars.Read Calendars.ReadWrite",
                 }
-            
+
             async with _post_context(session, token_url, token_data) as resp:
                 if resp.status != 200:
                     raise Exception(f"Token exchange failed: {resp.status}")
                 tokens = await resp.json()
-        
+
         # Store encrypted credentials
         credential = CalendarOAuthCredential(
             user_id=user_id,
             provider=provider,
-            user_email=tokens.get('email', user_id),
-            access_token_encrypted=encrypt_credential(tokens['access_token']),
-            refresh_token_encrypted=encrypt_credential(tokens.get('refresh_token', '')),
-            scopes=tokens.get('scope', '').split(),
-            expires_at=datetime.utcnow() + timedelta(seconds=tokens.get('expires_in', 3600))
+            user_email=tokens.get("email", user_id),
+            access_token_encrypted=encrypt_credential(tokens["access_token"]),
+            refresh_token_encrypted=encrypt_credential(tokens.get("refresh_token", "")),
+            scopes=tokens.get("scope", "").split(),
+            expires_at=datetime.utcnow() + timedelta(seconds=tokens.get("expires_in", 3600)),
         )
-        
+
         # Check if credential already exists and update instead of duplicate
-        existing = db.query(CalendarOAuthCredential).filter(
-            CalendarOAuthCredential.user_id == user_id,
-            CalendarOAuthCredential.provider == provider
-        ).first()
-        
+        existing = (
+            db.query(CalendarOAuthCredential)
+            .filter(CalendarOAuthCredential.user_id == user_id, CalendarOAuthCredential.provider == provider)
+            .first()
+        )
+
         if existing:
             existing.access_token_encrypted = credential.access_token_encrypted
             existing.refresh_token_encrypted = credential.refresh_token_encrypted
             existing.expires_at = credential.expires_at
         else:
             db.add(credential)
-        
+
         db.commit()
-        
-        # Log consent
-        consent_log = MeetingConsentLog(
-            tenant_id=user_id,
-            participant_email=tokens.get('id_token', 'calendar-user@local'),
-            ip_address="127.0.0.1"
-        )
-        db.add(consent_log)
-        db.commit()
-        
+
         logger.info(f"Calendar OAuth credentials stored for {user_id} ({provider})")
-        
+
         return {
             "status": "success",
             "provider": provider,
-            "message": f"{provider.capitalize()} calendar connected successfully"
+            "message": f"{provider.capitalize()} calendar connected successfully",
         }
-    
+
     except Exception as e:
-        logger.error(f"OAuth callback error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to process OAuth callback: {str(e)}")
+        logger.error("OAuth callback failed: %s", type(e).__name__)
+        raise HTTPException(status_code=502, detail="Failed to complete calendar authorization.") from e
 
 
 # ============================================================================
 # SCHEDULING ENDPOINTS - Smart Meeting Scheduling
 # ============================================================================
 
+
 @router.post("/meetings/schedule")
-async def schedule_meeting(
-    request_data: dict,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def schedule_meeting(request_data: dict, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Schedule a meeting using SmartScheduler algorithm
-    
+
     Request body:
     {
         "title": "Team Sync",
@@ -471,41 +467,41 @@ async def schedule_meeting(
         "exclude_days": [],  # e.g., ["Saturday", "Sunday"]
         "timezone": "America/New_York"
     }
-    
+
     Returns:
         Scheduled meeting details with confidence score
     """
     try:
         from ..utils.validators import validate_email_list
-        
+
         # Validate input
         if not request_data.get("title"):
             raise HTTPException(status_code=400, detail="Title is required")
-        
+
         attendees = request_data.get("attendees", [])
         validate_email_list(attendees)
-        
+
         if not attendees:
             raise HTTPException(status_code=400, detail="At least one attendee required")
-        
+
         # Get user's calendar credential
-        credential = db.query(CalendarOAuthCredential).filter(
-            CalendarOAuthCredential.user_id == user_id
-        ).first()
-        
+        credential = db.query(CalendarOAuthCredential).filter(CalendarOAuthCredential.user_id == user_id).first()
+
         if not credential:
-            raise HTTPException(status_code=401, detail="Calendar not connected. Please connect Google Calendar or Outlook first.")
-        
+            raise HTTPException(
+                status_code=401, detail="Calendar not connected. Please connect Google Calendar or Outlook first."
+            )
+
         # Initialize calendar service
-        access_token = decrypt_credential(_obj_get(credential, 'access_token_encrypted', ''))
-        credential_provider = _obj_get(credential, 'provider', 'google')
+        access_token = decrypt_credential(_obj_get(credential, "access_token_encrypted", ""))
+        credential_provider = _obj_get(credential, "provider", "google")
         calendar_service: GoogleCalendarService | OutlookCalendarService
 
         if credential_provider == "google":
             calendar_service = GoogleCalendarService(access_token)
         else:
             calendar_service = OutlookCalendarService(access_token)
-        
+
         # Use SmartScheduler to find best time
         scheduler = SmartScheduler(db)
 
@@ -514,19 +510,30 @@ async def schedule_meeting(
             attendees,
             request_data.get("duration_minutes", 60),
         )
-        
+
         if not best_time:
             raise HTTPException(status_code=404, detail="Could not find available time for all attendees")
-        
+
         # Create calendar event with video conference
-        meeting_start = best_time['start'] if isinstance(best_time['start'], datetime) else datetime.fromisoformat(str(best_time['start']))
-        meeting_end = best_time['end'] if isinstance(best_time['end'], datetime) else datetime.fromisoformat(str(best_time['end']))
+        meeting_start = (
+            best_time["start"]
+            if isinstance(best_time["start"], datetime)
+            else datetime.fromisoformat(str(best_time["start"]))
+        )
+        meeting_end = (
+            best_time["end"]
+            if isinstance(best_time["end"], datetime)
+            else datetime.fromisoformat(str(best_time["end"]))
+        )
         attendee_status_map = _attendees_to_status_map(attendees)
         event_body = {
             "summary": request_data.get("title"),
             "description": request_data.get("description", ""),
             "attendees": [{"email": attendee} for attendee in attendees],
-            "start": {"dateTime": meeting_start.isoformat(), "timeZone": request_data.get("timezone", "America/New_York")},
+            "start": {
+                "dateTime": meeting_start.isoformat(),
+                "timeZone": request_data.get("timezone", "America/New_York"),
+            },
             "end": {"dateTime": meeting_end.isoformat(), "timeZone": request_data.get("timezone", "America/New_York")},
         }
         if credential_provider == "google":
@@ -540,8 +547,14 @@ async def schedule_meeting(
                 "subject": request_data.get("title"),
                 "body": {"contentType": "text", "content": request_data.get("description", "")},
                 "attendees": [{"emailAddress": {"address": attendee}, "type": "required"} for attendee in attendees],
-                "start": {"dateTime": meeting_start.isoformat(), "timeZone": request_data.get("timezone", "America/New_York")},
-                "end": {"dateTime": meeting_end.isoformat(), "timeZone": request_data.get("timezone", "America/New_York")},
+                "start": {
+                    "dateTime": meeting_start.isoformat(),
+                    "timeZone": request_data.get("timezone", "America/New_York"),
+                },
+                "end": {
+                    "dateTime": meeting_end.isoformat(),
+                    "timeZone": request_data.get("timezone", "America/New_York"),
+                },
             }
 
         event = await _call_calendar_create_event(
@@ -553,12 +566,17 @@ async def schedule_meeting(
             start_time=meeting_start,
             end_time=meeting_end,
             with_video_conference=True,
-            timezone=request_data.get("timezone", "America/New_York")
+            timezone=request_data.get("timezone", "America/New_York"),
         )
 
-        event_id = event.get('id') or event.get('eventId') or event.get('event_id')
-        conference_url = event.get('conferenceUrl') or event.get('conference_url') or event.get('meet_link') or event.get('join_url', '')
-        
+        event_id = event.get("id") or event.get("eventId") or event.get("event_id")
+        conference_url = (
+            event.get("conferenceUrl")
+            or event.get("conference_url")
+            or event.get("meet_link")
+            or event.get("join_url", "")
+        )
+
         # Store meeting record
         meeting = Meeting(
             user_id=user_id,
@@ -574,28 +592,32 @@ async def schedule_meeting(
             attendees=attendee_status_map,
             conference_url=conference_url,
             timezone=request_data.get("timezone", "America/New_York"),
-            confidence_score=best_time['confidence'],
-            status="scheduled"
+            confidence_score=best_time["confidence"],
+            status="scheduled",
         )
-        
+
         db.add(meeting)
         db.commit()
         db.refresh(meeting)
-        
-        logger.info(f"Meeting scheduled: {meeting.id} for {best_time['start']} with confidence {best_time['confidence']}")
-        
+
+        logger.info(
+            f"Meeting scheduled: {meeting.id} for {best_time['start']} with confidence {best_time['confidence']}"
+        )
+
         return {
             "id": meeting.id,
             "title": meeting.title,
-                "scheduled_time": _obj_get(meeting, 'scheduled_time').isoformat() if _obj_get(meeting, 'scheduled_time') else None,
+            "scheduled_time": _obj_get(meeting, "scheduled_time").isoformat()
+            if _obj_get(meeting, "scheduled_time")
+            else None,
             "duration_minutes": meeting.duration_minutes,
             "attendees": attendees,
             "conference_url": meeting.conference_url,
-            "confidence_score": best_time['confidence'],
+            "confidence_score": best_time["confidence"],
             "provider": credential_provider,
-            "status": "scheduled"
+            "status": "scheduled",
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -609,42 +631,42 @@ async def list_meetings(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     status: str | None = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     List user's meetings with pagination
-    
+
     Query params:
         skip: Number of meetings to skip
         limit: Max meetings to return
         status: Filter by status (scheduled, completed, cancelled)
-    
+
     Returns:
         List of meetings with full details
     """
     try:
         query = db.query(Meeting).filter(Meeting.user_id == user_id)
-        
+
         if isinstance(status, str) and status:
             query = query.filter(Meeting.status == status)
-        
+
         meetings = query.offset(skip).limit(limit).all()
-        
+
         return [
             {
-                "id": _obj_get(m, 'id'),
-                "title": _obj_get(m, 'title', ''),
-                "scheduled_time": _obj_get(m, 'scheduled_time').isoformat() if _obj_get(m, 'scheduled_time') else None,
-                "duration_minutes": _obj_get(m, 'duration_minutes', 60),
-                "attendees": _safe_json_loads(_obj_get(m, 'attendees'), []),
-                "conference_url": _obj_get(m, 'conference_url', ''),
-                "status": _obj_get(m, 'status', 'scheduled'),
-                "confidence_score": _obj_get(m, 'confidence_score'),
-                "provider": _obj_get(m, 'calendar_provider')
+                "id": _obj_get(m, "id"),
+                "title": _obj_get(m, "title", ""),
+                "scheduled_time": _obj_get(m, "scheduled_time").isoformat() if _obj_get(m, "scheduled_time") else None,
+                "duration_minutes": _obj_get(m, "duration_minutes", 60),
+                "attendees": _safe_json_loads(_obj_get(m, "attendees"), []),
+                "conference_url": _obj_get(m, "conference_url", ""),
+                "status": _obj_get(m, "status", "scheduled"),
+                "confidence_score": _obj_get(m, "confidence_score"),
+                "provider": _obj_get(m, "calendar_provider"),
             }
             for m in meetings
         ]
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -653,41 +675,34 @@ async def list_meetings(
 
 
 @router.get("/meetings/{meeting_id}")
-async def get_meeting(
-    meeting_id: str,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def get_meeting(meeting_id: str, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Get full details for a specific meeting
-    
+
     Returns:
         Complete meeting record with all metadata
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
-        
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
+
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-        
+
         return {
             "id": meeting.id,
             "title": meeting.title,
             "description": meeting.description,
             "scheduled_time": meeting.scheduled_time.isoformat(),
             "duration_minutes": meeting.duration_minutes,
-            "attendees": _safe_json_loads(_obj_get(meeting, 'attendees'), []),
+            "attendees": _safe_json_loads(_obj_get(meeting, "attendees"), []),
             "conference_url": meeting.conference_url,
             "timezone": meeting.timezone,
             "status": meeting.status,
             "confidence_score": meeting.confidence_score,
             "provider": meeting.calendar_provider,
-            "created_at": meeting.created_at.isoformat() if meeting.created_at else None
+            "created_at": meeting.created_at.isoformat() if meeting.created_at else None,
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -697,74 +712,80 @@ async def get_meeting(
 
 @router.post("/meetings/{meeting_id}/reschedule")
 async def reschedule_meeting(
-    meeting_id: str,
-    new_request: dict,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
+    meeting_id: str, new_request: dict, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)
 ):
     """
     Reschedule an existing meeting
-    
+
     Request body:
     {
         "new_time": "2026-06-01T14:00:00",
         "reason": "Conflict with another meeting"
     }
-    
+
     Returns:
         Updated meeting details
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
-        
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
+
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-        
+
         if meeting.status == "cancelled":
             raise HTTPException(status_code=400, detail="Cannot reschedule cancelled meeting")
-        
+
         # Parse new time
         try:
-            new_time = datetime.fromisoformat(new_request['new_time'])
+            new_time = datetime.fromisoformat(new_request["new_time"])
         except (KeyError, ValueError):
             raise HTTPException(status_code=400, detail="Invalid new_time format")
-        
+
         # Get calendar service
-        credential = db.query(CalendarOAuthCredential).filter(
-            CalendarOAuthCredential.user_id == user_id,
-            CalendarOAuthCredential.provider == meeting.calendar_provider
-        ).first()
-        
+        credential = (
+            db.query(CalendarOAuthCredential)
+            .filter(
+                CalendarOAuthCredential.user_id == user_id,
+                CalendarOAuthCredential.provider == meeting.calendar_provider,
+            )
+            .first()
+        )
+
         if not credential:
             raise HTTPException(status_code=401, detail="Calendar connection lost")
-        
-        access_token = decrypt_credential(_obj_get(credential, 'access_token_encrypted', ''))
+
+        access_token = decrypt_credential(_obj_get(credential, "access_token_encrypted", ""))
         calendar_service: GoogleCalendarService | OutlookCalendarService
-        
+
         if meeting.calendar_provider == "google":
             calendar_service = GoogleCalendarService(access_token)
         else:
             calendar_service = OutlookCalendarService(access_token)
-        
+
         # Update event in calendar provider
         end_time = new_time + timedelta(minutes=meeting.duration_minutes or 60)
-        
-        attendee_list = _attendees_to_email_list(_obj_get(meeting, 'attendees'))
+
+        attendee_list = _attendees_to_email_list(_obj_get(meeting, "attendees"))
         update_body = {
             "summary": meeting.title,
-            "start": {"dateTime": new_time.isoformat(), "timeZone": _obj_get(meeting, 'timezone', 'America/New_York')},
-            "end": {"dateTime": end_time.isoformat(), "timeZone": _obj_get(meeting, 'timezone', 'America/New_York')},
+            "start": {"dateTime": new_time.isoformat(), "timeZone": _obj_get(meeting, "timezone", "America/New_York")},
+            "end": {"dateTime": end_time.isoformat(), "timeZone": _obj_get(meeting, "timezone", "America/New_York")},
             "attendees": [{"email": attendee} for attendee in attendee_list],
         }
         if meeting.calendar_provider == "outlook":
             update_body = {
                 "subject": meeting.title,
-                "start": {"dateTime": new_time.isoformat(), "timeZone": _obj_get(meeting, 'timezone', 'America/New_York')},
-                "end": {"dateTime": end_time.isoformat(), "timeZone": _obj_get(meeting, 'timezone', 'America/New_York')},
-                "attendees": [{"emailAddress": {"address": attendee}, "type": "required"} for attendee in attendee_list],
+                "start": {
+                    "dateTime": new_time.isoformat(),
+                    "timeZone": _obj_get(meeting, "timezone", "America/New_York"),
+                },
+                "end": {
+                    "dateTime": end_time.isoformat(),
+                    "timeZone": _obj_get(meeting, "timezone", "America/New_York"),
+                },
+                "attendees": [
+                    {"emailAddress": {"address": attendee}, "type": "required"} for attendee in attendee_list
+                ],
             }
 
         await _call_calendar_update_event(
@@ -776,24 +797,24 @@ async def reschedule_meeting(
             end_time=end_time,
             attendees=attendee_list,
         )
-        
+
         # Update database
         meeting.scheduled_start = new_time
         meeting.scheduled_end = end_time
         meeting.scheduled_time = new_time
         db.commit()
         db.refresh(meeting)
-        
+
         logger.info(f"Meeting {meeting_id} rescheduled to {new_time}")
-        
+
         return {
             "id": meeting.id,
             "title": meeting.title,
             "scheduled_time": meeting.scheduled_time.isoformat(),
             "status": "rescheduled",
-            "message": "Meeting successfully rescheduled"
+            "message": "Meeting successfully rescheduled",
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -801,47 +822,47 @@ async def reschedule_meeting(
         raise HTTPException(status_code=500, detail=f"Failed to reschedule meeting: {str(e)}")
 
 
-@router.post('/meeting-templates')
+@router.post("/meeting-templates")
 async def create_meeting_template(
     payload: dict,
     user_id: str = Depends(AuthDep),
     db: Session = Depends(get_db),
 ):
-    name = str(payload.get('name', '')).strip()
+    name = str(payload.get("name", "")).strip()
     if not name:
-        raise HTTPException(status_code=400, detail='Template name is required')
-    default_title = str(payload.get('default_title', '')).strip() or name
-    duration_minutes = int(payload.get('default_duration_minutes', 30) or 30)
+        raise HTTPException(status_code=400, detail="Template name is required")
+    default_title = str(payload.get("default_title", "")).strip() or name
+    duration_minutes = int(payload.get("default_duration_minutes", 30) or 30)
     if duration_minutes < 15 or duration_minutes > 480:
-        raise HTTPException(status_code=400, detail='default_duration_minutes must be between 15 and 480')
+        raise HTTPException(status_code=400, detail="default_duration_minutes must be between 15 and 480")
 
     template = MeetingTemplate(
         tenant_id=user_id,
         name=name,
-        description=str(payload.get('description', '') or ''),
+        description=str(payload.get("description", "") or ""),
         default_title=default_title,
-        default_description=str(payload.get('default_description', '') or ''),
+        default_description=str(payload.get("default_description", "") or ""),
         default_duration_minutes=duration_minutes,
-        default_attendee_patterns=[str(v) for v in payload.get('default_attendee_patterns', []) if str(v).strip()],
-        suggested_agenda=str(payload.get('suggested_agenda', '') or ''),
+        default_attendee_patterns=[str(v) for v in payload.get("default_attendee_patterns", []) if str(v).strip()],
+        suggested_agenda=str(payload.get("suggested_agenda", "") or ""),
     )
     db.add(template)
     db.commit()
     db.refresh(template)
     return {
-        'status': 'ok',
-        'template': {
-            'id': template.id,
-            'name': template.name,
-            'default_title': template.default_title,
-            'default_duration_minutes': template.default_duration_minutes,
-            'description': template.description,
-            'created_at': template.created_at.isoformat() if template.created_at else None,
+        "status": "ok",
+        "template": {
+            "id": template.id,
+            "name": template.name,
+            "default_title": template.default_title,
+            "default_duration_minutes": template.default_duration_minutes,
+            "description": template.description,
+            "created_at": template.created_at.isoformat() if template.created_at else None,
         },
     }
 
 
-@router.get('/meeting-templates')
+@router.get("/meeting-templates")
 async def list_meeting_templates(
     user_id: str = Depends(AuthDep),
     db: Session = Depends(get_db),
@@ -853,22 +874,22 @@ async def list_meeting_templates(
         .all()
     )
     return {
-        'status': 'ok',
-        'count': len(templates),
-        'templates': [
+        "status": "ok",
+        "count": len(templates),
+        "templates": [
             {
-                'id': t.id,
-                'name': t.name,
-                'default_title': t.default_title,
-                'default_duration_minutes': t.default_duration_minutes,
-                'usage_count': t.usage_count,
+                "id": t.id,
+                "name": t.name,
+                "default_title": t.default_title,
+                "default_duration_minutes": t.default_duration_minutes,
+                "usage_count": t.usage_count,
             }
             for t in templates
         ],
     }
 
 
-@router.get('/public-booking/{template_id}/availability')
+@router.get("/public-booking/{template_id}/availability")
 async def get_public_booking_availability(
     template_id: int,
     organizer_id: str = Query(..., min_length=3),
@@ -876,17 +897,21 @@ async def get_public_booking_availability(
     max_slots: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    template = db.query(MeetingTemplate).filter(
-        MeetingTemplate.id == template_id,
-        MeetingTemplate.tenant_id == organizer_id,
-    ).first()
+    template = (
+        db.query(MeetingTemplate)
+        .filter(
+            MeetingTemplate.id == template_id,
+            MeetingTemplate.tenant_id == organizer_id,
+        )
+        .first()
+    )
     if not template:
-        raise HTTPException(status_code=404, detail='Meeting template not found')
+        raise HTTPException(status_code=404, detail="Meeting template not found")
 
     prefs = db.query(SchedulingPreference).filter(SchedulingPreference.tenant_id == organizer_id).first()
-    work_start = int(_obj_get(prefs, 'work_start_hour', 9) or 9)
-    work_end = int(_obj_get(prefs, 'work_end_hour', 17) or 17)
-    duration = int(_obj_get(template, 'default_duration_minutes', 30) or 30)
+    work_start = int(_obj_get(prefs, "work_start_hour", 9) or 9)
+    work_end = int(_obj_get(prefs, "work_end_hour", 17) or 17)
+    duration = int(_obj_get(template, "default_duration_minutes", 30) or 30)
 
     now_dt = datetime.utcnow()
     candidates = _build_public_slots(
@@ -898,19 +923,23 @@ async def get_public_booking_availability(
         max_slots=max_slots * 3,
     )
 
-    existing = db.query(Meeting).filter(
-        Meeting.tenant_id == organizer_id,
-        Meeting.status.in_(['scheduled', 'rescheduled', 'in_progress']),
-    ).all()
+    existing = (
+        db.query(Meeting)
+        .filter(
+            Meeting.tenant_id == organizer_id,
+            Meeting.status.in_(["scheduled", "rescheduled", "in_progress"]),
+        )
+        .all()
+    )
 
     slots: list[dict[str, str]] = []
     for slot in candidates:
-        slot_start = _parse_iso_datetime(slot['start'])
-        slot_end = _parse_iso_datetime(slot['end'])
+        slot_start = _parse_iso_datetime(slot["start"])
+        slot_end = _parse_iso_datetime(slot["end"])
         has_conflict = False
         for meeting in existing:
-            m_start = _obj_get(meeting, 'scheduled_start')
-            m_end = _obj_get(meeting, 'scheduled_end')
+            m_start = _obj_get(meeting, "scheduled_start")
+            m_end = _obj_get(meeting, "scheduled_end")
             if not m_start or not m_end:
                 continue
             if slot_start < m_end and slot_end > m_start:
@@ -922,123 +951,155 @@ async def get_public_booking_availability(
             break
 
     return {
-        'status': 'ok',
-        'organizer_id': organizer_id,
-        'template': {
-            'id': template.id,
-            'name': template.name,
-            'default_title': template.default_title,
-            'default_duration_minutes': duration,
+        "status": "ok",
+        "organizer_id": organizer_id,
+        "template": {
+            "id": template.id,
+            "name": template.name,
+            "default_title": template.default_title,
+            "default_duration_minutes": duration,
         },
-        'slots': slots,
-        'count': len(slots),
+        "slots": slots,
+        "count": len(slots),
     }
 
 
-@router.post('/public-booking/{template_id}/book')
+@router.post("/public-booking/{template_id}/book")
 async def book_public_meeting(
     template_id: int,
     payload: dict,
     db: Session = Depends(get_db),
 ):
-    organizer_id = str(payload.get('organizer_id', '')).strip()
-    participant_email = str(payload.get('participant_email', '')).strip().lower()
-    slot_start_raw = payload.get('slot_start')
+    organizer_id = str(payload.get("organizer_id", "")).strip()
+    participant_email = str(payload.get("participant_email", "")).strip().lower()
+    slot_start_raw = payload.get("slot_start")
     if not organizer_id or not participant_email or not slot_start_raw:
-        raise HTTPException(status_code=400, detail='organizer_id, participant_email, and slot_start are required')
+        raise HTTPException(status_code=400, detail="organizer_id, participant_email, and slot_start are required")
 
-    template = db.query(MeetingTemplate).filter(
-        MeetingTemplate.id == template_id,
-        MeetingTemplate.tenant_id == organizer_id,
-    ).first()
+    template = (
+        db.query(MeetingTemplate)
+        .filter(
+            MeetingTemplate.id == template_id,
+            MeetingTemplate.tenant_id == organizer_id,
+        )
+        .first()
+    )
     if not template:
-        raise HTTPException(status_code=404, detail='Meeting template not found')
+        raise HTTPException(status_code=404, detail="Meeting template not found")
 
     slot_start = _parse_iso_datetime(slot_start_raw)
-    duration = int(payload.get('duration_minutes') or template.default_duration_minutes or 30)
+    duration = int(payload.get("duration_minutes") or template.default_duration_minutes or 30)
     slot_end = slot_start + timedelta(minutes=duration)
 
-    conflict = db.query(Meeting).filter(
-        Meeting.tenant_id == organizer_id,
-        Meeting.status.in_(['scheduled', 'rescheduled', 'in_progress']),
-        Meeting.scheduled_start < slot_end,
-        Meeting.scheduled_end > slot_start,
-    ).first()
+    conflict = (
+        db.query(Meeting)
+        .filter(
+            Meeting.tenant_id == organizer_id,
+            Meeting.status.in_(["scheduled", "rescheduled", "in_progress"]),
+            Meeting.scheduled_start < slot_end,
+            Meeting.scheduled_end > slot_start,
+        )
+        .first()
+    )
     if conflict:
-        raise HTTPException(status_code=409, detail='Selected slot is no longer available')
+        raise HTTPException(status_code=409, detail="Selected slot is no longer available")
 
     attendees = [participant_email]
-    organizer_attendee = str(payload.get('organizer_email', organizer_id)).strip()
+    organizer_attendee = str(payload.get("organizer_email", organizer_id)).strip()
     if organizer_attendee:
         attendees.append(organizer_attendee)
 
-    credential = db.query(CalendarOAuthCredential).filter(
-        CalendarOAuthCredential.user_id == organizer_id,
-    ).first()
-    provider = _obj_get(credential, 'provider', 'manual') if credential else 'manual'
-    conference_url = ''
+    credential = (
+        db.query(CalendarOAuthCredential)
+        .filter(
+            CalendarOAuthCredential.user_id == organizer_id,
+        )
+        .first()
+    )
+    provider = _obj_get(credential, "provider", "manual") if credential else "manual"
+    conference_url = ""
     event_id = None
-    calendar_sync = 'skipped'
+    calendar_sync = "skipped"
 
     if credential:
         try:
-            access_token = decrypt_credential(_obj_get(credential, 'access_token_encrypted', ''))
+            access_token = decrypt_credential(_obj_get(credential, "access_token_encrypted", ""))
             calendar_service: GoogleCalendarService | OutlookCalendarService
-            if provider == 'google':
+            if provider == "google":
                 calendar_service = GoogleCalendarService(access_token)
                 event_body = {
-                    'summary': str(payload.get('title') or template.default_title),
-                    'description': str(payload.get('description') or template.default_description or ''),
-                    'attendees': _to_attendee_payload(attendees, 'google'),
-                    'start': {'dateTime': slot_start.isoformat(), 'timeZone': str(payload.get('timezone', 'UTC'))},
-                    'end': {'dateTime': slot_end.isoformat(), 'timeZone': str(payload.get('timezone', 'UTC'))},
+                    "summary": str(payload.get("title") or template.default_title),
+                    "description": str(payload.get("description") or template.default_description or ""),
+                    "attendees": _to_attendee_payload(attendees, "google"),
+                    "start": {"dateTime": slot_start.isoformat(), "timeZone": str(payload.get("timezone", "UTC"))},
+                    "end": {"dateTime": slot_end.isoformat(), "timeZone": str(payload.get("timezone", "UTC"))},
                 }
             else:
                 calendar_service = OutlookCalendarService(access_token)
                 event_body = {
-                    'subject': str(payload.get('title') or template.default_title),
-                    'body': {'contentType': 'text', 'content': str(payload.get('description') or template.default_description or '')},
-                    'attendees': _to_attendee_payload(attendees, 'outlook'),
-                    'start': {'dateTime': slot_start.isoformat(), 'timeZone': str(payload.get('timezone', 'UTC'))},
-                    'end': {'dateTime': slot_end.isoformat(), 'timeZone': str(payload.get('timezone', 'UTC'))},
+                    "subject": str(payload.get("title") or template.default_title),
+                    "body": {
+                        "contentType": "text",
+                        "content": str(payload.get("description") or template.default_description or ""),
+                    },
+                    "attendees": _to_attendee_payload(attendees, "outlook"),
+                    "start": {"dateTime": slot_start.isoformat(), "timeZone": str(payload.get("timezone", "UTC"))},
+                    "end": {"dateTime": slot_end.isoformat(), "timeZone": str(payload.get("timezone", "UTC"))},
                 }
             event = await _call_calendar_create_event(calendar_service, event_body)
-            event_id = event.get('id') or event.get('eventId')
-            conference_url = event.get('hangoutLink') or event.get('conferenceUrl') or event.get('onlineMeeting', {}).get('joinUrl', '')
-            calendar_sync = 'ok'
+            event_id = event.get("id") or event.get("eventId")
+            conference_url = (
+                event.get("hangoutLink")
+                or event.get("conferenceUrl")
+                or event.get("onlineMeeting", {}).get("joinUrl", "")
+            )
+            calendar_sync = "ok"
         except Exception:
-            calendar_sync = 'failed'
+            calendar_sync = "failed"
 
     attendee_status = _attendees_to_status_map(attendees)
-    attendee_status[participant_email] = {'status': 'accepted'}
+    attendee_status[participant_email] = {"status": "accepted"}
+    participant_consent = {
+        "participant_email": participant_email,
+        "recording": payload.get("recording_consent") is True,
+        "transcription": payload.get("transcript_consent") is True,
+        "ai_processing": payload.get("ai_processing_consent") is True,
+        "recorded_at": datetime.utcnow().isoformat(),
+    }
     meeting = Meeting(
         user_id=organizer_id,
         organizer_id=organizer_id,
         calendar_provider=provider,
         event_id=event_id,
-        title=str(payload.get('title') or template.default_title),
-        description=str(payload.get('description') or template.default_description or ''),
+        title=str(payload.get("title") or template.default_title),
+        description=str(payload.get("description") or template.default_description or ""),
         scheduled_start=slot_start,
         scheduled_end=slot_end,
         scheduled_time=slot_start,
         duration_minutes=duration,
         attendees=attendee_status,
         conference_url=conference_url,
-        timezone=str(payload.get('timezone', 'UTC')),
+        timezone=str(payload.get("timezone", "UTC")),
         confidence_score=1.0,
-        status='scheduled',
-        extra_data={'source': 'public_booking', 'template_id': template.id, 'calendar_sync': calendar_sync},
+        status="scheduled",
+        extra_data={
+            "source": "public_booking",
+            "template_id": template.id,
+            "calendar_sync": calendar_sync,
+            "participant_consent": participant_consent,
+        },
     )
     db.add(meeting)
+    db.flush()
 
     consent_log = MeetingConsentLog(
         tenant_id=organizer_id,
+        meeting_id=meeting.id,
         participant_email=participant_email,
-        recording_consent=bool(payload.get('recording_consent', True)),
-        transcript_consent=bool(payload.get('transcript_consent', True)),
-        ai_processing_consent=bool(payload.get('ai_processing_consent', True)),
-        # Audit fallback value, not a socket bind operation.
-        ip_address=str(payload.get('ip_address') or '0.0.0.0'),  # nosec B104
+        recording_consent=participant_consent["recording"],
+        transcript_consent=participant_consent["transcription"],
+        ai_processing_consent=participant_consent["ai_processing"],
+        ip_address=None,
     )
     db.add(consent_log)
 
@@ -1047,65 +1108,73 @@ async def book_public_meeting(
     db.refresh(meeting)
 
     return {
-        'status': 'ok',
-        'booking': {
-            'meeting_id': meeting.id,
-            'organizer_id': organizer_id,
-            'participant_email': participant_email,
-            'scheduled_start': meeting.scheduled_start.isoformat() if meeting.scheduled_start else None,
-            'scheduled_end': meeting.scheduled_end.isoformat() if meeting.scheduled_end else None,
-            'conference_url': meeting.conference_url,
-            'calendar_provider': meeting.calendar_provider,
-            'calendar_sync': calendar_sync,
+        "status": "ok",
+        "booking": {
+            "meeting_id": meeting.id,
+            "organizer_id": organizer_id,
+            "participant_email": participant_email,
+            "scheduled_start": meeting.scheduled_start.isoformat() if meeting.scheduled_start else None,
+            "scheduled_end": meeting.scheduled_end.isoformat() if meeting.scheduled_end else None,
+            "conference_url": meeting.conference_url,
+            "calendar_provider": meeting.calendar_provider,
+            "calendar_sync": calendar_sync,
         },
     }
 
 
-@router.get('/meetings/integrations/vendors')
+@router.get("/meetings/integrations/vendors")
 async def meeting_integrations_vendors(
     user_id: str = Depends(AuthDep),
     db: Session = Depends(get_db),
 ):
-    credentials = db.query(CalendarOAuthCredential).filter(
-        CalendarOAuthCredential.user_id == user_id,
-    ).all()
-    providers = sorted({str(_obj_get(c, 'provider', '')) for c in credentials if _obj_get(c, 'provider')})
+    credentials = (
+        db.query(CalendarOAuthCredential)
+        .filter(
+            CalendarOAuthCredential.user_id == user_id,
+        )
+        .all()
+    )
+    providers = sorted({str(_obj_get(c, "provider", "")) for c in credentials if _obj_get(c, "provider")})
     return {
-        'status': 'ok',
-        'user_id': user_id,
-        'vendors': [
+        "status": "ok",
+        "user_id": user_id,
+        "vendors": [
             {
-                'vendor': 'Google Calendar',
-                'type': 'calendar',
-                'configured': 'google' in providers,
-                'capabilities': ['availability', 'event_create', 'event_update'],
+                "vendor": "Google Calendar",
+                "type": "calendar",
+                "configured": "google" in providers,
+                "capabilities": ["availability", "event_create", "event_update"],
             },
             {
-                'vendor': 'Microsoft Outlook Calendar',
-                'type': 'calendar',
-                'configured': 'outlook' in providers,
-                'capabilities': ['availability', 'event_create', 'event_update'],
+                "vendor": "Microsoft Outlook Calendar",
+                "type": "calendar",
+                "configured": "outlook" in providers,
+                "capabilities": ["availability", "event_create", "event_update"],
             },
             {
-                'vendor': 'Lindy AI Meeting Services',
-                'type': 'ai_automation',
-                'configured': True,
-                'capabilities': ['prep_generation', 'transcription', 'recap_delivery'],
+                "vendor": "Lindy AI Meeting Services",
+                "type": "ai_automation",
+                "configured": True,
+                "capabilities": ["prep_generation", "transcription", "recap_delivery"],
             },
             {
-                'vendor': 'Twilio',
-                'type': 'notification',
-                'configured': bool(os.getenv('TWILIO_ACCOUNT_SID') and os.getenv('TWILIO_AUTH_TOKEN') and os.getenv('TWILIO_FROM_NUMBER')),
-                'capabilities': ['sms_reminders'],
+                "vendor": "Twilio",
+                "type": "notification",
+                "configured": bool(
+                    os.getenv("TWILIO_ACCOUNT_SID")
+                    and os.getenv("TWILIO_AUTH_TOKEN")
+                    and os.getenv("TWILIO_FROM_NUMBER")
+                ),
+                "capabilities": ["sms_reminders"],
             },
             {
-                'vendor': 'Slack',
-                'type': 'notification',
-                'configured': bool(os.getenv('SLACK_WEBHOOK_URL')),
-                'capabilities': ['follow_up_alerts'],
+                "vendor": "Slack",
+                "type": "notification",
+                "configured": bool(os.getenv("SLACK_WEBHOOK_URL")),
+                "capabilities": ["follow_up_alerts"],
             },
         ],
-        'connected_providers': providers,
+        "connected_providers": providers,
     }
 
 
@@ -1113,75 +1182,67 @@ async def meeting_integrations_vendors(
 # MEETING PREPARATION ENDPOINTS
 # ============================================================================
 
+
 @router.post("/meetings/{meeting_id}/prepare")
-async def generate_meeting_prep(
-    meeting_id: str,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def generate_meeting_prep(meeting_id: str, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Generate AI-powered meeting preparation materials
-    
+
     Returns:
         Briefing, talking points, potential questions
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
-        
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
+
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-        
+
         # Check if prep already exists
-        existing_prep = db.query(MeetingPrep).filter(
-            MeetingPrep.meeting_id == meeting_id
-        ).first()
-        
+        existing_prep = db.query(MeetingPrep).filter(MeetingPrep.meeting_id == meeting_id).first()
+
         if existing_prep:
             return {
                 "meeting_id": meeting_id,
                 "briefing": existing_prep.briefing,
-                "talking_points": _safe_json_loads(_obj_get(existing_prep, 'talking_points'), []),
-                "confidence_score": float(_obj_get(existing_prep, 'confidence_score', 0.85) or 0.85),
-                "created_at": existing_prep.created_at.isoformat() if existing_prep.created_at else None
+                "talking_points": _safe_json_loads(_obj_get(existing_prep, "talking_points"), []),
+                "confidence_score": float(_obj_get(existing_prep, "confidence_score", 0.85) or 0.85),
+                "created_at": existing_prep.created_at.isoformat() if existing_prep.created_at else None,
             }
-        
+
         # Generate prep using MeetingPrepService
         prep_service = MeetingPrepService()  # type: ignore[no-untyped-call]
         meeting_payload = _normalize_meeting_payload(meeting)
-        
+
         prep_content_raw = await prep_service.generate_briefing(meeting_payload)
         prep_content, confidence = _normalize_briefing_result(prep_content_raw)
-        
+
         talking_points_raw = await prep_service.generate_talking_points(meeting_payload, context=meeting.description)
         talking_points = _normalize_talking_points_result(talking_points_raw)
-        meeting_prep_id = _coerce_optional_int(_obj_get(meeting, 'id'))
-        
+        meeting_prep_id = _coerce_optional_int(_obj_get(meeting, "id"))
+
         # Store prep in database
         prep = MeetingPrep(
             meeting_id=meeting_prep_id,
             user_id=user_id,
             briefing=prep_content,
             talking_points=talking_points,
-            confidence_score=confidence
+            confidence_score=confidence,
         )
-        
+
         db.add(prep)
         db.commit()
         db.refresh(prep)
-        
+
         logger.info(f"Meeting prep generated for {meeting_id}")
-        
+
         return {
             "meeting_id": meeting_id,
             "briefing": prep.briefing,
-            "talking_points": talking_points.get('points', []),
+            "talking_points": talking_points.get("points", []),
             "confidence_score": prep.confidence_score,
-            "created_at": prep.created_at.isoformat() if prep.created_at else None
+            "created_at": prep.created_at.isoformat() if prep.created_at else None,
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1190,42 +1251,33 @@ async def generate_meeting_prep(
 
 
 @router.get("/meetings/{meeting_id}/prep")
-async def get_meeting_prep(
-    meeting_id: str,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def get_meeting_prep(meeting_id: str, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Get existing meeting preparation
-    
+
     Returns:
         Prep materials if available
     """
     try:
         # Verify meeting belongs to user
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
-        
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
+
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-        
-        prep = db.query(MeetingPrep).filter(
-            MeetingPrep.meeting_id == meeting_id
-        ).first()
-        
+
+        prep = db.query(MeetingPrep).filter(MeetingPrep.meeting_id == meeting_id).first()
+
         if not prep:
             raise HTTPException(status_code=404, detail="Meeting prep not found. Generate prep first.")
-        
+
         return {
             "meeting_id": meeting_id,
             "briefing": prep.briefing,
             "talking_points": json.loads(prep.talking_points) if prep.talking_points else [],
             "confidence_score": prep.confidence_score,
-            "created_at": prep.created_at.isoformat() if prep.created_at else None
+            "created_at": prep.created_at.isoformat() if prep.created_at else None,
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1234,56 +1286,62 @@ async def get_meeting_prep(
 
 
 # ============================================================================
-# RECORDING & TRANSCRIPTION ENDPOINTS (Phase 2.5 - Placeholder)
+# RECORDING & TRANSCRIPTION ENDPOINTS
 # ============================================================================
+
 
 @router.post("/meetings/{meeting_id}/record")
 async def start_meeting_recording(
     meeting_id: str,
     record_request: dict[str, Any] | None = None,
     user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Start recording for meeting (Google Meet/Teams)
-    
+
     Request body (optional):
     {
         "auto_transcribe": true,
         "save_to_drive": true
     }
-    
+
     Returns:
         Recording status and details
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
-        
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
+
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-        
+
+        meeting_extra_data = _ensure_extra_data(meeting)
+        if not _has_explicit_participant_recording_consent(meeting_extra_data):
+            raise HTTPException(
+                status_code=403,
+                detail="Explicit participant recording, transcription, and AI-processing consent is required.",
+            )
+
         # Initialize recording service
         recording_service = RecordingManagementService()  # type: ignore[no-untyped-call]
-        
+
         # Determine provider from meeting calendar
-        provider = _obj_get(meeting, 'calendar_provider') or _obj_get(meeting, 'calendar_type') or "google"
+        provider = _obj_get(meeting, "calendar_provider") or _obj_get(meeting, "calendar_type") or "google"
 
         # Get access token for recording setup
-        credential = db.query(CalendarOAuthCredential).filter(
-            CalendarOAuthCredential.user_id == user_id,
-            CalendarOAuthCredential.provider == provider
-        ).first()
+        credential = (
+            db.query(CalendarOAuthCredential)
+            .filter(CalendarOAuthCredential.user_id == user_id, CalendarOAuthCredential.provider == provider)
+            .first()
+        )
 
         if not credential:
             raise HTTPException(status_code=401, detail="Calendar connection lost")
 
-        access_token = decrypt_credential(_obj_get(credential, 'access_token_encrypted', ''))
-        
+        access_token = decrypt_credential(_obj_get(credential, "access_token_encrypted", ""))
+
         # Setup recording
-        event_id = _obj_get(meeting, 'event_id') or _obj_get(meeting, 'external_event_id')
+        event_id = _obj_get(meeting, "event_id") or _obj_get(meeting, "external_event_id")
         if not event_id:
             raise HTTPException(status_code=400, detail="Meeting does not have a calendar event linked")
 
@@ -1291,119 +1349,121 @@ async def start_meeting_recording(
             provider=provider,
             event_id=event_id,
             access_token=access_token,
-            auto_transcribe=record_request.get("auto_transcribe", True) if record_request else True
+            auto_transcribe=record_request.get("auto_transcribe", True) if record_request else True,
         )
-        
-        # Log consent (GDPR compliance)
-        consent_log = MeetingConsentLog(
-            tenant_id=user_id,
-            participant_email=f"{user_id}@local",
-            recording_consent=True,
-            transcript_consent=True,
-            ai_processing_consent=True,
-            # Audit placeholder value, not a socket bind operation.
-            ip_address="0.0.0.0"  # nosec B104
-        )
-        db.add(consent_log)
-        
+
+        if recording_info.get("recording_started") is not True:
+            raise HTTPException(status_code=503, detail="The provider did not confirm that recording started.")
+
         # Store recording metadata on meeting
         meeting_extra_data = _ensure_extra_data(meeting)
         meeting_extra_data["recording_status"] = "active"
         meeting_extra_data["recording_started_at"] = datetime.utcnow().isoformat()
         meeting_extra_data["recording_provider"] = provider
-        meeting_extra_data["recording_url"] = recording_info.get("meet_link") or recording_info.get("join_url") or recording_info.get("recording_url")
+        meeting_extra_data["recording_url"] = (
+            recording_info.get("meet_link") or recording_info.get("join_url") or recording_info.get("recording_url")
+        )
         meeting.extra_data = meeting_extra_data
         meeting.meeting_recording_enabled = True
         meeting.recording_provider = provider
         meeting.recording_url = meeting_extra_data.get("recording_url")
-        
+
         db.commit()
         db.refresh(meeting)
-        
+
         logger.info(f"Recording started for meeting {meeting_id}")
-        
+
         return {
             "meeting_id": meeting_id,
             "status": recording_info.get("status"),
             "provider": provider,
             "meet_link": recording_info.get("meet_link"),
             "auto_transcribe": record_request.get("auto_transcribe", True) if record_request else True,
-            "started_at": datetime.utcnow().isoformat()
+            "started_at": datetime.utcnow().isoformat(),
         }
-    
+
+    except RecordingCapabilityUnavailable as exc:
+        logger.info("Recording start is unsupported by the provider: %s", type(exc).__name__)
+        raise HTTPException(status_code=503, detail="Recording start is unavailable for this provider.") from exc
     except HTTPException:
         raise
     except Exception as e:
         try:
-            meeting = db.query(Meeting).filter(
-                Meeting.id == meeting_id,
-                Meeting.user_id == user_id
-            ).first()
+            meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
             if meeting:
                 meeting_extra_data = _ensure_extra_data(meeting)
                 meeting_extra_data["recording_status"] = "failed"
-                meeting_extra_data["recording_error"] = str(e)
+                meeting_extra_data["recording_error"] = type(e).__name__
                 meeting_extra_data["recording_failed_at"] = datetime.utcnow().isoformat()
                 meeting.extra_data = meeting_extra_data
                 db.commit()
         except Exception:
             db.rollback()
-        logger.error(f"Recording start error: {str(e)}")
-        raise HTTPException(status_code=502, detail=f"Failed to start recording: {str(e)}")
+        logger.error("Recording start failed: %s", type(e).__name__)
+        raise HTTPException(status_code=502, detail="Failed to start recording.") from e
 
 
 @router.get("/meetings/{meeting_id}/recording/status")
-async def get_meeting_recording_status(
-    meeting_id: str,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def get_meeting_recording_status(meeting_id: str, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """Get current recording status and provider-level status for a meeting."""
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
 
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
         meeting_extra_data = _ensure_extra_data(meeting)
-        provider = _obj_get(meeting, 'recording_provider') or meeting_extra_data.get("recording_provider") or _obj_get(meeting, 'calendar_provider') or _obj_get(meeting, 'calendar_type') or "google"
-        event_id = _obj_get(meeting, 'event_id') or _obj_get(meeting, 'external_event_id')
+        provider = (
+            _obj_get(meeting, "recording_provider")
+            or meeting_extra_data.get("recording_provider")
+            or _obj_get(meeting, "calendar_provider")
+            or _obj_get(meeting, "calendar_type")
+            or "google"
+        )
+        event_id = _obj_get(meeting, "event_id") or _obj_get(meeting, "external_event_id")
+        saved_status = meeting_extra_data.get("recording_status")
+        if saved_status in ("active", "enabled", "ready") or _obj_get(meeting, "meeting_recording_enabled"):
+            saved_status = "unverified"
 
         response = {
             "meeting_id": meeting_id,
             "provider": provider,
-            "recording_status": meeting_extra_data.get("recording_status") or ("enabled" if _obj_get(meeting, 'meeting_recording_enabled') else "inactive"),
-            "recording_url": meeting_extra_data.get("recording_url") or _obj_get(meeting, 'recording_url'),
+            "recording_status": saved_status or "unknown",
+            "recording_url": None,
             "recording_error": meeting_extra_data.get("recording_error"),
             "recording_started_at": meeting_extra_data.get("recording_started_at"),
             "recording_failed_at": meeting_extra_data.get("recording_failed_at"),
         }
 
         if event_id:
-            credential = db.query(CalendarOAuthCredential).filter(
-                CalendarOAuthCredential.user_id == user_id,
-                CalendarOAuthCredential.provider == provider
-            ).first()
+            credential = (
+                db.query(CalendarOAuthCredential)
+                .filter(CalendarOAuthCredential.user_id == user_id, CalendarOAuthCredential.provider == provider)
+                .first()
+            )
             if credential:
-                access_token = decrypt_credential(_obj_get(credential, 'access_token_encrypted', ''))
+                access_token = decrypt_credential(_obj_get(credential, "access_token_encrypted", ""))
                 recording_service = RecordingManagementService()  # type: ignore[no-untyped-call]
                 try:
-                    provider_status = await recording_service.get_recording_status(provider=provider, event_id=event_id, access_token=access_token)
+                    provider_status = await recording_service.get_recording_status(
+                        provider=provider, event_id=event_id, access_token=access_token
+                    )
                     response["provider_status"] = provider_status
                     response["recording_status"] = provider_status.get("status") or response["recording_status"]
+                except RecordingCapabilityUnavailable:
+                    response["provider_status"] = {"status": "unknown", "recording_enabled": None}
+                    response["provider_status_error"] = "provider-status-unavailable"
                 except Exception as provider_error:
-                    response["provider_status_error"] = str(provider_error)
+                    logger.warning("Provider recording status lookup failed: %s", type(provider_error).__name__)
+                    response["provider_status_error"] = "provider-status-unavailable"
 
         return response
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Recording status error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve recording status")
+        logger.error("Recording status lookup failed: %s", type(e).__name__)
+        raise HTTPException(status_code=500, detail="Failed to retrieve recording status") from e
 
 
 @router.post("/meetings/{meeting_id}/transcript/start")
@@ -1411,19 +1471,21 @@ async def start_meeting_transcription(
     meeting_id: str,
     request_data: dict[str, Any] | None = None,
     user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Start transcription for a meeting recording and persist job metadata."""
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
 
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
         meeting_extra_data = _ensure_extra_data(meeting)
+        if not _has_explicit_participant_recording_consent(meeting_extra_data):
+            raise HTTPException(
+                status_code=403,
+                detail="Explicit participant recording, transcription, and AI-processing consent is required.",
+            )
 
         # Idempotency: return existing job if transcription already in-flight
         in_flight_statuses = {"submitted", "processing", "queued"}
@@ -1446,22 +1508,19 @@ async def start_meeting_transcription(
                 "idempotent": True,
             }
 
-        recording_url = meeting_extra_data.get("recording_url") or _obj_get(meeting, 'recording_url')
-        provider = _obj_get(meeting, 'recording_provider') or meeting_extra_data.get("recording_provider") or _obj_get(meeting, 'calendar_provider') or _obj_get(meeting, 'calendar_type') or "google"
-        event_id = _obj_get(meeting, 'event_id') or _obj_get(meeting, 'external_event_id')
-
-        if not recording_url and event_id:
-            credential = db.query(CalendarOAuthCredential).filter(
-                CalendarOAuthCredential.user_id == user_id,
-                CalendarOAuthCredential.provider == provider
-            ).first()
-            if credential:
-                access_token = decrypt_credential(_obj_get(credential, 'access_token_encrypted', ''))
-                recording_service = RecordingManagementService()  # type: ignore[no-untyped-call]
-                recording_url = await recording_service.get_recording_link(provider=provider, meeting_id=event_id, access_token=access_token)
-
+        recording_url = meeting_extra_data.get("recording_url") or _obj_get(meeting, "recording_url")
         if not recording_url:
-            raise HTTPException(status_code=400, detail="No recording URL available. Start recording first.")
+            raise HTTPException(status_code=503, detail="No verified recording artifact is available for this meeting.")
+
+        try:
+            outbound_target = await resolve_outbound_target_async(str(recording_url))
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="Recording source must be a public HTTPS address.") from exc
+        if outbound_target.host in {"meet.google.com", "teams.microsoft.com"} or outbound_target.host.endswith(
+            ".teams.microsoft.com"
+        ):
+            raise HTTPException(status_code=422, detail="A meeting join link is not a recording artifact.")
+        recording_url = outbound_target.url
 
         transcription_service = TranscriptionManagementService()  # type: ignore[no-untyped-call]
         language = (request_data or {}).get("language", "en")
@@ -1499,21 +1558,18 @@ async def start_meeting_transcription(
         raise
     except Exception as e:
         try:
-            meeting = db.query(Meeting).filter(
-                Meeting.id == meeting_id,
-                Meeting.user_id == user_id
-            ).first()
+            meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
             if meeting:
                 meeting_extra_data = _ensure_extra_data(meeting)
                 meeting_extra_data["transcript_status"] = "failed"
-                meeting_extra_data["transcript_error"] = str(e)
+                meeting_extra_data["transcript_error"] = type(e).__name__
                 meeting_extra_data["transcript_failed_at"] = datetime.utcnow().isoformat()
                 meeting.extra_data = meeting_extra_data
                 db.commit()
         except Exception:
             db.rollback()
-        logger.error(f"Transcription start error: {str(e)}")
-        raise HTTPException(status_code=502, detail=f"Failed to start transcription: {str(e)}")
+        logger.error("Transcription start failed: %s", type(e).__name__)
+        raise HTTPException(status_code=502, detail="Failed to start transcription.") from e
 
 
 @router.post("/meetings/{meeting_id}/transcript/poll")
@@ -1521,14 +1577,11 @@ async def poll_meeting_transcription(
     meeting_id: str,
     request_data: dict[str, Any] | None = None,
     user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Poll transcription status and persist durable transcription state for the meeting."""
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
 
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
@@ -1550,11 +1603,7 @@ async def poll_meeting_transcription(
         transcript_available = False
         if status.get("completed"):
             transcript = await transcription_service.retrieve_transcript(job_id)
-            full_text = str(
-                transcript.get("full_text")
-                or transcript.get("text")
-                or ""
-            )
+            full_text = str(transcript.get("full_text") or transcript.get("text") or "")
             meeting_extra_data["transcript"] = full_text
             meeting_extra_data["transcript_status"] = "completed"
             meeting_extra_data["transcript_completed_at"] = datetime.utcnow().isoformat()
@@ -1579,10 +1628,7 @@ async def poll_meeting_transcription(
         raise
     except Exception as e:
         try:
-            meeting = db.query(Meeting).filter(
-                Meeting.id == meeting_id,
-                Meeting.user_id == user_id
-            ).first()
+            meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
             if meeting:
                 meeting_extra_data = _ensure_extra_data(meeting)
                 meeting_extra_data["transcript_status"] = "failed"
@@ -1601,29 +1647,26 @@ async def get_meeting_transcript(
     meeting_id: str,
     job_id: str | None = Query(None, description="AssemblyAI transcription job ID"),
     user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get meeting transcript (from recording)
-    
+
     Query Parameters:
         job_id: Optional AssemblyAI job ID to check status
-    
+
     Returns:
         Transcript text and metadata
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
-        
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
+
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-        
+
         # Initialize transcription service
         transcription_service = TranscriptionManagementService()  # type: ignore[no-untyped-call]
-        
+
         meeting_extra_data = _ensure_extra_data(meeting)
         if not job_id:
             job_id = meeting_extra_data.get("transcript_job_id")
@@ -1631,13 +1674,15 @@ async def get_meeting_transcript(
         # If job_id provided, check status
         if job_id:
             status = await transcription_service.check_transcription_status(job_id)
-            meeting_extra_data["transcript_status"] = status.get("status") or meeting_extra_data.get("transcript_status", "processing")
+            meeting_extra_data["transcript_status"] = status.get("status") or meeting_extra_data.get(
+                "transcript_status", "processing"
+            )
             meeting_extra_data["transcript_progress"] = status.get("progress")
             meeting_extra_data["transcript_last_checked_at"] = datetime.utcnow().isoformat()
             meeting_extra_data["transcript_error"] = status.get("error")
             meeting.extra_data = meeting_extra_data
             db.commit()
-            
+
             if status.get("completed"):
                 transcript = await transcription_service.retrieve_transcript(job_id)
                 if not transcript:
@@ -1646,9 +1691,9 @@ async def get_meeting_transcript(
                         "job_id": job_id,
                         "status": "processing",
                         "progress": status.get("progress"),
-                        "message": "Transcript not finalized yet. Please retry shortly."
+                        "message": "Transcript not finalized yet. Please retry shortly.",
                     }
-                
+
                 # Store transcript on meeting record
                 meeting_extra_data["transcript"] = transcript.get("full_text", "")
                 meeting_extra_data["transcript_job_id"] = job_id
@@ -1658,9 +1703,9 @@ async def get_meeting_transcript(
                 meeting.extra_data = meeting_extra_data
                 meeting.transcript = transcript.get("full_text", "")
                 meeting.transcript_timestamp_url = job_id
-                
+
                 db.commit()
-                
+
                 return {
                     "meeting_id": meeting_id,
                     "job_id": job_id,
@@ -1671,7 +1716,7 @@ async def get_meeting_transcript(
                     "chapters": transcript.get("chapters", []),
                     "confidence": transcript.get("confidence", 0.0),
                     "duration_seconds": transcript.get("duration", 0),
-                    "generated_at": datetime.utcnow().isoformat()
+                    "generated_at": datetime.utcnow().isoformat(),
                 }
             else:
                 return {
@@ -1679,32 +1724,28 @@ async def get_meeting_transcript(
                     "job_id": job_id,
                     "status": status.get("status"),
                     "progress": status.get("progress"),
-                    "message": "Transcription in progress..."
+                    "message": "Transcription in progress...",
                 }
-        
+
         # Check if transcript already stored
-        if meeting_extra_data.get("transcript") or _obj_get(meeting, 'transcript'):
+        if meeting_extra_data.get("transcript") or _obj_get(meeting, "transcript"):
             return {
                 "meeting_id": meeting_id,
                 "job_id": meeting_extra_data.get("transcript_job_id"),
                 "status": "completed",
-                "transcript": meeting_extra_data.get("transcript") or _obj_get(meeting, 'transcript'),
-                "generated_at": meeting_extra_data.get("transcript_generated_at")
+                "transcript": meeting_extra_data.get("transcript") or _obj_get(meeting, "transcript"),
+                "generated_at": meeting_extra_data.get("transcript_generated_at"),
             }
-        
+
         raise HTTPException(
-            status_code=400,
-            detail="No transcription found. Provide job_id to check status or trigger transcription."
+            status_code=400, detail="No transcription found. Provide job_id to check status or trigger transcription."
         )
-    
+
     except HTTPException:
         raise
     except Exception as e:
         try:
-            meeting = db.query(Meeting).filter(
-                Meeting.id == meeting_id,
-                Meeting.user_id == user_id
-            ).first()
+            meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
             if meeting:
                 meeting_extra_data = _ensure_extra_data(meeting)
                 meeting_extra_data["transcript_status"] = "failed"
@@ -1722,47 +1763,42 @@ async def get_meeting_transcript(
 # MEETING RECAP ENDPOINTS
 # ============================================================================
 
+
 @router.post("/meetings/{meeting_id}/recap")
 async def generate_meeting_recap(
     meeting_id: str,
     recap_request: dict[str, Any] | None = None,
     user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Generate meeting recap and action items from transcript
-    
+
     Request body (optional):
     {
         "include_action_items": true,
         "include_decisions": true,
         "send_to_attendees": true
     }
-    
+
     Returns:
         Summary, action items, decisions
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
-        
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
+
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-        
+
         # Get transcript (must be generated first)
         meeting_extra_data = _ensure_extra_data(meeting)
-        transcript = meeting_extra_data.get("transcript") or _obj_get(meeting, 'transcript')
+        transcript = meeting_extra_data.get("transcript") or _obj_get(meeting, "transcript")
         if not transcript:
-            raise HTTPException(
-                status_code=400,
-                detail="Transcript not available. Generate transcript first."
-            )
-        
+            raise HTTPException(status_code=400, detail="Transcript not available. Generate transcript first.")
+
         # Initialize recap service
         recap_service = RecapManagementService()  # type: ignore[no-untyped-call]
-        
+
         # Generate recap
         attendees = _attendees_to_email_list(meeting.attendees)
         recap = await recap_service.generate_full_recap(
@@ -1770,20 +1806,22 @@ async def generate_meeting_recap(
             meeting_id=meeting_id,
             meeting_title=meeting.title,
             attendees=attendees,
-            duration_minutes=int((meeting.end_time - meeting.start_time).total_seconds() / 60) if meeting.end_time and meeting.start_time else 60
+            duration_minutes=int((meeting.end_time - meeting.start_time).total_seconds() / 60)
+            if meeting.end_time and meeting.start_time
+            else 60,
         )
-        
+
         # Store recap in database
         meeting_recap = MeetingRecap(
-            meeting_id=_coerce_optional_int(_obj_get(meeting, 'id')),
+            meeting_id=_coerce_optional_int(_obj_get(meeting, "id")),
             user_id=user_id,
             summary=recap.get("summary", ""),
             key_points=recap.get("key_points", []),
             decisions_made=recap.get("decisions", []),
-            action_items={"items": recap.get("action_items", [])}
+            action_items={"items": recap.get("action_items", [])},
         )
         db.add(meeting_recap)
-        
+
         # Update meeting extra_data
         meeting_extra_data = _ensure_extra_data(meeting)
         meeting_extra_data["recap_generated_at"] = datetime.utcnow().isoformat()
@@ -1791,11 +1829,13 @@ async def generate_meeting_recap(
         meeting.extra_data = meeting_extra_data
         meeting.ai_summary = recap.get("summary", "")
         meeting.key_decisions = recap.get("decisions", [])
-        meeting.action_items_extracted = [item.get("task", item) if isinstance(item, dict) else item for item in recap.get("action_items", [])]
-        
+        meeting.action_items_extracted = [
+            item.get("task", item) if isinstance(item, dict) else item for item in recap.get("action_items", [])
+        ]
+
         db.commit()
         db.refresh(meeting_recap)
-        
+
         recap_email_delivery: dict[str, Any] = {
             "requested": bool(recap_request and recap_request.get("send_to_attendees")),
             "sent": False,
@@ -1806,9 +1846,7 @@ async def generate_meeting_recap(
         if recap_request and recap_request.get("send_to_attendees"):
             try:
                 email_content = await recap_service.create_recap_email(
-                    recap=recap,
-                    sender_name="Lindy Meeting Assistant",
-                    sender_email=f"{user_id}@lindy.ai"
+                    recap=recap, sender_name="Lindy Meeting Assistant", sender_email=f"{user_id}@lindy.ai"
                 )
 
                 recipient_list = [str(addr) for addr in email_content.get("to", []) if addr]
@@ -1829,7 +1867,16 @@ async def generate_meeting_recap(
                     if not draft_result.get("success"):
                         recap_email_delivery["reason"] = draft_result.get("error", "Draft generation failed")
                     else:
-                        preferred_provider = "gmail" if any(c.provider == "google" for c in db.query(CalendarOAuthCredential).filter(CalendarOAuthCredential.user_id == user_id).all()) else "outlook"
+                        preferred_provider = (
+                            "gmail"
+                            if any(
+                                c.provider == "google"
+                                for c in db.query(CalendarOAuthCredential)
+                                .filter(CalendarOAuthCredential.user_id == user_id)
+                                .all()
+                            )
+                            else "outlook"
+                        )
                         sent_result = await email_service.send_draft(
                             draft_id=draft_result["draft_id"],
                             from_email=f"{user_id}@lindy.ai",
@@ -1843,9 +1890,9 @@ async def generate_meeting_recap(
             except Exception as e:
                 recap_email_delivery["reason"] = str(e)
                 logger.warning(f"Could not prepare or send recap email: {str(e)}")
-        
+
         logger.info(f"Recap generated for meeting {meeting_id}")
-        
+
         return {
             "meeting_id": meeting_id,
             "recap_id": meeting_recap.id,
@@ -1856,9 +1903,9 @@ async def generate_meeting_recap(
             "next_steps": recap.get("next_steps"),
             "confidence_score": recap.get("confidence_score"),
             "recap_email_delivery": recap_email_delivery,
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.utcnow().isoformat(),
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1867,42 +1914,33 @@ async def generate_meeting_recap(
 
 
 @router.get("/meetings/{meeting_id}/recap")
-async def get_meeting_recap(
-    meeting_id: str,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def get_meeting_recap(meeting_id: str, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Get existing meeting recap
-    
+
     Returns:
         Summary, action items, decisions
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
-        
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
+
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-        
-        recap = db.query(MeetingRecap).filter(
-            MeetingRecap.meeting_id == meeting_id
-        ).first()
-        
+
+        recap = db.query(MeetingRecap).filter(MeetingRecap.meeting_id == meeting_id).first()
+
         if not recap:
             raise HTTPException(status_code=404, detail="Meeting recap not found")
-        
+
         return {
             "meeting_id": meeting_id,
             "summary": recap.summary,
             "key_points": _safe_json_loads(recap.key_points, []),
             "action_items": _safe_json_loads(recap.action_items, {}),
             "decisions": _safe_json_loads(recap.decisions_made, []),
-            "created_at": recap.created_at.isoformat() if recap.created_at else None
+            "created_at": recap.created_at.isoformat() if recap.created_at else None,
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1914,15 +1952,12 @@ async def get_meeting_recap(
 # SETTINGS & PREFERENCES ENDPOINTS
 # ============================================================================
 
+
 @router.post("/scheduling-preferences")
-async def set_scheduling_preferences(
-    preferences: dict,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def set_scheduling_preferences(preferences: dict, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Set user's meeting scheduling preferences
-    
+
     Request body:
     {
         "working_hours_start": 9,
@@ -1933,16 +1968,14 @@ async def set_scheduling_preferences(
         "do_not_schedule_days": ["Saturday", "Sunday"],
         "timezone": "America/New_York"
     }
-    
+
     Returns:
         Updated preferences
     """
     try:
         # Check if preferences exist
-        existing = db.query(SchedulingPreference).filter(
-            SchedulingPreference.user_id == user_id
-        ).first()
-        
+        existing = db.query(SchedulingPreference).filter(SchedulingPreference.user_id == user_id).first()
+
         if existing:
             existing.working_hours_start = preferences.get("working_hours_start", 9)
             existing.working_hours_end = preferences.get("working_hours_end", 17)
@@ -1960,25 +1993,27 @@ async def set_scheduling_preferences(
                 lunch_start_hour=preferences.get("lunch_start_hour", 12),
                 lunch_end_hour=preferences.get("lunch_end_hour", 13),
                 do_not_schedule_days=preferences.get("do_not_schedule_days", []),
-                timezone=preferences.get("timezone", "America/New_York")
+                timezone=preferences.get("timezone", "America/New_York"),
             )
             db.add(existing)
-        
+
         db.commit()
         db.refresh(existing)
-        
+
         logger.info(f"Scheduling preferences updated for {user_id}")
-        
+
         return {
             "user_id": user_id,
             "working_hours": f"{existing.working_hours_start:02d}:00-{existing.working_hours_end:02d}:00",
             "buffer_time_minutes": existing.buffer_time_minutes,
             "lunch_hours": f"{existing.lunch_start_hour:02d}:00-{existing.lunch_end_hour:02d}:00",
-            "do_not_schedule_days": _safe_json_loads(existing.do_not_schedule_days, existing.do_not_schedule_days or []),
+            "do_not_schedule_days": _safe_json_loads(
+                existing.do_not_schedule_days, existing.do_not_schedule_days or []
+            ),
             "timezone": existing.timezone,
-            "status": "saved"
+            "status": "saved",
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1987,21 +2022,16 @@ async def set_scheduling_preferences(
 
 
 @router.get("/scheduling-preferences")
-async def get_scheduling_preferences(
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def get_scheduling_preferences(user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Get user's scheduling preferences
-    
+
     Returns:
         User's configured preferences or defaults
     """
     try:
-        preferences = db.query(SchedulingPreference).filter(
-            SchedulingPreference.user_id == user_id
-        ).first()
-        
+        preferences = db.query(SchedulingPreference).filter(SchedulingPreference.user_id == user_id).first()
+
         if not preferences:
             # Return defaults
             return {
@@ -2011,18 +2041,20 @@ async def get_scheduling_preferences(
                 "lunch_hours": "12:00-13:00",
                 "do_not_schedule_days": ["Saturday", "Sunday"],
                 "timezone": "America/New_York",
-                "status": "defaults"
+                "status": "defaults",
             }
-        
+
         return {
             "user_id": user_id,
             "working_hours": f"{preferences.working_hours_start:02d}:00-{preferences.working_hours_end:02d}:00",
             "buffer_time_minutes": preferences.buffer_time_minutes,
             "lunch_hours": f"{preferences.lunch_start_hour:02d}:00-{preferences.lunch_end_hour:02d}:00",
-            "do_not_schedule_days": _safe_json_loads(preferences.do_not_schedule_days, preferences.do_not_schedule_days or []),
-            "timezone": preferences.timezone
+            "do_not_schedule_days": _safe_json_loads(
+                preferences.do_not_schedule_days, preferences.do_not_schedule_days or []
+            ),
+            "timezone": preferences.timezone,
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -2034,35 +2066,33 @@ async def get_scheduling_preferences(
 # STATUS & HEALTH ENDPOINTS
 # ============================================================================
 
+
 @router.get("/meetings/status")
-async def get_meetings_status(
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def get_meetings_status(user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Get meeting service status and calendar connection status
-    
+
     Returns:
         Connected calendars, sync times, upcoming meetings count
     """
     try:
-        credentials = db.query(CalendarOAuthCredential).filter(
-            CalendarOAuthCredential.user_id == user_id
-        ).all()
-        
-        upcoming_count = db.query(Meeting).filter(
-            Meeting.user_id == user_id,
-            Meeting.status == "scheduled",
-            Meeting.scheduled_time > datetime.utcnow()
-        ).count()
-        
+        credentials = db.query(CalendarOAuthCredential).filter(CalendarOAuthCredential.user_id == user_id).all()
+
+        upcoming_count = (
+            db.query(Meeting)
+            .filter(
+                Meeting.user_id == user_id, Meeting.status == "scheduled", Meeting.scheduled_time > datetime.utcnow()
+            )
+            .count()
+        )
+
         return {
             "status": "operational",
             "connected_calendars": [
                 {
                     "provider": c.provider,
                     "connected_at": c.created_at.isoformat() if c.created_at else None,
-                    "expires_at": c.expires_at.isoformat() if c.expires_at else None
+                    "expires_at": c.expires_at.isoformat() if c.expires_at else None,
                 }
                 for c in credentials
             ],
@@ -2071,10 +2101,10 @@ async def get_meetings_status(
                 "smart_scheduler": "operational",
                 "meeting_prep": "operational",
                 "google_calendar": "operational",
-                "outlook_calendar": "operational"
-            }
+                "outlook_calendar": "operational",
+            },
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -2094,9 +2124,13 @@ async def meeting_production_readiness(
     claim whole-platform parity or global production certification.
     """
     try:
-        credentials = db.query(CalendarOAuthCredential).filter(
-            CalendarOAuthCredential.user_id == user_id,
-        ).all()
+        credentials = (
+            db.query(CalendarOAuthCredential)
+            .filter(
+                CalendarOAuthCredential.user_id == user_id,
+            )
+            .all()
+        )
         providers = sorted({str(_obj_get(c, "provider", "")) for c in credentials if _obj_get(c, "provider")})
 
         meetings = db.query(Meeting).filter(Meeting.user_id == user_id).all()
@@ -2116,7 +2150,9 @@ async def meeting_production_readiness(
             if isinstance(tracker, dict):
                 action_items_tracked += len(tracker)
 
-        twilio_ready = bool(os.getenv("TWILIO_ACCOUNT_SID") and os.getenv("TWILIO_AUTH_TOKEN") and os.getenv("TWILIO_FROM_NUMBER"))
+        twilio_ready = bool(
+            os.getenv("TWILIO_ACCOUNT_SID") and os.getenv("TWILIO_AUTH_TOKEN") and os.getenv("TWILIO_FROM_NUMBER")
+        )
         slack_ready = bool(os.getenv("SLACK_WEBHOOK_URL"))
 
         capability_matrix = [
@@ -2201,7 +2237,7 @@ async def meeting_production_readiness(
 async def health_check():
     """
     Health check for meeting service
-    
+
     Returns:
         Service health status
     """
@@ -2216,8 +2252,8 @@ async def health_check():
             "recording": 2,
             "recap": 4,
             "follow_up": 2,
-            "settings": 2
-        }
+            "settings": 2,
+        },
     }
 
 
@@ -2225,12 +2261,13 @@ async def health_check():
 # RECAP DELIVERY ENDPOINTS
 # ============================================================================
 
+
 @router.post("/meetings/{meeting_id}/recap/send")
 async def send_meeting_recap(
     meeting_id: str,
     send_request: dict[str, Any] | None = None,
     user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Send the meeting recap email to attendees (idempotent).
@@ -2245,10 +2282,7 @@ async def send_meeting_recap(
     }
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
@@ -2267,13 +2301,10 @@ async def send_meeting_recap(
             }
 
         # Require recap to exist
-        recap = db.query(MeetingRecap).filter(
-            MeetingRecap.meeting_id == meeting_id
-        ).first()
+        recap = db.query(MeetingRecap).filter(MeetingRecap.meeting_id == meeting_id).first()
         if not recap:
             raise HTTPException(
-                status_code=400,
-                detail="Recap not generated yet. Call POST /meetings/{meeting_id}/recap first."
+                status_code=400, detail="Recap not generated yet. Call POST /meetings/{meeting_id}/recap first."
             )
 
         # Build recipients list
@@ -2309,10 +2340,11 @@ async def send_meeting_recap(
 
         # Determine sending provider from user's connected calendar credentials
         preferred_provider = "gmail"
-        google_cred = db.query(CalendarOAuthCredential).filter(
-            CalendarOAuthCredential.user_id == user_id,
-            CalendarOAuthCredential.provider == "google"
-        ).first()
+        google_cred = (
+            db.query(CalendarOAuthCredential)
+            .filter(CalendarOAuthCredential.user_id == user_id, CalendarOAuthCredential.provider == "google")
+            .first()
+        )
         if not google_cred:
             preferred_provider = "outlook"
 
@@ -2372,10 +2404,7 @@ async def send_meeting_recap(
         raise
     except Exception as e:
         try:
-            meeting = db.query(Meeting).filter(
-                Meeting.id == meeting_id,
-                Meeting.user_id == user_id
-            ).first()
+            meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
             if meeting:
                 ed = _ensure_extra_data(meeting)
                 ed["recap_delivery_status"] = "failed"
@@ -2390,21 +2419,14 @@ async def send_meeting_recap(
 
 
 @router.get("/meetings/{meeting_id}/recap/delivery-status")
-async def get_recap_delivery_status(
-    meeting_id: str,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def get_recap_delivery_status(meeting_id: str, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Return the durable recap delivery status persisted in meeting.extra_data.
 
     Possible statuses: ``sent``, ``failed``, ``pending`` (not yet attempted).
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id
-        ).first()
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id, Meeting.user_id == user_id).first()
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
@@ -2432,22 +2454,23 @@ async def get_recap_delivery_status(
 # ACTION ITEM TRACKING & FOLLOW-UP ENDPOINTS
 # ============================================================================
 
+
 @router.get("/meetings/{meeting_id}/action-items")
-async def get_meeting_action_items(
-    meeting_id: str,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
-):
+async def get_meeting_action_items(meeting_id: str, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)):
     """
     Retrieve normalized action items with durable status tracking.
 
     Status and reminder history are persisted in ``meeting.extra_data``.
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id,
-        ).first()
+        meeting = (
+            db.query(Meeting)
+            .filter(
+                Meeting.id == meeting_id,
+                Meeting.user_id == user_id,
+            )
+            .first()
+        )
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
@@ -2481,17 +2504,19 @@ async def get_meeting_action_items(
             elif due_state == "upcoming":
                 upcoming += 1
 
-            normalized_items.append({
-                "id": key,
-                "task": item.get("task"),
-                "owner": item.get("owner"),
-                "due_date": item.get("due_date"),
-                "priority": item.get("priority"),
-                "status": item_status,
-                "due_state": due_state,
-                "last_reminded_at": state.get("last_reminded_at"),
-                "reminder_channels": state.get("last_channels", []),
-            })
+            normalized_items.append(
+                {
+                    "id": key,
+                    "task": item.get("task"),
+                    "owner": item.get("owner"),
+                    "due_date": item.get("due_date"),
+                    "priority": item.get("priority"),
+                    "status": item_status,
+                    "due_state": due_state,
+                    "last_reminded_at": state.get("last_reminded_at"),
+                    "reminder_channels": state.get("last_channels", []),
+                }
+            )
 
         return {
             "meeting_id": meeting_id,
@@ -2512,10 +2537,7 @@ async def get_meeting_action_items(
 
 @router.post("/meetings/{meeting_id}/action-items/remind")
 async def send_action_item_reminders(
-    meeting_id: str,
-    payload: dict | None = None,
-    user_id: str = Depends(AuthDep),
-    db: Session = Depends(get_db)
+    meeting_id: str, payload: dict | None = None, user_id: str = Depends(AuthDep), db: Session = Depends(get_db)
 ):
     """
     Send follow-up reminders for meeting action items.
@@ -2526,10 +2548,14 @@ async def send_action_item_reminders(
     - slack (incoming webhook when configured)
     """
     try:
-        meeting = db.query(Meeting).filter(
-            Meeting.id == meeting_id,
-            Meeting.user_id == user_id,
-        ).first()
+        meeting = (
+            db.query(Meeting)
+            .filter(
+                Meeting.id == meeting_id,
+                Meeting.user_id == user_id,
+            )
+            .first()
+        )
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
@@ -2551,10 +2577,14 @@ async def send_action_item_reminders(
 
         # Determine preferred email provider based on connected calendar identity.
         preferred_provider = "gmail"
-        google_cred = db.query(CalendarOAuthCredential).filter(
-            CalendarOAuthCredential.user_id == user_id,
-            CalendarOAuthCredential.provider == "google",
-        ).first()
+        google_cred = (
+            db.query(CalendarOAuthCredential)
+            .filter(
+                CalendarOAuthCredential.user_id == user_id,
+                CalendarOAuthCredential.provider == "google",
+            )
+            .first()
+        )
         if not google_cred:
             preferred_provider = "outlook"
 
@@ -2568,12 +2598,14 @@ async def send_action_item_reminders(
 
             owner_email = str(item.get("owner") or "").strip()
             if not owner_email and "email" in channels:
-                reminder_results.append({
-                    "action_item_id": item["id"],
-                    "task": item.get("task"),
-                    "status": "skipped",
-                    "reason": "owner_email_missing",
-                })
+                reminder_results.append(
+                    {
+                        "action_item_id": item["id"],
+                        "task": item.get("task"),
+                        "status": "skipped",
+                        "reason": "owner_email_missing",
+                    }
+                )
                 continue
 
             channel_outcomes: dict[str, Any] = {}
@@ -2658,23 +2690,27 @@ async def send_action_item_reminders(
                 "last_channels": channels,
                 "last_results": channel_outcomes,
             }
-            reminder_results.append({
-                "action_item_id": item["id"],
-                "task": item.get("task"),
-                "status": "sent" if success else "failed",
-                "channel_results": channel_outcomes,
-            })
+            reminder_results.append(
+                {
+                    "action_item_id": item["id"],
+                    "task": item.get("task"),
+                    "status": "sent" if success else "failed",
+                    "channel_results": channel_outcomes,
+                }
+            )
 
         meeting_extra["action_item_tracker"] = tracker
         history = meeting_extra.get("action_item_reminder_runs", [])
         if not isinstance(history, list):
             history = []
-        history.append({
-            "run_at": datetime.utcnow().isoformat(),
-            "channels": channels,
-            "only_overdue": only_overdue,
-            "results_count": len(reminder_results),
-        })
+        history.append(
+            {
+                "run_at": datetime.utcnow().isoformat(),
+                "channels": channels,
+                "only_overdue": only_overdue,
+                "results_count": len(reminder_results),
+            }
+        )
         meeting_extra["action_item_reminder_runs"] = history[-50:]
         meeting.extra_data = meeting_extra
         db.commit()

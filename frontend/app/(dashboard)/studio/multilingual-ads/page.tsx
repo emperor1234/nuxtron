@@ -84,9 +84,9 @@ export default function MultilingualAdsPage() {
       <div style={{ background: 'var(--card)', borderBottom: '1px solid var(--line)', padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link href="/studio" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: 14 }}>← Studio</Link>
-          <span style={{ color: '#e7e9ef' }}>|</span>
+          <span style={{ color: "var(--line)" }}>|</span>
           <span style={{ fontSize: 22, fontWeight: 700 }}>🌐 Multilingual Ads</span>
-          <span style={{ background: '#6366f122', color: 'var(--brand)', fontSize: 11, padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>20+ LANGUAGES · RTL SUPPORT</span>
+          <span style={{ background: 'color-mix(in oklab, var(--info) 13%, transparent)', color: 'var(--brand)', fontSize: 11, padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>20+ LANGUAGES · RTL SUPPORT</span>
         </div>
         <Link href="/studio/social-studio/ads" style={{ background: 'var(--card)', color: 'var(--text)', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', fontSize: 13 }}>
           Ads Manager →
@@ -101,7 +101,7 @@ export default function MultilingualAdsPage() {
       </div>
 
       <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }}>
-        {error && <div style={{ background: '#fee2e233', border: '1px solid #EF4444', borderRadius: 8, padding: 12, marginBottom: 16, color: '#dc2626' }}>{error}</div>}
+        {error && <div style={{ background: 'color-mix(in oklab, var(--danger-soft) 20%, transparent)', border: '1px solid var(--danger)', borderRadius: 8, padding: 12, marginBottom: 16, color: 'var(--danger)' }}>{error}</div>}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 32 }}>
           {/* Left: Input form */}
@@ -123,7 +123,7 @@ export default function MultilingualAdsPage() {
                   <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>AD TYPE</label>
                   <div style={{ display: 'flex', gap: 8 }}>
                     {['social', 'search', 'display', 'email'].map((t) => (
-                      <button key={t} type="button" onClick={() => setAdType(t)} style={{ background: adType === t ? '#6366f1' : '#eef0f4', color: adType === t ? '#fff' : 'var(--muted)', border: `1px solid ${adType === t ? '#6366f1' : '#e7e9ef'}`, padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, textTransform: 'capitalize' }}>
+                      <button key={t} type="button" onClick={() => setAdType(t)} style={{ background: adType === t ? "var(--brand)" : "var(--line-soft)", color: adType === t ? '#fff' : 'var(--muted)', border: `1px solid ${adType === t ? 'var(--info)' : 'var(--neutral-soft)'}`, padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, textTransform: 'capitalize' }}>
                         {t}
                       </button>
                     ))}
@@ -137,11 +137,11 @@ export default function MultilingualAdsPage() {
                 </div>
 
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 20, fontSize: 14, color: 'var(--text)' }}>
-                  <input type="checkbox" checked={culturallyAdapt} onChange={(e) => setCulturallyAdapt(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#6366f1' }} />
+                  <input type="checkbox" checked={culturallyAdapt} onChange={(e) => setCulturallyAdapt(e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--info)' }} />
                   Cultural adaptation (idioms, tone, local references)
                 </label>
 
-                <button type="submit" disabled={translating} style={{ width: '100%', background: translating ? '#e7e9ef' : '#6366f1', color: '#fff', border: 'none', padding: '14px 24px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: translating ? 'not-allowed' : 'pointer' }}>
+                <button type="submit" disabled={translating} style={{ width: '100%', background: translating ? "var(--line)" : "var(--brand)", color: 'var(--on-brand)', border: 'none', padding: '14px 24px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: translating ? 'not-allowed' : 'pointer' }}>
                   {translating ? `⏳ Translating into ${targetLangs.length} languages…` : `🌐 Translate to ${targetLangs.length} Language${targetLangs.length !== 1 ? 's' : ''}`}
                 </button>
               </div>
@@ -150,17 +150,17 @@ export default function MultilingualAdsPage() {
               <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
                   Target Languages
-                  <span style={{ marginLeft: 8, background: '#6366f133', color: 'var(--brand)', fontSize: 11, padding: '2px 8px', borderRadius: 10 }}>{targetLangs.length} selected</span>
+                  <span style={{ marginLeft: 8, background: 'color-mix(in oklab, var(--info) 20%, transparent)', color: 'var(--brand)', fontSize: 11, padding: '2px 8px', borderRadius: 10 }}>{targetLangs.length} selected</span>
                 </div>
                 {loading ? (
                   <div style={{ color: 'var(--muted)', fontSize: 13 }}>Loading languages…</div>
                 ) : (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {languages.map((lang) => (
-                      <button key={lang.code} type="button" onClick={() => toggleLang(lang.code)} style={{ background: targetLangs.includes(lang.code) ? '#6366f133' : '#eef0f4', border: `1px solid ${targetLangs.includes(lang.code) ? '#6366f1' : '#e7e9ef'}`, color: targetLangs.includes(lang.code) ? 'var(--brand)' : 'var(--muted)', padding: '6px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <button key={lang.code} type="button" onClick={() => toggleLang(lang.code)} style={{ background: targetLangs.includes(lang.code) ? 'color-mix(in oklab, var(--info) 20%, transparent)' : "var(--line-soft)", border: `1px solid ${targetLangs.includes(lang.code) ? 'var(--info)' : 'var(--neutral-soft)'}`, color: targetLangs.includes(lang.code) ? 'var(--brand)' : 'var(--muted)', padding: '6px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span>{lang.flag}</span>
                         <span>{lang.name}</span>
-                        {lang.rtl && <span style={{ fontSize: 9, color: '#F59E0B', background: '#fef3c7', padding: '1px 4px', borderRadius: 3 }}>RTL</span>}
+                        {lang.rtl && <span style={{ fontSize: 9, color: 'var(--warning-ink)', background: 'var(--warning-soft)', padding: '1px 4px', borderRadius: 3 }}>RTL</span>}
                       </button>
                     ))}
                   </div>
@@ -174,7 +174,7 @@ export default function MultilingualAdsPage() {
               {[{ name: 'DeepL API', env: 'DEEPL_API_KEY', tier: 'Primary — highest quality' }, { name: 'OpenAI GPT-4', env: 'OPENAI_API_KEY', tier: 'Cultural adaptation' }, { name: 'Google Translate', env: 'GOOGLE_TRANSLATE_KEY', tier: 'Backup' }].map((v) => (
                 <div key={v.name} style={{ marginBottom: 8, padding: '8px 10px', background: 'var(--card)', borderRadius: 6 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{v.name}</div>
-                  <div style={{ fontSize: 10, color: '#6366f1' }}>{v.env}</div>
+                  <div style={{ fontSize: 10, color: "var(--brand)" }}>{v.env}</div>
                   <div style={{ fontSize: 10, color: 'var(--muted)' }}>{v.tier}</div>
                 </div>
               ))}
@@ -184,7 +184,7 @@ export default function MultilingualAdsPage() {
           {/* Right: Results */}
           <div>
             {results.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--muted)', background: 'var(--card)', borderRadius: 12, border: '1px dashed #e7e9ef' }}>
+              <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--muted)', background: 'var(--card)', borderRadius: 12, border: "1px dashed var(--line)" }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🌐</div>
                 <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Translations appear here</div>
                 <div style={{ fontSize: 13, color: 'var(--muted)' }}>Select target languages and click Translate</div>
@@ -193,7 +193,7 @@ export default function MultilingualAdsPage() {
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>{results.length} translations ready</span>
-                  <button onClick={() => { const text = results.map((r) => `[${r.language_name}]\n${r.translated_copy}`).join('\n\n---\n\n'); navigator.clipboard?.writeText(text); }} style={{ background: '#e7e9ef', color: 'var(--text)', border: 'none', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
+                  <button onClick={() => { const text = results.map((r) => `[${r.language_name}]\n${r.translated_copy}`).join('\n\n---\n\n'); navigator.clipboard?.writeText(text); }} style={{ background: "var(--line)", color: 'var(--text)', border: 'none', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
                     📋 Copy All
                   </button>
                 </div>
@@ -204,12 +204,12 @@ export default function MultilingualAdsPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: 18 }}>{languages.find((l) => l.code === t.language_code)?.flag ?? '🌐'}</span>
                           <span style={{ fontSize: 15, fontWeight: 700 }}>{t.language_name}</span>
-                          {t.rtl && <span style={{ background: '#fef3c7', color: '#F59E0B', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>RTL</span>}
-                          {t.culturally_adapted && <span style={{ background: '#dcfce733', color: '#22c55e', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>Culturally Adapted</span>}
+                          {t.rtl && <span style={{ background: 'var(--warning-soft)', color: 'var(--warning-ink)', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>RTL</span>}
+                          {t.culturally_adapted && <span style={{ background: 'color-mix(in oklab, var(--success-soft) 20%, transparent)', color: 'var(--success)', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>Culturally Adapted</span>}
                         </div>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                           <span style={{ fontSize: 11, color: 'var(--muted)' }}>{t.provider} · {t.characters} chars</span>
-                          <button onClick={() => navigator.clipboard?.writeText(t.translated_copy)} style={{ background: '#e7e9ef', color: 'var(--text)', border: 'none', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 11 }}>Copy</button>
+                          <button onClick={() => navigator.clipboard?.writeText(t.translated_copy)} style={{ background: "var(--line)", color: 'var(--text)', border: 'none', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 11 }}>Copy</button>
                         </div>
                       </div>
                       <div style={{ background: 'var(--card)', borderRadius: 8, padding: 14, fontSize: 14, lineHeight: 1.6, direction: t.rtl ? 'rtl' : 'ltr', textAlign: t.rtl ? 'right' : 'left', color: 'var(--text)' }}>

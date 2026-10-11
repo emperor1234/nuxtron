@@ -59,7 +59,6 @@ class ApiGovernanceContext:
     ira_events_store: list[JsonObject]
     siem_cases_store: list[JsonObject]
     vault_hashicorp_health: Callable[[], JsonObject]
-    vault_supabase_health: Callable[[], JsonObject]
     persist: Callable[[], None] = lambda: None  # noqa: E731 – default no-op for tests
 
 
@@ -420,7 +419,6 @@ def create_api_governance_router(ctx: ApiGovernanceContext) -> APIRouter:  # NOS
                 },
                 'vaults': {
                     'hashicorp': ctx.vault_hashicorp_health(),
-                    'supabase': ctx.vault_supabase_health(),
                 },
             },
         }

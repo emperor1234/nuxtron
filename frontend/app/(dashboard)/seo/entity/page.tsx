@@ -72,7 +72,7 @@ function ScoreRing({ score, label, color = 'var(--brand)' }: { score: number; la
 }
 
 function ProminenceBar({ value }: { value: number }) {
-  const color = value >= 0.7 ? '#26d78e' : value >= 0.4 ? '#ffb867' : 'var(--muted)';
+  const color = value >= 0.7 ? 'var(--success)' : value >= 0.4 ? 'var(--warning)' : 'var(--muted)';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 100 }}>
       <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 2 }}>
@@ -166,12 +166,12 @@ export default function EntityPage() {
   const td: React.CSSProperties = { padding: '10px 12px', fontSize: 13, borderBottom: '1px solid var(--line)' };
 
   const ENTITY_TYPE_COLORS: Record<string, string> = {
-    PERSON: '#1bc7ff',
-    ORG: '#26d78e',
-    LOC: '#ffb867',
-    PRODUCT: '#a78bfa',
-    EVENT: '#f87171',
-    CONCEPT: '#60a5fa',
+    PERSON: 'var(--series-1)',
+    ORG: 'var(--series-2)',
+    LOC: 'var(--series-3)',
+    PRODUCT: 'var(--series-4)',
+    EVENT: 'var(--series-5)',
+    CONCEPT: 'var(--series-6)',
   };
 
   const tabs = [
@@ -202,7 +202,7 @@ export default function EntityPage() {
         </p>
 
         {error && (
-          <div style={{ ...card, color: '#f87171', borderColor: '#f8717144', background: '#f8717111' }}>{error}</div>
+          <div style={{ ...card, color: 'var(--danger)', borderColor: 'color-mix(in oklab, var(--danger) 27%, transparent)', background: 'color-mix(in oklab, var(--danger) 7%, transparent)' }}>{error}</div>
         )}
 
         <section style={card}>
@@ -280,7 +280,7 @@ export default function EntityPage() {
               border: 'none',
               borderRadius: 8,
               background: loading ? 'var(--muted)' : 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 800,
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: 14,
@@ -318,10 +318,10 @@ export default function EntityPage() {
                 </div>
               </div>
               <div style={{ ...card, marginBottom: 0, display: 'flex', justifyContent: 'center' }}>
-                <ScoreRing score={coverageScore} label="Coverage" color="#26d78e" />
+                <ScoreRing score={coverageScore} label="Coverage" color="var(--success)" />
               </div>
               <div style={{ ...card, marginBottom: 0, display: 'flex', justifyContent: 'center' }}>
-                <ScoreRing score={authorityScore} label="Authority" color="#ffb867" />
+                <ScoreRing score={authorityScore} label="Authority" color="var(--warning)" />
               </div>
               <div
                 style={{
@@ -348,10 +348,10 @@ export default function EntityPage() {
                   justifyContent: 'center',
                 }}
               >
-                <span style={{ fontSize: 10, color: '#f87171', fontWeight: 700, textTransform: 'uppercase' }}>
+                <span style={{ fontSize: 10, color: 'var(--danger)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Missing
                 </span>
-                <span style={{ fontSize: 24, fontWeight: 800, color: '#f87171' }}>
+                <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--danger)' }}>
                   {result.missing_entities?.length ?? 0}
                 </span>
               </div>
@@ -363,7 +363,7 @@ export default function EntityPage() {
                   style={{
                     fontSize: 12,
                     fontWeight: 700,
-                    color: '#f87171',
+                    color: 'var(--danger)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 10,
@@ -379,7 +379,7 @@ export default function EntityPage() {
                         padding: '4px 12px',
                         borderRadius: 999,
                         background: 'rgba(248,113,113,0.1)',
-                        color: '#f87171',
+                        color: 'var(--danger)',
                         fontSize: 12,
                         fontWeight: 700,
                         border: '1px solid rgba(248,113,113,0.25)',
@@ -547,7 +547,7 @@ export default function EntityPage() {
                             border: '1px solid var(--line)',
                           }}
                         >
-                          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#ffb867' }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: 'var(--warning)' }}>
                             {cl.cluster}
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -558,7 +558,7 @@ export default function EntityPage() {
                                   padding: '3px 10px',
                                   borderRadius: 999,
                                   background: 'rgba(255,184,103,0.1)',
-                                  color: '#ffb867',
+                                  color: 'var(--warning)',
                                   fontSize: 11,
                                   fontWeight: 700,
                                   border: '1px solid rgba(255,184,103,0.25)',
@@ -591,7 +591,7 @@ export default function EntityPage() {
                       background: 'none',
                       border: '1px solid var(--line)',
                       borderRadius: 6,
-                      color: copied ? '#26d78e' : 'var(--muted)',
+                      color: copied ? 'var(--success)' : 'var(--muted)',
                       cursor: 'pointer',
                       fontSize: 12,
                       padding: '6px 12px',
@@ -646,7 +646,7 @@ export default function EntityPage() {
                             padding: '4px 12px',
                             borderRadius: 999,
                             background: 'rgba(167,139,250,0.1)',
-                            color: '#a78bfa',
+                            color: 'var(--info)',
                             fontSize: 12,
                             fontWeight: 700,
                             border: '1px solid rgba(167,139,250,0.25)',

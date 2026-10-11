@@ -35,14 +35,14 @@ const SECTIONS: readonly { title: string; blurb: string; routes: readonly string
   {
     title: 'Brand',
     blurb: 'Keep every asset consistent with your identity.',
-    routes: ['/studio/brands', '/studio/brand-kit', '/studio/lately/brand-voice', '/studio/lately/brand-hierarchy', '/studio/template-system'],
+    routes: ['/studio/brands', '/studio/brand-kit', '/studio/content-hub/brand-voice', '/studio/content-hub/brand-hierarchy', '/studio/template-system'],
   },
   {
     title: 'Publish & engage',
     blurb: 'Schedule, approve and respond across every channel.',
     routes: [
       '/studio/social-studio',
-      '/studio/scheduler',
+      '/studio/social-studio/posts',
       '/studio/social-studio/calendar',
       '/studio/social-studio/inbox',
       '/studio/social-studio/approvals',
@@ -57,13 +57,13 @@ const SECTIONS: readonly { title: string; blurb: string; routes: readonly string
       '/studio/rank-tracker',
       '/studio/backlink-intelligence',
       '/studio/answer-engine',
-      '/studio/lately/repurpose',
+      '/studio/content-hub/repurpose',
     ],
   },
   {
     title: 'Advertise',
     blurb: 'Test creative and stretch budget further.',
-    routes: ['/studio/ads-engine', '/studio/multilingual-ads', '/studio/lately/ab-testing'],
+    routes: ['/studio/ads-engine', '/studio/multilingual-ads', '/studio/content-hub/ab-testing'],
   },
   {
     title: 'Measure',
@@ -72,9 +72,8 @@ const SECTIONS: readonly { title: string; blurb: string; routes: readonly string
       '/studio/analytics',
       '/studio/agent-analytics',
       '/studio/intelligence',
-      '/studio/lately/roi-forecast',
-      '/studio/prompt-volumes',
-      '/studio/lately/word-cloud',
+      '/studio/content-hub/roi-forecast',
+      '/studio/content-hub/word-cloud',
     ],
   },
   {

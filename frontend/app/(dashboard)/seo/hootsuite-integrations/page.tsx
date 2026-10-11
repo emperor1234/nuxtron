@@ -195,7 +195,7 @@ export default function HootsuiteIntegrationsPage() {
             Export CSV
           </a>
         </div>
-        {error ? <p style={{ color: '#dc2626' }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)' }}>{error}</p> : null}
         {wiringApply ? (
           <p style={{ marginTop: 10, opacity: 0.85 }}>
             Wiring result: {wiringApply.checklist_summary?.configured_pct ?? '--'}% configured, gate{' '}
@@ -273,7 +273,7 @@ export default function HootsuiteIntegrationsPage() {
               marginTop: 12,
               maxHeight: 240,
               overflow: 'auto',
-              background: '#f6f7fa',
+              background: "var(--bg)",
               border: '1px solid var(--line)',
               borderRadius: 8,
               padding: 12,

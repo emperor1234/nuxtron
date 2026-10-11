@@ -14,7 +14,7 @@ from ..authz import has_any_role
 from ..deps import AuthContext, JwtClaims, _is_production_environment, _resolve_jwt_secret, require_auth, revoke_token
 from ..saml_sso import is_saml_enabled, login_url, metadata_xml  # pyright: ignore[reportUnknownVariableType]
 from ..saml_sso import process_acs as raw_process_acs
-from ..security_redis import fixed_window_increment, reset_counter
+from ..domains.identity.security_redis import fixed_window_increment, reset_counter
 
 # Type alias for dependency injection
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
@@ -24,6 +24,15 @@ JsonObject = dict[str, object]
 # Claims that establish identity, scope, or lifetime. A caller may never supply
 # these through JwtIssueRequest.additional_claims; the server always owns them.
 _RESERVED_JWT_CLAIMS = frozenset({'sub', 'tenant_id', 'roles', 'iat', 'exp', 'iss', 'jti'})
+
+
+def _reject_local_auth_in_production() -> None:
+    """Prevent local HS256 bootstrap flows from fabricating OIDC-incompatible sessions."""
+    if _is_production_environment():
+        raise HTTPException(
+            status_code=501,
+            detail='Local password authentication is disabled in production; use the configured OIDC identity flow.',
+        )
 
 
 def _validate_relay_state(relay_state: str | None) -> str | None:
@@ -267,7 +276,7 @@ def _register_jwt_routes(
         session to revoke. TTL matches the token's own remaining lifetime so
         the denylist entry never outlives the token it is blocking.
         """
-        if auth.auth_mode == 'bearer_jwt' and auth.jti:
+        if auth.auth_mode in {'bearer_jwt', 'oidc_bearer'} and auth.jti:
             ttl = max(int(auth.exp - time.time()), 1) if auth.exp else 86400
             await revoke_token(auth.jti, ttl)
             auth_security_memory.append({
@@ -761,6 +770,7 @@ class _UserAuthHandlers:
         })
 
     def register(self, payload: UserRegisterRequest, auth: AuthDep) -> JsonObject:
+        _reject_local_auth_in_production()
         self._rl(f'{auth.tenant_id}:auth:register', limit=10, window_seconds=60)
         email_clean = payload.email.strip().lower()
         email_hash = self._hash_email(email_clean)
@@ -794,6 +804,7 @@ class _UserAuthHandlers:
         }
 
     def login(self, payload: UserLoginRequest, auth: AuthDep, request: Request) -> JsonObject:
+        _reject_local_auth_in_production()
         # Tenant-wide limiter: coarse protection against overall abuse, but a
         # single busy tenant sharing this budget across all its users means it
         # is NOT sufficient brute-force protection for one targeted account.
@@ -841,6 +852,7 @@ class _UserAuthHandlers:
         return forwarded_for or (request.client.host if request.client else 'unknown')
 
     def request_reset(self, payload: PasswordResetRequestPayload, auth: AuthDep) -> JsonObject:
+        _reject_local_auth_in_production()
         self._rl(f'{auth.tenant_id}:auth:reset:req', limit=5, window_seconds=60)
         email_clean = payload.email.strip().lower()
         email_hash = self._hash_email(email_clean)
@@ -855,6 +867,7 @@ class _UserAuthHandlers:
         return {'status': 'ok', 'tenant_id': auth.tenant_id, 'result': result}
 
     def confirm_reset(self, payload: PasswordResetConfirmPayload, auth: AuthDep) -> JsonObject:
+        _reject_local_auth_in_production()
         self._rl(f'{auth.tenant_id}:auth:reset:confirm', limit=10, window_seconds=60)
         email_clean = payload.email.strip().lower()
         email_hash = self._hash_email(email_clean)

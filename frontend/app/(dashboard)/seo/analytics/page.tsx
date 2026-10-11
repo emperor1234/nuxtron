@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   CardTitle,
+  DataStatus,
   Field,
   Page,
   PageHeader,
@@ -95,6 +96,20 @@ export default function AnalyticsReportingPage() {
       <PageHeader
         title="Traffic Analytics"
         subtitle="Turn cross-channel KPI trends, risks, and opportunities into a prioritized action plan."
+        actions={
+          result ? (
+            <DataStatus
+              state={result.fallback ? "preview" : "live"}
+              provider={
+                result.fallback
+                  ? "an analytics provider"
+                  : result.analysis_mode === "llm"
+                    ? "AI provider"
+                    : "Nuxtron analytics"
+              }
+            />
+          ) : undefined
+        }
       />
 
       <Card>
@@ -161,7 +176,7 @@ export default function AnalyticsReportingPage() {
                 tone={result.analysis_mode === "llm" ? "success" : "neutral"}
               >
                 {result.analysis_mode === "llm"
-                  ? "Live AI analysis"
+                  ? "AI-generated analysis"
                   : "Heuristic analysis"}
               </Badge>
             ) : null}

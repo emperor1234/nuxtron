@@ -44,17 +44,17 @@ const NETWORK_COLORS: Record<string, string> = {
   facebook: '#1877F2',
   linkedin: '#0A66C2',
   tiktok: '#69C9D0',
-  youtube: '#FF0000',
+  youtube: 'var(--danger)',
 };
 
 const RIGHTS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  pending: { bg: '#fef3c722', color: '#F59E0B', label: 'Pending Rights' },
-  approved: { bg: '#dcfce722', color: '#22c55e', label: 'Rights Approved' },
-  declined: { bg: '#fee2e222', color: '#EF4444', label: 'Declined' },
-  not_requested: { bg: '#eef0f4', color: 'var(--muted)', label: 'Not Requested' },
+  pending: { bg: 'color-mix(in oklab, var(--warning-line) 13%, transparent)', color: 'var(--warning)', label: 'Pending Rights' },
+  approved: { bg: 'color-mix(in oklab, var(--success-soft) 13%, transparent)', color: 'var(--success)', label: 'Rights Approved' },
+  declined: { bg: 'color-mix(in oklab, var(--danger-soft) 13%, transparent)', color: 'var(--danger)', label: 'Declined' },
+  not_requested: { bg: 'var(--neutral-soft)', color: 'var(--muted)', label: 'Not Requested' },
 };
 
-const SENTIMENT_COLOR: Record<string, string> = { positive: '#22c55e', neutral: 'var(--muted)', negative: '#EF4444' };
+const SENTIMENT_COLOR: Record<string, string> = { positive: 'var(--success)', neutral: 'var(--muted)', negative: 'var(--danger)' };
 
 export default function UgcManagementPage() {
   const [assets, setAssets] = useState<UgcAsset[]>([]);
@@ -260,9 +260,9 @@ export default function UgcManagementPage() {
         <div style={styles.summaryBar}>
           {[
             { label: 'Total UGC', value: summary.total, icon: '🎨' },
-            { label: 'Pending Rights', value: summary.pending_rights, icon: '⏳', accent: '#F59E0B' },
-            { label: 'Approved', value: summary.approved, icon: '✅', accent: '#22c55e' },
-            { label: 'Declined', value: summary.declined, icon: '❌', accent: '#EF4444' },
+            { label: 'Pending Rights', value: summary.pending_rights, icon: '⏳', accent: 'var(--warning)' },
+            { label: 'Approved', value: summary.approved, icon: '✅', accent: 'var(--success)' },
+            { label: 'Declined', value: summary.declined, icon: '❌', accent: 'var(--danger)' },
           ].map((item) => (
             <div key={item.label} style={styles.summaryCard}>
               <span style={styles.summaryIcon}>{item.icon}</span>
@@ -357,7 +357,7 @@ export default function UgcManagementPage() {
                   <div
                     style={{
                       ...styles.contentTypeBadge,
-                      background: asset.content_type === 'video' ? '#6366f1' : '#eef0f4',
+                      background: asset.content_type === 'video' ? "var(--brand)" : "var(--line-soft)",
                     }}
                   >
                     {asset.content_type === 'video' ? '▶ Video' : '🖼 Image'}
@@ -365,7 +365,7 @@ export default function UgcManagementPage() {
                   <div
                     style={{
                       ...styles.networkBadgeOverlay,
-                      background: NETWORK_COLORS[asset.creator_network] ?? '#e7e9ef',
+                      background: NETWORK_COLORS[asset.creator_network] ?? 'var(--neutral-soft)',
                     }}
                   >
                     {asset.creator_network}
@@ -515,9 +515,9 @@ const styles: Record<string, React.CSSProperties> = {
   subtitle: { color: 'var(--muted)', fontSize: 14, marginTop: 6, lineHeight: 1.5 },
   discoverBtn: {
     alignSelf: 'center',
-    background: '#6366f1',
+    background: "var(--brand)",
     border: 'none',
-    color: '#FFFFFF',
+    color: 'var(--on-brand)FFF',
     borderRadius: 8,
     padding: '10px 14px',
     cursor: 'pointer',
@@ -525,8 +525,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
   },
   errorBanner: {
-    background: '#fee2e2',
-    border: '1px solid #EF4444',
+    background: 'var(--danger-soft)',
+    border: '1px solid var(--danger)',
     borderRadius: 8,
     padding: '10px 16px',
     marginBottom: 16,
@@ -536,13 +536,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
   },
   successBanner: {
-    background: '#dcfce733',
-    border: '1px solid #22c55e',
+    background: 'color-mix(in oklab, var(--success-soft) 20%, transparent)',
+    border: '1px solid var(--success)',
     borderRadius: 8,
     padding: '10px 16px',
     marginBottom: 16,
     fontSize: 14,
-    color: '#22c55e',
+    color: 'var(--success)',
   },
   iconBtn: { background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 16, padding: 4 },
   summaryBar: {
@@ -589,7 +589,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 4,
     fontSize: 10,
     fontWeight: 600,
-    color: '#fff',
+    color: 'var(--on-status)',
   },
   networkBadgeOverlay: {
     position: 'absolute',
@@ -599,7 +599,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 4,
     fontSize: 10,
     fontWeight: 600,
-    color: '#fff',
+    color: 'var(--on-status)',
     textTransform: 'capitalize',
   },
   assetContent: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 },
@@ -615,9 +615,9 @@ const styles: Record<string, React.CSSProperties> = {
   actionRow: { display: 'flex', gap: 8, marginTop: 4 },
   approveBtn: {
     flex: 1,
-    background: '#dcfce722',
-    border: '1px solid #22c55e',
-    color: '#22c55e',
+    background: 'color-mix(in oklab, var(--success-soft) 13%, transparent)',
+    border: '1px solid var(--success)',
+    color: 'var(--success)',
     padding: '6px 0',
     borderRadius: 6,
     cursor: 'pointer',
@@ -626,9 +626,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   declineBtn: {
     flex: 1,
-    background: '#fee2e222',
-    border: '1px solid #EF4444',
-    color: '#EF4444',
+    background: 'color-mix(in oklab, var(--danger-soft) 13%, transparent)',
+    border: '1px solid var(--danger)',
+    color: 'var(--danger)',
     padding: '6px 0',
     borderRadius: 6,
     cursor: 'pointer',
@@ -648,7 +648,7 @@ const styles: Record<string, React.CSSProperties> = {
   republishBtn: {
     flex: 1,
     background: 'var(--card)',
-    border: '1px solid #6366f1',
+    border: "1px solid var(--brand)",
     color: 'var(--brand)',
     padding: '6px 0',
     borderRadius: 6,
@@ -699,9 +699,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
   },
   primaryBtn: {
-    background: '#6366f1',
+    background: "var(--brand)",
     border: 'none',
-    color: '#fff',
+    color: 'var(--on-brand)',
     padding: '9px 24px',
     borderRadius: 8,
     cursor: 'pointer',

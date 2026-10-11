@@ -32,7 +32,7 @@ export default function TrafficSourcesDonut() {
           <text x="90" y="84" textAnchor="middle" style={{ fontFamily: 'var(--d-font-display)', fontSize: 28, fontWeight: 700, fill: '#0e1525' }}>
             {TRAFFIC_SOURCES_TOTAL}
           </text>
-          <text x="90" y="104" textAnchor="middle" style={{ fontSize: 12, fontWeight: 600, fill: '#9aa1b2' }}>
+          <text x="90" y="104" textAnchor="middle" style={{ fontSize: 12, fontWeight: 600, fill: 'var(--neutral)' }}>
             total visits
           </text>
         </svg>

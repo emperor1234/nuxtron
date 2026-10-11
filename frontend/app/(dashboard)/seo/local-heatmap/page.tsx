@@ -36,10 +36,10 @@ interface ScanWithGrid extends ScanResult {
 }
 
 function cellColor(rank: number) {
-  if (rank <= 3) return '#22c55e';
-  if (rank <= 7) return '#eab308';
-  if (rank <= 12) return '#f97316';
-  return '#ef4444';
+  if (rank <= 3) return 'var(--success)';
+  if (rank <= 7) return 'var(--warning)';
+  if (rank <= 12) return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 export default function LocalHeatmapPage() {
@@ -255,10 +255,10 @@ export default function LocalHeatmapPage() {
                   </div>
                   <div className="flex justify-center gap-4 mt-4 text-xs text-gray-500">
                     {[
-                      { c: '#22c55e', l: 'Top 3' },
-                      { c: '#eab308', l: '4–7' },
-                      { c: '#f97316', l: '8–12' },
-                      { c: '#ef4444', l: '13+' },
+                      { c: 'var(--success)', l: 'Top 3' },
+                      { c: 'var(--warning)', l: '4–7' },
+                      { c: 'var(--warning)', l: '8–12' },
+                      { c: 'var(--danger)', l: '13+' },
                     ].map((leg) => (
                       <div key={leg.l} className="flex items-center gap-1">
                         <div className="w-3 h-3 rounded" style={{ backgroundColor: leg.c }} />

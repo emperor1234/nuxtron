@@ -230,7 +230,7 @@ export default function PlatformPage() {
         hybrid:
           typeof payload.recommendation.hybrid === 'string' && payload.recommendation.hybrid.trim()
             ? payload.recommendation.hybrid
-            : 'OpenLens (Free) + Promptwatch (Paid)',
+            : 'Nuxtron AI visibility and optimization workflows',
         score:
           typeof payload.recommendation.score === 'string' && payload.recommendation.score.trim()
             ? payload.recommendation.score
@@ -239,7 +239,7 @@ export default function PlatformPage() {
         positioning:
           typeof payload.recommendation.positioning === 'string' && payload.recommendation.positioning.trim()
             ? payload.recommendation.positioning
-            : 'This is the only configuration that gives complete GEO + LLMO coverage at the lowest cost.',
+            : 'A unified workflow for visibility monitoring, diagnostics, and prioritized optimization.',
       });
     }
 

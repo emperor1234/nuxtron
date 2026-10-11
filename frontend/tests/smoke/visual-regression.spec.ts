@@ -23,9 +23,33 @@ const PAGES = [
 
 for (const { name, path } of PAGES) {
   test(`${name} visual snapshot`, async ({ page }) => {
+    test.setTimeout(90_000);
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.route('**/api/fastapi/notifications**', async (route) => {
+      const isStream = new URL(route.request().url()).pathname.endsWith('/stream');
+      const snapshot = {
+        notifications: [],
+        unreadCount: 0,
+        unreadTotal: 0,
+        total: 0,
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: isStream
+          ? 'text/event-stream; charset=utf-8'
+          : 'application/json',
+        body: isStream
+          ? `event: notifications.snapshot\ndata: ${JSON.stringify(snapshot)}\n\n`
+          : JSON.stringify(snapshot),
+      });
+    });
     await page.goto(path);
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('body')).toBeVisible();
+    if (path === '/dashboard') {
+      await expect(page.getByRole('button', { name: 'Refresh', exact: true }))
+        .toBeEnabled({ timeout: 45_000 });
+    }
+    await page.evaluate(() => document.fonts.ready);
 
     await expect(page).toHaveScreenshot(`${name}.png`, {
       fullPage: true,

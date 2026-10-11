@@ -109,10 +109,10 @@ export default function DisputesDashboardPage() {
         bars={ticketStatusBars}
         line={eventTrend}
         ring={[
-          { label: 'Open', value: openTickets, color: '#ef4444' },
-          { label: 'Queued', value: queuedHuman, color: '#f59e0b' },
-          { label: 'Resolved', value: Math.max(0, totalTickets - openTickets), color: '#22c55e' },
-          { label: 'Events', value: events.length, color: '#6366f1' },
+          { label: 'Open', value: openTickets, color: 'var(--danger)' },
+          { label: 'Queued', value: queuedHuman, color: 'var(--warning)' },
+          { label: 'Resolved', value: Math.max(0, totalTickets - openTickets), color: 'var(--success)' },
+          { label: 'Events', value: events.length, color: "var(--brand)" },
         ]}
       />
 

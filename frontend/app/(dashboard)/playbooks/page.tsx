@@ -16,15 +16,15 @@ function asArray(v: unknown): unknown[] {
 }
 
 const VERTICAL_COLORS: Record<string, string> = {
-  ecommerce: '#f59e0b',
-  saas: '#6366f1',
-  agency: '#6366f1',
-  media: '#ec4899',
-  fintech: '#22c55e',
-  healthtech: '#06b6d4',
-  nonprofit: '#84cc16',
-  education: '#f97316',
-  marketplace: '#8b5cf6',
+  ecommerce: 'var(--series-1)',
+  saas: 'var(--series-2)',
+  agency: 'var(--series-3)',
+  media: 'var(--series-4)',
+  fintech: 'var(--series-5)',
+  healthtech: 'var(--series-6)',
+  nonprofit: 'var(--series-7)',
+  education: 'var(--series-8)',
+  marketplace: 'var(--series-1)',
   other: 'var(--muted)',
 };
 
@@ -87,7 +87,7 @@ export default function PlaybooksPage() {
   return (
     <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '0.5rem' }}>Integration Playbooks</h1>
-      <p style={{ color: '#888', marginBottom: '1.5rem' }}>
+      <p style={{ color: 'var(--neutral)', marginBottom: '1.5rem' }}>
         10 prebuilt playbooks with measurable ROI targets — activate any in one click to start the Integration Flywheel.
       </p>
 
@@ -99,9 +99,9 @@ export default function PlaybooksPage() {
           style={{
             padding: '0.5rem 0.8rem',
             borderRadius: 6,
-            border: '1px solid #333',
-            background: '#111',
-            color: '#fff',
+            border: '1px solid var(--line)',
+            background: 'var(--card)',
+            color: 'var(--text)',
             minWidth: 200,
           }}
         />
@@ -111,9 +111,9 @@ export default function PlaybooksPage() {
           style={{
             padding: '0.5rem 0.8rem',
             borderRadius: 6,
-            border: '1px solid #333',
-            background: '#111',
-            color: '#fff',
+            border: '1px solid var(--line)',
+            background: 'var(--card)',
+            color: 'var(--text)',
           }}
         >
           {verticals.map((v) => (
@@ -128,8 +128,8 @@ export default function PlaybooksPage() {
           style={{
             padding: '0.5rem 1.2rem',
             borderRadius: 6,
-            background: '#6366f1',
-            color: '#fff',
+            background: "var(--brand)",
+            color: 'var(--on-brand)',
             border: 'none',
             cursor: 'pointer',
           }}
@@ -138,7 +138,7 @@ export default function PlaybooksPage() {
         </button>
       </div>
 
-      {error && <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</p>}
+      {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem' }}>{error}</p>}
       {runMsg && <p style={{ color: 'var(--brand)', marginBottom: '1rem', fontSize: '14px' }}>{runMsg}</p>}
 
       {/* Playbook grid */}
@@ -159,7 +159,7 @@ export default function PlaybooksPage() {
               key={`${asString(pb.id)}-${idx}`}
               style={{
                 background: 'var(--card)',
-                border: `1px solid ${pb.id === selectedPlaybook?.id ? '#6366f1' : '#222'}`,
+                border: `1px solid ${pb.id === selectedPlaybook?.id ? 'var(--info)' : 'var(--line)'}`,
                 borderRadius: 10,
                 padding: '1.25rem',
                 transition: 'border-color 0.15s',
@@ -203,30 +203,30 @@ export default function PlaybooksPage() {
                   {asString(pb.vertical)}
                 </span>
               </div>
-              <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '0.75rem' }}>{asString(pb.description)}</p>
+              <p style={{ color: 'var(--neutral)', fontSize: '13px', marginBottom: '0.75rem' }}>{asString(pb.description)}</p>
 
               {roi && (
-                <div style={{ fontSize: '13px', color: '#22c55e', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '13px', color: 'var(--success)', marginBottom: '0.5rem' }}>
                   🎯 ROI target: {asNumber(roi.value)} {asString(roi.metric).replaceAll('_', ' ')}
                 </div>
               )}
-              <div style={{ fontSize: '12px', color: '#888', marginBottom: '0.75rem' }}>
+              <div style={{ fontSize: '12px', color: 'var(--neutral)', marginBottom: '0.75rem' }}>
                 ⏱ Time to value: {asNumber(pb.time_to_value_days)} day(s)
               </div>
 
               {selectedPlaybook?.id === pb.id && (
                 <div style={{ marginTop: '0.75rem' }}>
-                  <div style={{ fontSize: '13px', color: '#888', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  <div style={{ fontSize: '13px', color: 'var(--neutral)', marginBottom: '0.5rem', fontWeight: 600 }}>
                     Steps:
                   </div>
-                  <ol style={{ paddingLeft: '1.2rem', margin: 0, fontSize: '13px', color: '#ccc' }}>
+                  <ol style={{ paddingLeft: '1.2rem', margin: 0, fontSize: '13px', color: 'var(--neutral-line)' }}>
                     {asArray(pb.steps).map((step, si) => (
                       <li key={`${asString(step).slice(0, 30)}-${si}`} style={{ marginBottom: '0.2rem' }}>
                         {asString(step)}
                       </li>
                     ))}
                   </ol>
-                  <div style={{ fontSize: '12px', color: '#888', marginTop: '0.5rem' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--neutral)', marginTop: '0.5rem' }}>
                     Integrations:{' '}
                     {asArray(pb.integrations)
                       .map((i) => asString(i))
@@ -242,8 +242,8 @@ export default function PlaybooksPage() {
                       style={{
                         padding: '0.4rem 0.8rem',
                         borderRadius: 6,
-                        background: '#6366f1',
-                        color: '#fff',
+                        background: "var(--brand)",
+                        color: 'var(--on-brand)',
                         border: 'none',
                         cursor: 'pointer',
                         fontSize: '13px',
@@ -260,8 +260,8 @@ export default function PlaybooksPage() {
                       style={{
                         padding: '0.4rem 0.8rem',
                         borderRadius: 6,
-                        background: '#16a34a',
-                        color: '#fff',
+                        background: 'var(--success-ink)',
+                        color: 'var(--on-status)',
                         border: 'none',
                         cursor: 'pointer',
                         fontSize: '13px',
@@ -284,9 +284,9 @@ export default function PlaybooksPage() {
           <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '1rem' }}>Recent Runs</h2>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #333' }}>
+              <tr style={{ borderBottom: '1px solid var(--line)', }}>
                 {['Playbook', 'Status', 'Dry Run', 'Steps', 'Date'].map((h) => (
-                  <th key={h} style={{ textAlign: 'left', padding: '0.4rem 0.6rem', color: '#888' }}>
+                  <th key={h} style={{ textAlign: 'left', padding: '0.4rem 0.6rem', color: 'var(--neutral)' }}>
                     {h}
                   </th>
                 ))}
@@ -296,17 +296,17 @@ export default function PlaybooksPage() {
               {runs.slice(0, 20).map((r, idx) => {
                 const run = r as Json;
                 return (
-                  <tr key={`${asString(run.id)}-${idx}`} style={{ borderBottom: '1px solid #1a1a1a' }}>
+                  <tr key={`${asString(run.id)}-${idx}`} style={{ borderBottom: '1px solid var(--line-soft)' }}>
                     <td style={{ padding: '0.4rem 0.6rem' }}>{asString(run.playbook_name)}</td>
                     <td
                       style={{
                         padding: '0.4rem 0.6rem',
-                        color: asString(run.status).includes('dry') ? '#f59e0b' : '#22c55e',
+                        color: asString(run.status).includes('dry') ? 'var(--warning)' : 'var(--success)',
                       }}
                     >
                       {asString(run.status)}
                     </td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: '#888' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--neutral)' }}>
                       {(() => {
                         // NOSONAR
                         if (run.dry_run === true) return 'true';
@@ -317,7 +317,7 @@ export default function PlaybooksPage() {
                     <td style={{ padding: '0.4rem 0.6rem' }}>
                       {asNumber(run.steps_completed)}/{asNumber(run.steps_total)}
                     </td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: '#888', fontSize: '12px' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--neutral)', fontSize: '12px' }}>
                       {asString(run.created_at).slice(0, 10)}
                     </td>
                   </tr>

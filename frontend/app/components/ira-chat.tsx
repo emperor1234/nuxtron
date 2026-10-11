@@ -306,7 +306,7 @@ function IraProviderRouteSection({
           ))}
         </div>
       ) : null}
-      {unavailableRouteReason ? <div style={{ fontSize: 11, color: '#b45309' }}>{unavailableRouteReason}</div> : null}
+      {unavailableRouteReason ? <div style={{ fontSize: 11, color: 'var(--warning-ink)' }}>{unavailableRouteReason}</div> : null}
       </div>
     </details>
   );

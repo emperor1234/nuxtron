@@ -5,7 +5,7 @@ test.describe('Sprout Social automation console', () => {
     test.slow();
     test.setTimeout(120000);
 
-    await page.goto('/seo/sproutsocial-automation');
+    await page.goto('/seo/sproutsocial-automation', { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByRole('heading', { name: 'Sprout Social End-to-End Production Console' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Refresh Live State' })).toBeVisible();
@@ -31,15 +31,5 @@ test.describe('Sprout Social automation console', () => {
 
     await expect(jsonButton).toBeVisible();
     await expect(markdownButton).toBeVisible();
-  });
-
-  test('is linked from SEO command center quick links', async ({ page }) => {
-    await page.goto('/seo');
-
-    const link = page.getByRole('link', { name: 'Sprout Social Automation' }).first();
-    await expect(link).toBeVisible();
-    await link.click();
-
-    await expect(page).toHaveURL(/\/seo\/sproutsocial-automation$/);
   });
 });

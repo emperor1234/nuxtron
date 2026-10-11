@@ -16,12 +16,7 @@ export default function TrendsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadTrends();
-  }, []);
-
   async function loadTrends() {
-    setError(null);
     try {
       const result = await socialApi.fetchTrends();
       setTrends(result || []);
@@ -38,16 +33,26 @@ export default function TrendsPage() {
     }
   }
 
+  useEffect(() => {
+    let active = true;
+    globalThis.queueMicrotask(() => {
+      if (active) void loadTrends();
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const getMomentumColor = (momentum: string) => {
     switch (momentum) {
       case 'emerging':
-        return '#8B5CF6';
+        return 'var(--info)';
       case 'uptrend':
-        return '#10B981';
+        return 'var(--success)';
       case 'peak':
-        return '#F59014';
+        return 'var(--warning)';
       case 'downtrend':
-        return '#EF4444';
+        return 'var(--danger)';
       default:
         return 'var(--muted)';
     }
@@ -93,7 +98,7 @@ export default function TrendsPage() {
           onClick={() => setSelectedCategory(null)}
           style={{
             ...styles.filterBtn,
-            backgroundColor: !selectedCategory ? '#6366f1' : '#eef0f4',
+            backgroundColor: !selectedCategory ? "var(--brand)" : "var(--line-soft)",
             color: 'var(--text)',
           }}
         >
@@ -105,7 +110,7 @@ export default function TrendsPage() {
             onClick={() => setSelectedCategory(cat)}
             style={{
               ...styles.filterBtn,
-              backgroundColor: selectedCategory === cat ? '#6366f1' : '#eef0f4',
+              backgroundColor: selectedCategory === cat ? "var(--brand)" : "var(--line-soft)",
               color: 'var(--text)',
             }}
           >
@@ -161,7 +166,7 @@ export default function TrendsPage() {
                       <span
                         style={{
                           ...styles.metricValue,
-                          color: trend.roiPotential > 7 ? '#10B981' : '#F59014',
+                          color: trend.roiPotential > 7 ? 'var(--success)' : 'var(--warning)',
                         }}
                       >
                         {trend.roiPotential}/10
@@ -259,7 +264,7 @@ const styles: Record<string, React.CSSProperties> = {
   errorBanner: {
     backgroundColor: 'rgba(245, 158, 11, 0.12)',
     border: '1px solid rgba(245, 158, 11, 0.4)',
-    color: '#b45309',
+    color: 'var(--warning-ink)',
     padding: '12px 14px',
     borderRadius: '10px',
     marginBottom: '16px',
@@ -279,7 +284,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     fontWeight: 500,
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'background-color 200ms ease',
   },
   trendsGrid: {
     display: 'grid',
@@ -291,7 +296,6 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--line)',
     borderRadius: '12px',
     padding: '20px',
-    transition: 'all 0.3s',
   },
   trendHeader: {
     display: 'flex',
@@ -347,7 +351,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text)',
   },
   forecastBox: {
-    borderLeft: '3px solid #6366f1',
+    borderLeft: "3px solid var(--brand)",
     paddingLeft: '12px',
     marginBottom: '16px',
     paddingTop: '8px',
@@ -384,7 +388,7 @@ const styles: Record<string, React.CSSProperties> = {
   tag: {
     display: 'inline-block',
     padding: '4px 10px',
-    backgroundColor: '#8B5CF626',
+    backgroundColor: 'color-mix(in oklab, var(--info) 15%, transparent)',
     color: 'var(--brand)',
     borderRadius: '4px',
     fontSize: '12px',
@@ -392,7 +396,7 @@ const styles: Record<string, React.CSSProperties> = {
   accountTag: {
     display: 'inline-block',
     padding: '4px 10px',
-    backgroundColor: '#6366f126',
+    backgroundColor: 'color-mix(in oklab, var(--info) 15%, transparent)',
     color: 'var(--brand)',
     borderRadius: '4px',
     fontSize: '12px',
@@ -400,14 +404,13 @@ const styles: Record<string, React.CSSProperties> = {
   actionBtn: {
     width: '100%',
     padding: '10px',
-    backgroundColor: '#6366f1',
+    backgroundColor: "var(--brand)",
     color: 'var(--text)',
     border: 'none',
     borderRadius: '6px',
     fontSize: '14px',
     fontWeight: 600,
     cursor: 'pointer',
-    transition: 'all 0.2s',
   },
   skeleton: {
     display: 'grid',
@@ -425,7 +428,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '60px 24px',
     backgroundColor: 'var(--card)',
     borderRadius: '12px',
-    border: '1px dashed #e7e9ef',
+    border: "1px dashed var(--line)",
   },
   emptyIcon: {
     fontSize: '48px',

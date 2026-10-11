@@ -1,43 +1,175 @@
-/*
- * Dashboard design tokens — the single source of truth for color, typography,
- * spacing, radius, and elevation across every (dashboard) route.
- *
- * Mirrors the approved "Nuxtron Dashboard" reference (light, data-dense). Pages
- * consume these via the `nx-*` custom properties and the primitives in
- * `kit.tsx`, replacing per-page inline palettes so the whole app stays visually
- * consistent. Scoped to `.nxScope` (applied by the shell) to avoid leaking into
- * the public/marketing surface.
- */
+/* Product tokens inherit the shared identity; all product routes use this scope. */
 .nxScope {
-  --nx-bg: #f5f6f9;
-  --nx-card: #ffffff;
-  --nx-border: #e7e9ef;
-  --nx-border-soft: #eef0f4;
-  --nx-ink: #0e1525;
-  --nx-ink-2: #3d4456;
-  --nx-muted: #6b7385;
-  --nx-faint: #9aa1b2;
-
-  --nx-brand: #6d5efc;
-  --nx-brand-2: #a855f7;
-  --nx-brand-soft: #efeefe;
-
-  --nx-green: #10b981;
-  --nx-green-soft: #e7f8f1;
-  --nx-blue: #0ea5e9;
-  --nx-amber: #f59e0b;
-  --nx-pink: #ec4899;
-  --nx-red: #ef4444;
-  --nx-red-soft: #fdecec;
-
-  --nx-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-  --nx-shadow-lg: 0 8px 30px rgba(16, 24, 40, 0.08);
-  --nx-radius: 16px;
-  --nx-radius-sm: 10px;
+  --nx-bg: var(--bg);
+  --nx-card: var(--card);
+  --nx-border: var(--line);
+  --nx-border-soft: var(--line-soft);
+  --nx-ink: var(--text);
+  --nx-ink-2: var(--ink-2);
+  --nx-muted: var(--muted);
+  --nx-faint: var(--faint);
+  --nx-brand: var(--brand);
+  --nx-brand-2: var(--brand);
+  --nx-brand-soft: var(--brand-soft);
+  --nx-brand-hover: var(--brand-hover);
+  /* State colours come from the shared semantic palette in globals.css. The
+     nx-* names stay as aliases so existing product pages keep working. */
+  --nx-success: var(--success);
+  --nx-success-ink: var(--success-ink);
+  --nx-success-soft: var(--success-soft);
+  --nx-success-line: var(--success-line);
+  --nx-warning: var(--warning);
+  --nx-warning-ink: var(--warning-ink);
+  --nx-warning-soft: var(--warning-soft);
+  --nx-warning-line: var(--warning-line);
+  --nx-danger: var(--danger);
+  --nx-danger-ink: var(--danger-ink);
+  --nx-danger-soft: var(--danger-soft);
+  --nx-danger-line: var(--danger-line);
+  --nx-info: var(--info);
+  --nx-info-ink: var(--info-ink);
+  --nx-info-soft: var(--info-soft);
+  --nx-info-line: var(--info-line);
+  --nx-neutral: var(--neutral);
+  --nx-neutral-soft: var(--neutral-soft);
+  --nx-neutral-line: var(--neutral-line);
+  --nx-on-status: var(--on-status);
+  --nx-green: var(--success);
+  --nx-green-soft: var(--success-soft);
+  --nx-blue: var(--info);
+  --nx-amber: var(--warning);
+  --nx-pink: var(--series-5);
+  --nx-red: var(--danger);
+  --nx-red-soft: var(--danger-soft);
+  --nx-shadow: var(--shadow-sm);
+  --nx-shadow-lg: var(--shadow-lg);
+  --nx-radius: 10px;
+  --nx-radius-sm: 6px;
   --nx-radius-pill: 999px;
+  --nx-gap: 24px;
+  --nx-font: var(--font-geist-sans), system-ui, sans-serif;
+  --nx-font-display: var(--nx-font);
+  --nx-line: var(--nx-border);
+  --nx-surface: var(--nx-card);
+  --nx-radius-md: var(--nx-radius);
+}
+.nxScope :where(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--nx-font);
+}
+.nxScope :where(input, select, textarea) {
+  max-width: 100%;
+  min-width: 0;
+}
+.nxScope :where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--nx-brand);
+  outline-offset: 3px;
+}
+.nxScope :where(main) {
+  animation: none;
+}
+.nxScope :where(.card, .ui-surface, .ui-stat, .ui-hero) {
+  box-shadow: var(--nx-shadow);
+  border-radius: var(--nx-radius);
+}
+.nxScope :where(.card, .ui-surface, .ui-stat):hover {
+  transform: none;
+}
+@media (max-width: 640px) {
+  .nxScope {
+    --nx-gap: 18px;
+  }
+  .nxScope :where(input, select, textarea) {
+    font-size: 16px;
+  }
+}
 
-  --nx-gap: 20px;
+/* ---------------------------------------------------------------------------
+   Native-control baseline.
 
-  --nx-font: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --nx-font-display: var(--font-grotesk), 'Space Grotesk', var(--nx-font);
+   Half the product routes render plain <button>, <input>, <select> and
+   <textarea> with no styling of their own, so they fell back to browser
+   defaults and sat beside hand-styled controls on the same screen. These rules
+   use :where(), which carries zero specificity: a page that styles its own
+   controls (by class, utility or inline style) still wins, while everything
+   unstyled now matches the kit. Buttons that wrap a block layout (a whole
+   clickable card, a tile) are excluded so they keep their own shape.
+   --------------------------------------------------------------------------- */
+.nxScope :where(button, [type='button'], [type='submit'], [type='reset']):not(
+    :has(> div, > article, > section, > figure, > ul, > ol, > table, > h1, > h2, > h3, > h4)
+  ) {
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  min-height: 36px;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  background: var(--nx-card);
+  color: var(--nx-ink);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+.nxScope :where(button, [type='button'], [type='submit']):not(:has(> div, > article, > section)):hover:not(:disabled) {
+  background: var(--nx-neutral-soft);
+  border-color: var(--nx-ink-2);
+}
+.nxScope :where(button):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.nxScope :where(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']), select, textarea) {
+  font: inherit;
+  padding: 8px 10px;
+  min-height: 36px;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  background: var(--nx-card);
+  color: var(--nx-ink);
+}
+.nxScope :where(input, select, textarea)::placeholder {
+  color: var(--nx-faint);
+}
+.nxScope :where(input, select, textarea):disabled {
+  background: var(--nx-neutral-soft);
+  color: var(--nx-muted);
+}
+.nxScope :where(textarea) {
+  min-height: 84px;
+  resize: vertical;
+}
+.nxScope :where(input[type='checkbox'], input[type='radio']) {
+  accent-color: var(--nx-brand);
+  width: 16px;
+  height: 16px;
+}
+
+.nxScope :where(table) {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.nxScope :where(th) {
+  text-align: left;
+  font-weight: 600;
+  color: var(--nx-muted);
+}
+.nxScope :where(th, td) {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--nx-border-soft);
+}
+.nxScope :where(hr) {
+  border: 0;
+  border-top: 1px solid var(--nx-border-soft);
+  margin: 16px 0;
+}
+.nxScope :where(a:not([class])) {
+  color: var(--nx-brand);
+  text-underline-offset: 2px;
 }

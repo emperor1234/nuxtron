@@ -1,0 +1,1 @@
+"""Integrations/Platforms bounded context."""

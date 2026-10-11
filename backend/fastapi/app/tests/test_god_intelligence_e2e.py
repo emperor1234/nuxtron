@@ -651,7 +651,7 @@ async def test_99_summary():
 ║  ✓ Logging & Monitoring                                                   ║
 ║  ✓ End-to-End Data Flows                                                  ║
 ║                                                                            ║
-║  DATABASE: 11 Supabase tables with RLS policies                           ║
+║  DATABASE: 11 PostgreSQL tables with RLS policies                         ║
 ║  API CALLS: Real integrations (Twitter, Meta, News, Claude)               ║
 ║  ALGORITHMS: Fully implemented scoring & prediction                       ║
 ║  UI: Complete React dashboard (8 tabs)                                    ║

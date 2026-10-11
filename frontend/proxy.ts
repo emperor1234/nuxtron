@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken } from '@/app/lib/auth/jwt-edge';
+import INTERNAL_CONSOLES from '@/app/lib/internal-consoles.json';
 import { SESSION_COOKIE_NAME } from '@/app/lib/auth/session-cookie';
+import {
+  PRODUCT_COOKIE_NAME,
+  UNAVAILABLE_QUERY_PARAM,
+  productForPath,
+  resolveProductLine,
+} from '@/app/lib/product-line';
 import { buildContentSecurityPolicy, generateNonce } from '@/app/lib/security/csp';
 
 /**
- * Proxy runs before matched requests. Two jobs:
+ * Proxy runs before matched requests. Three jobs:
  *
  * 1. Inject X-Tenant-Id on /api/fastapi/* calls so pages never need to pass
  *    it manually. Security headers are already handled in next.config.ts
@@ -22,6 +29,12 @@ import { buildContentSecurityPolicy, generateNonce } from '@/app/lib/security/cs
  * allowlist the known public surface instead: anything not in it is
  * treated as protected by default, so a newly added authenticated route
  * is protected automatically without this file needing an update.
+ *
+ * 3. Product lines (app/lib/product-line.ts): a session signed in to one
+ *    product (SEO or Marketing) is redirected away from the other product's
+ *    routes to `/dashboard?unavailable=<owner>`. `/dashboard` is the shared
+ *    Home rail section, so `productForPath('/dashboard')` is always "shared"
+ *    and the redirect can never bounce back into this branch (no loop).
  */
 
 const PUBLIC_EXACT_PATHS = new Set([
@@ -36,11 +49,13 @@ const PUBLIC_EXACT_PATHS = new Set([
   '/features',
   '/integrations',
   '/login',
+  '/marketing',
   '/pricing',
   '/privacy',
   '/register',
   '/reset-password',
   '/terms',
+  '/tools',
   '/trust',
 ]);
 
@@ -50,7 +65,9 @@ const PUBLIC_EXACT_PATHS = new Set([
 // covers individual [slug] post pages (the index itself is /blog, above).
 const PUBLIC_PREFIXES = ['/tools/', '/blog/'];
 
-// Paths that require an elevated role beyond plain authentication. The
+// Paths that require an elevated role beyond plain authentication — the
+// super-admin backend console plus the internal vendor-integration consoles
+// listed in app/lib/internal-consoles.json. The
 // backend RBAC layer (backend/fastapi/app/authz.py) is the real
 // authorization boundary for API calls; this is a UI-level defense-in-depth
 // gate so a non-admin session never even receives the admin page shell.
@@ -62,7 +79,7 @@ const PUBLIC_PREFIXES = ['/tools/', '/blog/'];
 // code; gating them here would incorrectly lock out regular users, and
 // `/platform` itself hosts unrelated non-admin feature pages (e.g.
 // /platform/owly-writer-ai), so the match must not be a bare prefix.
-const ADMIN_ONLY_PATHS = ['/platform/backend'];
+const ADMIN_ONLY_PATHS = ['/platform/backend', ...INTERNAL_CONSOLES.paths];
 const ADMIN_ROLES = new Set(['admin', 'super_admin']);
 
 // Same escape hatch as ClientAuthGuard (app/components/client-auth-guard.tsx)
@@ -95,11 +112,45 @@ async function guardAppRoute(request: NextRequest): Promise<NextResponse | null>
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isAdminOnlyPath(pathname) && !claims.roles.some((role) => ADMIN_ROLES.has(role))) {
+  const isAdmin = claims.roles.some((role) => ADMIN_ROLES.has(role));
+
+  if (isAdminOnlyPath(pathname) && !isAdmin) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  return null;
+  return guardProductLine(request, pathname, {
+    claim: claims.product,
+    cookie: request.cookies.get(PRODUCT_COOKIE_NAME)?.value,
+    isAdmin,
+  });
+}
+
+/**
+ * Keeps a product-restricted session inside its own product. The session's
+ * product comes from the verified JWT claim first, then the httpOnly product
+ * cookie set by /api/auth/session (both narrowed by `parseProductLine`, so a
+ * tampered value simply means "unrestricted legacy session", never a crash or
+ * an escalation). Admins and pre-product-line sessions are unrestricted.
+ *
+ * This is a UI-mode boundary, not an entitlement: the backend API remains the
+ * authorization boundary for data.
+ */
+function guardProductLine(
+  request: NextRequest,
+  pathname: string,
+  input: Parameters<typeof resolveProductLine>[0]
+): NextResponse | null {
+  const product = resolveProductLine(input);
+  if (!product) return null;
+
+  const owner = productForPath(pathname);
+  if (owner === 'shared' || owner === product) return null;
+
+  // Built from request.url with a fixed path, so the redirect can never leave
+  // this origin, and `owner` is one of the two literal product names.
+  const target = new URL('/dashboard', request.url);
+  target.searchParams.set(UNAVAILABLE_QUERY_PARAM, owner);
+  return NextResponse.redirect(target);
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {

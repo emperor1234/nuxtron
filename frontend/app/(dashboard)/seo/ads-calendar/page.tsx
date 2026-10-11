@@ -138,11 +138,11 @@ export default function CalendarPage() {
   const days = buildCalendarDays(year, month);
 
   return (
-    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg, #0a0a0a)', color: 'var(--text, #f1f5f9)' }}>
+    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ margin: 0, fontSize: 26 }}>Campaign Calendar</h1>
-          <div style={{ fontSize: 12, color: '#64748b' }}>
+          <h1 style={{ margin: 0, fontSize: 26 }}>Ads Calendar</h1>
+          <div style={{ fontSize: 12, color: "var(--muted)" }}>
             {rescheduling ? 'Rescheduling…' : 'Drag events to reschedule'}
           </div>
         </div>
@@ -153,9 +153,9 @@ export default function CalendarPage() {
               marginTop: 12,
               padding: 12,
               borderRadius: 10,
-              border: '1px solid #ef4444',
-              color: '#dc2626',
-              background: '#7f1d1d22',
+              border: '1px solid var(--danger)',
+              color: 'var(--danger)',
+              background: 'var(--danger-soft)',
               fontSize: 13,
             }}
           >
@@ -168,9 +168,9 @@ export default function CalendarPage() {
               marginTop: 12,
               padding: 12,
               borderRadius: 10,
-              border: '1px solid #22c55e',
-              color: '#86efac',
-              background: '#14532d22',
+              border: '1px solid var(--success)',
+              color: 'var(--success)',
+              background: 'var(--success-soft)',
               fontSize: 13,
             }}
           >
@@ -185,8 +185,8 @@ export default function CalendarPage() {
             style={{
               padding: '6px 14px',
               borderRadius: 8,
-              border: '1px solid var(--line, #333)',
-              color: 'var(--text, #f1f5f9)',
+              border: '1px solid var(--line)',
+              color: 'var(--text)',
               background: 'transparent',
               cursor: 'pointer',
               fontSize: 14,
@@ -202,8 +202,8 @@ export default function CalendarPage() {
             style={{
               padding: '6px 14px',
               borderRadius: 8,
-              border: '1px solid var(--line, #333)',
-              color: 'var(--text, #f1f5f9)',
+              border: '1px solid var(--line)',
+              color: 'var(--text)',
               background: 'transparent',
               cursor: 'pointer',
               fontSize: 14,
@@ -214,7 +214,7 @@ export default function CalendarPage() {
         </div>
 
         {loading ? (
-          <div style={{ marginTop: 40, textAlign: 'center', color: '#64748b' }}>Loading calendar…</div>
+          <div style={{ marginTop: 40, textAlign: 'center', color: "var(--muted)" }}>Loading calendar…</div>
         ) : (
           <>
             {/* Weekday headers */}
@@ -226,7 +226,7 @@ export default function CalendarPage() {
                     textAlign: 'center',
                     fontSize: 11,
                     fontWeight: 700,
-                    color: '#64748b',
+                    color: "var(--muted)",
                     textTransform: 'uppercase',
                     padding: '4px 0',
                   }}
@@ -264,8 +264,8 @@ export default function CalendarPage() {
                     style={{
                       listStyle: 'none',
                       minHeight: 80,
-                      background: isToday ? '#6366f122' : 'var(--bg-soft, #111)',
-                      border: isToday ? '1px solid #6366f1' : '1px solid var(--line, #333)',
+                      background: isToday ? 'color-mix(in oklab, var(--info) 13%, transparent)' : 'var(--bg-soft)',
+                      border: isToday ? "1px solid var(--brand)" : '1px solid var(--line)',
                       borderRadius: 8,
                       padding: 6,
                     }}
@@ -274,7 +274,7 @@ export default function CalendarPage() {
                       style={{
                         fontSize: 11,
                         fontWeight: isToday ? 800 : 400,
-                        color: isToday ? '#93c5fd' : '#64748b',
+                        color: isToday ? 'var(--info-line)' : "var(--muted)",
                         marginBottom: 4,
                       }}
                     >
@@ -293,8 +293,8 @@ export default function CalendarPage() {
                         style={{
                           padding: '3px 6px',
                           borderRadius: 6,
-                          background: '#6366f1',
-                          color: '#bfdbfe',
+                          background: "var(--brand)",
+                          color: 'var(--info-line)',
                           fontSize: 10,
                           fontWeight: 700,
                           marginBottom: 2,
@@ -324,9 +324,9 @@ export default function CalendarPage() {
                         key={c.id}
                         style={{
                           padding: '10px 14px',
-                          background: 'var(--bg-soft, #111)',
+                          background: 'var(--bg-soft)',
                           borderRadius: 10,
-                          border: '1px solid var(--line, #333)',
+                          border: '1px solid var(--line)',
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
@@ -341,9 +341,9 @@ export default function CalendarPage() {
                               style={{
                                 padding: '2px 8px',
                                 borderRadius: 999,
-                                background: '#6366f122',
-                                color: '#93c5fd',
-                                border: '1px solid #6366f155',
+                                background: 'color-mix(in oklab, var(--info) 13%, transparent)',
+                                color: 'var(--info-line)',
+                                border: '1px solid color-mix(in oklab, var(--info) 33%, transparent)',
                                 fontSize: 11,
                               }}
                             >

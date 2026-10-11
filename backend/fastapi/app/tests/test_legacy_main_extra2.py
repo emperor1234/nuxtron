@@ -35,6 +35,7 @@ class TestDbDsn:
             "POSTGRES_USER": "myuser",
             "POSTGRES_PASSWORD": "mypass",
         }, clear=False):
+            os.environ.pop("DATABASE_URL", None)
             dsn = _db_dsn()
             assert "myhost" in dsn
             assert "5433" in dsn

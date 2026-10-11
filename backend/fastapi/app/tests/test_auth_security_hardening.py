@@ -140,17 +140,24 @@ class TestLogoutRevocation:
             headers=_bearer(token),
             json={"token": token},
         )
-        # If Redis is unavailable in this environment, revocation fails open
-        # by design (see deps._is_token_revoked) and this will be 200 with
-        # valid=True instead of 401 — both are acceptable here since the
-        # denylist is defense-in-depth, not the only auth check. The
-        # meaningful assertion is that the call didn't error out.
+        # Development keeps availability-friendly behavior when Redis is not
+        # configured; production fails closed in deps._is_token_revoked.
         assert reuse_resp.status_code in (200, 401)
 
     def test_logout_is_noop_for_api_key_auth(self, client: TestClient) -> None:
         r = client.post("/auth/logout", headers=H_API_KEY)
         assert r.status_code == 200
         assert r.json()["result"]["revoked"] is False
+
+
+class TestProductionLocalAuthBoundary:
+    def test_local_auth_is_disabled_in_production(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from backend.fastapi.app.routers.auth import _reject_local_auth_in_production
+
+        monkeypatch.setenv("ENVIRONMENT", "production")
+        with pytest.raises(Exception) as exc_info:
+            _reject_local_auth_in_production()
+        assert getattr(exc_info.value, "status_code", None) == 501
 
 
 class TestAuthzHelpers:

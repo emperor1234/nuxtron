@@ -24,10 +24,10 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..deps import require_auth
+from ..domains.identity.async_egress import outbound_async_request, resolve_outbound_target_async
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -288,6 +288,7 @@ class ToolConfigRequest(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _mask(key: str) -> str:
     """Return last-4 chars mask, safe for storage."""
     if not key or len(key) < 4:
@@ -326,6 +327,7 @@ def _tool_status(spec: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Router factory
 # ---------------------------------------------------------------------------
+
 
 def create_tool_integrations_router() -> APIRouter:
     router = APIRouter(prefix="/integrations", tags=["integrations"], dependencies=[Depends(require_auth)])
@@ -398,6 +400,7 @@ def create_tool_integrations_router() -> APIRouter:
             login = os.getenv("DATAFORSEO_LOGIN", "")
             if login and env_val:
                 import base64
+
                 token = base64.b64encode(f"{login}:{env_val}".encode()).decode()
                 headers["Authorization"] = f"Basic {token}"
         elif tool_key == "serper":
@@ -421,8 +424,14 @@ def create_tool_integrations_router() -> APIRouter:
 
         t0 = time.monotonic()
         try:
-            async with httpx.AsyncClient(timeout=8.0) as client:
-                resp = await client.get(test_url, headers=headers)
+            target = await resolve_outbound_target_async(test_url)
+            resp = await outbound_async_request(
+                "GET",
+                target,
+                headers=headers,
+                timeout=8.0,
+                max_response_bytes=256_000,
+            )
             latency_ms = int((time.monotonic() - t0) * 1000)
             # 200/401/403 all mean the endpoint is reachable
             if resp.status_code < 500:
@@ -442,11 +451,11 @@ def create_tool_integrations_router() -> APIRouter:
             }
         except Exception as exc:
             latency_ms = int((time.monotonic() - t0) * 1000)
-            logger.warning("Tool test failed for %s: %s", tool_key, exc)
+            logger.warning("Tool test failed for %s (%s)", tool_key, type(exc).__name__)
             return {
                 "tool_key": tool_key,
                 "status": "error",
-                "reason": str(exc),
+                "reason": "Connection test failed.",
                 "latency_ms": latency_ms,
                 "tested_at": datetime.now(UTC).isoformat(),
             }

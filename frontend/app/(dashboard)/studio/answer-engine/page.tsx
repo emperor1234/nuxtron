@@ -133,7 +133,7 @@ export default function AnswerEngineHub() {
               setSelectedBrand(e.target.value);
               if (e.target.value) fetchInsight(e.target.value);
             }}
-            placeholder="Enter brand name (e.g., Profound)"
+            placeholder="Enter a brand name"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
           />
         </div>

@@ -12,6 +12,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from .context_registry import register_all_contexts, register_shared_application_state
+from .infrastructure import wire_process_infrastructure
 from .lifespan import application_lifespan
 from .middleware import allow_api_docs, configure_exception_handlers, configure_middleware
 
@@ -21,6 +22,7 @@ APPLICATION_VERSION = '2.1.0'
 
 def create_app() -> FastAPI:
     """Build a fully wired, independent FastAPI application."""
+    wire_process_infrastructure()
     docs_enabled = allow_api_docs()
     application = FastAPI(
         title=APPLICATION_TITLE,

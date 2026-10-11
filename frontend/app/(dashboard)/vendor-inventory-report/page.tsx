@@ -63,7 +63,7 @@ type VendorReportJsonResponse = {
 
 function barGradient(percent: number): string {
   const safe = Math.max(0, Math.min(percent, 100));
-  return `linear-gradient(90deg, #0f766e 0%, #14b8a6 ${safe}%, rgba(20, 184, 166, 0.14) ${safe}%, rgba(20, 184, 166, 0.08) 100%)`;
+  return `linear-gradient(90deg, var(--info-ink) 0%, var(--info) ${safe}%, rgba(20, 184, 166, 0.14) ${safe}%, rgba(20, 184, 166, 0.08) 100%)`;
 }
 
 function downloadTextFile(filename: string, content: string, mimeType: string): void {
@@ -165,7 +165,7 @@ export default function VendorInventoryReportPage() {
             {loading ? 'Refreshing...' : 'Refresh Report'}
           </button>
         </div>
-        {error ? <p style={{ color: '#f87171', marginTop: 12 }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)', marginTop: 12 }}>{error}</p> : null}
       </section>
 
       {report ? (
@@ -282,7 +282,7 @@ export default function VendorInventoryReportPage() {
               <button onClick={() => void downloadCsv()}>Download CSV</button>
             </div>
           </div>
-          {exportStatus ? <p style={{ marginTop: 0, color: '#99f6e4' }}>{exportStatus}</p> : null}
+          {exportStatus ? <p style={{ marginTop: 0, color: 'var(--info-line)' }}>{exportStatus}</p> : null}
           <ul className="bullet-list">
             {report.export_rows.slice(0, 12).map((item) => (
               <li key={`${item.source}-${item.vendor}-${item.integration}`}>

@@ -4,6 +4,7 @@ Implements A/B testing, copy generation, brand kits, competitor analysis, etc.
 """
 
 import math
+import os
 import random
 import threading
 import uuid
@@ -13,6 +14,10 @@ from typing import TypedDict
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..deps import require_auth
+
+
+def _strict_production() -> bool:
+    return os.getenv('ENVIRONMENT', 'development').strip().lower() == 'production'
 
 # ============ IN-MEMORY STORES ============
 _store_lock = threading.Lock()
@@ -1310,13 +1315,15 @@ async def generate_text_to_video(payload: dict, tenant_id: str = "default"):
     - PIKA_API_KEY: Pika Labs for text-to-video
     - KLING_API_KEY: Kling AI for 4K video generation
     - HEYGEN_API_KEY: HeyGen for avatar-based video
-    Fallback: queued job with placeholder when no provider configured.
+    Development-only queue metadata is returned when no provider is configured.
     """
     import os as _os
     try:
         prompt = str(payload.get("prompt", "")).strip()
         if not prompt:
             raise HTTPException(status_code=422, detail="prompt is required")
+        if _strict_production():
+            raise HTTPException(status_code=503, detail="Text-to-video provider worker is not configured.")
         
         platform = str(payload.get("platform", "instagram")).lower()
         format_type = str(payload.get("format", "reel")).lower()  # reel|story|feed|youtube_short|tiktok
@@ -1336,7 +1343,7 @@ async def generate_text_to_video(payload: dict, tenant_id: str = "default"):
         # Provider dispatch (configured at deployment)
         provider = "queued"
         video_url = f"/storage/videos/gen/{job_id}.mp4"
-        thumbnail_url = f"https://picsum.photos/seed/{job_id[:8]}/1080/1920"
+        thumbnail_url = None
         estimated_completion_s = 45
         
         runway_key = _os.getenv("RUNWAY_API_KEY", "")
@@ -1500,7 +1507,7 @@ async def list_avatars():
     """List available AI avatars for UGC video creation (no real actors needed).
     
     Vendor: HeyGen API (configured via HEYGEN_API_KEY env var).
-    Fallback: built-in catalog with static previews.
+    Built-in catalog with static previews.
     """
     return {"avatars": _avatar_catalog, "total": len(_avatar_catalog)}
 
@@ -1609,7 +1616,7 @@ async def generate_product_photoshoot(payload: dict, tenant_id: str = "default")
     - OPENAI_API_KEY: DALL-E 3 for product scene generation
     - FAL_AI_KEY: fal.ai for fast inference (stable-diffusion-xl)
     - CLIPDROP_API_KEY: Clipdrop (Stability) for background replacement
-    Fallback: queued job with placeholder when no provider configured.
+    Development-only queue metadata is returned when no provider is configured.
     """
     import os as _os
     try:
@@ -1623,6 +1630,8 @@ async def generate_product_photoshoot(payload: dict, tenant_id: str = "default")
         
         if not product_image_url and not custom_prompt:
             raise HTTPException(status_code=422, detail="Either product_image_url or custom_prompt is required")
+        if _strict_production():
+            raise HTTPException(status_code=503, detail="Product photoshoot provider worker is not configured.")
         
         style = next((s for s in PHOTOSHOOT_STYLES if s["id"] == style_id), PHOTOSHOOT_STYLES[0])
         num_outputs = max(1, min(8, num_outputs))
@@ -1650,7 +1659,7 @@ async def generate_product_photoshoot(payload: dict, tenant_id: str = "default")
                 "style": style_id,
                 "status": "pending",
                 "image_url": None,
-                "thumbnail_url": f"https://picsum.photos/seed/{job_id[:6]}{i}/800/800",
+                "thumbnail_url": None,
                 "resolution": "2048x2048",
                 "format": "PNG",
             })
@@ -1712,13 +1721,15 @@ async def generate_multilingual_ads(payload: dict, tenant_id: str = "default"):
     - DEEPL_API_KEY: DeepL Pro for high-quality translation
     - OPENAI_API_KEY: GPT-4 for culturally-adapted copy (not just translation)
     - GOOGLE_TRANSLATE_KEY: Google Cloud Translation fallback
-    Fallback: structured placeholder with language metadata.
+    Development-only source-copy metadata is returned when no provider is configured.
     """
     import os as _os
     try:
         source_copy = str(payload.get("source_copy", "")).strip()
         if not source_copy:
             raise HTTPException(status_code=422, detail="source_copy is required")
+        if _strict_production():
+            raise HTTPException(status_code=503, detail="Translation provider worker is not configured.")
         
         source_language = str(payload.get("source_language", "en"))
         target_languages = payload.get("target_languages", ["es", "fr", "de"])
@@ -1746,7 +1757,8 @@ async def generate_multilingual_ads(payload: dict, tenant_id: str = "default"):
             is_rtl = lang_info.get("rtl", False)
             
             # Production flow: call DeepL/OpenAI/Google for real translation
-            # Here we produce a structured response suitable for production wiring
+            # Development-only metadata; production is guarded above until a
+            # real translation provider client is configured.
             translation_note = ""
             if deepl_key and not deepl_key.startswith("local"):
                 translation_note = "deepl_pro"
@@ -1759,7 +1771,7 @@ async def generate_multilingual_ads(payload: dict, tenant_id: str = "default"):
             
             results[lang_code] = {
                 "language": lang_info,
-                "translated_copy": source_copy if translation_note == "queued_for_translation" else f"[{lang_info['name']}] {source_copy}",
+                "translated_copy": source_copy if translation_note == "queued_for_translation" else None,
                 "is_rtl": is_rtl,
                 "culturally_adapted": culturally_adapt and translation_note.startswith("openai"),
                 "provider": translation_note,
@@ -1983,7 +1995,7 @@ async def import_template(payload: dict, tenant_id: str = "default"):
     - Canva Connect API (CANVA_CLIENT_ID + CANVA_CLIENT_SECRET)
     - Figma REST API (FIGMA_ACCESS_TOKEN)
     - Adobe Creative SDK (ADOBE_CLIENT_ID)
-    Fallback: accept image upload URL directly.
+    Accept an image upload URL directly.
     """
     import os as _os
     try:

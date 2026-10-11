@@ -4,17 +4,17 @@ import { useEffect, useState } from 'react';
 import { adsApi, AdsConnector, AdsPlatform, PLATFORM_LABELS } from '@/app/lib/ads-api';
 
 const STATUS_COLORS: Record<string, string> = {
-  connected: '#22c55e',
-  disconnected: '#6b7280',
-  auth_pending: '#f59e0b',
+  connected: 'var(--success)',
+  disconnected: 'var(--neutral)',
+  auth_pending: 'var(--warning)',
 };
 
 const FALLBACK_PLATFORM_ACCENT: Record<AdsPlatform, string> = {
   google_ads: '#4285F4',
   microsoft_ads: '#00A4EF',
-  amazon_ads: '#f59e0b',
-  apple_search_ads: '#cbd5e1',
-  youtube_ads: '#ef4444',
+  amazon_ads: 'var(--warning)',
+  apple_search_ads: 'var(--neutral-line)',
+  youtube_ads: 'var(--danger)',
 };
 
 function PlatformLogo({ platform }: Readonly<{ platform: AdsPlatform }>) {
@@ -42,7 +42,7 @@ function PlatformLogo({ platform }: Readonly<{ platform: AdsPlatform }>) {
           width: 28,
           height: 28,
           borderRadius: 8,
-          background: '#ffffff',
+          background: 'var(--card)fff',
           border: '1px solid var(--line)',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))',
@@ -66,9 +66,9 @@ function PlatformLogo({ platform }: Readonly<{ platform: AdsPlatform }>) {
           width: 28,
           height: 28,
           borderRadius: 999,
-          background: '#ffffff',
+          background: 'var(--card)fff',
           border: '1px solid var(--line)',
-          color: '#f59e0b',
+          color: 'var(--warning)',
           display: 'grid',
           placeItems: 'center',
           fontSize: 15,
@@ -87,7 +87,7 @@ function PlatformLogo({ platform }: Readonly<{ platform: AdsPlatform }>) {
           width: 28,
           height: 28,
           borderRadius: 999,
-          background: '#ffffff',
+          background: 'var(--card)fff',
           border: '1px solid var(--line)',
           color: 'var(--text)',
           display: 'grid',
@@ -107,9 +107,9 @@ function PlatformLogo({ platform }: Readonly<{ platform: AdsPlatform }>) {
         width: 28,
         height: 28,
         borderRadius: 8,
-        background: '#991b1b',
-        border: '1px solid #ef4444',
-        color: '#ffffff',
+        background: 'var(--danger-ink)',
+        border: '1px solid var(--danger)',
+        color: 'var(--on-status)fff',
         display: 'grid',
         placeItems: 'center',
         fontSize: 12,
@@ -133,16 +133,16 @@ function ConnectorCard({
   onDisconnect: (platform: AdsPlatform) => void;
   busy: boolean;
 }>) {
-  const color = STATUS_COLORS[connector.status] ?? '#6b7280';
-  const accent = connector.platform_accent ?? FALLBACK_PLATFORM_ACCENT[connector.platform] ?? '#6366f1';
+  const color = STATUS_COLORS[connector.status] ?? 'var(--neutral)';
+  const accent = connector.platform_accent ?? FALLBACK_PLATFORM_ACCENT[connector.platform] ?? 'var(--info)';
 
   return (
     <>
       <div
         className="connector-card"
         style={{
-          background: 'var(--bg-soft, #111)',
-          border: '1px solid var(--line, #333)',
+          background: 'var(--bg-soft)',
+          border: '1px solid var(--line)',
           borderRadius: 16,
           padding: 18,
           boxShadow: '0 2px 8px rgba(2, 6, 23, 0.2)',
@@ -163,7 +163,7 @@ function ConnectorCard({
                 className="connector-description"
                 style={{
                   fontSize: 12,
-                  color: '#64748b',
+                  color: "var(--muted)",
                   marginTop: 4,
                   lineHeight: 1.45,
                   transition: 'color 0.18s ease',
@@ -187,9 +187,9 @@ function ConnectorCard({
               padding: '4px 10px',
               fontSize: 11,
               fontWeight: 800,
-              background: `${color}22`,
+              background: `color-mix(in srgb, ${color} 13.33%, transparent)`,
               color,
-              border: `1px solid ${color}55`,
+              border: `1px solid color-mix(in srgb, ${color} 33.33%, transparent)`,
             }}
           >
             {connector.status.replace('_', ' ')}
@@ -212,8 +212,8 @@ function ConnectorCard({
               style={{
                 padding: '7px 16px',
                 borderRadius: 8,
-                border: '1px solid #ef4444',
-                color: '#ef4444',
+                border: '1px solid var(--danger)',
+                color: 'var(--danger)',
                 background: 'transparent',
                 cursor: busy ? 'not-allowed' : 'pointer',
                 fontSize: 13,
@@ -229,9 +229,9 @@ function ConnectorCard({
               style={{
                 padding: '7px 16px',
                 borderRadius: 8,
-                border: '1px solid #6366f1',
-                color: '#93c5fd',
-                background: '#6366f122',
+                border: "1px solid var(--brand)",
+                color: 'var(--info-line)',
+                background: 'color-mix(in oklab, var(--info) 13%, transparent)',
                 cursor: busy ? 'not-allowed' : 'pointer',
                 fontSize: 13,
                 fontWeight: 700,
@@ -264,12 +264,12 @@ function ConnectorCard({
 
         .connector-card:hover .connector-description,
         .connector-card:focus-within .connector-description {
-          color: #cbd5e1;
+          color: var(--neutral-line);
         }
 
         .connector-card:hover .connector-account,
         .connector-card:focus-within .connector-account {
-          color: #e2e8f0;
+          color: var(--neutral-soft);
         }
       `}</style>
     </>
@@ -279,7 +279,7 @@ function ConnectorCard({
 function Stat({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div>
-      <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+      <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
       <div style={{ fontWeight: 800, fontSize: 15, marginTop: 2 }}>{value}</div>
     </div>
   );
@@ -353,18 +353,18 @@ export default function ConnectorsPage() {
   const connected = connectors.filter((c) => c.connected).length;
 
   return (
-    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg, #0a0a0a)', color: 'var(--text, #f1f5f9)' }}>
+    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 26 }}>Ad Network Connectors</h1>
-            <p style={{ color: '#64748b', marginTop: 6, marginBottom: 0, fontSize: 14 }}>
+            <p style={{ color: "var(--muted)", marginTop: 6, marginBottom: 0, fontSize: 14 }}>
               Connect ad platforms via OAuth to enable campaign management and reporting.
             </p>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 28, fontWeight: 900, color: '#22c55e' }}>{connected}</div>
-            <div style={{ fontSize: 12, color: '#64748b' }}>of {connectors.length} connected</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--success)' }}>{connected}</div>
+            <div style={{ fontSize: 12, color: "var(--muted)" }}>of {connectors.length} connected</div>
           </div>
         </div>
 
@@ -374,9 +374,9 @@ export default function ConnectorsPage() {
               marginTop: 14,
               padding: 12,
               borderRadius: 10,
-              border: '1px solid #ef4444',
-              color: '#dc2626',
-              background: '#7f1d1d22',
+              border: '1px solid var(--danger)',
+              color: 'var(--danger)',
+              background: 'var(--danger-soft)',
               fontSize: 13,
             }}
           >
@@ -389,9 +389,9 @@ export default function ConnectorsPage() {
               marginTop: 14,
               padding: 12,
               borderRadius: 10,
-              border: '1px solid #22c55e',
-              color: '#86efac',
-              background: '#14532d22',
+              border: '1px solid var(--success)',
+              color: 'var(--success)',
+              background: 'var(--success-soft)',
               fontSize: 13,
             }}
           >
@@ -400,7 +400,7 @@ export default function ConnectorsPage() {
         )}
 
         {loading ? (
-          <div style={{ marginTop: 40, textAlign: 'center', color: '#64748b' }}>Loading connectors…</div>
+          <div style={{ marginTop: 40, textAlign: 'center', color: "var(--muted)" }}>Loading connectors…</div>
         ) : (
           <div
             style={{

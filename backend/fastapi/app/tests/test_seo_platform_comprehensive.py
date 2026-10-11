@@ -36,7 +36,7 @@ def no_live_db_connections():
 @pytest.fixture(autouse=True)
 def no_live_llm_calls():
     # Avoid slow external LLM calls during broad smoke coverage tests.
-    with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value={"fallback": True})):
+    with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value={"fallback": True})):
         yield
 
 

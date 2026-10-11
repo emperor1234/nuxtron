@@ -8,30 +8,27 @@ Extracted from legacy_main.py. Routes depend on mutable app state
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from ..deps import require_auth
-
 from ..production_middleware import get_health_check_data, get_metrics_data
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
+from ..rate_limiter import RateLimitMetrics
 
 JsonObject = dict[str, object]
 
 
 def create_health_router(
     *,
-    get_db_ready: 'Callable[[], bool]',
-    auth_security_memory: 'list[dict[str, Any]]',
-    notifications_memory: 'list[dict[str, Any]]',
-    all_stores_fn: 'Callable[[], dict[str, list[dict[str, Any]]]]',
-    rate_buckets: 'Mapping[str, list[float]]',
-    rate_lock: Any,
+    get_db_ready: Callable[[], bool],
+    auth_security_memory: list[dict[str, Any]],
+    notifications_memory: list[dict[str, Any]],
+    all_stores_fn: Callable[[], dict[str, list[dict[str, Any]]]],
+    rate_metrics_snapshot: Callable[[], RateLimitMetrics],
 ) -> APIRouter:
     """Build the health / metrics router with injected dependencies."""
     router = APIRouter(tags=['health'])
@@ -66,7 +63,7 @@ def create_health_router(
             from sqlalchemy import text
             with get_db_session() as session:
                 session.execute(text('SELECT 1'))
-        except Exception as exc:
+        except Exception:
             return JSONResponse(
                 status_code=503,
                 content={'status': 'not-ready', 'reason': 'Database connectivity check failed'},
@@ -119,7 +116,7 @@ def create_health_router(
     @router.get('/metrics', dependencies=[Depends(require_auth)])
     def metrics() -> JsonObject:
         all_queues = all_stores_fn()
-        return get_metrics_data(all_queues, rate_buckets, rate_lock)
+        return get_metrics_data(all_queues, rate_metrics_snapshot())
 
     @router.get('/ai/ping')
     def ai_ping() -> JsonObject:

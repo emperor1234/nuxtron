@@ -1,5 +1,35 @@
 'use client';
 
+import {
+  AudioLines,
+  Bot,
+  Box,
+  CalendarDays,
+  CheckCircle2,
+  Clapperboard,
+  Film,
+  Glasses,
+  Globe,
+  Image as ImageIcon,
+  LayoutTemplate,
+  Link2,
+  MessagesSquare,
+  Music,
+  PenLine,
+  Presentation,
+  Radar,
+  Scissors,
+  Smartphone,
+  Sparkles,
+  TrendingUp,
+  UserRound,
+  Users,
+  Workflow,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+import { SocialStudioHeader } from "./social-studio-header";
+import type { Route } from 'next';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
@@ -573,7 +603,7 @@ const EDIT_TOOL_OPTIONS = [
 const HUBSPOT_FEATURES: HubspotFeature[] = [
   {
     id: 'crm',
-    title: 'HubSpot CRM',
+    title: 'HubSpot CRM sync',
     summary: 'Sync leads and deal context for campaign personalization in social workflows.',
     href: '/hubspot-e2e#hubspot-product-completion',
   },
@@ -585,32 +615,70 @@ const HUBSPOT_FEATURES: HubspotFeature[] = [
   },
   {
     id: 'academy',
-    title: 'HubSpot Knowledge Base',
+    title: 'HubSpot setup guide',
     summary: 'Operational docs for campaign setup, contacts, and reporting best practices.',
     href: '/hubspot-e2e#validation-boundaries',
   },
   {
     id: 'api',
-    title: 'HubSpot Developer Platform',
+    title: 'HubSpot API docs',
     summary: 'Use API docs to wire custom sync, attribution, and event ingestion.',
     href: '/hubspot-e2e',
   },
 ];
+/** One icon per studio module, replacing the emoji the tiles used to carry. */
+const STUDIO_MODULE_ICONS: Record<string, LucideIcon> = {
+  music: Music,
+  "sound-design": AudioLines,
+  "faceless-video": Clapperboard,
+  ar: Glasses,
+  vr: Box,
+  hologram: Sparkles,
+  "short-video": Film,
+  reels: Smartphone,
+  images: ImageIcon,
+  slides: Presentation,
+  blogs: PenLine,
+  avatars: UserRound,
+  templates: LayoutTemplate,
+  editing: Scissors,
+};
+
+const OPS_MODULE_ICONS: Record<string, LucideIcon> = {
+  accounts: Link2,
+  autonomous: Bot,
+  trends: Radar,
+  calendar: CalendarDays,
+  kpi: TrendingUp,
+  approvals: CheckCircle2,
+  inbox: MessagesSquare,
+  ugc: Users,
+  browser_capture: Globe,
+  mobile: Smartphone,
+  optimization: Zap,
+  manychat: Workflow,
+};
+
+function ModuleGlyph({ icons, id }: { icons: Record<string, LucideIcon>; id: string }) {
+  const Icon = icons[id] ?? Sparkles;
+  return <Icon size={18} strokeWidth={1.8} aria-hidden="true" />;
+}
+
 const CATEGORY_THEMES = [
-  { icon: '🎵', color: '#4c8dff' },
-  { icon: '🧾', color: '#2bd97f' },
-  { icon: '📊', color: '#ffb41f' },
-  { icon: '🗓️', color: '#a55cff' },
-  { icon: '📈', color: '#ff5f6d' },
-  { icon: '🧠', color: '#14c4e6' },
-  { icon: '🎬', color: '#7d8cff' },
-  { icon: '📱', color: '#2dd4bf' },
+  { icon: '🎵', color: 'var(--info)' },
+  { icon: '🧾', color: 'var(--success)' },
+  { icon: '📊', color: 'var(--warning)' },
+  { icon: '🗓️', color: 'var(--info)' },
+  { icon: '📈', color: 'var(--danger)' },
+  { icon: '🧠', color: 'var(--info)' },
+  { icon: '🎬', color: 'var(--info)' },
+  { icon: '📱', color: 'var(--info)' },
   { icon: '🖼️', color: 'var(--brand)' },
-  { icon: '📚', color: '#34d399' },
-  { icon: '✍️', color: '#f59e0b' },
-  { icon: '🧑', color: '#c084fc' },
-  { icon: '🧩', color: '#fb7185' },
-  { icon: '✂️', color: '#22d3ee' },
+  { icon: '📚', color: 'var(--success)' },
+  { icon: '✍️', color: 'var(--warning)' },
+  { icon: '🧑', color: 'var(--info)' },
+  { icon: '🧩', color: 'var(--danger)' },
+  { icon: '✂️', color: 'var(--info)' },
 ];
 const MODULE_PRESETS: Record<string, ModulePreset> = {
   music: {
@@ -780,18 +848,18 @@ const SOCIAL_OPS_MODULES: SocialOpsModule[] = [
   },
 ];
 const SOCIAL_OPS_ACCENT_BY_ID: Record<SocialOpsModuleId, string> = {
-  accounts: '#6366f1',
-  autonomous: '#22c55e',
-  trends: '#f59e0b',
-  calendar: '#a855f7',
-  kpi: '#ef4444',
-  approvals: '#06b6d4',
-  inbox: '#2dd4bf',
-  ugc: '#f97316',
-  browser_capture: '#8b5cf6',
-  mobile: '#22c55e',
-  optimization: '#f59e0b',
-  manychat: '#0ea5e9',
+  accounts: 'var(--series-1)',
+  autonomous: 'var(--series-2)',
+  trends: 'var(--series-3)',
+  calendar: 'var(--series-4)',
+  kpi: 'var(--series-5)',
+  approvals: 'var(--series-6)',
+  inbox: 'var(--series-7)',
+  ugc: 'var(--series-8)',
+  browser_capture: 'var(--series-1)',
+  mobile: 'var(--series-2)',
+  optimization: 'var(--series-3)',
+  manychat: 'var(--series-4)',
 };
 
 const SOCIAL_OPS_ROUTE_BY_MODULE_ID: Record<SocialOpsModuleId, string> = {
@@ -844,29 +912,29 @@ function createModuleVisualFromHex(accentHex: string): ModuleVisualTheme {
   const rgb = hexToRgbChannels(accentHex);
   return {
     heroBorder: accentHex,
-    heroBackground: `linear-gradient(135deg, color-mix(in oklab, ${accentHex} 24%, #eef0f4) 0%, color-mix(in oklab, ${accentHex} 16%, #eef0f4) 52%, color-mix(in oklab, ${accentHex} 56%, #6366f1) 130%)`,
+    heroBackground: `linear-gradient(135deg, color-mix(in oklab, ${accentHex} 24%, var(--neutral-soft)) 0%, color-mix(in oklab, ${accentHex} 16%, var(--neutral-soft)) 52%, color-mix(in oklab, ${accentHex} 56%, var(--info)) 130%)`,
     glowOne: `rgba(${rgb}, 0.28)`,
     glowTwo: `rgba(${rgb}, 0.18)`,
     focusBorder: `color-mix(in oklab, ${accentHex} 42%, var(--line))`,
-    focusBackground: `linear-gradient(180deg, color-mix(in oklab, ${accentHex} 34%, #0f1f3f) 0%, color-mix(in oklab, ${accentHex} 20%, #0d1a34) 100%)`,
+    focusBackground: `linear-gradient(180deg, color-mix(in oklab, ${accentHex} 10%, var(--bg-soft)) 0%, var(--bg-soft) 100%)`,
   };
 }
 
 const CATEGORY_ACCENT_BY_ID: Record<string, string> = Object.fromEntries(
   STUDIO_CATEGORIES.map((category, index) => [
     category.id,
-    CATEGORY_THEMES[index % CATEGORY_THEMES.length]?.color ?? '#4c8dff',
+    CATEGORY_THEMES[index % CATEGORY_THEMES.length]?.color ?? 'var(--info)',
   ])
 );
 
 const CATEGORY_SECONDARY_ACCENT_BY_ID: Record<string, string> = Object.fromEntries(
   STUDIO_CATEGORIES.map((category, index) => [
     category.id,
-    CATEGORY_THEMES[(index + 1) % CATEGORY_THEMES.length]?.color ?? '#2bd97f',
+    CATEGORY_THEMES[(index + 1) % CATEGORY_THEMES.length]?.color ?? 'var(--success)',
   ])
 );
 
-const DEFAULT_STUDIO_MODULE_VISUAL: ModuleVisualTheme = createModuleVisualFromHex('#4c8dff');
+const DEFAULT_STUDIO_MODULE_VISUAL: ModuleVisualTheme = createModuleVisualFromHex('var(--info)');
 
 const STUDIO_MODULE_VISUAL_BY_CATEGORY_ID: Record<string, ModuleVisualTheme> = Object.fromEntries(
   Object.entries(CATEGORY_ACCENT_BY_ID).map(([categoryId, accentHex]) => [
@@ -988,51 +1056,53 @@ function readNumber(value: unknown, fallback = 0) {
   return typeof value === 'number' ? value : fallback;
 }
 
-function buildSeoTileStyle(accent: string, isHovered: boolean, isActive = false): CSSProperties {
+function buildSeoTileStyle(_accent: string, isHovered: boolean, isActive = false): CSSProperties {
   const isEmphasized = isHovered || isActive;
   return {
-    background: isEmphasized
-      ? `linear-gradient(135deg, ${accent}1f 0%, rgba(148,163,184,0.10) 75%)`
-      : 'var(--bg-soft, #eef0f4)',
-    border: isEmphasized ? `1px solid ${accent}` : `1px solid ${accent}44`,
-    borderRadius: 16,
+    background: 'var(--card)',
+    border: `1px solid ${isEmphasized ? 'var(--brand-line)' : 'var(--line)'}`,
+    borderRadius: 14,
     padding: 18,
-    minHeight: 188,
+    minHeight: 172,
     display: 'grid',
     gap: 8,
     alignContent: 'start',
-    transform: isEmphasized ? 'translateY(-4px)' : 'translateY(0)',
-    boxShadow: isEmphasized ? `0 14px 28px ${accent}33, 0 0 0 1px ${accent}22 inset` : '0 2px 8px rgba(148,163,184,0.10)',
-    transition: 'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.2s ease',
+    transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+    boxShadow: isEmphasized ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+    transition: 'transform 0.2s var(--ease-out), border-color 0.16s ease, box-shadow 0.2s ease',
   };
 }
 
 function buildSeoIconStyle(isHovered: boolean, isActive = false): CSSProperties {
   return {
-    fontSize: 28,
-    lineHeight: 1,
-    transform: isHovered || isActive ? 'scale(1.08)' : 'scale(1)',
-    transition: 'transform 0.18s ease',
+    display: 'grid',
+    placeItems: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    background: isActive ? 'var(--brand)' : 'var(--brand-soft)',
+    color: isActive ? 'var(--on-brand)' : 'var(--brand)',
+    transform: isHovered ? 'rotate(-6deg) scale(1.04)' : 'none',
+    transition: 'transform 0.2s var(--ease-out), background-color 0.16s ease',
   };
 }
 
-function buildSeoSummaryStyle(isHovered: boolean, isActive = false): CSSProperties {
+function buildSeoSummaryStyle(_isHovered: boolean, _isActive = false): CSSProperties {
   return {
-    color: isHovered || isActive ? 'var(--muted)' : 'var(--muted)',
-    fontSize: 12,
+    color: 'var(--muted)',
+    fontSize: 13,
     lineHeight: 1.55,
-    transition: 'color 0.18s ease',
   };
 }
 
-function buildSeoArrowStyle(accent: string, isHovered: boolean, isActive = false): CSSProperties {
+function buildSeoArrowStyle(_accent: string, isHovered: boolean, isActive = false): CSSProperties {
   return {
-    color: accent,
+    color: 'var(--brand)',
     fontSize: 14,
-    fontWeight: 900,
+    fontWeight: 700,
     opacity: isHovered || isActive ? 1 : 0,
     transform: isHovered || isActive ? 'translateX(0)' : 'translateX(-6px)',
-    transition: 'opacity 0.18s ease, transform 0.18s ease',
+    transition: 'opacity 0.18s ease, transform 0.18s var(--ease-out)',
   };
 }
 
@@ -1653,7 +1723,7 @@ export default function SocialStudioPage() {
 
   // ── BRAND KIT ────────────────────────────────────────────────────────
   const [brandKitName, setBrandKitName] = useState('');
-  const [brandKitColors] = useState<BrandColor[]>([{ name: 'Primary', hex: '#6366f1', usage: 'CTA buttons' }]);
+  const [brandKitColors] = useState<BrandColor[]>([{ name: 'Primary', hex: 'var(--info)', usage: 'CTA buttons' }]);
   const [brandKitFonts] = useState<BrandFont[]>([{ name: 'Inter', category: 'sans-serif', usage: 'Body text' }]);
 
   // ── CONTENT CALENDAR ─────────────────────────────────────────────────
@@ -1681,8 +1751,8 @@ export default function SocialStudioPage() {
   const effectiveOpsModuleId: SocialOpsModuleId = routeOpsModuleId ?? activeOpsModuleId;
   const isStudioModulePage = routeSelectedCategoryId !== null;
   const activeVisualCategoryId = routeSelectedCategoryId ?? selectedCategoryId;
-  const activeAccent = CATEGORY_ACCENT_BY_ID[activeVisualCategoryId] ?? '#4c8dff';
-  const activeAccentSecondary = CATEGORY_SECONDARY_ACCENT_BY_ID[activeVisualCategoryId] ?? '#2bd97f';
+  const activeAccent = CATEGORY_ACCENT_BY_ID[activeVisualCategoryId] ?? 'var(--info)';
+  const activeAccentSecondary = CATEGORY_SECONDARY_ACCENT_BY_ID[activeVisualCategoryId] ?? 'var(--success)';
   const activeAccentRgb = hexToRgbChannels(activeAccent);
   const activeAccentSecondaryRgb = hexToRgbChannels(activeAccentSecondary);
   const moduleVisual = useMemo(
@@ -3142,8 +3212,8 @@ export default function SocialStudioPage() {
   }
 
   function getActivityBorderColor(tone: ActivityItem['tone']): string {
-    if (tone === 'error') return '#ff6b6b';
-    if (tone === 'success') return '#22c55e';
+    if (tone === 'error') return 'var(--danger)';
+    if (tone === 'success') return 'var(--success)';
     return 'var(--line)';
   }
 
@@ -3498,47 +3568,24 @@ export default function SocialStudioPage() {
   }
 
   return (
-    <main
+    <div
       className={`social-studio-page density-${density} ${isPageReady ? '' : 'page-loading'}`}
       style={moduleVisualStyle}
     >
       <div className="tower-wrap">
-        <section className="hero-shell tower-hero">
-          <div className="hero-copy tower-copy">
-            <p className="eyebrow">Advanced Social Studio Control Tower</p>
-            <h1>Unified Social Studio Frontier Stack</h1>
-            <p>
-              Centralized operating plane for multimodal campaign production, provider orchestration, credit-safe
-              execution, and cross-channel publishing.
-            </p>
-            <p className="hero-lately-link">
-              <Link href="/studio/lately">Launch Lately AI Hub →</Link>
-            </p>
-            {lastError ? (
-              <div className="hero-inline-error">{lastError} — some features may be unavailable.</div>
-            ) : null}
-          </div>
-          <div className="hero-metrics">
-            <article className="metric-card">
-              <p>{overview.creditBalance} paid credits</p>
-            </article>
-            <article className="metric-card">
-              <p>{overview.pendingTopups} top-ups pending</p>
-            </article>
-            <article className="metric-card">
-              <p>${overview.walletBalanceUsd.toFixed(2)} wallet balance</p>
-            </article>
-            <article className="metric-card">
-              <p>{generated.length} generated outputs</p>
-            </article>
-          </div>
-        </section>
+        <SocialStudioHeader
+          credits={overview.creditBalance}
+          pendingTopups={overview.pendingTopups}
+          walletUsd={overview.walletBalanceUsd}
+          generatedCount={generated.length}
+          error={lastError || undefined}
+        />
 
         {isStudioModulePage ? (
           <section className="modules-shell card module-focus-shell">
             <div className="modules-head">
               <Link href="/studio/social-studio" className="module-back-link">
-                ← Back to Studio Modules
+                ← Back to Studio modules
               </Link>
               <h3>{selectedCategory.title}</h3>
               <span className="small-text">{selectedCategory.summary}</span>
@@ -3547,8 +3594,8 @@ export default function SocialStudioPage() {
         ) : (
           <section className="modules-shell card">
             <div className="modules-head">
-              <h3>Studio Modules</h3>
-              <span className="small-text">Click a module to open its dedicated page</span>
+              <h3>Studio modules</h3>
+              <span className="small-text">Open a module to start creating</span>
             </div>
             <div className="category-grid tower-grid">
               {STUDIO_CATEGORIES.map((category, index) => {
@@ -3559,7 +3606,7 @@ export default function SocialStudioPage() {
                 return (
                   <Link
                     key={category.id}
-                    href={`/studio/${moduleRouteSegment}`}
+                    href={`/studio/${moduleRouteSegment}` as Route}
                     onMouseEnter={() => setHoveredModuleId(category.id)}
                     onMouseLeave={() => setHoveredModuleId(null)}
                     onFocus={() => setHoveredModuleId(category.id)}
@@ -3568,10 +3615,10 @@ export default function SocialStudioPage() {
                   >
                     <div style={buildSeoTileStyle(theme.color, isHovered, isActive)}>
                       <span aria-hidden="true" style={buildSeoIconStyle(isHovered, isActive)}>
-                        {theme.icon}
+                        <ModuleGlyph icons={STUDIO_MODULE_ICONS} id={category.id} />
                       </span>
                       <strong
-                        style={{ margin: 0, fontSize: 14, lineHeight: 1.35, fontWeight: 800, color: theme.color }}
+                        style={{ margin: 0, fontSize: 15, lineHeight: 1.35, fontWeight: 650, color: 'var(--text)' }}
                       >
                         {category.title}
                       </strong>
@@ -3590,10 +3637,10 @@ export default function SocialStudioPage() {
                             fontSize: 11,
                             letterSpacing: '0.08em',
                             textTransform: 'uppercase',
-                            color: theme.color,
+                            color: 'var(--brand)',
                           }}
                         >
-                          {isActive ? 'Active module' : 'Open module page'}
+                          {isActive ? 'Current module' : 'Open'}
                         </span>
                         <span aria-hidden="true" style={buildSeoArrowStyle(theme.color, isHovered, isActive)}>
                           →
@@ -3627,7 +3674,7 @@ export default function SocialStudioPage() {
               return (
                 <Link
                   key={module.id}
-                  href={`/studio/${SOCIAL_OPS_ROUTE_BY_MODULE_ID[module.id]}`}
+                  href={`/studio/${SOCIAL_OPS_ROUTE_BY_MODULE_ID[module.id]}` as Route}
                   onMouseEnter={() => setHoveredModuleId(hoverKey)}
                   onMouseLeave={() => setHoveredModuleId(null)}
                   onFocus={() => setHoveredModuleId(hoverKey)}
@@ -3636,9 +3683,9 @@ export default function SocialStudioPage() {
                 >
                   <div style={buildSeoTileStyle(accent, isHovered)}>
                     <span style={buildSeoIconStyle(isHovered)} aria-hidden="true">
-                      {module.icon}
+                      <ModuleGlyph icons={OPS_MODULE_ICONS} id={module.id} />
                     </span>
-                    <strong style={{ margin: 0, fontSize: 14, lineHeight: 1.35, fontWeight: 800, color: accent }}>
+                    <strong style={{ margin: 0, fontSize: 15, lineHeight: 1.35, fontWeight: 650, color: 'var(--text)' }}>
                       {module.title}
                     </strong>
                     <small style={{ margin: 0, ...buildSeoSummaryStyle(isHovered) }}>{module.summary}</small>
@@ -3652,9 +3699,9 @@ export default function SocialStudioPage() {
                       }}
                     >
                       <span
-                        style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: accent }}
+                        style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--brand)' }}
                       >
-                        Open module page
+                        Open
                       </span>
                       <span style={buildSeoArrowStyle(accent, isHovered)} aria-hidden="true">
                         →
@@ -3670,7 +3717,7 @@ export default function SocialStudioPage() {
             <div className="widget-head">
               <div>
                 <h3>Advanced Creative Surfaces</h3>
-                <p className="muted">Direct launchers for all newly added Predis production features.</p>
+                <p className="muted">Shortcuts to the newest creation tools.</p>
               </div>
             </div>
             <div
@@ -3711,7 +3758,7 @@ export default function SocialStudioPage() {
               ].map((item) => (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={item.href as Route}
                   style={{
                     textDecoration: 'none',
                     color: 'inherit',
@@ -3824,9 +3871,9 @@ export default function SocialStudioPage() {
                 ) : (
                   <div className="ops-list">
                     {socialAccounts.map((account) => {
-                      let statusColor = '#ef4444';
-                      if (account.status === 'connected') statusColor = '#22c55e';
-                      else if (account.status === 'pending') statusColor = '#f59e0b';
+                      let statusColor = 'var(--danger)';
+                      if (account.status === 'connected') statusColor = 'var(--success)';
+                      else if (account.status === 'pending') statusColor = 'var(--warning)';
                       let statusLabel = account.status ?? 'Unknown';
                       if (account.status === 'connected') statusLabel = 'Connected';
                       else if (account.status === 'pending') statusLabel = 'Pending';
@@ -3960,7 +4007,7 @@ export default function SocialStudioPage() {
               <section className="ops-panel">
                 <div className="section-header-row">
                   <h4>A/B Testing Lab</h4>
-                  <span className="suggestion-chip">Predis</span>
+                  <span className="suggestion-chip">Variants</span>
                 </div>
                 <div className="dual-grid compact">
                   <div className="field">
@@ -4194,7 +4241,7 @@ export default function SocialStudioPage() {
                       style={
                         calendarDragOverDay === day.id
                           ? {
-                              borderColor: '#a855f7',
+                              borderColor: "var(--brand)",
                               background: 'rgba(168,85,247,0.12)',
                               boxShadow: '0 0 0 2px rgba(168,85,247,0.35)',
                             }
@@ -4892,12 +4939,12 @@ export default function SocialStudioPage() {
         <section className="card hubspot-hub">
           <div className="widget-head">
             <div>
-              <h3>HubSpot features</h3>
+              <h3>HubSpot integration</h3>
               <p className="muted">
-                Open each HubSpot capability to wire CRM, automation, and attribution into Social Studio.
+                Connect your HubSpot CRM, automation and attribution to Social Studio.
               </p>
             </div>
-            <span className="suggestion-chip">HubSpot stack</span>
+            <span className="suggestion-chip">Integration</span>
           </div>
           <div className="hubspot-grid">
             {HUBSPOT_FEATURES.map((feature) => (
@@ -5407,8 +5454,8 @@ export default function SocialStudioPage() {
                 </button>
               </div>
               <div className="predis-toggle-groups">
-                <section className="predis-toggle-group" aria-label="Core Predis tools">
-                  <p className="predis-toggle-label">Core Predis Tools</p>
+                <section className="predis-toggle-group" aria-label="Core creation tools">
+                  <p className="predis-toggle-label">Core creation tools</p>
                   <div className="predis-toggle-grid">
                     <button
                       type="button"
@@ -5490,7 +5537,7 @@ export default function SocialStudioPage() {
                     </button>
                   </div>
                 </section>
-                <section className="predis-toggle-group" aria-label="Creative Predis tools">
+                <section className="predis-toggle-group" aria-label="Creative tools">
                   <p className="predis-toggle-label">Creative Boosters</p>
                   <div className="predis-toggle-grid">
                     <button
@@ -5683,7 +5730,7 @@ export default function SocialStudioPage() {
           <section className="card block">
             <div className="section-header-row">
               <h3>A/B Testing Lab</h3>
-              <span className="suggestion-chip">Predis</span>
+              <span className="suggestion-chip">Variants</span>
             </div>
             <div className="dual-grid compact" style={{ marginBottom: 10 }}>
               <div className="field">
@@ -5736,7 +5783,7 @@ export default function SocialStudioPage() {
               {showAbTestPanel ? (
                 <section className="card block">
                   <div className="section-header-row">
-                    <h3>Predis A/B Testing Lab</h3>
+                    <h3>A/B Testing Lab</h3>
                     <button
                       type="button"
                       className="command-btn command-btn-muted"
@@ -5797,7 +5844,7 @@ export default function SocialStudioPage() {
               {showCopyGeneratorPanel ? (
                 <section className="card block">
                   <div className="section-header-row">
-                    <h3>Predis Copy &amp; Hook Generator</h3>
+                    <h3>Copy &amp; Hook Generator</h3>
                     <button
                       type="button"
                       className="command-btn command-btn-muted"
@@ -5873,7 +5920,7 @@ export default function SocialStudioPage() {
               {showContentCalendarPanel ? (
                 <section className="card block">
                   <div className="section-header-row">
-                    <h3>Predis Content Calendar</h3>
+                    <h3>Content Calendar</h3>
                     <button
                       type="button"
                       className="command-btn command-btn-muted"
@@ -6597,7 +6644,7 @@ export default function SocialStudioPage() {
                                 maxWidth: '70%',
                                 padding: '8px 12px',
                                 borderRadius: 8,
-                                backgroundColor: msg.role === 'user' ? 'var(--brand, #6366f1)' : 'var(--line)',
+                                backgroundColor: msg.role === 'user' ? "var(--brand)" : 'var(--line)',
                                 color: msg.role === 'user' ? 'white' : 'inherit',
                                 fontSize: 12,
                               }}
@@ -7114,10 +7161,7 @@ export default function SocialStudioPage() {
           display: grid;
           gap: 16px;
           padding-bottom: 20px;
-          background:
-            radial-gradient(circle at 0% -15%, rgba(57, 176, 255, 0.12), transparent 42%),
-            radial-gradient(circle at 100% -10%, rgba(72, 252, 196, 0.12), transparent 44%),
-            linear-gradient(180deg, rgba(5, 16, 28, 0.9), rgba(6, 17, 31, 0.95));
+          background: transparent;
           transition:
             opacity 180ms ease,
             transform 220ms ease;
@@ -7146,17 +7190,13 @@ export default function SocialStudioPage() {
           margin: 0 auto;
           display: grid;
           gap: 16px;
-          font-family:
-            Manrope,
-            Segoe UI,
-            ui-sans-serif,
-            sans-serif;
+          font-family: inherit;
         }
 
         .tower-hero {
           border-radius: 20px;
-          border: 1px solid var(--module-hero-border, #1e3a8a);
-          background: var(--module-hero-bg, linear-gradient(135deg, #eef0f4 0%, #eef0f4 52%, #6366f1 130%));
+          border: 1px solid var(--module-hero-border, var(--info-ink));
+          background: var(--module-hero-bg, linear-gradient(135deg, var(--neutral-soft) 0%, var(--neutral-soft) 52%, var(--info) 130%));
         }
 
         .tower-copy p {
@@ -7166,7 +7206,7 @@ export default function SocialStudioPage() {
         .hero-inline-error {
           margin-top: 14px;
           font-size: 13px;
-          color: #dc2626;
+          color: var(--danger);
         }
 
         .modules-shell {
@@ -7194,13 +7234,10 @@ export default function SocialStudioPage() {
         }
 
         .hero-shell {
-          border: 1px solid color-mix(in oklab, var(--module-accent, #4c8dff) 24%, var(--line));
+          border: 1px solid color-mix(in oklab, var(--module-accent, var(--info)) 24%, var(--line));
           border-radius: 18px;
           padding: 24px;
-          background:
-            radial-gradient(circle at 0% 10%, var(--module-glow-one, rgba(27, 199, 255, 0.2)), transparent 38%),
-            radial-gradient(circle at 100% 0%, var(--module-glow-two, rgba(38, 215, 142, 0.18)), transparent 32%),
-            linear-gradient(165deg, rgba(5, 18, 32, 0.95), rgba(10, 30, 46, 0.85));
+          background: var(--card);
           display: grid;
           gap: 18px;
         }
@@ -7225,7 +7262,7 @@ export default function SocialStudioPage() {
         }
 
         .hero-lately-link a:hover {
-          color: #c7d2fe;
+          color: var(--info-line);
           border-bottom-color: rgba(199, 210, 254, 0.8);
         }
 
@@ -7239,11 +7276,8 @@ export default function SocialStudioPage() {
           position: relative;
           z-index: 4;
           backdrop-filter: blur(10px);
-          background:
-            radial-gradient(circle at 8% 0%, rgba(var(--module-accent-rgb, 76, 141, 255), 0.18), transparent 32%),
-            radial-gradient(circle at 100% 0%, rgba(var(--module-accent-2-rgb, 43, 217, 127), 0.15), transparent 34%),
-            linear-gradient(140deg, rgba(8, 24, 38, 0.88), rgba(8, 27, 35, 0.82));
-          border: 1px solid color-mix(in oklab, var(--module-accent, #4c8dff) 18%, var(--line));
+          background: var(--card);
+          border: 1px solid color-mix(in oklab, var(--module-accent, var(--info)) 18%, var(--line));
           padding: 16px;
           box-shadow: 0 18px 36px rgba(3, 8, 18, 0.35);
         }
@@ -7300,7 +7334,7 @@ export default function SocialStudioPage() {
         }
 
         .predis-toggle-group {
-          border: 1px solid color-mix(in oklab, var(--module-accent, #4c8dff) 22%, var(--line));
+          border: 1px solid color-mix(in oklab, var(--module-accent, var(--info)) 22%, var(--line));
           border-radius: 14px;
           padding: 10px;
           background: linear-gradient(150deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
@@ -7312,7 +7346,7 @@ export default function SocialStudioPage() {
           font-weight: 800;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: color-mix(in oklab, var(--module-accent, #4c8dff) 70%, #d8e9ff);
+          color: color-mix(in oklab, var(--module-accent, var(--info)) 70%, var(--info-soft));
         }
 
         .predis-toggle-grid {
@@ -7322,9 +7356,9 @@ export default function SocialStudioPage() {
         }
 
         .predis-toggle-btn {
-          border: 1px solid color-mix(in oklab, var(--module-accent, #4c8dff) 20%, var(--line));
+          border: 1px solid color-mix(in oklab, var(--module-accent, var(--info)) 20%, var(--line));
           background: rgba(255, 255, 255, 0.02);
-          color: #c8d6ea;
+          color: var(--info-line);
           border-radius: 10px;
           padding: 8px 10px;
           font-size: 12px;
@@ -7341,17 +7375,17 @@ export default function SocialStudioPage() {
 
         .predis-toggle-btn:hover {
           transform: translateY(-1px);
-          border-color: color-mix(in oklab, var(--module-accent, #4c8dff) 48%, #87deff);
-          color: #eef5ff;
+          border-color: color-mix(in oklab, var(--module-accent, var(--info)) 48%, var(--info));
+          color: var(--info-soft);
         }
 
         .predis-toggle-btn.active {
-          color: #07162c;
+          color: var(--on-status);
           border-color: transparent;
           background: linear-gradient(
             125deg,
-            color-mix(in oklab, var(--module-accent, #4c8dff) 86%, #bff3ff),
-            color-mix(in oklab, var(--module-accent-2, #2bd97f) 76%, #d2ffd8)
+            color-mix(in oklab, var(--module-accent, var(--info)) 86%, var(--info-line)),
+            color-mix(in oklab, var(--module-accent-2, var(--success)) 76%, var(--success-soft))
           );
           box-shadow: 0 10px 24px rgba(7, 20, 40, 0.28);
         }
@@ -7381,14 +7415,14 @@ export default function SocialStudioPage() {
         .progress-fill {
           height: 100%;
           border-radius: inherit;
-          background: linear-gradient(90deg, var(--module-accent, #4c8dff), var(--module-accent-2, #2bd97f));
+          background: linear-gradient(90deg, var(--module-accent, var(--info)), var(--module-accent-2, var(--success)));
           transition: width 250ms ease;
         }
 
         .suggestion-chip {
-          border: 1px solid color-mix(in oklab, var(--module-accent, #4c8dff) 40%, var(--line));
-          background: color-mix(in oklab, var(--module-accent, #4c8dff) 14%, transparent);
-          color: color-mix(in oklab, var(--module-accent, #4c8dff) 82%, #e7f0ff);
+          border: 1px solid color-mix(in oklab, var(--module-accent, var(--info)) 40%, var(--line));
+          background: color-mix(in oklab, var(--module-accent, var(--info)) 14%, transparent);
+          color: color-mix(in oklab, var(--module-accent, var(--info)) 82%, var(--info-soft));
           border-radius: 999px;
           padding: 5px 10px;
           font-size: 11px;
@@ -7415,8 +7449,8 @@ export default function SocialStudioPage() {
         }
 
         .alert-card {
-          border-color: #ff6b6b;
-          color: #ffd5d5;
+          border-color: var(--danger);
+          color: var(--danger-soft);
         }
 
         .alert-card p {
@@ -7426,15 +7460,15 @@ export default function SocialStudioPage() {
         .social-ops-hub {
           display: grid;
           gap: 12px;
-          border: 1px solid color-mix(in oklab, var(--module-accent-2, #2bd97f) 26%, var(--line));
-          background: linear-gradient(135deg, rgba(7, 24, 33, 0.9), rgba(8, 25, 41, 0.86));
+          border: 1px solid color-mix(in oklab, var(--module-accent-2, var(--success)) 26%, var(--line));
+          background: var(--card);
         }
 
         .hubspot-hub {
           display: grid;
           gap: 12px;
-          border: 1px solid color-mix(in oklab, #f59e0b 24%, var(--line));
-          background: linear-gradient(135deg, rgba(30, 20, 4, 0.42), rgba(8, 20, 34, 0.86));
+          border: 1px solid color-mix(in oklab, var(--warning) 24%, var(--line));
+          background: var(--card);
         }
 
         .hubspot-grid {
@@ -7444,7 +7478,7 @@ export default function SocialStudioPage() {
         }
 
         .hubspot-link-card {
-          border: 1px solid color-mix(in oklab, #f59e0b 35%, var(--line));
+          border: 1px solid color-mix(in oklab, var(--warning) 35%, var(--line));
           border-radius: 12px;
           padding: 12px;
           display: grid;
@@ -7461,13 +7495,13 @@ export default function SocialStudioPage() {
         .hubspot-link-card:hover,
         .hubspot-link-card:focus-visible {
           transform: translateY(-2px);
-          border-color: #f59e0b;
+          border-color: var(--warning);
           box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
         }
 
         .hubspot-link-card strong {
           font-size: 13px;
-          color: #f9c770;
+          color: var(--warning);
         }
 
         .hubspot-link-card span {
@@ -7481,12 +7515,12 @@ export default function SocialStudioPage() {
           font-size: 11px;
           letter-spacing: 0.06em;
           text-transform: uppercase;
-          color: #ffd28a;
+          color: var(--warning);
         }
 
         .ops-inline-error {
           margin: 0;
-          color: #dc2626;
+          color: var(--danger);
           font-size: 13px;
         }
 
@@ -7499,9 +7533,9 @@ export default function SocialStudioPage() {
         .ops-module-link {
           text-decoration: none;
           color: inherit;
-          border: 1px solid color-mix(in oklab, var(--ops-accent) 28%, #e7e9ef);
+          border: 1px solid color-mix(in oklab, var(--ops-accent) 28%, var(--neutral-soft));
           border-radius: 14px;
-          background: var(--bg-soft, #eef0f4);
+          background: var(--bg-soft);
           padding: 18px;
           min-height: 188px;
           display: grid;
@@ -7573,7 +7607,7 @@ export default function SocialStudioPage() {
           font-size: 11px;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: color-mix(in oklab, var(--ops-accent) 72%, #cfdaf0);
+          color: color-mix(in oklab, var(--ops-accent) 72%, var(--info-line));
         }
 
         .ops-module-arrow {
@@ -7611,12 +7645,12 @@ export default function SocialStudioPage() {
 
         .ops-module-btn:hover {
           transform: translateY(-1px);
-          border-color: color-mix(in oklab, var(--module-accent, #4c8dff) 44%, var(--line));
+          border-color: color-mix(in oklab, var(--module-accent, var(--info)) 44%, var(--line));
           box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
 
         .ops-module-btn.active {
-          border-color: color-mix(in oklab, var(--module-accent, #4c8dff) 72%, #ffffff);
+          border-color: color-mix(in oklab, var(--module-accent, var(--info)) 72%, #ffffff);
           background: rgba(var(--module-accent-rgb, 76, 141, 255), 0.16);
         }
 
@@ -7678,7 +7712,7 @@ export default function SocialStudioPage() {
 
         .ops-list-item:hover {
           transform: translateY(-1px);
-          border-color: color-mix(in oklab, var(--module-accent, #4c8dff) 36%, var(--line));
+          border-color: color-mix(in oklab, var(--module-accent, var(--info)) 36%, var(--line));
           box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
         }
 
@@ -7699,7 +7733,7 @@ export default function SocialStudioPage() {
         }
 
         .ops-panel:hover {
-          border-color: color-mix(in oklab, var(--module-accent-2, #2bd97f) 24%, var(--line));
+          border-color: color-mix(in oklab, var(--module-accent-2, var(--success)) 24%, var(--line));
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
         }
 
@@ -7752,7 +7786,7 @@ export default function SocialStudioPage() {
         .command-btn-danger-sm {
           background: rgba(239, 68, 68, 0.12);
           border: 1px solid rgba(239, 68, 68, 0.3);
-          color: #dc2626;
+          color: var(--danger);
           border-radius: 6px;
           padding: 3px 10px;
           font-size: 11px;
@@ -7797,7 +7831,7 @@ export default function SocialStudioPage() {
         .autopilot-val {
           flex: 1;
           font-size: 12px;
-          color: #d8e6ff;
+          color: var(--info-soft);
           word-break: break-all;
         }
 
@@ -7833,8 +7867,8 @@ export default function SocialStudioPage() {
           border-radius: inherit;
           background: linear-gradient(
             90deg,
-            var(--module-accent, #4c8dff),
-            color-mix(in oklab, var(--module-accent, #4c8dff) 60%, var(--module-accent-2, #2bd97f))
+            var(--module-accent, var(--info)),
+            color-mix(in oklab, var(--module-accent, var(--info)) 60%, var(--module-accent-2, var(--success)))
           );
           transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
         }
@@ -7880,7 +7914,7 @@ export default function SocialStudioPage() {
         }
 
         .activity-dismiss-btn:hover {
-          color: #ff6b6b;
+          color: var(--danger);
         }
 
         /* --- Metric card hover (if used) --- */
@@ -7893,7 +7927,7 @@ export default function SocialStudioPage() {
 
         .metric-card:hover {
           transform: translateY(-2px);
-          border-color: color-mix(in oklab, var(--module-accent, #4c8dff) 40%, var(--line));
+          border-color: color-mix(in oklab, var(--module-accent, var(--info)) 40%, var(--line));
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
         }
 
@@ -7938,13 +7972,13 @@ export default function SocialStudioPage() {
         .toast-success {
           background: rgba(34, 197, 94, 0.14);
           border-color: rgba(34, 197, 94, 0.35);
-          color: #15803d;
+          color: var(--success-ink);
         }
 
         .toast-error {
           background: rgba(239, 68, 68, 0.14);
           border-color: rgba(239, 68, 68, 0.35);
-          color: #dc2626;
+          color: var(--danger);
         }
 
         .toast-info {
@@ -7956,7 +7990,7 @@ export default function SocialStudioPage() {
         .toast-warning {
           background: rgba(245, 158, 11, 0.14);
           border-color: rgba(245, 158, 11, 0.35);
-          color: #b45309;
+          color: var(--warning-ink);
         }
 
         .toast-message {
@@ -8010,9 +8044,9 @@ export default function SocialStudioPage() {
         .kpi-bar-fill.is-active {
           background-image: linear-gradient(
             90deg,
-            var(--module-accent, #4c8dff) 0%,
-            color-mix(in oklab, var(--module-accent, #4c8dff) 55%, #fff) 40%,
-            var(--module-accent, #4c8dff) 80%
+            var(--module-accent, var(--info)) 0%,
+            color-mix(in oklab, var(--module-accent, var(--info)) 55%, #fff) 40%,
+            var(--module-accent, var(--info)) 80%
           );
           background-size: 200px 100%;
           animation: progress-shimmer 1.6s linear infinite;
@@ -8063,7 +8097,7 @@ export default function SocialStudioPage() {
           border-radius: 10px;
           padding: 10px;
           background: rgba(4, 13, 22, 0.8);
-          color: #9ae6ff;
+          color: var(--info-line);
           font-size: 12px;
           max-height: 300px;
           overflow: auto;
@@ -8078,7 +8112,7 @@ export default function SocialStudioPage() {
         }
 
         .calendar-lane {
-          border: 1px dashed color-mix(in oklab, var(--module-accent, #4c8dff) 34%, var(--line));
+          border: 1px dashed color-mix(in oklab, var(--module-accent, var(--info)) 34%, var(--line));
           border-radius: 10px;
           min-height: 124px;
           padding: 8px;
@@ -8093,7 +8127,7 @@ export default function SocialStudioPage() {
         }
 
         .calendar-lane:hover {
-          border-color: color-mix(in oklab, var(--module-accent, #4c8dff) 52%, var(--line));
+          border-color: color-mix(in oklab, var(--module-accent, var(--info)) 52%, var(--line));
           background: rgba(var(--module-accent-rgb, 76, 141, 255), 0.04);
         }
 
@@ -8121,7 +8155,7 @@ export default function SocialStudioPage() {
 
         .calendar-post:hover {
           transform: translateY(-2px) scale(1.01);
-          border-color: color-mix(in oklab, var(--module-accent, #4c8dff) 55%, var(--line));
+          border-color: color-mix(in oklab, var(--module-accent, var(--info)) 55%, var(--line));
           background: rgba(27, 199, 255, 0.14);
           box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
         }
@@ -8185,9 +8219,9 @@ export default function SocialStudioPage() {
 
         .category-tile {
           text-align: left;
-          border: 1px solid color-mix(in oklab, var(--tile-accent) 60%, #27385c);
+          border: 1px solid color-mix(in oklab, var(--tile-accent) 60%, var(--info-ink));
           border-radius: 22px;
-          background: linear-gradient(180deg, #112346 0%, #0f1f3f 100%);
+          background: var(--card);
           color: var(--text);
           text-decoration: none;
           padding: 20px 20px 18px;
@@ -8203,21 +8237,21 @@ export default function SocialStudioPage() {
         }
 
         .module-focus-shell {
-          border-color: var(--module-focus-border, color-mix(in oklab, #4c8dff 32%, var(--line)));
-          background: var(--module-focus-bg, linear-gradient(180deg, #0f1f3f 0%, #0d1a34 100%));
+          border-color: var(--module-focus-border, color-mix(in oklab, var(--info) 32%, var(--line)));
+          background: var(--module-focus-bg, var(--bg-soft));
         }
 
         .module-back-link {
           display: inline-block;
           margin-bottom: 8px;
-          color: #94b5ff;
+          color: var(--info-line);
           text-decoration: none;
           font-size: 13px;
           font-weight: 700;
         }
 
         .module-back-link:hover {
-          color: #c7d8ff;
+          color: var(--info-line);
           text-decoration: underline;
         }
 
@@ -8229,7 +8263,7 @@ export default function SocialStudioPage() {
         }
 
         .category-summary {
-          color: #7486a6;
+          color: var(--neutral);
           font-size: 18px;
           line-height: 1.45;
           font-weight: 500;
@@ -8240,7 +8274,7 @@ export default function SocialStudioPage() {
           font-size: 11px;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: color-mix(in oklab, var(--tile-accent) 74%, #cfdaf0);
+          color: color-mix(in oklab, var(--tile-accent) 74%, var(--info-line));
         }
 
         .category-tile:hover {
@@ -8340,12 +8374,12 @@ export default function SocialStudioPage() {
         }
 
         .toggle-chip.active-brand {
-          border-color: var(--module-accent, #4c8dff);
+          border-color: var(--module-accent, var(--info));
           background: rgba(var(--module-accent-rgb, 76, 141, 255), 0.16);
         }
 
         .toggle-chip.active-success {
-          border-color: var(--module-accent-2, #2bd97f);
+          border-color: var(--module-accent-2, var(--success));
           background: rgba(var(--module-accent-2-rgb, 43, 217, 127), 0.16);
         }
 
@@ -8361,7 +8395,7 @@ export default function SocialStudioPage() {
           padding: 14px;
           display: grid;
           gap: 10px;
-          background: linear-gradient(155deg, rgba(15, 26, 46, 0.88), rgba(12, 20, 36, 0.84));
+          background: var(--bg);
           min-height: 178px;
           transition:
             border-color 180ms ease,
@@ -8370,15 +8404,15 @@ export default function SocialStudioPage() {
         }
 
         .upload-box:hover {
-          border-color: color-mix(in oklab, var(--module-accent, #4c8dff) 50%, var(--line));
+          border-color: color-mix(in oklab, var(--module-accent, var(--info)) 50%, var(--line));
           transform: translateY(-2px);
           box-shadow: 0 14px 28px rgba(148,163,184,0.10);
         }
 
         .upload-box.is-dragging {
-          border-color: color-mix(in oklab, var(--module-accent, #4c8dff) 78%, #ffffff);
+          border-color: color-mix(in oklab, var(--module-accent, var(--info)) 78%, #ffffff);
           box-shadow:
-            0 0 0 1px color-mix(in oklab, var(--module-accent, #4c8dff) 36%, transparent),
+            0 0 0 1px color-mix(in oklab, var(--module-accent, var(--info)) 36%, transparent),
             0 14px 28px rgba(148,163,184,0.10);
           transform: translateY(-3px);
         }
@@ -8397,7 +8431,7 @@ export default function SocialStudioPage() {
           place-items: center;
           font-size: 18px;
           background: rgba(var(--module-accent-rgb, 76, 141, 255), 0.14);
-          border: 1px solid color-mix(in oklab, var(--module-accent, #4c8dff) 42%, var(--line));
+          border: 1px solid color-mix(in oklab, var(--module-accent, var(--info)) 42%, var(--line));
           flex-shrink: 0;
         }
 
@@ -8405,7 +8439,7 @@ export default function SocialStudioPage() {
           font-size: 12px;
           font-weight: 700;
           display: block;
-          color: #d8e6ff;
+          color: var(--info-soft);
         }
 
         .upload-head small {
@@ -8418,7 +8452,7 @@ export default function SocialStudioPage() {
 
         .upload-input {
           width: 100%;
-          border: 1px dashed color-mix(in oklab, var(--module-accent, #4c8dff) 35%, var(--line));
+          border: 1px dashed color-mix(in oklab, var(--module-accent, var(--info)) 35%, var(--line));
           border-radius: 10px;
           padding: 8px;
           background: rgba(255, 255, 255, 0.02);
@@ -8442,7 +8476,7 @@ export default function SocialStudioPage() {
           font-size: 11px;
           letter-spacing: 0.06em;
           text-transform: uppercase;
-          color: color-mix(in oklab, var(--module-accent, #4c8dff) 82%, #e8f1ff);
+          color: color-mix(in oklab, var(--module-accent, var(--info)) 82%, var(--info-soft));
         }
 
         .upload-file-list {
@@ -8454,7 +8488,7 @@ export default function SocialStudioPage() {
         .upload-file-list span {
           font-size: 11px;
           color: var(--muted);
-          border: 1px solid color-mix(in oklab, var(--module-accent, #4c8dff) 30%, var(--line));
+          border: 1px solid color-mix(in oklab, var(--module-accent, var(--info)) 30%, var(--line));
           background: rgba(var(--module-accent-rgb, 76, 141, 255), 0.12);
           border-radius: 999px;
           padding: 4px 8px;
@@ -8475,7 +8509,7 @@ export default function SocialStudioPage() {
         }
 
         .upload-file-chip:hover {
-          border-color: color-mix(in oklab, var(--module-accent, #4c8dff) 55%, var(--line));
+          border-color: color-mix(in oklab, var(--module-accent, var(--info)) 55%, var(--line));
           background: rgba(var(--module-accent-rgb, 76, 141, 255), 0.2);
           transform: translateY(-1px);
         }
@@ -8483,7 +8517,7 @@ export default function SocialStudioPage() {
         .upload-file-remove {
           border: none;
           background: transparent;
-          color: #d8e6ff;
+          color: var(--info-soft);
           font-size: 14px;
           line-height: 1;
           cursor: pointer;
@@ -8498,7 +8532,7 @@ export default function SocialStudioPage() {
         .upload-progress-track {
           height: 7px;
           border-radius: 999px;
-          border: 1px solid color-mix(in oklab, var(--module-accent, #4c8dff) 25%, var(--line));
+          border: 1px solid color-mix(in oklab, var(--module-accent, var(--info)) 25%, var(--line));
           background: rgba(255, 255, 255, 0.03);
           overflow: hidden;
         }
@@ -8508,15 +8542,15 @@ export default function SocialStudioPage() {
           border-radius: inherit;
           background: linear-gradient(
             90deg,
-            var(--module-accent, #4c8dff),
-            color-mix(in oklab, var(--module-accent, #4c8dff) 70%, #9bd7ff)
+            var(--module-accent, var(--info)),
+            color-mix(in oklab, var(--module-accent, var(--info)) 70%, var(--info-line))
           );
           transition: width 180ms ease;
         }
 
         .upload-progress-label {
           font-size: 11px;
-          color: color-mix(in oklab, var(--module-accent, #4c8dff) 72%, #dbe8ff);
+          color: color-mix(in oklab, var(--module-accent, var(--info)) 72%, var(--info-soft));
         }
 
         .upload-file-progress-list {
@@ -8538,7 +8572,7 @@ export default function SocialStudioPage() {
 
         .upload-file-progress-meta span {
           font-size: 10px;
-          color: #d7e6ff;
+          color: var(--info-soft);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -8563,8 +8597,8 @@ export default function SocialStudioPage() {
           border-radius: inherit;
           background: linear-gradient(
             90deg,
-            color-mix(in oklab, var(--module-accent, #4c8dff) 80%, #ffffff),
-            var(--module-accent, #4c8dff)
+            color-mix(in oklab, var(--module-accent, var(--info)) 80%, #ffffff),
+            var(--module-accent, var(--info))
           );
           transition: width 120ms linear;
         }
@@ -8590,9 +8624,9 @@ export default function SocialStudioPage() {
         }
 
         .preview-stage-shell {
-          border: 1px solid color-mix(in oklab, var(--module-accent, #4c8dff) 26%, var(--line));
+          border: 1px solid color-mix(in oklab, var(--module-accent, var(--info)) 26%, var(--line));
           border-radius: 12px;
-          background: linear-gradient(160deg, rgba(7, 20, 34, 0.92), rgba(6, 17, 30, 0.86));
+          background: var(--card);
           padding: 14px;
           min-height: 320px;
         }
@@ -8658,11 +8692,11 @@ export default function SocialStudioPage() {
         }
 
         .health-row .ok {
-          color: #15803d;
+          color: var(--success-ink);
         }
 
         .health-row .warn {
-          color: #fbbf24;
+          color: var(--warning);
         }
 
         .bottom-layout {
@@ -8760,20 +8794,20 @@ export default function SocialStudioPage() {
           border: none;
           background: linear-gradient(
             130deg,
-            var(--module-accent, #4c8dff),
-            color-mix(in oklab, var(--module-accent, #4c8dff) 72%, #92f4ff)
+            var(--module-accent, var(--info)),
+            color-mix(in oklab, var(--module-accent, var(--info)) 72%, var(--info-line))
           );
-          color: #001528;
+          color: var(--on-status);
         }
 
         .command-btn-success {
           border: none;
           background: linear-gradient(
             130deg,
-            var(--module-accent-2, #2bd97f),
-            color-mix(in oklab, var(--module-accent-2, #2bd97f) 72%, #93f7c4)
+            var(--module-accent-2, var(--success)),
+            color-mix(in oklab, var(--module-accent-2, var(--success)) 72%, var(--success))
           );
-          color: #03130c;
+          color: var(--on-status);
         }
 
         .compact-grid {
@@ -8811,9 +8845,9 @@ export default function SocialStudioPage() {
         .palette {
           position: relative;
           width: min(720px, 100%);
-          border: 1px solid color-mix(in oklab, var(--module-accent, #4c8dff) 20%, var(--line));
+          border: 1px solid color-mix(in oklab, var(--module-accent, var(--info)) 20%, var(--line));
           border-radius: 14px;
-          background: linear-gradient(165deg, rgba(8, 21, 34, 0.96), rgba(8, 24, 35, 0.92));
+          background: var(--card);
           box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
           overflow: hidden;
         }
@@ -8989,7 +9023,7 @@ export default function SocialStudioPage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }
 

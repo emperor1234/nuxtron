@@ -9,12 +9,12 @@ import { AuthField } from '@/app/components/auth/auth-field';
 
 const PANEL_POINTS = [
   'Reset links are single-use and expire automatically.',
-  'Your session is signed out everywhere once the password changes.',
+  'Choose a unique password for your account.',
   'Every account event is written to the audit trail.',
 ] as const;
 
 export default function ResetPasswordPage() {
-  const [tenantId, setTenantId] = useState(DEFAULT_TENANT_ID);
+  const [tenantId] = useState(DEFAULT_TENANT_ID);
   const [email, setEmail] = useState('');
 
   // Step 1: request reset token
@@ -89,7 +89,7 @@ export default function ResetPasswordPage() {
     >
       {confirmSuccess ? (
         <div className="py-2">
-          <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#466cf314] text-[#466cf3]">
+          <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-full bg-brand-soft text-brand">
             <Check size={22} strokeWidth={2.5} aria-hidden="true" />
           </div>
           <Link href="/login" className="mk-btn-primary">
@@ -98,7 +98,7 @@ export default function ResetPasswordPage() {
         </div>
       ) : (
         <>
-          <form className="flex flex-col gap-5" onSubmit={handleRequest} noValidate>
+          <form className="flex flex-col gap-5" onSubmit={handleRequest}>
             <AuthField
               label="Email"
               name="email"
@@ -121,11 +121,10 @@ export default function ResetPasswordPage() {
 
           {requestSent ? (
             <form
-              className="mt-8 flex flex-col gap-5 border-t border-[#18181814] pt-8"
+              className="mt-8 flex flex-col gap-5 border-t border-line pt-8"
               onSubmit={handleConfirm}
-              noValidate
             >
-              <p className="text-sm text-[#46484d]">
+              <p className="text-sm text-ink-2">
                 Check your inbox — enter the token and your new password below.
               </p>
               <AuthField

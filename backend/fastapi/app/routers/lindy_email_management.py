@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from ..dependencies import AuthDep, get_db
 from ..models_lindy_email import Email, EmailDraft, EmailOAuthCredential
-from ..services_lindy_email import (
+from ..domains.meetings.services.email_service import (
     DraftGenerationRequest,
     EmailManagementService,
     EmailSyncRequest,

@@ -2,63 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 240 60% 99%;
-    --foreground: 234 38% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 234 38% 14%;
-    --primary: 245 75% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 40% 96%;
-    --secondary-foreground: 234 38% 14%;
-    --muted: 240 32% 95%;
-    --muted-foreground: 234 16% 42%;
-    --accent: 268 70% 96%;
-    --accent-foreground: 234 38% 14%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 26% 90%;
-    --input: 240 26% 90%;
-    --ring: 258 90% 66%;
-    --radius: 0.85rem;
-  }
-}
-
+/* Shared Nuxtron identity: warm paper, deep ink, and the original Nuxtron blue.
+   Green, amber, slate, and red carry status meaning rather than decoration.
+   Text pairs are checked against WCAG AA (4.5:1). */
 :root {
-  /* Canonical light surface system — matches the Marketing Overview dashboard. */
-  --bg: #f5f6f9;
-  --bg-soft: #ffffff;
-  --bg-elevated: #ffffff;
-  --card: #ffffff;
-  --text: #0e1525;
-  --fg: #0e1525;
-  --ink-2: #3d4456;
-  --muted: #6b7385;
-  --faint: #9aa1b2;
-  /* Brand: indigo -> violet -> fuchsia */
-  --brand: #6d5efc;
-  --brand-2: #a855f7;
-  --brand-3: #ec4899;
-  --brand-sky: #38bdf8;
-  --gradient-brand: linear-gradient(120deg, #6366f1 0%, #8b5cf6 45%, #ec4899 100%);
-  --gradient-brand-soft: linear-gradient(120deg, rgba(99, 102, 241, 0.16), rgba(139, 92, 246, 0.14), rgba(236, 72, 153, 0.12));
-  --line: #e7e9ef;
-  --line-soft: #eef0f4;
-  --surface-glass: rgba(99, 102, 241, 0.04);
-  --surface-glass-strong: rgba(99, 102, 241, 0.08);
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --focus-ring:
-    0 0 0 2px color-mix(in oklab, var(--bg) 38%, transparent),
-    0 0 0 4px color-mix(in oklab, var(--brand) 78%, transparent);
-  --glow-brand:
-    0 0 0 1px color-mix(in oklab, var(--brand) 30%, transparent),
-    0 16px 40px color-mix(in oklab, var(--brand-2) 24%, transparent);
-  --shadow-lg: 0 24px 56px rgba(16, 24, 40, 0.1);
-  --shadow-md: 0 12px 28px rgba(16, 24, 40, 0.08);
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+  /* Channel triples drive both CSS tokens and alpha-aware Tailwind utilities. */
+  --brand-rgb: 37 99 201; --brand-soft-rgb: 235 243 255;
+  --brand-line-rgb: 192 214 246; --brand-hover-rgb: 24 73 155;
+  --text-rgb: 39 35 32; --ink-2-rgb: 75 69 64;
+  --muted-rgb: 104 97 91; --faint-rgb: 131 124 117;
+  --line-rgb: 232 227 220; --line-soft-rgb: 244 241 236;
+  --bg-rgb: 249 247 243; --bg-soft-rgb: 255 255 255; --card-rgb: 255 254 252;
+  --success-rgb: 46 109 88; --success-ink-rgb: 34 80 64;
+  --success-soft-rgb: 233 243 237; --success-line-rgb: 189 220 201;
+  --warning-rgb: 139 94 14; --warning-ink-rgb: 103 68 8;
+  --warning-soft-rgb: 248 241 222; --warning-line-rgb: 230 210 164;
+  --danger-rgb: 178 67 55; --danger-ink-rgb: 136 47 41;
+  --danger-soft-rgb: 252 240 238; --danger-line-rgb: 237 200 195;
+  --info-rgb: 71 102 127; --info-ink-rgb: 51 79 102;
+  --info-soft-rgb: 238 243 246; --info-line-rgb: 205 219 228;
+  --background: 35 27% 97%; --foreground: 24 17% 14%;
+  --ui-card: 40 100% 99%; --card-foreground: 24 17% 14%;
+  /* Ink buttons keep the hierarchy calm; blue marks the Nuxtron brand. */
+  --primary: 24 11% 14%; --primary-foreground: 0 0% 100%;
+  --secondary: 35 22% 94%; --secondary-foreground: 24 17% 14%;
+  --ui-muted: 35 22% 94%; --muted-foreground: 28 8% 40%;
+  --accent: 214 100% 97%; --accent-foreground: 216 73% 34%;
+  --destructive: 5 55% 47%; --destructive-foreground: 0 0% 100%;
+  --border: 31 17% 89%; --input: 30 12% 83%; --ring: 216 69% 46%;
+  --popover: 40 100% 99%; --popover-foreground: 24 17% 14%;
+  --radius: 0.5rem;
+  --font-body: var(--font-geist-sans); --font-display: var(--font-geist-sans); --font-inter: var(--font-geist-sans); --font-jakarta: var(--font-geist-sans); --font-grotesk: var(--font-geist-sans);
+  --bg: rgb(var(--bg-rgb)); --bg-soft: rgb(var(--bg-soft-rgb)); --bg-elevated: #fffefc;
+  --card: rgb(var(--card-rgb)); --text: rgb(var(--text-rgb)); --fg: #272320;
+  --ink-2: rgb(var(--ink-2-rgb)); --muted: rgb(var(--muted-rgb)); --faint: rgb(var(--faint-rgb));
+  --brand: rgb(var(--brand-rgb)); --brand-2: #5790e6; --brand-3: #22cdea;
+  --brand-soft: rgb(var(--brand-soft-rgb)); --brand-line: rgb(var(--brand-line-rgb)); --brand-hover: rgb(var(--brand-hover-rgb));
+  --brand-deep: #0f2f63;
+  --brand-light: #5790e6;
+  --accent-teal: #22cdea;
+  --ghost: #ddd7d0;
+  --brand-sky: #22cdea;
+  --gradient-brand: linear-gradient(135deg, #2563c9, #22cdea);
+  --gradient-brand-soft: linear-gradient(135deg, #eaf2ff, #f9f7f3);
+  --line: rgb(var(--line-rgb)); --line-soft: rgb(var(--line-soft-rgb));
+  --surface-glass: #f9f7f3; --surface-glass-strong: #eee9e2;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+  --focus-ring: 0 0 0 3px #2563c933;
+  --glow-brand: 0 1px 2px #2a211d0d;
+  --shadow-lg: 0 24px 56px #2a211d1a;
+  --shadow-md: 0 10px 26px #2a211d14;
+  --shadow-sm: 0 1px 2px #2a211d0d;
+  /* Semantic status palette. */
+  --success: rgb(var(--success-rgb)); --success-ink: rgb(var(--success-ink-rgb)); --success-soft: rgb(var(--success-soft-rgb)); --success-line: rgb(var(--success-line-rgb));
+  --warning: rgb(var(--warning-rgb)); --warning-ink: rgb(var(--warning-ink-rgb)); --warning-soft: rgb(var(--warning-soft-rgb)); --warning-line: rgb(var(--warning-line-rgb));
+  --danger: rgb(var(--danger-rgb)); --danger-ink: rgb(var(--danger-ink-rgb)); --danger-soft: rgb(var(--danger-soft-rgb)); --danger-line: rgb(var(--danger-line-rgb));
+  --info: rgb(var(--info-rgb)); --info-ink: rgb(var(--info-ink-rgb)); --info-soft: rgb(var(--info-soft-rgb)); --info-line: rgb(var(--info-line-rgb));
+  --neutral: #746e68; --neutral-soft: #f4f1ec; --neutral-line: #e8e3dc;
+  --on-brand: #ffffff; --on-status: #ffffff;
+  /* Deep blue ink surfaces keep the palette coherent in dark bands and menus. */
+  --ink-surface: #0b1330; --ink-surface-2: #0f2f63; --ink-surface-3: #071629;
+  --on-ink: #f4f7ff; --on-ink-strong: #ffffff; --on-ink-muted: #b7c5dc;
+  --on-ink-accent: #72e4f3; --brand-on-ink: #72e4f3;
+  --ink-line: color-mix(in oklab, var(--on-ink) 15%, transparent);
+  --scrim: color-mix(in oklab, var(--brand-deep) 40%, transparent);
+  --scrim-strong: color-mix(in oklab, var(--brand-deep) 80%, transparent);
+  /* Blue leads the chart palette; the remaining series stay distinguishable. */
+  --series-1: #2563c9; --series-2: #2e6d58; --series-3: #4b4540;
+  --series-4: #896017; --series-5: #64717a; --series-6: #8c5143;
+  --series-7: #22a8c6; --series-8: #272320;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 * {
@@ -84,49 +100,14 @@
   outline: 3px solid color-mix(in oklab, var(--brand) 40%, #fff);
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  scroll-padding-top: 140px;
-  background:
-    radial-gradient(circle at 6% 12%, rgba(99, 102, 241, 0.16) 0, transparent 44%),
-    radial-gradient(circle at 94% 6%, rgba(139, 92, 246, 0.15) 0, transparent 40%),
-    radial-gradient(circle at 82% 90%, rgba(236, 72, 153, 0.1) 0, transparent 38%),
-    linear-gradient(165deg, #fbfbfe 0%, #f5f3ff 46%, #fdfcff 100%);
-  color: var(--text);
-  font-family: var(--font-body), 'Segoe UI', sans-serif;
-  text-rendering: geometricPrecision;
+html, body {
+  margin: 0; padding: 0;
+  scroll-padding-top: 88px;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
-
-body::before,
-body::after {
-  content: '';
-  position: fixed;
-  z-index: -1;
-  pointer-events: none;
-}
-
-body::before {
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(circle at center, black 35%, transparent 88%);
-}
-
-body::after {
-  width: 42vw;
-  height: 42vw;
-  right: -14vw;
-  top: -18vw;
-  border-radius: 999px;
-  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.18), transparent 72%);
-  filter: blur(6px);
-  animation: ambientFloat 14s ease-in-out infinite;
-  will-change: transform;
-}.institutional-content :is(button, a, input, select, textarea, [role='button']) {
+.institutional-content :is(button, a, input, select, textarea, [role='button']) {
   scroll-margin-top: 140px;
 }
 
@@ -194,7 +175,7 @@ main {
   max-width: 1240px;
   margin: 0 auto;
   padding: 36px 24px 88px;
-  animation: pageReveal 0.45s ease;
+  animation: none;
 }
 
 /* ============================================================
@@ -208,9 +189,9 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   color: var(--text);
-  font-weight: 800;
+  font-weight: 650;
   letter-spacing: -0.02em;
   line-height: 1.15;
   margin: 0 0 0.5em;
@@ -295,7 +276,7 @@ p {
   font-size: 13px;
   color: var(--muted);
   background: rgba(15, 33, 63, 0.04);
-  transition: all 0.16s ease;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -453,7 +434,7 @@ p {
   padding: 8px 10px;
   color: var(--muted);
   font-size: 14px;
-  transition: all 0.16s ease;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -463,7 +444,6 @@ p {
   color: var(--fg);
   border-color: color-mix(in oklab, var(--brand) 40%, var(--line));
   background: rgba(99, 102, 241, 0.08);
-  transform: translateX(2px);
 }
 
 .institutional-link-icon {
@@ -476,7 +456,7 @@ p {
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 650;
   letter-spacing: 0.02em;
   background: rgba(99, 102, 241, 0.08);
 }
@@ -539,9 +519,7 @@ p {
 }
 
 .institutional-content .card:hover {
-  transform: translateY(-2px);
   border-color: color-mix(in oklab, var(--brand) 35%, var(--line));
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
 }
 
 .ai-widget-grid {
@@ -612,7 +590,6 @@ p {
 }
 
 .suggestion-chip:hover {
-  transform: translateY(-1px);
   border-color: color-mix(in oklab, var(--brand) 50%, var(--line));
 }
 
@@ -680,7 +657,6 @@ p {
 
 .drag-item:hover {
   border-color: color-mix(in oklab, var(--brand) 46%, var(--line));
-  transform: translateY(-1px);
 }
 
 .drag-handle {
@@ -863,7 +839,7 @@ p {
   background: linear-gradient(135deg, #ffb84d, #ff6f61);
   color: #0a1120;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 650;
   padding: 0 6px;
 }
 
@@ -1079,7 +1055,6 @@ p {
   }
 
   .institutional-sidebar-group a:hover {
-    transform: none;
   }
 }
 
@@ -1521,7 +1496,11 @@ p {
 
 .feature-card {
   position: relative;
-  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    transform 200ms var(--ease-out),
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -1544,7 +1523,9 @@ p {
   font-size: 14px;
   opacity: 0;
   transform: translateX(-4px);
-  transition: all 0.28s ease;
+  transition:
+    opacity 160ms ease,
+    transform 160ms var(--ease-out);
 }
 
 .feature-card:hover .feature-cta {
@@ -1954,7 +1935,7 @@ textarea:focus-visible {
   font-size: clamp(1.35rem, 1.6vw, 1.7rem);
   line-height: 1.1;
   letter-spacing: -0.02em;
-  font-weight: 800;
+  font-weight: 650;
   color: var(--fg);
 }
 
@@ -2001,15 +1982,6 @@ textarea:focus-visible {
     overflow-x: auto;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }
 
@@ -2152,26 +2124,6 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 
-/* Shimmer sweep across the button */
-.ira-trigger::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(105deg, transparent 40%, rgba(99, 102, 241, 0.14) 50%, transparent 60%);
-  background-size: 200% 100%;
-  animation: ira-shimmer 3.5s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes ira-shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
 .ira-trigger:hover {
   transform: translateY(-2px) scale(1.03);
   box-shadow:
@@ -2200,7 +2152,7 @@ textarea:focus-visible {
 
 .ira-trigger-label {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 650;
   color: var(--fg);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -2230,7 +2182,7 @@ textarea:focus-visible {
   .ira-trigger::after {
     content: 'IRA';
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 650;
     letter-spacing: 0.08em;
     color: var(--fg);
     position: relative;
@@ -2425,7 +2377,7 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 650;
   color: #fff;
 }
 
@@ -2951,9 +2903,19 @@ pre {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-property: color, background-color, border-color, opacity, box-shadow !important;
+  }
+
+  .feature-card:hover,
+  .feature-cta,
+  .ira-trigger:hover {
+    transform: none !important;
   }
 }
 
@@ -3013,9 +2975,7 @@ pre {
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.5s ease;
 }
 .ax-btn:hover {
-  transform: translateY(-2px);
   background-position: right center;
-  box-shadow: 0 20px 48px color-mix(in oklab, var(--brand-2) 36%, transparent);
 }
 
 .ax-btn-ghost {
@@ -3034,9 +2994,7 @@ pre {
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .ax-btn-ghost:hover {
-  transform: translateY(-2px);
   border-color: color-mix(in oklab, var(--brand) 50%, var(--line));
-  box-shadow: var(--shadow-md);
 }
 
 /* Gradient-border glass card */
@@ -3050,9 +3008,7 @@ pre {
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .ax-card:hover {
-  transform: translateY(-6px);
   border-color: color-mix(in oklab, var(--brand) 40%, var(--line));
-  box-shadow: var(--shadow-lg);
 }
 .ax-card::after {
   content: '';
@@ -3138,11 +3094,11 @@ pre {
 }
 .ax-hero-copy { position: relative; z-index: 2; }
 .ax-hero-title {
-  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   font-size: clamp(2.1rem, 4.4vw, 3.6rem);
   line-height: 1.06;
   letter-spacing: -0.025em;
-  font-weight: 800;
+  font-weight: 650;
   margin: 18px 0 0;
   color: var(--text);
 }
@@ -3345,7 +3301,7 @@ pre {
 }
 .ui-hero-eyebrow {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--brand);
@@ -3381,7 +3337,7 @@ pre {
 }
 .ui-stat-value {
   font-size: 26px;
-  font-weight: 800;
+  font-weight: 650;
   margin-top: 8px;
   color: var(--text);
   letter-spacing: -0.4px;
@@ -3410,7 +3366,7 @@ canvas {
 /* Page content is clipped horizontally so a stray wide child can never
    create a full-page horizontal scrollbar; wide tables scroll internally. */
 main {
-  overflow-x: clip;
+  overflow-x: auto;
   /* Allow the content column to shrink below its min-content size so flex/grid
      children reflow on mobile instead of forcing the page wider than the viewport. */
   min-width: 0;
@@ -3441,9 +3397,9 @@ main :where(p, li, td, th, dd, dt, code, .break-anywhere) {
 }
 .page-title {
   margin: 0;
-  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   font-size: clamp(20px, 2.4vw, 28px);
-  font-weight: 800;
+  font-weight: 650;
   letter-spacing: -0.4px;
   line-height: 1.12;
   color: var(--text);
@@ -3486,4 +3442,35 @@ main :where(p, li, td, th, dd, dt, code, .break-anywhere) {
     padding-left: 16px;
     padding-right: 16px;
   }
+}
+
+/* Shared product foundations, including legacy route compositions. */
+.nxScope { --gradient-brand: linear-gradient(var(--brand),var(--brand)); }
+.nxScope :where(.hero,.platform-hero,.dashboard-hero,.kpi-card,.ai-brief-box,.widget-card,.ax-card) { background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.nxScope :where(.hero)::before,.nxScope :where(.hero)::after { display: none; }
+.nxScope :where(.hero) { padding: 24px; border-radius: 10px; }
+.nxScope :where(.hero) h1 { font-size: clamp(24px,3vw,32px); font-weight: 600; }
+.nxScope :where(.hero) p { font-size: 14px; color: var(--muted); }
+.nxScope :where(.gradient-text) { background: none; color: var(--text); -webkit-text-fill-color: currentColor; }
+.nxScope :where(.ax-glow-ring,.ax-spotlight)::before { display: none; }
+.nxScope :where(button,input,select,textarea) { font-family: inherit; }
+.nxScope :where(button) { line-height: 1.4; }
+.nxScope :where(input:not([type=checkbox]):not([type=radio]),select,textarea) { max-width: 100%; min-width: 0; }
+.nxScope :where(.grid,.workspace-grid,.workspace-io-grid,.platform-feature-grid,.platform-attribution-grid,.platform-integration-grid) { grid-template-columns: repeat(auto-fit,minmax(min(100%,280px),1fr)); }
+.nxScope :where(.table-scroll,.table-wrap) { max-width: 100%; overflow-x: auto; }
+.nxScope :where(th,td) { font-variant-numeric: tabular-nums; }
+.nxScope :where(.seo-crumb) { display: flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 11px; margin-bottom: 20px; }
+.nxScope :where(.seo-crumb) strong { font-weight: 500; color: var(--ink-2); }
+.nxScope :where(.notification-trigger) { background: var(--card); border-color: var(--line); box-shadow: none; }
+.nxScope :where(.notification-panel) { background: var(--card); color: var(--text); border-color: var(--line); box-shadow: var(--shadow-lg); }
+.nxScope :where(.notification-item) { background: var(--card); }
+.nxScope :where(.notification-copy p,.notification-age) { color: var(--muted); }
+.nxScope :where(.notification-panel-head h3,.notification-copy strong) { color: var(--text); }
+.nxScope :where(.auto-recovery-banner) { background: #f8f1e4; color: #755725; border-color: #e9d8b8; }
+.nxScope :where(.auto-recovery-dot) { animation: none; }
+:where(input,textarea)::placeholder { color: var(--faint); opacity: 1; }
+:where(button):disabled { cursor: not-allowed; }
+@media (max-width:640px) {
+  .nxScope :where(.trust-form-grid,.auth-grid-2,.metric-card-grid,.ai-widget-grid) { grid-template-columns: minmax(0,1fr); }
+  .nxScope :where(.notification-panel) { position: fixed; top: 64px; left: 12px; right: 12px; width: auto; max-height: calc(100dvh - 90px); overflow-y: auto; }
 }

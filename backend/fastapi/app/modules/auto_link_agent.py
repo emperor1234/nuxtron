@@ -21,6 +21,7 @@ from urllib.parse import urlparse
 
 import psycopg
 
+from ..domains.identity.async_egress import outbound_async_request, resolve_outbound_target_async
 from ..event_bus import Event, EventBus, EventType
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SafetyViolation:
     """A single safety violation found during pre-execution checks"""
+
     rule: str
     severity: str  # "block", "warn"
     detail: str
@@ -37,6 +39,7 @@ class SafetyViolation:
 @dataclass
 class AgentDecision:
     """Record of an agent's decision on a single link"""
+
     link: dict[str, Any]
     approved: bool
     violations: list[SafetyViolation] = field(default_factory=list)
@@ -68,62 +71,76 @@ class AgentSafetyChecker:
         from_domain = urlparse(from_url).netloc
         to_domain = urlparse(to_url).netloc
         if from_domain and to_domain and from_domain != to_domain:
-            violations.append(SafetyViolation(
-                rule="same_domain",
-                severity="block",
-                detail=f"Cross-domain link attempt: {from_domain} → {to_domain}",
-            ))
+            violations.append(
+                SafetyViolation(
+                    rule="same_domain",
+                    severity="block",
+                    detail=f"Cross-domain link attempt: {from_domain} → {to_domain}",
+                )
+            )
 
         # Rule 2: Neither URL should be empty or malformed
         if not from_url or not to_url:
-            violations.append(SafetyViolation(
-                rule="url_required",
-                severity="block",
-                detail="from_url or to_url is empty",
-            ))
+            violations.append(
+                SafetyViolation(
+                    rule="url_required",
+                    severity="block",
+                    detail="from_url or to_url is empty",
+                )
+            )
 
         # Rule 3: Anchor text must not be empty or spam-like
         if not anchor or len(anchor.strip()) < 2:
-            violations.append(SafetyViolation(
-                rule="anchor_quality",
-                severity="block",
-                detail="Anchor text is missing or too short",
-            ))
+            violations.append(
+                SafetyViolation(
+                    rule="anchor_quality",
+                    severity="block",
+                    detail="Anchor text is missing or too short",
+                )
+            )
 
         spam_signals = ["click here", "here", "read more", "learn more"]
         if anchor.lower().strip() in spam_signals:
-            violations.append(SafetyViolation(
-                rule="anchor_quality",
-                severity="warn",
-                detail=f"Generic anchor text detected: '{anchor}'",
-            ))
+            violations.append(
+                SafetyViolation(
+                    rule="anchor_quality",
+                    severity="warn",
+                    detail=f"Generic anchor text detected: '{anchor}'",
+                )
+            )
 
         # Rule 4: Do not link to blocked paths
         to_path = urlparse(to_url).path
         for blocked in self.blocked_paths:
             if to_path.startswith(blocked):
-                violations.append(SafetyViolation(
-                    rule="blocked_path",
-                    severity="block",
-                    detail=f"Link target is in blocked path: {to_path}",
-                ))
+                violations.append(
+                    SafetyViolation(
+                        rule="blocked_path",
+                        severity="block",
+                        detail=f"Link target is in blocked path: {to_path}",
+                    )
+                )
 
         # Rule 5: No self-links
         if from_url == to_url:
-            violations.append(SafetyViolation(
-                rule="no_self_link",
-                severity="block",
-                detail="from_url and to_url are the same",
-            ))
+            violations.append(
+                SafetyViolation(
+                    rule="no_self_link",
+                    severity="block",
+                    detail="from_url and to_url are the same",
+                )
+            )
 
         # Rule 6: Relevance score must be sufficient
         relevance = link.get("relevance_score", 0)
         if relevance < 0.5:
-            violations.append(SafetyViolation(
-                rule="relevance_threshold",
-                severity="block",
-                detail=f"Relevance score {relevance:.2f} is below minimum 0.50",
-            ))
+            violations.append(
+                SafetyViolation(
+                    rule="relevance_threshold",
+                    severity="block",
+                    detail=f"Relevance score {relevance:.2f} is below minimum 0.50",
+                )
+            )
 
         return violations
 
@@ -168,9 +185,7 @@ class AutoLinkAgent:
             return
 
         links = event.payload.get("links_pending_review", [])
-        logger.info(
-            f"[auto-link-agent] Received {len(links)} link suggestions from event {event.id}"
-        )
+        logger.info(f"[auto-link-agent] Received {len(links)} link suggestions from event {event.id}")
 
         if not links:
             return
@@ -205,12 +220,14 @@ class AutoLinkAgent:
             approved = len(blocking) == 0
             reasoning = self._build_reasoning(link, violations, approved)
 
-            decisions.append(AgentDecision(
-                link=link,
-                approved=approved,
-                violations=violations,
-                reasoning=reasoning,
-            ))
+            decisions.append(
+                AgentDecision(
+                    link=link,
+                    approved=approved,
+                    violations=violations,
+                    reasoning=reasoning,
+                )
+            )
 
             # Log to reasoning
             logger.info(
@@ -296,9 +313,7 @@ class AutoLinkAgent:
             lines.append("All safety checks passed.")
         return "\n".join(lines)
 
-    async def _execute_link(
-        self, run_id: str, decision: AgentDecision
-    ) -> dict[str, Any]:
+    async def _execute_link(self, run_id: str, decision: AgentDecision) -> dict[str, Any]:
         """
         Execute a single approved link.
         In v1: calls CMS API if configured, otherwise logs the action.
@@ -313,26 +328,27 @@ class AutoLinkAgent:
 
         if self.cms_api_url and self.cms_api_key:
             try:
-                import httpx
-                async with httpx.AsyncClient() as client:
-                    resp = await client.post(
-                        f"{self.cms_api_url}/api/links",
-                        json={
-                            "from_url": link.get("from_url"),
-                            "to_url": link.get("to_url"),
-                            "anchor_text": link.get("anchor_text"),
-                            "context": link.get("context_snippet"),
-                        },
-                        headers={"Authorization": f"Bearer {self.cms_api_key}"},
-                        timeout=10,
-                    )
-                    resp.raise_for_status()
-                    result["status"] = "executed"
-                    result["cms_response"] = resp.json()
+                target = await resolve_outbound_target_async(f"{self.cms_api_url.rstrip('/')}/api/links")
+                resp = await outbound_async_request(
+                    "POST",
+                    target,
+                    json={
+                        "from_url": link.get("from_url"),
+                        "to_url": link.get("to_url"),
+                        "anchor_text": link.get("anchor_text"),
+                        "context": link.get("context_snippet"),
+                    },
+                    headers={"Authorization": f"Bearer {self.cms_api_key}"},
+                    timeout=10,
+                    max_response_bytes=128_000,
+                )
+                resp.raise_for_status()
+                result["status"] = "executed"
+                result["cms_response"] = resp.json()
             except Exception as e:
                 result["status"] = "error"
-                result["error"] = str(e)
-                logger.error(f"[auto-link-agent] CMS API error: {e}")
+                result["error"] = type(e).__name__
+                logger.error("[auto-link-agent] CMS API request failed (%s)", type(e).__name__)
         else:
             logger.info(
                 f"[auto-link-agent] SIMULATED: Add link "
@@ -342,9 +358,7 @@ class AutoLinkAgent:
 
         return result
 
-    async def _persist_decisions(
-        self, run_id: str, decisions: list[AgentDecision]
-    ):
+    async def _persist_decisions(self, run_id: str, decisions: list[AgentDecision]):
         """Persist all decisions to action_audit table"""
         for d in decisions:
             await self.db.execute(
@@ -358,19 +372,21 @@ class AutoLinkAgent:
                     self.agent_id,
                     "internal_link_suggestion",
                     json.dumps({"link": d.link}),
-                    json.dumps({"approved": d.approved, "violations": [
-                        {"rule": v.rule, "severity": v.severity, "detail": v.detail}
-                        for v in d.violations
-                    ]}),
+                    json.dumps(
+                        {
+                            "approved": d.approved,
+                            "violations": [
+                                {"rule": v.rule, "severity": v.severity, "detail": v.detail} for v in d.violations
+                            ],
+                        }
+                    ),
                     "executed" if d.approved else "rejected",
                     d.reasoning,
                 ),
             )
         await self.db.commit()
 
-    async def _update_reasoning_log(
-        self, run_id: str, decisions: list[AgentDecision]
-    ):
+    async def _update_reasoning_log(self, run_id: str, decisions: list[AgentDecision]):
         """Append to agent's reasoning log"""
         log_entry = {
             "run_id": run_id,
@@ -379,10 +395,7 @@ class AutoLinkAgent:
                 {
                     "link": d.link,
                     "approved": d.approved,
-                    "violations": [
-                        {"rule": v.rule, "severity": v.severity}
-                        for v in d.violations
-                    ],
+                    "violations": [{"rule": v.rule, "severity": v.severity} for v in d.violations],
                     "reasoning": d.reasoning,
                 }
                 for d in decisions

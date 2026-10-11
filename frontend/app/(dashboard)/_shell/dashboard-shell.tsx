@@ -1,216 +1,103 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import type { Route } from "next";
+import * as Dialog from "@radix-ui/react-dialog";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import {
+  Home,
+  Search,
+  ChartNoAxesCombined,
+  MapPin,
+  FileText,
+  Share2,
+  Clapperboard,
+  LayoutGrid,
+  Settings,
+  Menu,
+  X,
+  ChevronDown,
+  Plus,
+  ScanEye,
+  LogOut,
+  ArrowLeftRight,
+} from "lucide-react";
 import { apiGet, resolveSessionTenant } from "@/app/lib/api-client";
 import { readSessionUser, type SessionUser } from "@/app/lib/session-user";
+import { otherProductLine, PRODUCT_META, type ProductLine } from "@/app/lib/product-line";
+import {
+  otherProductSignInHref,
+  signOutAndNavigate,
+  useProductLine,
+  visibleRailItems,
+} from "@/app/lib/use-product-line";
+import NotificationCenter from "@/app/notification-center";
 import styles from "./shell.module.css";
 import "../_ui/tokens.css";
 import CommandPalette from "./command-palette";
 import DashboardRouteIdentity from "./route-identity";
 import { MENUS, RAIL_ITEMS, SETTINGS_ITEM, type RailKey } from "./nav";
 
-const RAIL_ICONS: Record<RailKey, ReactNode> = {
-  dashboard: (
-    <path
-      d="M4 11l8-7 8 7M6 9.5V20h12V9.5"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  ),
-  seo: (
-    <>
-      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.9" />
-      <path
-        d="M16 16l4.5 4.5"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinecap="round"
-      />
-    </>
-  ),
-  ai: (
-    <>
-      <path
-        d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5 10.2 10.8 5.5 9l4.7-1.3L12 3z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M19 14l.7 1.9L21.5 16.5l-1.8.6L19 19l-.7-1.9L16.5 16.5l1.8-.6L19 14z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </>
-  ),
-  traffic: (
-    <>
-      <path
-        d="M5 20V12M12 20V5M19 20v-6"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinecap="round"
-      />
-      <path
-        d="M3 20h18"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinecap="round"
-      />
-    </>
-  ),
-  local: (
-    <>
-      <path
-        d="M12 21s7-6.3 7-11a7 7 0 10-14 0c0 4.7 7 11 7 11z"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.9" />
-    </>
-  ),
-  content: (
-    <>
-      <rect
-        x="4"
-        y="3"
-        width="16"
-        height="18"
-        rx="2.5"
-        stroke="currentColor"
-        strokeWidth="1.9"
-      />
-      <path
-        d="M8 8h8M8 12h8M8 16h5"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinecap="round"
-      />
-    </>
-  ),
-  social: (
-    <>
-      <circle cx="6" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.9" />
-      <circle cx="18" cy="6" r="2.6" stroke="currentColor" strokeWidth="1.9" />
-      <circle cx="18" cy="18" r="2.6" stroke="currentColor" strokeWidth="1.9" />
-      <path
-        d="M8.3 10.8l7.4-3.6M8.3 13.2l7.4 3.6"
-        stroke="currentColor"
-        strokeWidth="1.9"
-      />
-    </>
-  ),
-  studio: (
-    <>
-      <rect
-        x="3"
-        y="4.5"
-        width="18"
-        height="12"
-        rx="2.2"
-        stroke="currentColor"
-        strokeWidth="1.9"
-      />
-      <path
-        d="M10 8.8l4.2 2.2-4.2 2.2V8.8z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M8.5 20h7"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinecap="round"
-      />
-    </>
-  ),
-  apps: (
-    <>
-      <rect
-        x="3.5"
-        y="3.5"
-        width="7"
-        height="7"
-        rx="1.6"
-        stroke="currentColor"
-        strokeWidth="1.9"
-      />
-      <rect
-        x="13.5"
-        y="3.5"
-        width="7"
-        height="7"
-        rx="1.6"
-        stroke="currentColor"
-        strokeWidth="1.9"
-      />
-      <rect
-        x="3.5"
-        y="13.5"
-        width="7"
-        height="7"
-        rx="1.6"
-        stroke="currentColor"
-        strokeWidth="1.9"
-      />
-      <rect
-        x="13.5"
-        y="13.5"
-        width="7"
-        height="7"
-        rx="1.6"
-        stroke="currentColor"
-        strokeWidth="1.9"
-      />
-    </>
-  ),
-  settings: (
-    <>
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.9" />
-      <path
-        d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinecap="round"
-      />
-    </>
-  ),
-};
+function subscribeSession(update: () => void) {
+  window.addEventListener("storage", update);
+  window.addEventListener("focus", update);
+  return () => {
+    window.removeEventListener("storage", update);
+    window.removeEventListener("focus", update);
+  };
+}
+function sessionSnapshot() {
+  try {
+    return JSON.stringify(readSessionUser());
+  } catch {
+    return "null";
+  }
+}
+const serverSessionSnapshot = () => "null";
 
-function RailIcon({ k }: { k: RailKey }) {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      {RAIL_ICONS[k]}
-    </svg>
-  );
+const ICONS = {
+  dashboard: Home,
+  seo: Search,
+  ai: ScanEye,
+  traffic: ChartNoAxesCombined,
+  local: MapPin,
+  content: FileText,
+  social: Share2,
+  studio: Clapperboard,
+  apps: LayoutGrid,
+  settings: Settings,
+};
+const ALL_RAILS = [...RAIL_ITEMS, SETTINGS_ITEM];
+
+/** The topbar's primary action belongs to whichever product the user is in. */
+function primaryAction(product: ProductLine | null): { href: Route; label: string } {
+  return product === "marketing"
+    ? { href: "/content-generation", label: "New content" }
+    : { href: "/seo/domain-overview", label: "New analysis" };
 }
 
-function matchKey(pathname: string): RailKey {
-  const all = [...RAIL_ITEMS, SETTINGS_ITEM];
+function matchKey(path: string): RailKey {
   let best: RailKey = "dashboard";
-  let bestLen = -1;
-  for (const item of all) {
-    if (
-      (pathname === item.href || pathname.startsWith(`${item.href}/`)) &&
-      item.href.length > bestLen
-    ) {
-      best = item.key;
-      bestLen = item.href.length;
+  let length = -1;
+  for (const item of ALL_RAILS)
+    for (const prefix of [item.href, ...(item.matchPrefixes ?? [])]) {
+      if (
+        (path === prefix || path.startsWith(`${prefix}/`)) &&
+        prefix.length > length
+      ) {
+        best = item.key;
+        length = prefix.length;
+      }
     }
-  }
   return best;
 }
 
@@ -224,317 +111,326 @@ export default function DashboardShell({
   const pathname = usePathname() || "/dashboard";
   const router = useRouter();
   const activeKey = matchKey(pathname);
-  const [menuIntent, setMenuIntent] = useState<RailKey | "closed" | null>(null);
+  const [expanded, setExpanded] = useState<RailKey | null>(null);
+  const [mobile, setMobile] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [sessionUser] = useState<SessionUser | null>(() => readSessionUser());
-  const [workspaceLabel, setWorkspaceLabel] = useState("");
-  const [unreadCount, setUnreadCount] = useState(0);
-  const openMenu =
-    menuIntent === "closed"
-      ? null
-      : (menuIntent ?? (activeKey !== "dashboard" ? activeKey : null));
-
+  const searchTrigger = useRef<HTMLButtonElement>(null);
+  const session = useSyncExternalStore(
+    subscribeSession,
+    sessionSnapshot,
+    serverSessionSnapshot,
+  );
+  const sessionUser = JSON.parse(session) as SessionUser | null;
+  const product = useProductLine();
+  const rails = visibleRailItems(ALL_RAILS, product);
+  const action = primaryAction(product);
+  const [workspace, setWorkspace] = useState("");
   useEffect(() => {
-    if (!openMenu) return;
-    const onKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") setMenuIntent("closed");
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [activeKey, openMenu]);
-
-  useEffect(() => {
-    const onKey = (e: globalThis.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setSearchOpen(true);
-        setMenuIntent("closed");
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [activeKey]);
-
-  useEffect(() => {
-    const tenantId = sessionUser?.tenantId || resolveSessionTenant();
-    if (!tenantId) return;
-
+    const tenant = resolveSessionTenant();
+    if (!tenant) return;
     let active = true;
-    async function loadChrome() {
-      try {
-        const [profile, unread] = await Promise.allSettled([
-          apiGet("/white-label/profile", tenantId),
-          apiGet("/notifications/unread-count", tenantId),
-        ]);
-        if (!active) return;
-        if (profile.status === "fulfilled") {
-          const whiteLabel = profile.value.white_label as
-            | Record<string, unknown>
-            | undefined;
-          const wlProfile = whiteLabel?.profile as
-            | Record<string, unknown>
-            | undefined;
-          const brand =
-            typeof wlProfile?.brand_name === "string"
-              ? wlProfile.brand_name.trim()
-              : "";
-          const stage =
-            typeof wlProfile?.stage === "string" ? wlProfile.stage.trim() : "";
-          setWorkspaceLabel(brand || stage);
-        }
-        if (unread.status === "fulfilled") {
-          const count = unread.value.unreadCount ?? unread.value.unread_count;
-          setUnreadCount(typeof count === "number" ? count : 0);
-        }
-      } catch {
-        if (active) setUnreadCount(0);
-      }
-    }
-    void loadChrome();
+    void apiGet("/white-label/profile", tenant)
+      .then((profile) => {
+        const whiteLabel = profile.white_label as
+          | { profile?: { brand_name?: string } }
+          | undefined;
+        if (active) setWorkspace(whiteLabel?.profile?.brand_name?.trim() || "");
+      })
+      .catch(() => {
+        /* Workspace naming is optional; keep the neutral label. */
+      });
     return () => {
       active = false;
     };
-  }, [sessionUser]);
+  }, []);
+  useEffect(() => {
+    const listener = (event: globalThis.KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setMobile(false);
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, []);
+  const closeSearch = () => setSearchOpen(false);
 
-  const activeMenu = openMenu ? MENUS[openMenu] : null;
-
-  const renderRailButton = (
-    item: (typeof RAIL_ITEMS)[number] | typeof SETTINGS_ITEM,
-  ) => {
-    const isActive = (openMenu ?? activeKey) === item.key;
-    const className = `${styles.railItem} ${isActive ? styles.railItemActive : ""}`;
-
-    if (!item.hasMenu) {
-      return (
-        <Link
-          key={item.key}
-          href={item.href}
-          className={className}
-          aria-current={isActive ? "page" : undefined}
-          onClick={() => setMenuIntent(null)}
-        >
-          <RailIcon k={item.key} />
-          <span>{item.label}</span>
-        </Link>
-      );
-    }
-
-    const expanded = openMenu === item.key;
+  function navigation(scope: string) {
     return (
-      <button
-        key={item.key}
-        type="button"
-        className={className}
-        aria-haspopup="true"
-        aria-expanded={expanded}
-        onClick={() => {
-          if (openMenu !== item.key) {
-            setMenuIntent(item.key);
-            router.push(item.href);
-            return;
-          }
-          setMenuIntent(expanded ? "closed" : item.key);
-        }}
-      >
-        <RailIcon k={item.key} />
-        <span>{item.label}</span>
-      </button>
-    );
-  };
-
-  return (
-    <div
-      className={`nxScope ${styles.shell}${fontClassName ? ` ${fontClassName}` : ""}`}
-    >
-      {/* ICON RAIL */}
-      <aside className={styles.rail} aria-label="Primary">
-        <nav className={styles.railNav}>{RAIL_ITEMS.map(renderRailButton)}</nav>
-        <div className={styles.railBottom}>
-          {renderRailButton(SETTINGS_ITEM)}
-        </div>
-      </aside>
-
-      {/* FLYOUT */}
-      {activeMenu ? (
-        <>
-          <button
-            type="button"
-            className={styles.flyoutOverlay}
-            aria-label="Close menu"
-            onClick={() => setMenuIntent("closed")}
-          />
-          <div
-            className={styles.flyout}
-            role="menu"
-            aria-label={activeMenu.title}
+      <>
+        <div className={styles.brandRow}>
+          <Link
+            href="/dashboard"
+            className={styles.logo}
+            onClick={() => setMobile(false)}
           >
-            <div className={styles.flyoutTitle}>{activeMenu.title}</div>
-            <Link
-              href="/dashboard"
-              className={`${styles.flyoutLink} ${styles.flyoutLinkPrimary}`}
-              role="menuitem"
-              onClick={() => setMenuIntent(null)}
-            >
-              Dashboard
-            </Link>
-            {activeMenu.groups.map((group) => (
-              <div key={group.label}>
-                <div className={styles.flyoutGroupLabel}>{group.label}</div>
-                {group.items.map((entry) => (
-                  <Link
-                    key={`${group.label}-${entry.label}`}
-                    href={entry.href}
-                    className={`${styles.flyoutLink} ${
-                      pathname === entry.href ||
-                      pathname.startsWith(`${entry.href}/`)
-                        ? styles.flyoutLinkActive
-                        : ""
-                    }`}
-                    aria-current={
-                      pathname === entry.href ||
-                      pathname.startsWith(`${entry.href}/`)
-                        ? "page"
-                        : undefined
-                    }
-                    role="menuitem"
-                    onClick={() => setMenuIntent(openMenu)}
-                  >
-                    {entry.label}
-                  </Link>
-                ))}
-              </div>
-            ))}
+            <Image src="/brand/nuxtron-icon-square.svg" alt="" width={27} height={27} />
+            Nuxtron
+          </Link>
+          {product && (
+            <span className={styles.productBadge}>
+              <span className="sr-only">Signed in to </span>
+              {PRODUCT_META[product].label}
+            </span>
+          )}
+        </div>
+        <div className={styles.workspaceLabel}>
+          <span className={styles.workspaceInitial} aria-hidden="true">
+            {Array.from(workspace || "Workspace")[0]}
+          </span>
+          <div>
+            <strong title={workspace || "Your workspace"}>
+              {workspace || "Your workspace"}
+            </strong>
+            <small>{product ? PRODUCT_META[product].name : "All products"}</small>
           </div>
-        </>
-      ) : null}
-
-      {/* MAIN */}
-      <div
-        className={`${styles.main} ${activeMenu ? styles.mainWithFlyout : ""}`}
-      >
+        </div>
+        <p className={styles.navLabel}>Workspace</p>
+        <nav className={styles.railNav} aria-label="Primary">
+          {rails.map((item) => {
+            const Icon = ICONS[item.key];
+            const isExpanded = expanded === item.key;
+            const section = MENUS[item.key];
+            return (
+              <div key={item.key}>
+                {item.hasMenu ? (
+                  <button
+                    type="button"
+                    className={`${styles.railItem} ${activeKey === item.key ? styles.railItemActive : ""}`}
+                    aria-expanded={isExpanded}
+                    aria-current={activeKey === item.key ? "location" : undefined}
+                    aria-controls={`${scope}-nav-${item.key}`}
+                    onClick={() => {
+                      setExpanded(isExpanded ? null : item.key);
+                      if (!isExpanded) router.push(item.href);
+                    }}
+                  >
+                    <Icon size={18} aria-hidden="true" />
+                    <span>{item.label}</span>
+                    <ChevronDown
+                      size={13}
+                      className={styles.chevron}
+                      aria-hidden="true"
+                    />
+                  </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`${styles.railItem} ${activeKey === item.key ? styles.railItemActive : ""}`}
+                    aria-current={pathname === item.href ? "page" : undefined}
+                    onClick={() => {
+                      setExpanded(null);
+                      setMobile(false);
+                    }}
+                  >
+                    <Icon size={18} aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </Link>
+                )}
+                {isExpanded && section && (
+                  <div
+                    id={`${scope}-nav-${item.key}`}
+                    className={styles.subnav}
+                  >
+                    {section.groups.map((group) => (
+                      <div key={group.label}>
+                        <p className={styles.flyoutGroupLabel}>{group.label}</p>
+                        {group.items.map((entry) => (
+                          <Link
+                            key={entry.href}
+                            href={entry.href}
+                            className={styles.flyoutLink}
+                            aria-current={
+                              pathname === entry.href ? "page" : undefined
+                            }
+                            onClick={() => setMobile(false)}
+                          >
+                            {entry.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+        <div className={styles.sidebarFoot}>
+          <Link href="/account">
+            Account settings <Settings size={14} aria-hidden="true" />
+          </Link>
+        </div>
+      </>
+    );
+  }
+  return (
+    <div className={`nxScope ${styles.shell} ${fontClassName || ""}`}>
+      <a href="#workspace-content" className="skip-to-content">
+        Skip to workspace
+      </a>
+      <aside className={styles.rail}>{navigation("desktop")}</aside>
+      <div className={styles.main}>
         <header className={styles.topbar}>
+          <Dialog.Root open={mobile} onOpenChange={setMobile}>
+            <Dialog.Trigger asChild>
+              <button
+                className={styles.mobileMenu}
+                type="button"
+                aria-label="Open workspace navigation"
+              >
+                <Menu size={20} />
+              </button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay className={styles.mobileOverlay} />
+              <Dialog.Content
+                className={`nxScope ${styles.mobilePanel}`}
+                aria-describedby={undefined}
+              >
+                <Dialog.Title className="sr-only">
+                  Workspace navigation
+                </Dialog.Title>
+                <Dialog.Close
+                  className={styles.mobileClose}
+                  aria-label="Close workspace navigation"
+                >
+                  <X size={20} />
+                </Dialog.Close>
+                {navigation("mobile")}
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
           <button
+            ref={searchTrigger}
             type="button"
             className={styles.search}
             onClick={() => setSearchOpen(true)}
-            aria-label="Search domains, keywords, reports"
+            aria-label="Search tools and pages"
           >
-            <svg
-              width="17"
-              height="17"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="7"
-                stroke="currentColor"
-                strokeWidth="1.9"
-              />
-              <path
-                d="M16 16l4.5 4.5"
-                stroke="currentColor"
-                strokeWidth="1.9"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className={styles.searchText}>
-              Search domains, keywords, reports…
-            </span>
-            <span className={styles.kbd}>⌘K</span>
+            <Search size={16} aria-hidden="true" />
+            <span className={styles.searchText}>Search your workspace</span>
+            <kbd className={styles.kbd}>⌘ K</kbd>
           </button>
-          <CommandPalette
-            open={searchOpen}
-            onClose={() => setSearchOpen(false)}
-          />
           <div className={styles.topActions}>
-            {sessionUser?.tenantId ? (
-              <span className={styles.tenantChip} title={sessionUser.tenantId}>
-                {workspaceLabel || sessionUser.tenantId}
-              </span>
-            ) : null}
             <Link
-              href="/seo"
+              href={action.href}
               className={styles.newReport}
-              onClick={() => setMenuIntent(null)}
+              aria-label={action.label}
             >
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 5v14M5 12h14"
-                  stroke="#fff"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                />
-              </svg>
-              New analysis
+              <Plus size={15} aria-hidden="true" />
+              <span>{action.label}</span>
             </Link>
-            <Link
-              href="/account"
-              className={styles.bell}
-              onClick={() => setMenuIntent(null)}
-              aria-label={
-                unreadCount > 0
-                  ? `${unreadCount} unread notifications`
-                  : "Notifications"
-              }
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z"
-                  stroke="#5b6478"
-                  strokeWidth="1.9"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M10 20a2 2 0 004 0"
-                  stroke="#5b6478"
-                  strokeWidth="1.9"
-                />
-              </svg>
-              {unreadCount > 0 ? <span className={styles.bellDot} /> : null}
-            </Link>
-            <Link
-              href="/account"
-              className={styles.userChip}
-              onClick={() => setMenuIntent(null)}
-            >
-              <span className={styles.userAvatar}>
-                {sessionUser?.initials || "·"}
-              </span>
-              <span className={styles.userMeta}>
-                <span className={styles.userName}>
-                  {sessionUser?.name || sessionUser?.email || "Account"}
-                </span>
-                <br />
-                <span className={styles.userRole}>
-                  {sessionUser?.email && sessionUser.name
-                    ? sessionUser.email
-                    : workspaceLabel || "Signed in"}
-                </span>
-              </span>
-            </Link>
+            <NotificationCenter />
+            <AccountMenu
+              email={sessionUser?.email}
+              initials={sessionUser?.initials}
+              product={product}
+            />
           </div>
         </header>
-
-        <main className={styles.content}>
+        <CommandPalette
+          open={searchOpen}
+          onClose={closeSearch}
+          returnFocusRef={searchTrigger}
+        />
+        <main id="workspace-content" tabIndex={-1} className={styles.content}>
           <DashboardRouteIdentity />
           {children}
         </main>
       </div>
     </div>
+  );
+}
+
+/**
+ * Account menu. Moving to the other product signs the user out and opens that
+ * product's sign-in: access is fixed at sign-in, so there is deliberately no
+ * in-session switch.
+ */
+function AccountMenu({
+  email,
+  initials,
+  product,
+}: {
+  email?: string;
+  initials?: string;
+  product: ProductLine | null;
+}) {
+  const [leaving, setLeaving] = useState(false);
+  const switchTo = product
+    ? {
+        name: PRODUCT_META[otherProductLine(product)].name,
+        from: PRODUCT_META[product].label,
+        href: otherProductSignInHref(product),
+      }
+    : null;
+  const leave = (href: string) => {
+    if (leaving) return;
+    setLeaving(true);
+    void signOutAndNavigate(href);
+  };
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          className={styles.userChip}
+          aria-label="Account menu"
+          title={email || "Account"}
+        >
+          <span className={styles.userAvatar} aria-hidden="true">
+            {initials || "N"}
+          </span>
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="end"
+          sideOffset={8}
+          collisionPadding={16}
+          className={`nxScope ${styles.accountMenu}`}
+        >
+          <div className={styles.accountMenuHead}>
+            <strong>{email || "Signed in"}</strong>
+            <small>
+              {product ? PRODUCT_META[product].name : "All Nuxtron products"}
+            </small>
+          </div>
+          <DropdownMenu.Separator className={styles.accountMenuSeparator} />
+          <DropdownMenu.Item asChild className={styles.accountMenuItem}>
+            <Link href="/account">
+              <Settings size={15} aria-hidden="true" />
+              Account settings
+            </Link>
+          </DropdownMenu.Item>
+          {switchTo && (
+            <DropdownMenu.Item
+              className={styles.accountMenuItem}
+              disabled={leaving}
+              onSelect={() => leave(switchTo.href)}
+            >
+              <ArrowLeftRight size={15} aria-hidden="true" />
+              <span className={styles.accountMenuText}>
+                Use {switchTo.name}
+                <small>Signs you out of {switchTo.from}</small>
+              </span>
+            </DropdownMenu.Item>
+          )}
+          <DropdownMenu.Separator className={styles.accountMenuSeparator} />
+          <DropdownMenu.Item
+            className={styles.accountMenuItem}
+            disabled={leaving}
+            onSelect={() =>
+              leave(product ? PRODUCT_META[product].homePath : "/")
+            }
+          >
+            <LogOut size={15} aria-hidden="true" />
+            {leaving ? "Signing out…" : "Sign out"}
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }

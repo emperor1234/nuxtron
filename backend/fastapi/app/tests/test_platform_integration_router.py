@@ -138,7 +138,10 @@ def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> TestClient:
         ),
     )
 
-    monkeypatch.setattr(platform_router, "_build_platform_client", lambda platform, credentials: DummyPlatformClient())
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.clients._build_platform_client",
+        lambda platform, credentials: DummyPlatformClient(),
+    )
     platform_router._scheduled_posts.clear()
     platform_router._inbox_messages.clear()
 
@@ -233,29 +236,40 @@ def test_schedule_fails_closed_in_production_when_persistence_unavailable(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from backend.fastapi.app.routers import platform_integration as platform_router
+    from backend.fastapi.app.integrations.vendor_manager import get_vendor_manager
 
     monkeypatch.setenv("ENVIRONMENT", "production")
-    monkeypatch.setattr(platform_router, "_persist_scheduled_posts_store", lambda: False)
-
-    response = client.post(
-        "/platforms/schedule",
-        headers=H,
-        json={
-            "content": "scheduled persistence fail-closed test",
-            "media_urls": ["https://example.com/image.jpg"],
-            "platforms": ["twitter"],
-            "scheduled_at": FUTURE_SCHEDULE_AT,
-            "hashtags": ["nuxtron"],
-        },
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.local_repository._persist_scheduled_posts_store",
+        lambda: False,
     )
+    vendor_manager = get_vendor_manager()
+    tenant_vendor_id = vendor_manager.ensure_tenant_vendor(H["X-Tenant-Id"], "twitter_api")
+    tenant_credentials = vendor_manager.get_credentials("twitter_api")
+    assert tenant_credentials is not None
+    vendor_manager.store_credentials(tenant_vendor_id, tenant_credentials)
 
-    assert response.status_code == 503
-    assert response.json()["detail"] == "Scheduled post persistence is unavailable in production."
+    try:
+        response = client.post(
+            "/platforms/schedule",
+            headers=H,
+            json={
+                "content": "scheduled persistence fail-closed test",
+                "media_urls": ["https://example.com/image.jpg"],
+                "platforms": ["twitter"],
+                "scheduled_at": FUTURE_SCHEDULE_AT,
+                "hashtags": ["nuxtron"],
+            },
+        )
 
-    list_response = client.get("/platforms/scheduled-posts", headers=H)
-    assert list_response.status_code == 200
-    assert list_response.json()["count"] == 0
+        assert response.status_code == 503
+        assert response.json()["detail"] == "Scheduled post persistence is unavailable in production."
+
+        list_response = client.get("/platforms/scheduled-posts", headers=H)
+        assert list_response.status_code == 200
+        assert list_response.json()["count"] == 0
+    finally:
+        vendor_manager.revoke_credentials(tenant_vendor_id)
 
 
 def test_force_publish_rejects_cancelled_post(client: TestClient) -> None:
@@ -791,7 +805,9 @@ def test_schedule_and_inbox_store_helper_paths(monkeypatch: pytest.MonkeyPatch, 
 
     monkeypatch.delenv("PLATFORM_SCHEDULE_STORE_PATH", raising=False)
     default_path = platform_router._schedule_store_path()
-    assert str(default_path).endswith("storage\\platform\\scheduled_posts.json") or str(default_path).endswith("storage/platform/scheduled_posts.json")
+    assert str(default_path).endswith("storage\\platform\\scheduled_posts.json") or str(default_path).endswith(
+        "storage/platform/scheduled_posts.json"
+    )
 
     custom_path = tmp_path / "custom" / "store.json"
     monkeypatch.setenv("PLATFORM_SCHEDULE_STORE_PATH", str(custom_path))
@@ -805,7 +821,9 @@ def test_schedule_and_inbox_store_helper_paths(monkeypatch: pytest.MonkeyPatch, 
 
     monkeypatch.delenv("PLATFORM_INBOX_STORE_PATH", raising=False)
     default_inbox_path = platform_router._inbox_store_path()
-    assert str(default_inbox_path).endswith("storage\\platform\\inbox_messages.json") or str(default_inbox_path).endswith("storage/platform/inbox_messages.json")
+    assert str(default_inbox_path).endswith("storage\\platform\\inbox_messages.json") or str(
+        default_inbox_path
+    ).endswith("storage/platform/inbox_messages.json")
 
     custom_inbox_path = tmp_path / "custom" / "inbox-store.json"
     monkeypatch.setenv("PLATFORM_INBOX_STORE_PATH", str(custom_inbox_path))
@@ -830,7 +848,10 @@ def test_persist_store_helper_and_fail_closed(monkeypatch: pytest.MonkeyPatch, t
     assert schedule_path.exists()
 
     monkeypatch.setenv("ENVIRONMENT", "production")
-    monkeypatch.setattr(platform_router, "_persist_scheduled_posts_store", lambda: False)
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.local_repository._persist_scheduled_posts_store",
+        lambda: False,
+    )
     with pytest.raises(HTTPException) as exc:
         platform_router._persist_scheduled_posts_or_raise()
     assert exc.value.status_code == 503
@@ -889,7 +910,10 @@ def test_persist_or_raise_is_noop_when_not_production(monkeypatch: pytest.Monkey
     from backend.fastapi.app.routers import platform_integration as platform_router
 
     monkeypatch.setenv("ENVIRONMENT", "development")
-    monkeypatch.setattr(platform_router, "_persist_scheduled_posts_store", lambda: False)
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.local_repository._persist_scheduled_posts_store",
+        lambda: False,
+    )
 
     # In non-production, persistence failure should not block request handling.
     platform_router._persist_scheduled_posts_or_raise()
@@ -1167,7 +1191,10 @@ def test_force_publish_rolls_back_when_persist_fails(client: TestClient, monkeyp
     def _raise_http() -> None:
         raise HTTPException(status_code=503, detail="persist down")
 
-    monkeypatch.setattr(platform_router, "_persist_scheduled_posts_or_raise", _raise_http)
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.local_repository._persist_scheduled_posts_or_raise",
+        _raise_http,
+    )
     response = client.post(f"/platforms/scheduled-posts/{post_id}/publish-now", headers=H)
     assert response.status_code == 503
 
@@ -1200,7 +1227,10 @@ def test_cancel_not_found_and_rollback_when_persist_fails(client: TestClient, mo
     def _raise_http() -> None:
         raise HTTPException(status_code=503, detail="persist down")
 
-    monkeypatch.setattr(platform_router, "_persist_scheduled_posts_or_raise", _raise_http)
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.local_repository._persist_scheduled_posts_or_raise",
+        _raise_http,
+    )
     response = client.post(f"/platforms/scheduled-posts/{post_id}/cancel", headers=H)
     assert response.status_code == 503
 
@@ -1209,14 +1239,17 @@ def test_cancel_not_found_and_rollback_when_persist_fails(client: TestClient, mo
     assert "cancelled_at" not in post
 
 
-def test_metrics_uses_dict_payload_branch_when_model_dump_absent(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    from backend.fastapi.app.routers import platform_integration as platform_router
-
+def test_metrics_uses_dict_payload_branch_when_model_dump_absent(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     class DictMetricsClient(DummyPlatformClient):
         async def get_tweet_metrics(self, post_id: str) -> dict[str, Any]:
             return {"tweet_id": post_id, "likes": 3}
 
-    monkeypatch.setattr(platform_router, "_build_platform_client", lambda *_: DictMetricsClient())
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.clients._build_platform_client",
+        lambda *_: DictMetricsClient(),
+    )
     response = client.get(
         "/platforms/posts/post-dict/metrics",
         headers=H,
@@ -1270,7 +1303,9 @@ def test_publish_returns_503_when_platform_credentials_missing(client: TestClien
     assert "twitter credentials are not configured" in response.json()["detail"]
 
 
-def test_force_publish_rollback_restores_existing_published_fields(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_force_publish_rollback_restores_existing_published_fields(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from backend.fastapi.app.routers import platform_integration as platform_router
     from fastapi import HTTPException
 
@@ -1294,7 +1329,10 @@ def test_force_publish_rollback_restores_existing_published_fields(client: TestC
     def _raise_http() -> None:
         raise HTTPException(status_code=503, detail="persist down")
 
-    monkeypatch.setattr(platform_router, "_persist_scheduled_posts_or_raise", _raise_http)
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.local_repository._persist_scheduled_posts_or_raise",
+        _raise_http,
+    )
     response = client.post(f"/platforms/scheduled-posts/{post_id}/publish-now", headers=H)
     assert response.status_code == 503
 
@@ -1325,7 +1363,10 @@ def test_cancel_rollback_restores_existing_cancelled_at(client: TestClient, monk
     def _raise_http() -> None:
         raise HTTPException(status_code=503, detail="persist down")
 
-    monkeypatch.setattr(platform_router, "_persist_scheduled_posts_or_raise", _raise_http)
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.local_repository._persist_scheduled_posts_or_raise",
+        _raise_http,
+    )
     response = client.post(f"/platforms/scheduled-posts/{post_id}/cancel", headers=H)
     assert response.status_code == 503
 
@@ -1337,11 +1378,21 @@ def test_controlled_unreachable_else_branches_for_publish_schedule_and_metrics(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from backend.fastapi.app.routers import platform_integration as platform_router
+    from backend.fastapi.app.domains.integrations.platforms import constants
+    from backend.fastapi.app.domains.integrations.platforms.operations import get_oauth_url, schedule_post
 
-    monkeypatch.setattr(platform_router, "_SUPPORTED_PLATFORMS", (*platform_router._SUPPORTED_PLATFORMS, "other"))
-    monkeypatch.setattr(platform_router, "_build_platform_client", lambda *_: DummyPlatformClient())
-    monkeypatch.setattr(platform_router, "_require_platform_credentials", lambda *_: object())
+    for owner in (constants, get_oauth_url, schedule_post):
+        monkeypatch.setattr(owner, "_SUPPORTED_PLATFORMS", (*owner._SUPPORTED_PLATFORMS, "other"))
+    for owner in (get_oauth_url, schedule_post):
+        monkeypatch.setattr(owner, "_require_platform_credentials", lambda *_: object())
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.clients._build_platform_client",
+        lambda *_: DummyPlatformClient(),
+    )
+    monkeypatch.setattr(
+        "backend.fastapi.app.domains.integrations.platforms.services.clients._require_platform_credentials",
+        lambda *_: object(),
+    )
 
     publish_response = client.post(
         "/platforms/other/publish",
@@ -1370,4 +1421,3 @@ def test_controlled_unreachable_else_branches_for_publish_schedule_and_metrics(
     )
     assert metrics_response.status_code == 422
     assert metrics_response.json()["detail"] == "Unsupported platform: other"
-

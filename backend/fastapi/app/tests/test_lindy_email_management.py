@@ -361,14 +361,19 @@ class TestEmailManagementService:
             mock_analysis.analyze_sentiment = AsyncMock(return_value='positive')
             mock_analysis.detect_requires_response = AsyncMock(return_value=True)
             
-            with patch('services_lindy_email.GmailService.list_messages') as mock_list:
-                mock_list.return_value = AsyncMock(return_value=[
+            with patch.object(
+                GmailService,
+                'list_messages',
+                new=AsyncMock(return_value=[
                     {'id': 'msg_1'},
                     {'id': 'msg_2'},
-                ])
+                ]),
+            ):
                 
-                with patch('services_lindy_email.GmailService.get_message') as mock_get:
-                    mock_get.return_value = AsyncMock(return_value={
+                with patch.object(
+                    GmailService,
+                    'get_message',
+                    new=AsyncMock(return_value={
                         'id': 'msg_1',
                         'threadId': 'thread_1',
                         'internalDate': '1634000000000',
@@ -381,7 +386,8 @@ class TestEmailManagementService:
                             ],
                             'body': {'data': 'VGVzdA=='}
                         }
-                    })
+                    }),
+                ):
                     
                     result = await service.sync_emails('test-tenant-123', 'gmail', limit=2)
                     
@@ -453,33 +459,27 @@ class TestEmailManagementAPI:
     
     def test_get_inbox(self, client, auth_mock, test_db, sample_email):
         """Test get inbox endpoint."""
-        with patch('dependencies.get_auth') as mock_auth:
-            mock_auth.return_value = auth_mock
-            
-            response = client.get(
-                '/api/email/inbox',
-                headers={'Authorization': 'Bearer test_token'}
-            )
-            
-            assert response.status_code == 200
-            data = response.json()
-            assert data['success'] is True
-            assert data['total'] >= 0
+        response = client.get(
+            '/api/email/inbox',
+            headers={'Authorization': 'Bearer test_token'}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data['success'] is True
+        assert data['total'] >= 0
     
     def test_get_email(self, client, auth_mock, test_db, sample_email):
         """Test get email endpoint."""
-        with patch('dependencies.get_auth') as mock_auth:
-            mock_auth.return_value = auth_mock
-            
-            response = client.get(
-                f'/api/email/email/{sample_email.id}',
-                headers={'Authorization': 'Bearer test_token'}
-            )
-            
-            assert response.status_code == 200
-            data = response.json()
-            assert data['success'] is True
-            assert data['email']['subject'] == 'Test Subject'
+        response = client.get(
+            f'/api/email/email/{sample_email.id}',
+            headers={'Authorization': 'Bearer test_token'}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data['success'] is True
+        assert data['email']['subject'] == 'Test Subject'
 
 
 # ==================== Performance Tests ====================

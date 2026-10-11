@@ -34,10 +34,10 @@ const PLATFORMS = ['instagram', 'facebook', 'amazon', 'shopify', 'pinterest', 'l
 const NUM_OUTPUT_OPTIONS = [1, 2, 4, 6, 8];
 
 const STATUS = {
-  queued: { bg: '#eef0f4', color: 'var(--brand)', label: 'In Queue' },
-  processing: { bg: '#fef3c7', color: '#F59E0B', label: 'Generating…' },
-  completed: { bg: '#dcfce722', color: '#22c55e', label: 'Ready' },
-  failed: { bg: '#fee2e222', color: '#EF4444', label: 'Failed' },
+  queued: { bg: 'var(--neutral-soft)', color: 'var(--brand)', label: 'In Queue' },
+  processing: { bg: 'var(--warning-line)', color: 'var(--warning)', label: 'Generating…' },
+  completed: { bg: 'color-mix(in oklab, var(--success-soft) 13%, transparent)', color: 'var(--success)', label: 'Ready' },
+  failed: { bg: 'color-mix(in oklab, var(--danger-soft) 13%, transparent)', color: 'var(--danger)', label: 'Failed' },
 };
 
 export default function ProductPhotoshootPage() {
@@ -118,9 +118,9 @@ export default function ProductPhotoshootPage() {
       <div style={{ background: 'var(--card)', borderBottom: '1px solid var(--line)', padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link href="/studio" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: 14 }}>← Studio</Link>
-          <span style={{ color: '#e7e9ef' }}>|</span>
+          <span style={{ color: "var(--line)" }}>|</span>
           <span style={{ fontSize: 22, fontWeight: 700 }}>📸 AI Product Photoshoot</span>
-          <span style={{ background: '#6366f122', color: 'var(--brand)', fontSize: 11, padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>STABILITY AI · DALL-E 3 · FAL.AI</span>
+          <span style={{ background: 'color-mix(in oklab, var(--info) 13%, transparent)', color: 'var(--brand)', fontSize: 11, padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>STABILITY AI · DALL-E 3 · FAL.AI</span>
         </div>
         <Link href="/studio/image-studio" style={{ background: 'var(--card)', color: 'var(--text)', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', fontSize: 13 }}>Image Editor →</Link>
       </div>
@@ -135,15 +135,15 @@ export default function ProductPhotoshootPage() {
       {/* Tabs */}
       <div style={{ padding: '0 32px', borderBottom: '1px solid var(--line)', background: 'var(--card)', display: 'flex' }}>
         {(['create', 'gallery'] as const).map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: 'none', border: 'none', color: activeTab === tab ? 'var(--brand)' : 'var(--muted)', padding: '14px 20px', cursor: 'pointer', fontSize: 14, fontWeight: activeTab === tab ? 600 : 400, borderBottom: activeTab === tab ? '2px solid #6366f1' : '2px solid transparent' }}>
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: 'none', border: 'none', color: activeTab === tab ? 'var(--brand)' : 'var(--muted)', padding: '14px 20px', cursor: 'pointer', fontSize: 14, fontWeight: activeTab === tab ? 600 : 400, borderBottom: activeTab === tab ? "2px solid var(--brand)" : '2px solid transparent' }}>
             {{ create: '✨ Create Photoshoot', gallery: '🖼 My Photos' }[tab]}
           </button>
         ))}
       </div>
 
       <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }}>
-        {error && <div style={{ background: '#fee2e233', border: '1px solid #EF4444', borderRadius: 8, padding: 12, marginBottom: 16, color: '#dc2626' }}>{error}</div>}
-        {successMsg && <div style={{ background: '#dcfce733', border: '1px solid #22c55e', borderRadius: 8, padding: 12, marginBottom: 16, color: '#15803d' }}>{successMsg}</div>}
+        {error && <div style={{ background: 'color-mix(in oklab, var(--danger-soft) 20%, transparent)', border: '1px solid var(--danger)', borderRadius: 8, padding: 12, marginBottom: 16, color: 'var(--danger)' }}>{error}</div>}
+        {successMsg && <div style={{ background: 'color-mix(in oklab, var(--success-soft) 20%, transparent)', border: '1px solid var(--success)', borderRadius: 8, padding: 12, marginBottom: 16, color: 'var(--success-ink)' }}>{successMsg}</div>}
 
         {activeTab === 'create' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 24 }}>
@@ -156,7 +156,7 @@ export default function ProductPhotoshootPage() {
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 10 }}>
                     {styles.map((s) => (
-                      <button key={s.id} type="button" onClick={() => setSelectedStyle(s.id)} style={{ background: selectedStyle === s.id ? '#6366f133' : '#eef0f4', border: `2px solid ${selectedStyle === s.id ? '#6366f1' : '#e7e9ef'}`, borderRadius: 10, padding: 14, cursor: 'pointer', textAlign: 'left', color: 'var(--text)' }}>
+                      <button key={s.id} type="button" onClick={() => setSelectedStyle(s.id)} style={{ background: selectedStyle === s.id ? 'color-mix(in oklab, var(--info) 20%, transparent)' : "var(--line-soft)", border: `2px solid ${selectedStyle === s.id ? 'var(--info)' : 'var(--neutral-soft)'}`, borderRadius: 10, padding: 14, cursor: 'pointer', textAlign: 'left', color: 'var(--text)' }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: selectedStyle === s.id ? 'var(--brand)' : 'var(--text)', marginBottom: 4 }}>{s.name}</div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.4 }}>{s.description}</div>
                       </button>
@@ -186,7 +186,7 @@ export default function ProductPhotoshootPage() {
                 <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 8, fontWeight: 600 }}>OUTPUT PLATFORMS</label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {PLATFORMS.map((p) => (
-                    <button key={p} type="button" onClick={() => setSelectedPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p])} style={{ background: selectedPlatforms.includes(p) ? '#6366f133' : '#eef0f4', border: `1px solid ${selectedPlatforms.includes(p) ? '#6366f1' : '#e7e9ef'}`, color: selectedPlatforms.includes(p) ? 'var(--brand)' : 'var(--muted)', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, textTransform: 'capitalize' }}>
+                    <button key={p} type="button" onClick={() => setSelectedPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p])} style={{ background: selectedPlatforms.includes(p) ? 'color-mix(in oklab, var(--info) 20%, transparent)' : "var(--line-soft)", border: `1px solid ${selectedPlatforms.includes(p) ? 'var(--info)' : 'var(--neutral-soft)'}`, color: selectedPlatforms.includes(p) ? 'var(--brand)' : 'var(--muted)', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, textTransform: 'capitalize' }}>
                       {p}
                     </button>
                   ))}
@@ -198,7 +198,7 @@ export default function ProductPhotoshootPage() {
                 <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 8, fontWeight: 600 }}>NUMBER OF OUTPUTS</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {NUM_OUTPUT_OPTIONS.map((n) => (
-                    <button key={n} type="button" onClick={() => setNumOutputs(n)} style={{ background: numOutputs === n ? '#6366f1' : '#eef0f4', color: numOutputs === n ? '#fff' : 'var(--text)', border: `1px solid ${numOutputs === n ? '#6366f1' : '#e7e9ef'}`, padding: '7px 18px', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+                    <button key={n} type="button" onClick={() => setNumOutputs(n)} style={{ background: numOutputs === n ? "var(--brand)" : "var(--line-soft)", color: numOutputs === n ? '#fff' : 'var(--text)', border: `1px solid ${numOutputs === n ? 'var(--info)' : 'var(--neutral-soft)'}`, padding: '7px 18px', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
                       {n}
                     </button>
                   ))}
@@ -209,13 +209,13 @@ export default function ProductPhotoshootPage() {
               <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
                 {[{ id: 'bg', label: 'Remove background', checked: removeBg, onChange: setRemoveBg }, { id: 'shadow', label: 'Add natural shadows', checked: addShadows, onChange: setAddShadows }].map((tog) => (
                   <label key={tog.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, color: 'var(--text)' }}>
-                    <input type="checkbox" checked={tog.checked} onChange={(e) => tog.onChange(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#6366f1' }} />
+                    <input type="checkbox" checked={tog.checked} onChange={(e) => tog.onChange(e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--info)' }} />
                     {tog.label}
                   </label>
                 ))}
               </div>
 
-              <button type="submit" disabled={generating} style={{ width: '100%', background: generating ? '#e7e9ef' : '#6366f1', color: '#fff', border: 'none', padding: '14px 24px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: generating ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={generating} style={{ width: '100%', background: generating ? "var(--line)" : "var(--brand)", color: 'var(--on-brand)', border: 'none', padding: '14px 24px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: generating ? 'not-allowed' : 'pointer' }}>
                 {generating ? `⏳ Generating ${numOutputs} images…` : `📸 Generate ${numOutputs} Product Photos`}
               </button>
 
@@ -231,11 +231,11 @@ export default function ProductPhotoshootPage() {
                           <div style={{ fontSize: 13, fontWeight: 600 }}>{job.product_name} · {job.style} style</div>
                           <span style={{ background: s.bg, color: s.color, fontSize: 11, padding: '2px 10px', borderRadius: 12, fontWeight: 600 }}>{s.label}</span>
                         </div>
-                        {job.status === 'processing' && <div style={{ height: 3, background: '#e7e9ef', borderRadius: 2 }}><div style={{ height: '100%', width: `${job.progress_pct ?? 40}%`, background: '#6366f1' }} /></div>}
+                        {job.status === 'processing' && <div style={{ height: 3, background: "var(--line)", borderRadius: 2 }}><div style={{ height: '100%', width: `${job.progress_pct ?? 40}%`, background: "var(--brand)" }} /></div>}
                         {job.status === 'completed' && job.output_images && (
                           <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                             {job.output_images.map((img) => (
-                              <a key={img.slot} href={img.url} target="_blank" rel="noopener noreferrer" style={{ background: '#22c55e', color: '#fff', padding: '4px 10px', borderRadius: 6, fontSize: 11, textDecoration: 'none', fontWeight: 600 }}>
+                              <a key={img.slot} href={img.url} target="_blank" rel="noopener noreferrer" style={{ background: 'var(--success)', color: 'var(--on-brand)', padding: '4px 10px', borderRadius: 6, fontSize: 11, textDecoration: 'none', fontWeight: 600 }}>
                                 ⬇ Photo {img.slot + 1} ({img.resolution})
                               </a>
                             ))}
@@ -258,7 +258,7 @@ export default function ProductPhotoshootPage() {
                   <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, fontWeight: 600 }}>Best for:</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {activeStyle.best_for.map((b) => (
-                      <span key={b} style={{ background: '#e7e9ef', color: 'var(--text)', fontSize: 10, padding: '2px 8px', borderRadius: 10 }}>{b}</span>
+                      <span key={b} style={{ background: "var(--line)", color: 'var(--text)', fontSize: 10, padding: '2px 8px', borderRadius: 10 }}>{b}</span>
                     ))}
                   </div>
                 </div>
@@ -268,7 +268,7 @@ export default function ProductPhotoshootPage() {
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10, fontWeight: 600, letterSpacing: 1 }}>AI PROVIDERS</div>
                 {[{ name: 'Stability AI', env: 'STABILITY_API_KEY', tier: 'Primary' }, { name: 'fal.ai', env: 'FAL_API_KEY', tier: 'Fallback' }, { name: 'DALL-E 3', env: 'OPENAI_API_KEY', tier: 'Backup' }].map((v) => (
                   <div key={v.name} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div><div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{v.name}</div><div style={{ fontSize: 10, color: '#6366f1' }}>{v.env}</div></div>
+                    <div><div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{v.name}</div><div style={{ fontSize: 10, color: "var(--brand)" }}>{v.env}</div></div>
                     <span style={{ fontSize: 10, color: 'var(--muted)' }}>{v.tier}</span>
                   </div>
                 ))}
@@ -283,7 +283,7 @@ export default function ProductPhotoshootPage() {
               <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)' }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>📸</div>
                 <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>No photoshoots yet</div>
-                <button onClick={() => setActiveTab('create')} style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>Create First Photoshoot</button>
+                <button onClick={() => setActiveTab('create')} style={{ background: "var(--brand)", color: 'var(--on-brand)', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>Create First Photoshoot</button>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 20 }}>
@@ -291,10 +291,10 @@ export default function ProductPhotoshootPage() {
                   const s = STATUS[job.status] ?? STATUS.queued;
                   return (
                     <div key={job.id} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 2, background: '#e7e9ef' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 2, background: "var(--line)" }}>
                         {(job.output_images ?? Array.from({ length: 4 }, (_, i) => ({ slot: i, url: '', resolution: '' }))).slice(0, 4).map((img, i) => (
-                          <div key={i} style={{ height: 100, background: img.url ? `url(${img.url}) center/cover` : '#e7e9ef', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {!img.url && <div style={{ fontSize: 20, color: '#e7e9ef' }}>📸</div>}
+                          <div key={i} style={{ height: 100, background: img.url ? `url(${img.url}) center/cover` : "var(--line)", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {!img.url && <div style={{ fontSize: 20, color: "var(--line)" }}>📸</div>}
                           </div>
                         ))}
                       </div>
@@ -305,7 +305,7 @@ export default function ProductPhotoshootPage() {
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>{job.style} · {job.output_images?.length ?? 0} images</div>
                         {job.status === 'completed' && job.output_images && (
-                          <a href={job.output_images[0]?.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', background: '#6366f1', color: '#fff', padding: '5px 0', borderRadius: 6, fontSize: 11, textDecoration: 'none', textAlign: 'center', fontWeight: 600 }}>
+                          <a href={job.output_images[0]?.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', background: "var(--brand)", color: 'var(--on-brand)', padding: '5px 0', borderRadius: 6, fontSize: 11, textDecoration: 'none', textAlign: 'center', fontWeight: 600 }}>
                             ⬇ Download All
                           </a>
                         )}

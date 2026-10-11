@@ -292,7 +292,7 @@ export default function FinanceOpsPage() {
         </p>
 
         {(error || status) && (
-          <div style={{ ...card, marginBottom: 10, color: error ? '#f87171' : '#34d399' }}>{error || status}</div>
+          <div style={{ ...card, marginBottom: 10, color: error ? 'var(--danger)' : 'var(--success)' }}>{error || status}</div>
         )}
 
         <div
@@ -359,7 +359,7 @@ export default function FinanceOpsPage() {
                         style={{
                           width: `${Math.min(100, widthCost)}%`,
                           height: '100%',
-                          background: '#ef4444',
+                          background: 'var(--danger)',
                           borderRadius: 999,
                         }}
                       />
@@ -373,7 +373,7 @@ export default function FinanceOpsPage() {
                         style={{
                           width: `${Math.min(100, widthValue)}%`,
                           height: '100%',
-                          background: '#34d399',
+                          background: 'var(--success)',
                           borderRadius: 999,
                         }}
                       />
@@ -399,7 +399,7 @@ export default function FinanceOpsPage() {
                 border: 'none',
                 borderRadius: 8,
                 background: 'var(--brand)',
-                color: '#00101e',
+                color: 'var(--on-brand)',
                 fontWeight: 700,
               }}
             >
@@ -420,7 +420,7 @@ export default function FinanceOpsPage() {
                   padding: '8px 12px',
                   border: 'none',
                   borderRadius: 8,
-                  background: '#34d399',
+                  background: 'var(--success)',
                   color: '#00110a',
                   fontWeight: 700,
                 }}
@@ -475,7 +475,7 @@ export default function FinanceOpsPage() {
                 border: 'none',
                 borderRadius: 8,
                 background: 'var(--brand)',
-                color: '#00101e',
+                color: 'var(--on-brand)',
                 fontWeight: 700,
                 marginBottom: 10,
               }}
@@ -547,8 +547,8 @@ export default function FinanceOpsPage() {
                   padding: '8px 12px',
                   border: 'none',
                   borderRadius: 8,
-                  background: '#ef4444',
-                  color: '#fff',
+                  background: 'var(--danger)',
+                  color: 'var(--on-status)',
                   fontWeight: 700,
                 }}
               >
@@ -656,7 +656,7 @@ export default function FinanceOpsPage() {
             </div>
           </div>
           {hub?.profit_guard.auto_disable_candidate_provider && (
-            <div style={{ marginTop: 8, color: '#fbbf24', fontSize: 12 }}>
+            <div style={{ marginTop: 8, color: 'var(--warning)', fontSize: 12 }}>
               Profit guard candidate to disable first: {hub.profit_guard.auto_disable_candidate_provider}
             </div>
           )}

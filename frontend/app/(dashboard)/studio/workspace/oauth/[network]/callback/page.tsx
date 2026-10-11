@@ -67,7 +67,7 @@ export default function SocialOAuthCallbackPage() {
     <main style={styles.container}>
       <div style={styles.card}>
         <h1 style={styles.title}>Social OAuth Callback</h1>
-        <p style={{ ...styles.message, color: status === 'error' ? '#dc2626' : '#C7D2FE' }}>{message}</p>
+        <p style={{ ...styles.message, color: status === 'error' ? 'var(--danger)' : 'var(--info-line)' }}>{message}</p>
         <div style={styles.actions}>
           <Link href="/studio/social-accounts" style={styles.link}>
             Back to Social Accounts

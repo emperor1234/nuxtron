@@ -5,6 +5,9 @@
  * base route; flyout groups organise the tools within that section.
  */
 
+import type { Route } from "next";
+import type { ProductLine } from "@/app/lib/product-line";
+
 export type RailKey =
   | "dashboard"
   | "seo"
@@ -17,51 +20,86 @@ export type RailKey =
   | "apps"
   | "settings";
 
-export type FlyoutItem = { label: string; href: string };
+export type FlyoutItem = { label: string; href: Route };
 export type FlyoutGroup = { label: string; items: FlyoutItem[] };
 export type FlyoutMenu = { title: string; groups: FlyoutGroup[] };
 
 export type RailItem = {
   key: RailKey;
   label: string;
-  href: string;
+  href: Route;
+  /** Additional route families owned by this rail section. */
+  matchPrefixes?: readonly string[];
   /** Whether clicking opens a function-grouped flyout. */
   hasMenu: boolean;
+  /**
+   * Which product line owns this section. A user signed in to one product
+   * only sees its sections plus the "shared" ones; proxy.ts enforces the same
+   * split server-side so a deep link cannot reach the other product's pages.
+   */
+  product: ProductLine | "shared";
 };
 
 export const RAIL_ITEMS: readonly RailItem[] = [
-  { key: "dashboard", label: "Home", href: "/dashboard", hasMenu: false },
-  { key: "seo", label: "SEO", href: "/seo", hasMenu: true },
-  { key: "ai", label: "AI", href: "/seo/seo-ai", hasMenu: true },
-  { key: "traffic", label: "Traffic", href: "/seo/analytics", hasMenu: true },
-  { key: "local", label: "Local", href: "/seo/local-seo", hasMenu: true },
+  { key: "dashboard", product: "shared", label: "Home", href: "/dashboard", hasMenu: false },
+  { key: "seo", product: "seo", label: "SEO", href: "/seo", hasMenu: true },
+  { key: "ai", product: "seo", label: "AI", href: "/seo/seo-ai", hasMenu: true },
+  { key: "traffic", product: "seo", label: "Traffic", href: "/seo/analytics", hasMenu: true },
+  { key: "local", product: "seo", label: "Local", href: "/seo/local-seo", hasMenu: true },
   {
-    key: "content",
+    key: "content", product: "marketing",
     label: "Content",
     href: "/content-generation",
     hasMenu: true,
   },
   // Social points at the Studio suite (25 pages) rather than /seo/social (1).
   {
-    key: "social",
+    key: "social", product: "marketing",
     label: "Social",
     href: "/studio/social-studio",
     hasMenu: true,
   },
   // Studio had no rail entry at all, stranding 34 pages with no way in.
-  { key: "studio", label: "Studio", href: "/studio", hasMenu: true },
-  { key: "apps", label: "Apps", href: "/platform", hasMenu: true },
+  {
+    key: "studio", product: "marketing",
+    label: "Studio",
+    href: "/studio",
+    matchPrefixes: ["/vse"],
+    hasMenu: true,
+  },
+  {
+    key: "apps", product: "shared",
+    label: "Operations",
+    href: "/crm",
+    matchPrefixes: [
+      "/crm",
+      "/workflows",
+      "/smart-inbox",
+      "/disputes",
+      "/finance-ops",
+      "/outcome-graph",
+      "/vendor-inventory-report",
+      "/siem",
+      "/trust-center",
+      "/ai-security",
+      "/platform-ops",
+      "/platform",
+      "/api-governance",
+    ],
+    hasMenu: true,
+  },
 ];
 
 export const SETTINGS_ITEM: RailItem = {
-  key: "settings",
+  key: "settings", product: "shared",
   label: "Settings",
   href: "/account/settings",
+  matchPrefixes: ["/account", "/billing", "/white-label"],
   hasMenu: true,
 };
 
-const seo = (slug: string) => `/seo/${slug}`;
-const studio = (slug: string) => `/studio/${slug}`;
+const seo = (slug: string) => `/seo/${slug}` as Route;
+const studio = (slug: string) => `/studio/${slug}` as Route;
 
 export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
   seo: {
@@ -76,20 +114,22 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         ],
       },
       {
+        label: "AEO & AI search",
+        items: [
+          {
+            label: "SEO / AEO / GEO Audit",
+            href: "/seo-aeo-geo-audit-tool",
+          },
+          { label: "AI SEO Analysis", href: "/seo-analysis" },
+        ],
+      },
+      {
         label: "Competitive Analysis",
         items: [
           { label: "Domain Overview", href: seo("domain-overview") },
           { label: "Organic Research", href: seo("keywords") },
           { label: "Top Pages", href: seo("performance") },
           { label: "Keyword Gap", href: seo("planner") },
-          { label: "Backlink Gap", href: seo("backlink-intelligence") },
-        ],
-      },
-      {
-        label: "Keyword Research",
-        items: [
-          { label: "Keyword Overview", href: seo("keywords") },
-          { label: "Keyword Magic Tool", href: seo("planner") },
           { label: "Keyword Strategy Builder", href: seo("growth-playbooks") },
         ],
       },
@@ -97,8 +137,6 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         label: "Link Building",
         items: [
           { label: "Backlinks", href: seo("backlink-intelligence") },
-          { label: "Referring Domains", href: seo("backlink-intelligence") },
-          { label: "Backlink Audit", href: seo("backlink-intelligence") },
           { label: "Link Building Tool", href: seo("linkbuilding") },
         ],
       },
@@ -106,8 +144,7 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         label: "Content",
         items: [
           { label: "SEO Writing Assistant", href: seo("writer") },
-          { label: "Topic Research", href: seo("content-brief") },
-          { label: "SEO Content Template", href: seo("content-brief") },
+          { label: "Content Brief", href: seo("content-brief") },
         ],
       },
     ],
@@ -119,25 +156,30 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         label: "Research & optimize",
         items: [
           { label: "AI Visibility Overview", href: seo("seo-ai") },
+          {
+            label: "AI Visibility Dashboard",
+            href: "/ai-visibility-dashboard",
+          },
+          {
+            label: "AI Search Impact",
+            href: "/ai-search-impact-calculator",
+          },
           { label: "Competitor Research", href: seo("competitor") },
-          { label: "Prompt Research", href: seo("promptwatch-assist") },
+          { label: "Prompt Research", href: seo("prompt-research") },
           { label: "Brand Performance", href: seo("brand-voice") },
-          { label: "Site Audit", href: seo("technical") },
         ],
       },
       {
         label: "Create",
         items: [
           { label: "AI Content Generator", href: "/content-generation" },
-          { label: "AI Copywriter", href: seo("writer") },
           { label: "Image Studio", href: "/media-processing" },
-          { label: "Brand Voice", href: seo("brand-voice") },
         ],
       },
       {
         label: "Optimize",
         items: [
-          { label: "AI SEO Assistant", href: seo("seo-ai-assist") },
+          { label: "Answer Engine Optimization", href: seo("aeo") },
           { label: "A/B Test Lab", href: seo("seo-ab-testing") },
         ],
       },
@@ -156,7 +198,7 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         label: "Insights",
         items: [
           { label: "Trend Predictor", href: "/ai-analytics" },
-          { label: "Audience Intelligence", href: seo("one2target") },
+          { label: "Audience Intelligence", href: seo("audience-intelligence") },
         ],
       },
     ],
@@ -169,7 +211,6 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         items: [
           { label: "Market Explorer", href: seo("market-explorer") },
           { label: "Traffic Analytics", href: seo("analytics") },
-          { label: "One2Target", href: seo("one2target") },
         ],
       },
       {
@@ -178,13 +219,6 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
           { label: "Industry Benchmarks", href: "/benchmarks" },
           { label: "Growth Quadrant", href: "/competitive-benchmarking" },
           { label: "Trending Now", href: seo("news-discover") },
-        ],
-      },
-      {
-        label: "Audience",
-        items: [
-          { label: "Demographics", href: seo("one2target") },
-          { label: "Audience Overlap", href: seo("market-explorer") },
         ],
       },
     ],
@@ -202,10 +236,7 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
       },
       {
         label: "Business Profile",
-        items: [
-          { label: "GBP Optimization", href: seo("map-rank-tracker") },
-          { label: "Local Heatmap", href: seo("local-heatmap") },
-        ],
+        items: [{ label: "Local Heatmap", href: seo("local-heatmap") }],
       },
     ],
   },
@@ -214,16 +245,12 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
     groups: [
       {
         label: "Plan",
-        items: [
-          { label: "Content Calendar", href: seo("ads-calendar") },
-          { label: "Topic Research", href: seo("content-brief") },
-          { label: "Brief Generator", href: seo("content-brief") },
-        ],
+        items: [{ label: "Content Brief", href: seo("content-brief") }],
       },
       {
         label: "Create",
         items: [
-          { label: "AI Writer", href: seo("writer") },
+          { label: "SEO Writing Assistant", href: seo("writer") },
           {
             label: "Content Templates",
             href: seo("content-creation-blogging"),
@@ -235,14 +262,12 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         items: [
           { label: "On-Page Checker", href: seo("on-page") },
           { label: "Readability Score", href: seo("content-auditor") },
-          { label: "SEO Writing Assistant", href: seo("writer") },
         ],
       },
       {
         label: "Distribute",
         items: [
           { label: "Social Poster", href: seo("social") },
-          { label: "Newsletter Builder", href: "/content-generation" },
         ],
       },
     ],
@@ -254,28 +279,19 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         label: "Publish",
         items: [
           { label: "Post Scheduler", href: studio("social-studio/posts") },
-          {
-            label: "Campaign Calendar",
-            href: studio("social-studio/calendar"),
-          },
-          {
-            label: "Bulk Scheduler",
-            href: studio("social-studio/bulk-schedule"),
-          },
-          {
-            label: "Best Time to Post",
-            href: studio("social-studio/best-time"),
-          },
+          { label: "Content Calendar", href: studio("social-studio/calendar") },
+          { label: "Publishing Queue", href: studio("social-studio/queue") },
+          { label: "Bulk Scheduler", href: studio("social-studio/bulk-schedule") },
+          { label: "Best Time to Post", href: studio("social-studio/best-time") },
+          { label: "Ideas & Drafts", href: studio("social-studio/ideas") },
         ],
       },
       {
         label: "Engage",
         items: [
           { label: "Smart Inbox", href: studio("social-studio/inbox") },
-          {
-            label: "Content Approvals",
-            href: studio("social-studio/approvals"),
-          },
+          { label: "Comment Replies", href: studio("social-studio/community") },
+          { label: "Content Approvals", href: studio("social-studio/approvals") },
           { label: "Review Management", href: studio("social-studio/reviews") },
           { label: "UGC Management", href: studio("social-studio/ugc") },
         ],
@@ -283,18 +299,11 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
       {
         label: "Analyze",
         items: [
-          {
-            label: "Analytics & KPIs",
-            href: studio("social-studio/analytics"),
-          },
-          {
-            label: "Social Listening",
-            href: studio("social-studio/listening"),
-          },
-          {
-            label: "Monitoring Streams",
-            href: studio("social-studio/streams"),
-          },
+          { label: "Analytics & KPIs", href: studio("social-studio/analytics") },
+          { label: "Audience Insights", href: studio("social-studio/audience") },
+          { label: "Social Media ROI", href: "/social-media-roi" },
+          { label: "Social Listening", href: studio("social-studio/listening") },
+          { label: "Monitoring Streams", href: studio("social-studio/streams") },
           { label: "Social Trends", href: studio("social-studio/trends") },
         ],
       },
@@ -302,15 +311,10 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         label: "Advertise & Grow",
         items: [
           { label: "Paid Social Ads", href: studio("social-studio/ads") },
-          {
-            label: "Influencer CRM",
-            href: studio("social-studio/influencers"),
-          },
+          { label: "Ads Calendar", href: seo("ads-calendar") },
+          { label: "Influencer CRM", href: studio("social-studio/influencers") },
           { label: "Link In Bio", href: studio("social-studio/link-in-bio") },
-          {
-            label: "Employee Advocacy",
-            href: studio("social-studio/advocacy"),
-          },
+          { label: "Employee Advocacy", href: studio("social-studio/advocacy") },
         ],
       },
     ],
@@ -326,6 +330,7 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
           { label: "Short Video Factory", href: studio("short-video-factory") },
           { label: "Reels Factory", href: studio("reels-factory") },
           { label: "Avatar Builder", href: studio("avatar-builder") },
+          { label: "AI Copywriter", href: studio("copywriter") },
         ],
       },
       {
@@ -333,21 +338,23 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         items: [
           { label: "Brand Hub", href: studio("brands") },
           { label: "Brand Kit", href: studio("brand-kit") },
-          { label: "Brand Voice DNA", href: studio("lately/brand-voice") },
+          { label: "Brand Voice DNA", href: studio("content-hub/brand-voice") },
           { label: "Template System", href: studio("template-system") },
         ],
       },
       {
         label: "Growth",
         items: [
+          { label: "AI Content Hub", href: studio("content-hub") },
           { label: "AI Growth Suite", href: studio("growth-suite") },
+          { label: "Viral Content Engine", href: "/vse" },
           { label: "Rank Tracker", href: studio("rank-tracker") },
           {
             label: "Backlink Intelligence",
             href: studio("backlink-intelligence"),
           },
           { label: "Answer Engine Hub", href: studio("answer-engine") },
-          { label: "Content Repurposer", href: studio("lately/repurpose") },
+          { label: "Content Repurposer", href: studio("content-hub/repurpose") },
         ],
       },
       {
@@ -358,8 +365,7 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
             label: "Workflow Orchestrator",
             href: studio("workflow-orchestrator"),
           },
-          { label: "Team & Approvals", href: studio("team") },
-          { label: "Scheduler", href: studio("scheduler") },
+          { label: "Team & Roles", href: studio("team") },
         ],
       },
       {
@@ -367,32 +373,47 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         items: [
           { label: "Platform Analytics", href: studio("analytics") },
           { label: "Agent Analytics", href: studio("agent-analytics") },
-          { label: "A/B Testing Engine", href: studio("lately/ab-testing") },
-          { label: "ROI Forecaster", href: studio("lately/roi-forecast") },
+          { label: "A/B Testing Engine", href: studio("content-hub/ab-testing") },
+          { label: "ROI Forecaster", href: studio("content-hub/roi-forecast") },
         ],
       },
     ],
   },
   apps: {
-    title: "Apps & More",
+    title: "Operations",
     groups: [
       {
-        label: "Marketplace",
+        label: "Customer operations",
+        items: [
+          { label: "CRM", href: "/crm" },
+          { label: "Workflows", href: "/workflows" },
+          { label: "Customer Inbox", href: "/smart-inbox" },
+        ],
+      },
+      {
+        label: "Finance & governance",
+        items: [
+          { label: "Finance Ops", href: "/finance-ops" },
+          { label: "Disputes", href: "/disputes" },
+          { label: "Outcome Graph", href: "/outcome-graph" },
+          { label: "Vendor Inventory", href: "/vendor-inventory-report" },
+        ],
+      },
+      {
+        label: "Trust & security",
+        items: [
+          { label: "Trust Center", href: "/trust-center" },
+          { label: "SIEM", href: "/siem" },
+          { label: "AI Security", href: "/ai-security" },
+          { label: "Platform Operations", href: "/platform-ops" },
+        ],
+      },
+      {
+        label: "Platform",
         items: [
           { label: "App Center", href: "/platform" },
           { label: "Integrations", href: seo("integrations-automation") },
           { label: "API Access", href: "/api-governance" },
-        ],
-      },
-      {
-        label: "Resources",
-        items: [
-          { label: "Agency Kit", href: seo("agency-platform") },
-          { label: "Academy", href: "/playbooks" },
-          {
-            label: "Templates Gallery",
-            href: seo("content-creation-blogging"),
-          },
         ],
       },
     ],
@@ -412,8 +433,7 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
         label: "Preferences",
         items: [
           { label: "Notifications", href: "/account/settings" },
-          { label: "Connected Apps", href: seo("integrations-automation") },
-          { label: "API Keys", href: "/api-governance" },
+          { label: "White label", href: "/white-label" },
         ],
       },
     ],

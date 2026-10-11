@@ -19,7 +19,7 @@ const SOCIAL_NETWORKS: { network: SocialNetwork; label: string; monogram: string
   { network: 'tiktok', label: 'TikTok', monogram: 'TT', color: '#000000' },
   { network: 'twitter', label: 'X (Twitter)', monogram: 'X', color: '#000000' },
   { network: 'linkedin', label: 'LinkedIn', monogram: 'in', color: '#0A66C2' },
-  { network: 'youtube', label: 'YouTube', monogram: 'YT', color: '#FF0000' },
+  { network: 'youtube', label: 'YouTube', monogram: 'YT', color: 'var(--danger)' },
   { network: 'threads', label: 'Threads', monogram: '@', color: '#000000' },
 ];
 
@@ -29,13 +29,8 @@ export default function AccountsPage() {
   const [connecting, setConnecting] = useState<SocialNetwork | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadAccounts();
-  }, []);
-
   async function loadAccounts() {
     try {
-      setError(null);
       const result = await socialApi.listAccounts();
       setAccounts(result || []);
     } catch (err) {
@@ -51,6 +46,16 @@ export default function AccountsPage() {
     }
   }
 
+  useEffect(() => {
+    let active = true;
+    globalThis.queueMicrotask(() => {
+      if (active) void loadAccounts();
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   async function handleConnect(network: SocialNetwork) {
     setConnecting(network);
     setError(null);
@@ -59,7 +64,7 @@ export default function AccountsPage() {
       // Full navigation, not a fetch — the provider's authorization page is
       // a real page the user must interact with, and it redirects back to
       // our own /oauth/[network]/callback route with ?code=&state=.
-      globalThis.location.href = authorizationUrl;
+      globalThis.location.assign(authorizationUrl);
     } catch (err) {
       console.error('Connect failed:', err);
       setError(err instanceof Error ? err.message : `Failed to connect ${network}. Please try again.`);
@@ -68,13 +73,13 @@ export default function AccountsPage() {
   }
 
   async function handleDisconnect(accountId: string) {
-    if (!confirm('Are you sure you want to disconnect this account?')) return;
+    if (!globalThis.confirm('Are you sure you want to disconnect this account?')) return;
     try {
       await socialApi.disconnectAccount(accountId);
-      setAccounts(accounts.filter((a) => a.id !== accountId));
+      setAccounts((current) => current.filter((a) => a.id !== accountId));
     } catch (err) {
       console.error('Disconnect failed:', err);
-      alert('Failed to disconnect account. Please try again.');
+      globalThis.alert('Failed to disconnect account. Please try again.');
     }
   }
 
@@ -134,16 +139,16 @@ export default function AccountsPage() {
                               ...styles.statusBadge,
                               backgroundColor:
                                 account.syncStatus === 'synced'
-                                  ? '#10B98126'
+                                  ? 'color-mix(in oklab, var(--success) 15%, transparent)'
                                   : account.syncStatus === 'syncing'
-                                    ? '#F5901426'
-                                    : '#EF444426',
+                                    ? 'color-mix(in oklab, var(--warning) 15%, transparent)'
+                                    : 'color-mix(in oklab, var(--danger) 15%, transparent)',
                               color:
                                 account.syncStatus === 'synced'
-                                  ? '#047857'
+                                  ? 'var(--success-ink)'
                                   : account.syncStatus === 'syncing'
-                                    ? '#B45309'
-                                    : '#DC2626',
+                                    ? 'var(--warning-ink)'
+                                    : 'var(--danger)',
                             }}
                           >
                             {account.syncStatus}
@@ -238,13 +243,13 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   errorBanner: {
-    backgroundColor: '#ffedd526',
-    border: '1px solid #DC266326',
+    backgroundColor: 'color-mix(in oklab, var(--warning-soft) 15%, transparent)',
+    border: '1px solid color-mix(in oklab, var(--series-5) 15%, transparent)',
     borderRadius: '8px',
     padding: '12px 16px',
     marginBottom: '24px',
     fontSize: '14px',
-    color: '#dc2626',
+    color: 'var(--danger)',
   },
   section: {
     marginBottom: '40px',
@@ -265,14 +270,13 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--line)',
     borderRadius: '12px',
     overflow: 'hidden',
-    transition: 'all 0.2s',
   },
   cardHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     padding: '16px',
-    borderLeft: '4px solid #6366f1',
+    borderLeft: "4px solid var(--brand)",
     backgroundColor: 'var(--card)',
   },
   networkIcon: {
@@ -284,7 +288,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '10px',
     fontSize: '13px',
     fontWeight: 700,
-    color: '#fff',
+    color: 'var(--on-status)',
     flexShrink: 0,
   },
   accountInfo: {
@@ -303,7 +307,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   verifiedBadge: {
     fontSize: '16px',
-    color: '#6366f1',
+    color: "var(--brand)",
   },
   cardStats: {
     display: 'grid',
@@ -349,14 +353,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   disconnectBtn: {
     padding: '6px 12px',
-    backgroundColor: '#DC266326',
-    color: '#dc2626',
-    border: '1px solid #DC266326',
+    backgroundColor: 'color-mix(in oklab, var(--series-5) 15%, transparent)',
+    color: 'var(--danger)',
+    border: '1px solid color-mix(in oklab, var(--series-5) 15%, transparent)',
     borderRadius: '6px',
     fontSize: '12px',
     fontWeight: 500,
     cursor: 'pointer',
-    transition: 'all 0.2s',
   },
   networkGrid: {
     display: 'grid',
@@ -371,10 +374,10 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     padding: '20px',
     backgroundColor: 'var(--card)',
-    border: '2px dashed #e7e9ef',
+    border: "2px dashed var(--line)",
     borderRadius: '8px',
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'opacity 200ms ease',
     fontSize: '14px',
     fontWeight: 500,
     color: 'var(--text)',
@@ -388,7 +391,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     fontSize: '15px',
     fontWeight: 700,
-    color: '#fff',
+    color: 'var(--on-status)',
   },
   connectLabel: {
     textAlign: 'center',
@@ -414,7 +417,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '60px 24px',
     backgroundColor: 'var(--card)',
     borderRadius: '12px',
-    border: '1px dashed #e7e9ef',
+    border: "1px dashed var(--line)",
   },
   emptyIcon: {
     fontSize: '48px',

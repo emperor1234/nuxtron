@@ -2,6 +2,7 @@
 Additional tests for bridges.py pure handler functions.
 These take all dependencies as kwargs, so they can be tested without the DB/router.
 """
+
 from __future__ import annotations
 
 import os
@@ -34,6 +35,7 @@ class TestHandleCacheSet:
             RedisCacheSetRequest,
             _handle_cache_set,
         )
+
         memory: list[dict] = []
         payload = RedisCacheSetRequest(key="my-key", value="hello", ttl_seconds=60)
         result = _handle_cache_set(
@@ -53,6 +55,7 @@ class TestHandleCacheSet:
             RedisCacheSetRequest,
             _handle_cache_set,
         )
+
         mock_redis = MagicMock()
         mock_redis.setex.return_value = True
         result = _handle_cache_set(
@@ -71,6 +74,7 @@ class TestHandleCacheSet:
             RedisCacheSetRequest,
             _handle_cache_set,
         )
+
         mock_redis = MagicMock()
         mock_redis.setex.side_effect = Exception("Connection refused")
         memory: list[dict] = []
@@ -89,6 +93,7 @@ class TestHandleCacheSet:
             RedisCacheSetRequest,
             _handle_cache_set,
         )
+
         memory: list[dict] = [{"key": "t-1:key1", "op": "set"}]
         _handle_cache_set(
             payload=RedisCacheSetRequest(key="key1", value="new-value", ttl_seconds=60),
@@ -109,6 +114,7 @@ class TestHandleCacheGet:
             RedisCacheGetRequest,
             _handle_cache_get,
         )
+
         expires = (datetime.now(UTC) + timedelta(seconds=60)).isoformat()
         memory = [{"key": "t-1:mykey", "op": "set", "value": "cached-value", "expires_at": expires}]
         result = _handle_cache_get(
@@ -127,6 +133,7 @@ class TestHandleCacheGet:
             RedisCacheGetRequest,
             _handle_cache_get,
         )
+
         result = _handle_cache_get(
             payload=RedisCacheGetRequest(key="nonexistent"),
             auth=_make_auth(),
@@ -142,6 +149,7 @@ class TestHandleCacheGet:
             RedisCacheGetRequest,
             _handle_cache_get,
         )
+
         expires = (datetime.now(UTC) - timedelta(seconds=60)).isoformat()
         memory = [{"key": "t-1:oldkey", "op": "set", "value": "stale", "expires_at": expires}]
         result = _handle_cache_get(
@@ -158,6 +166,7 @@ class TestHandleCacheGet:
             RedisCacheGetRequest,
             _handle_cache_get,
         )
+
         mock_redis = MagicMock()
         mock_redis.get.return_value = "redis-value"
         mock_redis.ttl.return_value = 120
@@ -179,6 +188,7 @@ class TestHandleCacheDelete:
             RedisCacheDeleteRequest,
             _handle_cache_delete,
         )
+
         memory: list[dict] = [{"key": "t-1:del-key"}]
         result = _handle_cache_delete(
             payload=RedisCacheDeleteRequest(key="del-key"),
@@ -195,6 +205,7 @@ class TestHandleCacheDelete:
             RedisCacheDeleteRequest,
             _handle_cache_delete,
         )
+
         memory: list[dict] = []
         result = _handle_cache_delete(
             payload=RedisCacheDeleteRequest(key="nonexistent"),
@@ -210,6 +221,7 @@ class TestHandleCacheDelete:
             RedisCacheDeleteRequest,
             _handle_cache_delete,
         )
+
         mock_redis = MagicMock()
         mock_redis.delete.return_value = 1
         result = _handle_cache_delete(
@@ -229,6 +241,7 @@ class TestHandleCacheFlushPrefix:
             RedisCacheFlushPrefixRequest,
             _handle_cache_flush_prefix,
         )
+
         memory: list[dict] = [
             {"key": "t-1:prefix:a"},
             {"key": "t-1:prefix:b"},
@@ -250,6 +263,7 @@ class TestHandleCacheFlushPrefix:
             RedisCacheFlushPrefixRequest,
             _handle_cache_flush_prefix,
         )
+
         mock_redis = MagicMock()
         mock_redis.scan_iter.return_value = ["t-1:prefix:a", "t-1:prefix:b"]
         result = _handle_cache_flush_prefix(
@@ -267,6 +281,7 @@ class TestHandleCacheFlushPrefix:
             RedisCacheFlushPrefixRequest,
             _handle_cache_flush_prefix,
         )
+
         memory: list[dict] = [{"key": "t-1:other:x"}]
         result = _handle_cache_flush_prefix(
             payload=RedisCacheFlushPrefixRequest(prefix="nomatch:"),
@@ -287,6 +302,7 @@ class TestHandleSlackSendMessage:
             SlackSendMessageRequest,
             _handle_slack_send_message,
         )
+
         memory: list[dict] = []
         with patch.dict(os.environ, {"SLACK_BOT_TOKEN": ""}, clear=False):
             result = _handle_slack_send_message(
@@ -306,6 +322,7 @@ class TestHandleSlackSendMessage:
             SlackSendMessageRequest,
             _handle_slack_send_message,
         )
+
         memory: list[dict] = []
         with patch.dict(os.environ, {"SLACK_BOT_TOKEN": "xoxb-fake"}, clear=False):
             with patch("httpx.Client") as mock_client_cls:
@@ -328,6 +345,7 @@ class TestHandleSlackWebhookMessage:
             SlackWebhookMessageRequest,
             _handle_slack_webhook_message,
         )
+
         memory: list[dict] = []
         with patch.dict(os.environ, {"SLACK_WEBHOOK_URL": ""}, clear=False):
             result = _handle_slack_webhook_message(
@@ -346,10 +364,13 @@ class TestHandleSlackWebhookMessage:
             SlackWebhookMessageRequest,
             _handle_slack_webhook_message,
         )
+
         memory: list[dict] = []
         with patch.dict(os.environ, {"SLACK_WEBHOOK_URL": "https://hooks.slack.com/fake"}, clear=False):
-            with patch("httpx.Client") as mock_client_cls:
-                mock_client_cls.return_value.__enter__.return_value.post.side_effect = Exception("net")
+            with (
+                patch("backend.fastapi.app.routers.bridges.resolve_outbound_target", return_value=object()),
+                patch("backend.fastapi.app.routers.bridges.outbound_request", side_effect=ValueError("net")),
+            ):
                 result = _handle_slack_webhook_message(
                     payload=SlackWebhookMessageRequest(text="Test message"),
                     auth=_make_auth(),
@@ -367,6 +388,7 @@ class TestHandleTwilioSendSms:
             TwilioSendSmsRequest,
             _handle_twilio_send_sms,
         )
+
         memory: list[dict] = []
         with patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "", "TWILIO_AUTH_TOKEN": ""}, clear=False):
             result = _handle_twilio_send_sms(
@@ -385,8 +407,13 @@ class TestHandleTwilioSendSms:
             TwilioSendSmsRequest,
             _handle_twilio_send_sms,
         )
+
         memory: list[dict] = []
-        with patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "ACtest", "TWILIO_AUTH_TOKEN": "token", "TWILIO_FROM_NUMBER": "+15551234567"}, clear=False):
+        with patch.dict(
+            os.environ,
+            {"TWILIO_ACCOUNT_SID": "ACtest", "TWILIO_AUTH_TOKEN": "token", "TWILIO_FROM_NUMBER": "+15551234567"},
+            clear=False,
+        ):
             with patch("httpx.Client") as mock_client_cls:
                 mock_client_cls.return_value.__enter__.return_value.post.side_effect = Exception("network")
                 result = _handle_twilio_send_sms(
@@ -406,6 +433,7 @@ class TestHandleTwilioMakeCall:
             TwilioMakeCallRequest,
             _handle_twilio_make_call,
         )
+
         memory: list[dict] = []
         with patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "", "TWILIO_AUTH_TOKEN": ""}, clear=False):
             result = _handle_twilio_make_call(
@@ -425,8 +453,13 @@ class TestHandleTwilioMakeCall:
             TwilioMakeCallRequest,
             _handle_twilio_make_call,
         )
+
         memory: list[dict] = []
-        with patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "ACtest", "TWILIO_AUTH_TOKEN": "token", "TWILIO_FROM_NUMBER": "+15551234567"}, clear=False):
+        with patch.dict(
+            os.environ,
+            {"TWILIO_ACCOUNT_SID": "ACtest", "TWILIO_AUTH_TOKEN": "token", "TWILIO_FROM_NUMBER": "+15551234567"},
+            clear=False,
+        ):
             with patch("httpx.Client") as mock_client_cls:
                 mock_client_cls.return_value.__enter__.return_value.post.side_effect = Exception("net")
                 result = _handle_twilio_make_call(

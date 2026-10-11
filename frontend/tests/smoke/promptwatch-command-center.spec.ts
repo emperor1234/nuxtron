@@ -178,8 +178,8 @@ test.describe('Promptwatch command center', () => {
     await mockPromptwatchApis(page);
     await page.goto('/seo/promptwatch-readiness');
 
-    await expect(page.getByRole('heading', { name: 'Promptwatch End-to-End Readiness Hub' })).toBeVisible();
-    await expect(page.getByText('Current status:')).toContainText('PASSED');
+    await expect(page.getByRole('heading', { name: 'Promptwatch Overview' })).toBeVisible();
+    await expect(page.getByText('10/10')).toBeVisible();
     await expect(page.locator('a[href="/seo/promptwatch-automation"]')).toBeVisible();
     await expect(page.locator('a[href="/seo/promptwatch-integrations"]')).toBeVisible();
   });
@@ -188,9 +188,10 @@ test.describe('Promptwatch command center', () => {
     await mockPromptwatchApis(page);
     await page.goto('/seo/promptwatch-automation');
 
-    await expect(page.getByRole('heading', { name: 'Promptwatch Run And Product Control' })).toBeVisible();
-    const runBlueprintButton = page.getByRole('button', { name: 'Run Full Automation Blueprint' });
-    const blueprintHeading = page.getByRole('heading', { name: 'Automation Blueprint' });
+    await expect(page.getByRole('heading', { name: 'Promptwatch Automation' })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Domain', exact: true }).fill('nuxtron.ai');
+    const runBlueprintButton = page.getByRole('button', { name: 'Run full automation' });
+    const blueprintHeading = page.getByText('Latest automation');
     await runBlueprintButton.click();
     if (!(await blueprintHeading.isVisible())) {
       await runBlueprintButton.click();
@@ -199,16 +200,16 @@ test.describe('Promptwatch command center', () => {
     await expect(
       page.getByText('Evaluation and regression suites benchmark candidate prompts before promotion.')
     ).toBeVisible();
-    await expect(page.getByText('Vendors referenced: 2')).toBeVisible();
+    await expect(page.getByText('2 provider connections participated.')).toBeVisible();
   });
 
   test('integrations page can apply wiring', async ({ page }) => {
     await mockPromptwatchApis(page);
     await page.goto('/seo/promptwatch-integrations');
 
-    await expect(page.getByRole('heading', { name: 'Provider Wiring And Remediation' })).toBeVisible();
-    await page.getByRole('button', { name: 'Apply All Missing Wiring' }).click();
-    await expect(page.getByText(/Wiring result:\s*\d+% configured, gate PASSED\.?/i)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('heading', { name: 'Promptwatch Connections' })).toBeVisible();
+    await page.getByRole('button', { name: 'Apply available settings' }).click();
+    await expect(page.getByText('100% complete')).toBeVisible({ timeout: 30_000 });
   });
 
   test('assist page returns operational guidance', async ({ page }) => {
@@ -217,8 +218,8 @@ test.describe('Promptwatch command center', () => {
     await mockPromptwatchApis(page);
     await page.goto('/seo/promptwatch-assist');
 
-    const assistHeading = page.getByRole('heading', { name: 'Assist Prompt Console' });
-    const runAssistButton = page.getByRole('button', { name: 'Run Assist' });
+    const assistHeading = page.getByRole('heading', { name: 'Promptwatch AI Assist' });
+    const runAssistButton = page.getByRole('button', { name: 'Get recommendations' });
     await expect(assistHeading).toBeVisible();
     await runAssistButton.click();
     if (new URL(page.url()).search) {
@@ -226,7 +227,7 @@ test.describe('Promptwatch command center', () => {
       await expect(assistHeading).toBeVisible();
       await runAssistButton.click();
     }
-    await expect(page.getByRole('heading', { name: 'Assist Response' })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('heading', { name: 'Recommendations' })).toBeVisible({ timeout: 30000 });
     await expect(page.getByText('Promptwatch rollout is healthy and production ready for this tenant.')).toBeVisible();
   });
 });

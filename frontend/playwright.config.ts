@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const frontendPort = 4273;
 const mockApiPort = 4101;
+const chromiumExecutable = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 export default defineConfig({
   testDir: './tests/smoke',
@@ -32,6 +33,8 @@ export default defineConfig({
       timeout: 300_000,
       env: {
         CI: '1',
+        NEXT_DIST_DIR: '.next-playwright',
+        WATCHPACK_POLLING: 'true',
         NEXT_PUBLIC_FASTAPI_URL: `http://localhost:${mockApiPort}`,
         FASTAPI_URL: `http://localhost:${mockApiPort}`,
         NEXT_PUBLIC_FASTAPI_API_KEY: 'change-this-fastapi-key',
@@ -52,6 +55,7 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
+        launchOptions: chromiumExecutable ? { executablePath: chromiumExecutable } : undefined,
       },
     },
   ],

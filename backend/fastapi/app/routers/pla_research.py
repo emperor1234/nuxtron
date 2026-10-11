@@ -43,6 +43,16 @@ from ..deps import AuthContext, require_auth
 logger = logging.getLogger(__name__)
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
+
+def _require_live_pla_provider(auth: AuthContext | None) -> None:
+    if os.getenv('ENVIRONMENT', 'development').strip().lower() == 'production':
+        if auth is None:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=401, detail='Authentication is required for PLA research.')
+        if not _dataforseo_auth():
+            from fastapi import HTTPException
+            raise HTTPException(status_code=503, detail='PLA research provider is not configured.')
+
 router = APIRouter(prefix="/pla-research", tags=["PLA Research"])
 _lock = threading.Lock()
 
@@ -139,7 +149,7 @@ def _make_ad_copies(domain: str) -> list[dict[str, Any]]:
             "product_title": p,
             "price_usd": round(random.uniform(9.99, 999.99), 2),
             "category": random.choice(_PRODUCT_CATEGORIES),
-            "image_url": f"https://via.placeholder.com/120?text={p.split()[0]}",
+            "image_url": None,
             "landing_url": f"https://{domain}/products/{p.lower().replace(' ', '-')}",
             "impressions": random.randint(1000, 500_000),
             "clicks": random.randint(50, 10_000),
@@ -216,7 +226,8 @@ def get_overview(
     keyword: str = Query(min_length=1, max_length=200, description="Product keyword or category"),
     auth: AuthDep | None = None,
 ) -> dict[str, Any]:
-    """Top PLA advertisers for keyword — DataForSEO Shopping live, seed fallback."""
+    """Top PLA advertisers for keyword from the configured DataForSEO provider."""
+    _require_live_pla_provider(auth)
     # Try DataForSEO Shopping SERP
     payload = [{"keyword": keyword, "location_code": 2840, "language_code": "en"}]
     data = _dataforseo_request("/v3/serp/google/shopping/live/advanced", payload)
@@ -248,6 +259,7 @@ def get_ad_copies(
     auth: AuthDep | None = None,
 ) -> dict[str, Any]:
     """PLA ad creatives for a domain."""
+    _require_live_pla_provider(auth)
     d = domain.lower().strip().split("/")[0]
     ads = _make_ad_copies(d)
     return {"domain": d, "ads": ads, "total": len(ads), "_source": "seed"}
@@ -260,6 +272,7 @@ def get_keyword_positions(
     auth: AuthDep | None = None,
 ) -> dict[str, Any]:
     """PLA positions for given keyword and domain."""
+    _require_live_pla_provider(auth)
     d = domain.lower().strip().split("/")[0]
     positions = _make_keyword_positions(keyword, d)
     return {"domain": d, "keyword": keyword, "positions": positions, "_source": "seed"}
@@ -271,6 +284,7 @@ def get_pla_competitors(
     auth: AuthDep | None = None,
 ) -> dict[str, Any]:
     """Competitor domains running PLAs in same categories."""
+    _require_live_pla_provider(auth)
     d = domain.lower().strip().split("/")[0]
     random.seed(int(hashlib.md5(f"{d}:pla_comps".encode(), usedforsecurity=False).hexdigest(), 16) % (2**32))
     sample = random.sample(_PLA_ADVERTISERS, 6)
@@ -293,6 +307,7 @@ def get_price_comparison(
     auth: AuthDep | None = None,
 ) -> dict[str, Any]:
     """Price intelligence across competitor PLAs."""
+    _require_live_pla_provider(auth)
     comparison = _make_price_comparison(keyword)
     return {"keyword": keyword, "price_comparison": comparison, "total": len(comparison)}
 
@@ -303,6 +318,7 @@ def get_top_products(
     auth: AuthDep | None = None,
 ) -> dict[str, Any]:
     """Top-performing individual product listings in category."""
+    _require_live_pla_provider(auth)
     random.seed(int(hashlib.md5(f"{category}:top_products".encode(), usedforsecurity=False).hexdigest(), 16) % (2**32))
     products = []
     for i in range(10):
@@ -325,6 +341,7 @@ def get_top_products(
 @router.post("/track-domain")
 def track_domain(payload: TrackDomainRequest, auth: AuthDep | None = None) -> dict[str, Any]:
     """Track a competitor's PLA presence."""
+    _require_live_pla_provider(auth)
     d = payload.domain.lower().strip().split("/")[0]
     record = {
         "id": str(uuid.uuid4()),
@@ -342,6 +359,7 @@ def track_domain(payload: TrackDomainRequest, auth: AuthDep | None = None) -> di
 
 @router.get("/tracked-domains")
 def list_tracked_domains(auth: AuthDep | None = None) -> dict[str, Any]:
+    _require_live_pla_provider(auth)
     with _lock:
         domains = list(_tracked_domains.get(auth.tenant_id, []))
     return {"domains": domains, "total": len(domains)}
@@ -353,6 +371,7 @@ def get_pla_trends(
     auth: AuthDep | None = None,
 ) -> dict[str, Any]:
     """30-day PLA spend/impression trend."""
+    _require_live_pla_provider(auth)
     d = domain.lower().strip().split("/")[0]
     trends = _make_trends(d)
     return {"domain": d, "trends": trends, "days": len(trends)}

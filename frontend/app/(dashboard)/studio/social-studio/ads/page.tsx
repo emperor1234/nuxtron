@@ -52,15 +52,15 @@ const NETWORK_COLORS: Record<string, string> = {
   linkedin: '#0A66C2',
   x: '#1DA1F2',
   tiktok: '#69C9D0',
-  youtube: '#FF0000',
+  youtube: 'var(--danger)',
   snapchat: '#FFFC00',
 };
 
 const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
-  active: { bg: '#dcfce722', color: '#22c55e' },
-  paused: { bg: '#fef3c722', color: '#F59E0B' },
-  archived: { bg: '#eef0f4', color: 'var(--muted)' },
-  pending_review: { bg: '#eef0f4', color: 'var(--brand)' },
+  active: { bg: 'color-mix(in oklab, var(--success-soft) 13%, transparent)', color: 'var(--success)' },
+  paused: { bg: 'color-mix(in oklab, var(--warning-line) 13%, transparent)', color: 'var(--warning)' },
+  archived: { bg: 'var(--neutral-soft)', color: 'var(--muted)' },
+  pending_review: { bg: 'var(--neutral-soft)', color: 'var(--brand)' },
 };
 
 export default function PaidSocialAdsPage() {
@@ -220,13 +220,13 @@ export default function PaidSocialAdsPage() {
         <div style={styles.kpiRow}>
           {[
             { label: 'Total Campaigns', value: summary.total_campaigns, icon: '📢' },
-            { label: 'Active', value: summary.active, icon: '▶️', accent: '#22c55e' },
+            { label: 'Active', value: summary.active, icon: '▶️', accent: 'var(--success)' },
             { label: 'Total Spend', value: `$${summary.total_spent.toLocaleString()}`, icon: '💰' },
             { label: 'Impressions', value: `${(summary.total_impressions / 1000).toFixed(0)}K`, icon: '👁' },
             { label: 'Conversions', value: summary.total_conversions, icon: '✅' },
-            { label: 'Avg ROAS', value: `${summary.avg_roas}×`, icon: '📈', accent: '#22c55e' },
+            { label: 'Avg ROAS', value: `${summary.avg_roas}×`, icon: '📈', accent: 'var(--success)' },
           ].map((kpi, i) => (
-            <div key={i} style={{ ...styles.kpiCard, borderColor: kpi.accent ?? '#e7e9ef' }}>
+            <div key={i} style={{ ...styles.kpiCard, borderColor: kpi.accent ?? 'var(--neutral-soft)' }}>
               <span style={styles.kpiIcon}>{kpi.icon}</span>
               <span style={{ ...styles.kpiValue, color: kpi.accent ?? 'var(--text)' }}>{kpi.value}</span>
               <span style={styles.kpiLabel}>{kpi.label}</span>
@@ -358,7 +358,7 @@ export default function PaidSocialAdsPage() {
                     <div key={campaign.id} style={styles.campaignCard}>
                       <div style={styles.campaignHeader}>
                         <div style={styles.campaignLeft}>
-                          <div style={{ ...styles.netTag, background: NETWORK_COLORS[campaign.network] ?? '#e7e9ef' }}>
+                          <div style={{ ...styles.netTag, background: NETWORK_COLORS[campaign.network] ?? 'var(--neutral-soft)' }}>
                             {campaign.network}
                           </div>
                           <div>
@@ -392,7 +392,7 @@ export default function PaidSocialAdsPage() {
                           {
                             label: 'ROAS',
                             value: `${campaign.roas}×`,
-                            accent: campaign.roas >= 3 ? '#22c55e' : '#F59E0B',
+                            accent: campaign.roas >= 3 ? 'var(--success)' : 'var(--warning)',
                           },
                         ].map((m, i) => (
                           <div key={i} style={styles.metricCell}>
@@ -426,7 +426,7 @@ export default function PaidSocialAdsPage() {
                 <h3 style={styles.sectionTitle}>Performance by Network</h3>
                 {Object.entries(byNetwork).map(([net, data]) => (
                   <div key={net} style={styles.networkRow}>
-                    <div style={{ ...styles.netTag, background: NETWORK_COLORS[net] ?? '#e7e9ef', marginRight: 10 }}>
+                    <div style={{ ...styles.netTag, background: NETWORK_COLORS[net] ?? 'var(--neutral-soft)', marginRight: 10 }}>
                       {net}
                     </div>
                     <div style={styles.networkStats}>
@@ -434,7 +434,7 @@ export default function PaidSocialAdsPage() {
                       <span style={styles.netStat}>{data.clicks.toLocaleString()} clicks</span>
                       <span style={styles.netStat}>{data.conversions} conversions</span>
                       <span style={styles.netStat}>${data.spent.toLocaleString()} spent</span>
-                      <span style={{ ...styles.netStat, color: '#22c55e' }}>{data.avg_roas}× ROAS</span>
+                      <span style={{ ...styles.netStat, color: 'var(--success)' }}>{data.avg_roas}× ROAS</span>
                     </div>
                   </div>
                 ))}
@@ -460,7 +460,7 @@ export default function PaidSocialAdsPage() {
                     <div key={i} style={styles.comparisonRow}>
                       <span style={styles.comparisonMetric}>{row.metric}</span>
                       <span style={{ ...styles.comparisonVal, color: 'var(--brand)' }}>📢 {row.paid}</span>
-                      <span style={{ ...styles.comparisonVal, color: '#22c55e' }}>🌱 {row.organic}</span>
+                      <span style={{ ...styles.comparisonVal, color: 'var(--success)' }}>🌱 {row.organic}</span>
                     </div>
                   ))}
                 </div>
@@ -550,9 +550,9 @@ const styles: Record<string, React.CSSProperties> = {
   title: { fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: '-0.5px' },
   subtitle: { color: 'var(--muted)', fontSize: 14, marginTop: 6, lineHeight: 1.5 },
   primaryBtn: {
-    background: '#6366f1',
+    background: "var(--brand)",
     border: 'none',
-    color: '#fff',
+    color: 'var(--on-brand)',
     padding: '9px 18px',
     borderRadius: 8,
     cursor: 'pointer',
@@ -560,8 +560,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
   },
   errorBanner: {
-    background: '#fee2e2',
-    border: '1px solid #EF4444',
+    background: 'var(--danger-soft)',
+    border: '1px solid var(--danger)',
     borderRadius: 8,
     padding: '10px 16px',
     marginBottom: 16,
@@ -572,13 +572,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   iconBtn: { background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 16, padding: 4 },
   successBanner: {
-    background: '#dcfce733',
-    border: '1px solid #22c55e',
+    background: 'color-mix(in oklab, var(--success-soft) 20%, transparent)',
+    border: '1px solid var(--success)',
     borderRadius: 8,
     padding: '10px 16px',
     marginBottom: 16,
     fontSize: 14,
-    color: '#22c55e',
+    color: 'var(--success)',
   },
   kpiRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))', gap: 12, marginBottom: 24 },
   kpiCard: {
@@ -647,7 +647,7 @@ const styles: Record<string, React.CSSProperties> = {
   netTag: {
     padding: '4px 10px',
     borderRadius: 6,
-    color: '#fff',
+    color: 'var(--on-status)',
     fontSize: 12,
     fontWeight: 600,
     textTransform: 'capitalize',
@@ -679,7 +679,7 @@ const styles: Record<string, React.CSSProperties> = {
   metricLabel: { fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.3px' },
   muted: { color: 'var(--muted)', fontSize: 10 },
   budgetBar: { height: 4, background: 'var(--card)', borderRadius: 2, overflow: 'hidden' },
-  budgetFill: { height: '100%', background: '#6366f1', borderRadius: 2, transition: 'width 0.4s ease' },
+  budgetFill: { height: '100%', background: "var(--brand)", borderRadius: 2, transition: 'width 0.4s ease' },
   analyticsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 20 },
   analyticsCard: { background: 'var(--card)', borderRadius: 12, padding: 24, border: '1px solid var(--line)' },
   sectionTitle: { fontSize: 16, fontWeight: 600, marginBottom: 16, color: 'var(--text)' },

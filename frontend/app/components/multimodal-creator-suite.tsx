@@ -348,8 +348,8 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                     }
                     style={{
                       borderRadius: 10,
-                      border: active ? '1px solid rgba(255,255,255,0.24)' : '1px solid rgba(255,255,255,0.08)',
-                      background: active ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)',
+                      border: active ? '1px solid rgba(255,255,255,0.24)' : '1px solid var(--line)',
+                      background: active ? 'var(--line)' : 'var(--line)',
                       color: 'var(--text)',
                       padding: '8px 12px',
                       fontSize: 12,
@@ -364,10 +364,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
 
             <div
               style={{
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--line)',
                 borderRadius: 14,
                 padding: 14,
-                background: 'rgba(255,255,255,0.02)',
+                background: 'var(--line)',
               }}
             >
               <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>AI Model</p>
@@ -379,8 +379,8 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                     width: '100%',
                     padding: '10px 12px',
                     borderRadius: 10,
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    background: '#111318',
+                    border: '1px solid var(--line)',
+                    background: 'var(--card)',
                     color: 'var(--text)',
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -402,9 +402,9 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                       top: 'calc(100% + 8px)',
                       zIndex: 20,
                       borderRadius: 12,
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: '#0f1014',
-                      boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
+                      border: '1px solid var(--line)',
+                      background: 'var(--card)',
+                      boxShadow: '0 20px 60px var(--shadow-lg)',
                       overflow: 'hidden',
                     }}
                   >
@@ -419,7 +419,7 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                         style={{
                           width: '100%',
                           border: 'none',
-                          borderBottom: '1px solid rgba(255,255,255,0.06)',
+                          borderBottom: '1px solid var(--line)',
                           background: 'transparent',
                           color: 'var(--text)',
                           padding: '12px 14px',
@@ -436,7 +436,7 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                                   key={badge}
                                   style={{
                                     borderRadius: 999,
-                                    background: 'rgba(255,255,255,0.08)',
+                                    background: 'var(--line)',
                                     padding: '2px 7px',
                                     fontSize: 10,
                                     color: 'rgba(255,255,255,0.82)',
@@ -462,10 +462,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
             <div style={{ display: 'grid', gap: 10 }}>
               <div
                 style={{
-                  border: '1px dashed rgba(255,255,255,0.1)',
+                  border: '1px dashed var(--line)',
                   borderRadius: 14,
                   padding: 14,
-                  background: '#17181c',
+                  background: 'var(--card)',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
@@ -477,7 +477,7 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                       borderRadius: 999,
                       border: '1px solid rgba(111,86,255,0.35)',
                       background: 'rgba(111,86,255,0.16)',
-                      color: '#c6b7ff',
+                      color: 'var(--info)',
                       padding: '4px 10px',
                       fontSize: 11,
                       cursor: 'pointer',
@@ -500,10 +500,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
 
               <div
                 style={{
-                  border: '1px dashed rgba(255,255,255,0.1)',
+                  border: '1px dashed var(--line)',
                   borderRadius: 14,
                   padding: 14,
-                  background: '#17181c',
+                  background: 'var(--card)',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
@@ -524,10 +524,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
 
               <div
                 style={{
-                  border: '1px dashed rgba(255,255,255,0.1)',
+                  border: '1px dashed var(--line)',
                   borderRadius: 14,
                   padding: 14,
-                  background: '#17181c',
+                  background: 'var(--card)',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
@@ -553,10 +553,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 gap: 12,
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--line)',
                 borderRadius: 12,
                 padding: '10px 12px',
-                background: '#17181c',
+                background: 'var(--card)',
               }}
             >
               <span style={{ fontSize: 12 }}>Contains Real People</span>
@@ -573,10 +573,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 gap: 12,
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--line)',
                 borderRadius: 12,
                 padding: '10px 12px',
-                background: '#17181c',
+                background: 'var(--card)',
               }}
             >
               <span style={{ fontSize: 12 }}>Return Last Frame</span>
@@ -589,10 +589,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
 
             <div
               style={{
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--line)',
                 borderRadius: 12,
                 padding: 12,
-                background: '#17181c',
+                background: 'var(--card)',
               }}
             >
               <p style={{ margin: 0, fontSize: 12, fontWeight: 700 }}>Prompt</p>
@@ -606,8 +606,8 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                   marginTop: 8,
                   padding: 10,
                   borderRadius: 10,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: '#101115',
+                  border: '1px solid var(--line)',
+                  background: 'var(--card)',
                   color: 'var(--text)',
                   resize: 'vertical',
                 }}
@@ -629,8 +629,8 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                       onClick={() => setResolution(item)}
                       style={{
                         borderRadius: 10,
-                        border: active ? '1px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.08)',
-                        background: active ? 'rgba(255,255,255,0.08)' : '#17181c',
+                        border: active ? '1px solid rgba(255,255,255,0.22)' : '1px solid var(--line)',
+                        background: active ? 'var(--line)' : 'var(--card)',
                         color: 'var(--text)',
                         padding: '8px 14px',
                         fontSize: 12,
@@ -671,8 +671,8 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                       onClick={() => setAspectRatio(ratio)}
                       style={{
                         borderRadius: 12,
-                        border: active ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.08)',
-                        background: active ? 'rgba(255,255,255,0.08)' : '#17181c',
+                        border: active ? '1px solid rgba(255,255,255,0.25)' : '1px solid var(--line)',
+                        background: active ? 'var(--line)' : 'var(--card)',
                         color: 'var(--text)',
                         padding: '12px 8px',
                         minHeight: 58,
@@ -687,15 +687,15 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
               </div>
             </div>
 
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 10 }}>
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 10 }}>
               <button
                 type="button"
                 onClick={setRandomSeed}
                 style={{
                   width: '100%',
                   borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: '#17181c',
+                  border: '1px solid var(--line)',
+                  background: 'var(--card)',
                   color: 'var(--text)',
                   padding: '8px 12px',
                   cursor: 'pointer',
@@ -721,8 +721,8 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                     width: '100%',
                     padding: '8px 10px',
                     borderRadius: 10,
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    background: '#101115',
+                    border: '1px solid var(--line)',
+                    background: 'var(--card)',
                     color: 'var(--text)',
                   }}
                 />
@@ -738,8 +738,8 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                     width: '100%',
                     borderRadius: 12,
                     border: 'none',
-                    background: 'linear-gradient(90deg, #6d5efc, #8a38ff)',
-                    color: '#fff',
+                    background: "linear-gradient(90deg, var(--brand), var(--info))",
+                    color: 'var(--on-status)',
                     padding: '12px 14px',
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -757,10 +757,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
           <div style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
             <div
               style={{
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--line)',
                 borderRadius: 18,
                 padding: 14,
-                background: 'rgba(255,255,255,0.03)',
+                background: 'var(--line)',
               }}
             >
               <div
@@ -779,10 +779,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
 
             <div
               style={{
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--line)',
                 borderRadius: 14,
                 padding: 14,
-                background: '#17181c',
+                background: 'var(--card)',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
@@ -790,7 +790,7 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                 <span
                   style={{
                     borderRadius: 999,
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    border: '1px solid var(--line)',
                     padding: '4px 8px',
                     fontSize: 11,
                     color: 'var(--muted)',
@@ -802,10 +802,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
               <div
                 style={{
                   marginTop: 10,
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  border: '1px solid var(--line)',
                   borderRadius: 10,
                   padding: 10,
-                  background: '#111318',
+                  background: 'var(--card)',
                 }}
               >
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--muted)' }}>Prompt Guide</p>
@@ -842,13 +842,13 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
 
             <div
               style={{
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--line)',
                 borderRadius: 14,
                 padding: 14,
                 background: 'linear-gradient(180deg, rgba(15,20,48,0.88), rgba(9,12,28,0.96))',
               }}
             >
-              <h4 style={{ margin: 0, textAlign: 'center', color: '#5ea0ff' }}>Get Inspired</h4>
+              <h4 style={{ margin: 0, textAlign: 'center', color: 'var(--info)' }}>Get Inspired</h4>
               <p style={{ margin: '8px 0 0', textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>
                 Explore multimodal video examples created with the current reference workflow.
               </p>
@@ -861,7 +861,7 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                     style={{
                       borderRadius: 12,
                       minHeight: 100,
-                      background: 'linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04))',
+                      background: 'linear-gradient(135deg, var(--line), var(--line))',
                       display: 'grid',
                       placeItems: 'center',
                       fontSize: 12,
@@ -1147,10 +1147,10 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
           <div
             style={{
               marginTop: 12,
-              border: '1px solid #f59e0b55',
+              border: '1px solid color-mix(in oklab, var(--warning) 33%, transparent)',
               borderRadius: 8,
               padding: 10,
-              background: '#f59e0b12',
+              background: 'color-mix(in oklab, var(--warning) 7%, transparent)',
             }}
           >
             <p style={{ margin: 0, fontSize: 12, fontWeight: 700 }}>Public Figure / Celebrity Controls</p>
@@ -1169,7 +1169,7 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                   borderRadius: 8,
                   border: 'none',
                   background: 'var(--brand)',
-                  color: '#00101e',
+                  color: 'var(--text)',
                   padding: '9px 12px',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -1254,7 +1254,7 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                       padding: '8px 10px',
                       borderRadius: 8,
                       border: '1px solid var(--line)',
-                      background: '#111318',
+                      background: 'var(--card)',
                       color: 'var(--text)',
                       textAlign: 'left',
                       cursor: 'pointer',
@@ -1271,13 +1271,13 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                         right: 0,
                         zIndex: 40,
                         borderRadius: 10,
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        background: '#17181c',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
+                        border: '1px solid var(--line)',
+                        background: 'var(--card)',
+                        boxShadow: '0 20px 60px var(--shadow-lg)',
                         overflow: 'hidden',
                       }}
                     >
-                      <div style={{ padding: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div style={{ padding: 8, borderBottom: '1px solid var(--line)' }}>
                         <input
                           value={portraitCountrySearch}
                           onChange={(event) => setPortraitCountrySearch(event.target.value)}
@@ -1286,8 +1286,8 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                             width: '100%',
                             padding: '8px 10px',
                             borderRadius: 8,
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            background: '#101115',
+                            border: '1px solid var(--line)',
+                            background: 'var(--card)',
                             color: 'var(--text)',
                           }}
                         />
@@ -1305,7 +1305,7 @@ export default function MultimodalCreatorSuite({ moduleType, onApplyConfig }: Pr
                             style={{
                               width: '100%',
                               border: 'none',
-                              background: portraitCountry === country ? 'rgba(255,255,255,0.08)' : 'transparent',
+                              background: portraitCountry === country ? 'var(--line)' : 'transparent',
                               color: 'var(--text)',
                               padding: '10px 12px',
                               textAlign: 'left',

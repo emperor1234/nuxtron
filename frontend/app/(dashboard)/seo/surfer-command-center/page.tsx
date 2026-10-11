@@ -1,5 +1,6 @@
 'use client';
 
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -258,7 +259,7 @@ function ActionToolbar({
           {loading ? 'Executing...' : 'Run Full Automation Blueprint'}
         </button>
       </div>
-      {error ? <p style={{ color: '#dc2626' }}>{error}</p> : null}
+      {error ? <p style={{ color: 'var(--danger)' }}>{error}</p> : null}
     </section>
   );
 }
@@ -292,7 +293,7 @@ function QuickNavigation() {
       <SectionTitle title="Quick Navigation" summary="Surfer command-center routes and adjacent SEO execution workspaces." />
       <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))' }}>
         {links.map((item) => (
-          <Link key={item.href} className="card" href={item.href} style={{ textDecoration: 'none' }}>
+          <Link key={item.href} className="card" href={item.href as Route} style={{ textDecoration: 'none' }}>
             <h3 style={{ marginTop: 0 }}>{item.title}</h3>
             <p style={{ opacity: 0.82, marginBottom: 0 }}>{item.summary}</p>
           </Link>
@@ -494,7 +495,7 @@ function SetupPlaybookSection({ playbook }: Readonly<{ playbook: SetupPlaybookRe
               margin: 0,
               padding: 16,
               borderRadius: 12,
-              background: '#f6f7fa',
+              background: "var(--bg)",
             }}
           >
             {playbook.setup_playbook.providers[0].preflight_commands_powershell.join('\n')}
@@ -639,7 +640,7 @@ function EnvTemplateSection({ envTemplate }: Readonly<{ envTemplate: EnvTemplate
       </p>
       <p style={{ opacity: 0.82 }}>Providers included: {envTemplate.providers_included.join(', ')}</p>
       <p style={{ opacity: 0.82 }}>Missing keys: {envTemplate.missing_keys.length ? envTemplate.missing_keys.join(', ') : 'None'}</p>
-      <pre style={{ whiteSpace: 'pre-wrap', overflowX: 'auto', margin: 0, padding: 16, borderRadius: 12, background: '#f6f7fa' }}>
+      <pre style={{ whiteSpace: 'pre-wrap', overflowX: 'auto', margin: 0, padding: 16, borderRadius: 12, background: "var(--bg)" }}>
         {envTemplate.env_template}
       </pre>
     </section>

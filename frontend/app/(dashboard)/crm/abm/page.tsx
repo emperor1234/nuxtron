@@ -283,7 +283,7 @@ export default function CrmAbmPage() {
           </section>
         )}
 
-        {error && <section style={{ ...card, borderColor: '#b91c1c', color: '#fca5a5' }}>{error}</section>}
+        {error && <section style={{ ...card, borderColor: 'var(--danger)', color: 'var(--danger-line)' }}>{error}</section>}
 
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 12 }}>
           <div style={{ display: 'grid', gap: 12 }}>
@@ -582,7 +582,7 @@ const primaryButton: React.CSSProperties = {
   border: 'none',
   borderRadius: 8,
   background: 'var(--brand)',
-  color: '#00101e',
+  color: 'var(--on-brand)',
   fontWeight: 700,
   padding: '8px 12px',
 };

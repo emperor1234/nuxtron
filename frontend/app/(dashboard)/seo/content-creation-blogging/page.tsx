@@ -101,7 +101,7 @@ export default function ContentCreationBloggingPage() {
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <h1 style={{ marginTop: 0 }}>Content Creation & Blogging</h1>
         <p style={{ color: 'var(--muted)' }}>Plan and strategize your SEO-driven content calendar.</p>
-        {error && <div style={{ ...card, color: '#f87171', marginBottom: 10 }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)', marginBottom: 10 }}>{error}</div>}
         <section style={card}>
           <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Topic</label>
           <input style={input} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Content topic" />
@@ -173,7 +173,7 @@ export default function ContentCreationBloggingPage() {
               border: 'none',
               borderRadius: 8,
               background: loading ? 'var(--muted)' : 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
@@ -186,12 +186,12 @@ export default function ContentCreationBloggingPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.15)', color: '#38bdf8' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.15)', color: 'var(--info)' }}>
                     Cached result
                   </span>
                 )}

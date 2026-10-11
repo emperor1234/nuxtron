@@ -103,7 +103,7 @@ export default function SeoAbTestingPage() {
   }
 
   const card = {
-    background: '#ffffff',
+    background: 'var(--card)fff',
     border: '1px solid rgba(148, 163, 184, 0.16)',
     borderRadius: 16,
     padding: 18,
@@ -116,7 +116,7 @@ export default function SeoAbTestingPage() {
     padding: '10px 12px',
     borderRadius: 12,
     border: '1px solid rgba(148, 163, 184, 0.22)',
-    background: '#ffffff',
+    background: 'var(--card)fff',
     color: 'var(--text)',
     marginBottom: 10,
     boxSizing: 'border-box' as const,
@@ -175,7 +175,7 @@ export default function SeoAbTestingPage() {
           <p style={{ color: 'var(--muted)', margin: 0 }}>Statistical testing and guardrails for SEO and UX variants.</p>
         </section>
 
-        {error && <div style={{ ...card, color: '#b91c1c' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
 
         <form style={card} onSubmit={handleSubmit}>
           <label htmlFor="seo-ab-url" style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
@@ -354,7 +354,7 @@ export default function SeoAbTestingPage() {
                       borderRadius: 999,
                       background:
                         result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
-                      color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)',
+                      color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)',
                     }}
                   >
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
@@ -368,7 +368,7 @@ export default function SeoAbTestingPage() {
                       padding: '4px 10px',
                       borderRadius: 999,
                       background: 'rgba(56,189,248,0.12)',
-                      color: '#38bdf8',
+                      color: 'var(--info)',
                     }}
                   >
                     Cached result

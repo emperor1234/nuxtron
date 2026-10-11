@@ -31,15 +31,15 @@ const NETWORK_COLORS: Record<string, string> = {
   facebook: '#1877F2',
   linkedin: '#0A66C2',
   tiktok: '#69C9D0',
-  youtube: '#FF0000',
-  all: '#6366f1',
+  youtube: 'var(--danger)',
+  all: 'var(--info)',
 };
 
 const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
-  ready: { bg: '#dcfce722', color: '#22c55e' },
-  generating: { bg: '#1e3a5f22', color: 'var(--brand)' },
-  scheduled: { bg: '#fef3c722', color: '#F59E0B' },
-  failed: { bg: '#fee2e222', color: '#EF4444' },
+  ready: { bg: 'color-mix(in oklab, var(--success-soft) 13%, transparent)', color: 'var(--success)' },
+  generating: { bg: 'var(--info-soft)', color: 'var(--brand)' },
+  scheduled: { bg: 'color-mix(in oklab, var(--warning-line) 13%, transparent)', color: 'var(--warning)' },
+  failed: { bg: 'color-mix(in oklab, var(--danger-soft) 13%, transparent)', color: 'var(--danger)' },
 };
 
 const ALL_METRICS = [
@@ -216,12 +216,12 @@ export default function ReportBuilderPage() {
               <p style={styles.growthSubtitle}>Live production-grade progress for acquisition and revenue integrations.</p>
             </div>
             <div style={styles.growthStatsRow}>
-              <span style={{ ...styles.growthStatChip, borderColor: '#6366f133' }}>
+              <span style={{ ...styles.growthStatChip, borderColor: 'color-mix(in oklab, var(--info) 20%, transparent)' }}>
                 Required Done: {growthSummary.required_done}/{growthSummary.required_integrations}
               </span>
-              <span style={{ ...styles.growthStatChip, borderColor: '#22C55E33' }}>Done: {growthSummary.done}</span>
-              <span style={{ ...styles.growthStatChip, borderColor: '#F59E0B33' }}>Partial: {growthSummary.partial}</span>
-              <span style={{ ...styles.growthStatChip, borderColor: '#EF444433' }}>Missing: {growthSummary.missing}</span>
+              <span style={{ ...styles.growthStatChip, borderColor: 'color-mix(in oklab, var(--success) 20%, transparent)' }}>Done: {growthSummary.done}</span>
+              <span style={{ ...styles.growthStatChip, borderColor: 'color-mix(in oklab, var(--warning) 20%, transparent)' }}>Partial: {growthSummary.partial}</span>
+              <span style={{ ...styles.growthStatChip, borderColor: 'color-mix(in oklab, var(--danger) 20%, transparent)' }}>Missing: {growthSummary.missing}</span>
               <span style={styles.growthStatChip}>Avg: {growthSummary.average_completion_percent}%</span>
             </div>
           </div>
@@ -242,10 +242,10 @@ export default function ReportBuilderPage() {
                 {growthMatrix.map((item) => {
                   const statusColor =
                     item.implementation_status === 'done'
-                      ? '#22c55e'
+                      ? 'var(--success)'
                       : item.implementation_status === 'missing'
-                        ? '#EF4444'
-                        : '#F59E0B';
+                        ? 'var(--danger)'
+                        : 'var(--warning)';
                   return (
                     <tr key={item.integration_key}>
                       <td style={styles.growthTd}>{item.integration}</td>
@@ -352,7 +352,7 @@ export default function ReportBuilderPage() {
                     style={{
                       ...styles.chip,
                       ...(newNetworks.includes(n)
-                        ? { background: NETWORK_COLORS[n], color: '#fff', borderColor: NETWORK_COLORS[n] }
+                        ? { background: NETWORK_COLORS[n], color: 'var(--on-status)', borderColor: NETWORK_COLORS[n] }
                         : {}),
                     }}
                   >
@@ -371,7 +371,7 @@ export default function ReportBuilderPage() {
                     style={{
                       ...styles.chip,
                       ...(newMetrics.includes(m)
-                        ? { background: '#6366f1', color: '#fff', borderColor: '#6366f1' }
+                        ? { background: "var(--brand)", color: 'var(--on-brand)', borderColor: "var(--brand)" }
                         : {}),
                     }}
                   >
@@ -446,7 +446,7 @@ export default function ReportBuilderPage() {
                 <div style={styles.reportBody}>
                   <div style={styles.networksRow}>
                     {report.networks.map((n) => (
-                      <span key={n} style={{ ...styles.netTag, background: NETWORK_COLORS[n] ?? '#e7e9ef' }}>
+                      <span key={n} style={{ ...styles.netTag, background: NETWORK_COLORS[n] ?? 'var(--neutral-soft)' }}>
                         {n}
                       </span>
                     ))}
@@ -484,9 +484,9 @@ const styles: Record<string, React.CSSProperties> = {
   title: { fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: '-0.5px' },
   subtitle: { color: 'var(--muted)', fontSize: 14, marginTop: 6, lineHeight: 1.5 },
   primaryBtn: {
-    background: '#6366f1',
+    background: "var(--brand)",
     border: 'none',
-    color: '#fff',
+    color: 'var(--on-brand)',
     padding: '9px 18px',
     borderRadius: 8,
     cursor: 'pointer',
@@ -494,8 +494,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
   },
   errorBanner: {
-    background: '#fee2e2',
-    border: '1px solid #EF4444',
+    background: 'var(--danger-soft)',
+    border: '1px solid var(--danger)',
     borderRadius: 8,
     padding: '10px 16px',
     marginBottom: 16,
@@ -505,13 +505,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
   },
   successBanner: {
-    background: '#dcfce733',
-    border: '1px solid #22c55e',
+    background: 'color-mix(in oklab, var(--success-soft) 20%, transparent)',
+    border: '1px solid var(--success)',
     borderRadius: 8,
     padding: '10px 16px',
     marginBottom: 16,
     fontSize: 14,
-    color: '#22c55e',
+    color: 'var(--success)',
   },
   iconBtn: { background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 16, padding: 4 },
   formCard: { background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: 24, marginBottom: 24 },
@@ -579,7 +579,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     cursor: 'pointer',
     fontSize: 18,
-    color: '#EF4444',
+    color: 'var(--danger)',
     padding: '4px 6px',
   },
   reportBody: { padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 8 },
@@ -587,7 +587,7 @@ const styles: Record<string, React.CSSProperties> = {
   netTag: {
     padding: '3px 8px',
     borderRadius: 4,
-    color: '#fff',
+    color: 'var(--on-status)',
     fontSize: 11,
     fontWeight: 600,
     textTransform: 'capitalize',
@@ -628,7 +628,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 999,
     border: '1px solid var(--line)',
     padding: '4px 10px',
-    color: '#D5D9E2',
+    color: 'var(--neutral-line)',
     background: 'var(--card)',
   },
   growthTableWrap: { overflowX: 'auto' },
@@ -670,6 +670,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   progressFill: {
     height: '100%',
-    background: 'linear-gradient(90deg, #22c55e 0%, #6366f1 100%)',
+    background: "linear-gradient(90deg, var(--success) 0%, var(--brand) 100%)",
   },
 };

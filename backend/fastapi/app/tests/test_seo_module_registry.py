@@ -16,7 +16,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 
 
 def _frontend_catalog_ahrefs_pairs() -> set[tuple[str, str]]:
-    catalog_path = _REPO_ROOT / "frontend" / "app" / "seo" / "module-catalog.ts"
+    catalog_path = _REPO_ROOT / "frontend" / "app" / "(dashboard)" / "seo" / "module-catalog.ts"
     text = catalog_path.read_text(encoding="utf-8")
     pattern = re.compile(
         r"routePath:\s*'(?P<route>/seo/[^']+)'\s*,\s*moduleKey:\s*'(?P<module>ahrefs-[^']+)'"
@@ -30,7 +30,7 @@ def _frontend_route_file_exists(route_path: str) -> bool:
     slug = route_path.removeprefix("/seo/").strip("/")
     if not slug:
         return False
-    return (_REPO_ROOT / "frontend" / "app" / "seo" / slug / "page.tsx").exists()
+    return (_REPO_ROOT / "frontend" / "app" / "(dashboard)" / "seo" / slug / "page.tsx").exists()
 
 
 class TestMergeUnique:

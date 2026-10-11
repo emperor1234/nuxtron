@@ -4,8 +4,8 @@
 # ---------------------------------------------------------------------------
 
 # Core framework
-Django==5.2.16
-djangorestframework==3.16.1
+Django==5.2.17
+djangorestframework==3.17.2
 
 # Token authentication (rotating refresh tokens + blacklist)
 djangorestframework-simplejwt==5.5.1

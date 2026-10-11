@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 import { copyLibFiles } from '@builder.io/partytown/utils';
 import path from 'path';
+import ROUTE_RENAMES from './app/lib/route-renames.json';
 
 // Content-Security-Policy is NOT set here. A static CSP can't carry a
 // per-request nonce, and `script-src 'self'` without one blocks every
@@ -25,6 +26,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   allowedDevOrigins: ['localhost', '127.0.0.1'],
   outputFileTracingRoot: path.join(__dirname, '..'),
   images: {
@@ -37,6 +39,15 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
+  },
+  // Renamed and merged dashboard routes (app/lib/route-renames.json). These
+  // run before proxy.ts, so an old bookmark lands on the new URL first and the
+  // product-line check then applies to the page actually being served.
+  async redirects() {
+    return ROUTE_RENAMES.redirects.flatMap(({ from, to, subpaths }) => [
+      { source: from, destination: to, permanent: true },
+      ...(subpaths ? [{ source: `${from}/:rest*`, destination: `${to}/:rest*`, permanent: true }] : []),
+    ]);
   },
   // Partytown lib files are served from public/~partytown/ — Next.js handles this
   // automatically without any rewrite. A rewrite would shadow the public/ path.

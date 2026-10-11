@@ -10,9 +10,9 @@
  */
 
 const CARD =
-  'overflow-hidden rounded-2xl border border-[#E4DCC9] bg-white shadow-[0_12px_32px_-12px_rgba(31,31,31,0.12)]';
+  'overflow-hidden rounded-2xl border border-line bg-white shadow-[0_12px_32px_-12px_rgba(31,31,31,0.12)]';
 const HEADER =
-  'flex items-center gap-2 border-b border-[#EFE9DC] bg-[#FEFCF8] px-4 py-2.5';
+  'flex items-center gap-2 border-b border-line-soft bg-surface px-4 py-2.5';
 
 /* ── SEO rank-tracking visual ── */
 export function SeoVisual() {
@@ -24,29 +24,29 @@ export function SeoVisual() {
   return (
     <div className={CARD}>
       <div className={HEADER}>
-        <span className="text-sm font-semibold text-[#1F1F1F]">Position Tracking</span>
-        <span className="ml-auto rounded-full bg-[#FEF3E2] px-2 py-0.5 text-xs font-semibold text-[#F59E0B]">
+        <span className="text-sm font-semibold text-ink">Position Tracking</span>
+        <span className="ml-auto rounded-full bg-line-soft px-2 py-0.5 text-xs font-semibold text-warning-ink">
           Live
         </span>
       </div>
-      <div className="divide-y divide-[#EFE9DC]">
+      <div className="divide-y divide-line-soft">
         {keywords.map((k) => (
           <div key={k.kw} className="flex items-center gap-4 px-4 py-3">
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium text-[#1F1F1F]">{k.kw}</div>
-              <div className="text-xs text-[#899AA8]">{k.vol} searches/mo</div>
+              <div className="truncate text-sm font-medium text-ink">{k.kw}</div>
+              <div className="text-xs text-info">{k.vol} searches/mo</div>
             </div>
             <div className="text-right">
               <div className="flex items-center justify-end gap-1.5">
-                <span className="text-lg font-bold text-[#1F1F1F]">#{k.pos}</span>
-                <span className="flex items-center text-xs font-semibold text-[#1F7A3D]">
+                <span className="text-lg font-bold text-ink">#{k.pos}</span>
+                <span className="flex items-center text-xs font-semibold text-success-ink">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                     <path d="M7 17L17 7M17 7H8M17 7v9" />
                   </svg>
                   {k.prev - k.pos}
                 </span>
               </div>
-              <div className="text-xs text-[#899AA8]">was #{k.prev}</div>
+              <div className="text-xs text-info">was #{k.prev}</div>
             </div>
           </div>
         ))}
@@ -66,8 +66,8 @@ export function SocialVisual() {
   return (
     <div className={CARD}>
       <div className={HEADER}>
-        <span className="text-sm font-semibold text-[#1F1F1F]">This week</span>
-        <span className="ml-auto text-xs text-[#899AA8]">14 posts scheduled</span>
+        <span className="text-sm font-semibold text-ink">This week</span>
+        <span className="ml-auto text-xs text-info">14 posts scheduled</span>
       </div>
       <div className="space-y-2 p-4">
         {channels.map((c) => (
@@ -78,24 +78,24 @@ export function SocialVisual() {
             >
               {c.icon}
             </div>
-            <span className="flex-1 text-sm font-medium text-[#1F1F1F]">{c.name}</span>
+            <span className="flex-1 text-sm font-medium text-ink">{c.name}</span>
             <div className="flex gap-1">
               {Array.from({ length: 7 }).map((_, i) => (
                 <div
                   key={i}
                   className={
                     i < c.posts
-                      ? 'h-6 w-3 rounded-sm bg-[#F59E0B]'
-                      : 'h-6 w-3 rounded-sm bg-[#FEF3E2]'
+                      ? 'h-6 w-3 rounded-sm bg-warning'
+                      : 'h-6 w-3 rounded-sm bg-line-soft'
                   }
                 />
               ))}
             </div>
-            <span className="w-6 text-right text-sm font-semibold text-[#33475B]">{c.posts}</span>
+            <span className="w-6 text-right text-sm font-semibold text-info-ink">{c.posts}</span>
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-2 border-t border-[#EFE9DC] bg-[#FEF3E2] px-4 py-2.5 text-xs font-semibold text-[#F59E0B]">
+      <div className="flex items-center gap-2 border-t border-line-soft bg-line-soft px-4 py-2.5 text-xs font-semibold text-warning-ink">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
         </svg>
@@ -115,36 +115,36 @@ export function AdsVisual() {
   return (
     <div className={CARD}>
       <div className={HEADER}>
-        <span className="text-sm font-semibold text-[#1F1F1F]">Ad Campaigns</span>
-        <span className="ml-auto text-xs text-[#899AA8]">3 active</span>
+        <span className="text-sm font-semibold text-ink">Ad Campaigns</span>
+        <span className="ml-auto text-xs text-info">3 active</span>
       </div>
-      <div className="divide-y divide-[#EFE9DC]">
+      <div className="divide-y divide-line-soft">
         {campaigns.map((c) => (
           <div key={c.name} className="px-4 py-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-[#1F1F1F]">{c.name}</span>
+              <span className="text-sm font-medium text-ink">{c.name}</span>
               <span
                 className={
                   c.status === 'optimized'
-                    ? 'rounded-full bg-[#E6F4EC] px-2 py-0.5 text-xs font-semibold text-[#1F7A3D]'
-                    : 'rounded-full bg-[#FFF4E0] px-2 py-0.5 text-xs font-semibold text-[#B87400]'
+                    ? 'rounded-full bg-line-soft px-2 py-0.5 text-xs font-semibold text-success-ink'
+                    : 'rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning-ink'
                 }
               >
                 {c.status}
               </span>
             </div>
             <div className="mt-2 flex items-center gap-4 text-xs">
-              <span className="text-[#899AA8]">
-                Spend: <span className="font-semibold text-[#33475B]">{c.spend}</span>
+              <span className="text-info">
+                Spend: <span className="font-semibold text-info-ink">{c.spend}</span>
               </span>
-              <span className="text-[#899AA8]">
-                ROAS: <span className="font-semibold text-[#F59E0B]">{c.roas}</span>
+              <span className="text-info">
+                ROAS: <span className="font-semibold text-warning-ink">{c.roas}</span>
               </span>
             </div>
           </div>
         ))}
       </div>
-      <div className="border-t border-[#EFE9DC] bg-[#FEF3E2] px-4 py-2.5 text-xs font-semibold text-[#F59E0B]">
+      <div className="border-t border-line-soft bg-line-soft px-4 py-2.5 text-xs font-semibold text-warning-ink">
         {'⚡ AI reallocated $500 from “Lookalike” to “Brand Search” — projected +$1,840 revenue'}
       </div>
     </div>

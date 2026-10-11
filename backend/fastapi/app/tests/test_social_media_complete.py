@@ -664,7 +664,7 @@ class TestParityStatePersistence:
     @staticmethod
     def _social_migration_sql_text() -> str:
         repo_root = Path(__file__).resolve().parents[4]
-        migration_path = repo_root / "services" / "fastapi" / "sql" / "20260523_social_parity_state_schema.sql"
+        migration_path = repo_root / "backend" / "fastapi" / "sql" / "20260523_social_parity_state_schema.sql"
         return migration_path.read_text(encoding="utf-8")
 
     @pytest.mark.asyncio

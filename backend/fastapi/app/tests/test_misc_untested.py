@@ -119,48 +119,10 @@ class TestAuditApiUsage:
         assert store[0]["ip_hash"] != ''
 
 
-# ─── secrets_manager: _detect_primary_backend, clear_caches ─────────────────
-
-class TestSecretsManagerDetectBackend:
-    def _make_manager(self):
-        from backend.fastapi.app.vault.secrets_manager import SecretsManager
-        mgr = SecretsManager.__new__(SecretsManager)
-        mgr.enable_local_fallback = True
-        mgr.hashicorp = MagicMock()
-        mgr.supabase = MagicMock()
-        return mgr
-
-    def test_hashicorp_connected_returns_hashicorp(self):
-        from backend.fastapi.app.vault.secrets_manager import VaultBackend
-        mgr = self._make_manager()
-        mgr.hashicorp.is_connected.return_value = True
-        result = mgr._detect_primary_backend()
-        assert result == VaultBackend.HASHICORP
-
-    def test_supabase_ready_when_hashicorp_disconnected(self):
-        from backend.fastapi.app.vault.secrets_manager import VaultBackend
-        mgr = self._make_manager()
-        mgr.hashicorp.is_connected.return_value = False
-        mgr.supabase.is_ready = True
-        result = mgr._detect_primary_backend()
-        assert result == VaultBackend.SUPABASE
-
-    def test_neither_available_returns_default(self):
-        from backend.fastapi.app.vault.secrets_manager import VaultBackend
-        mgr = self._make_manager()
-        mgr.hashicorp.is_connected.return_value = False
-        mgr.supabase.is_ready = False
-        result = mgr._detect_primary_backend()
-        # Default is HASHICORP per implementation
-        assert result == VaultBackend.HASHICORP
-
-
 class TestSecretsManagerClearCaches:
-    def test_clear_caches_calls_both(self):
+    def test_clear_caches_calls_hashicorp(self):
         from backend.fastapi.app.vault.secrets_manager import SecretsManager
         mgr = SecretsManager.__new__(SecretsManager)
         mgr.hashicorp = MagicMock()
-        mgr.supabase = MagicMock()
         mgr.clear_caches()
         mgr.hashicorp.clear_cache.assert_called_once()
-        mgr.supabase.clear_cache.assert_called_once()

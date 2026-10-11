@@ -57,7 +57,7 @@ def client() -> Generator[TestClient, None, None]:
 
 
 def test_frontier_stack_readiness_state_branches(client: TestClient) -> None:
-    with patch('backend.fastapi.app.routers.ira._module_available', return_value=True), patch.dict(
+    with patch('backend.fastapi.app.domains.assistant.services.reasoning_support._module_available', return_value=True), patch.dict(
         os.environ,
         {
             'OPENAI_API_KEY': '1',
@@ -99,7 +99,7 @@ def test_frontier_stack_readiness_state_branches(client: TestClient) -> None:
         assert high.status_code == 200
         assert high.json()['readiness']['state'] in ('medium', 'high')
 
-    with patch('backend.fastapi.app.routers.ira._module_available', return_value=False), patch.dict(
+    with patch('backend.fastapi.app.domains.assistant.services.reasoning_support._module_available', return_value=False), patch.dict(
         os.environ,
         {
             'OPENAI_API_KEY': '1',
@@ -152,7 +152,7 @@ def test_chat_explicit_ads_and_social_branches(client: TestClient) -> None:
 
 def test_actions_delivery_direct_return_paths(client: TestClient) -> None:
     with patch(
-        'backend.fastapi.app.routers.ira.dispatch_via_ira_connector',
+        'backend.fastapi.app.ira_connector_integration.dispatch_via_ira_connector',
         return_value={'provider': 'mock', 'delivery_status': 'sent', 'channel': '#ops'},
     ):
         email = client.post(

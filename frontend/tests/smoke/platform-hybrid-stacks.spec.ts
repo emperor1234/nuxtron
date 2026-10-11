@@ -11,8 +11,6 @@ const basePayloads: Record<string, unknown> = {
     db_ready: true,
     integrations: {
       hashicorp_vault_configured: true,
-      supabase_configured: true,
-      supabase_vault_ready: true,
     },
   },
   '/ops/platform/use-case-coverage': {

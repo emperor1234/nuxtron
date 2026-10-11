@@ -1,3 +1,5 @@
+import { PRODUCT_STORAGE_KEY, parseProductLine, type ProductLine } from '@/app/lib/product-line';
+
 export const PROXY_BASE_URL = '/api/fastapi';
 
 export const DEFAULT_TENANT_ID = (process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '').trim();
@@ -110,6 +112,30 @@ export function clearAuthSession(): void {
   /* v8 ignore next */ if (!globalThis.window) return;
   globalThis.localStorage?.removeItem(STORAGE_TOKEN_KEY);
   globalThis.localStorage?.removeItem(STORAGE_TENANT_KEY);
+  globalThis.localStorage?.removeItem(PRODUCT_STORAGE_KEY);
+}
+
+/**
+ * Remembers which product (SEO or Marketing) the user signed in through so
+ * client components can render the right navigation without a round trip.
+ * This is a display hint only — proxy.ts enforces the split server-side from
+ * the httpOnly cookie set by `syncServerSession`.
+ */
+export function setStoredProductLine(product: ProductLine): void {
+  /* v8 ignore next */ if (!globalThis.window) return;
+  const parsed = parseProductLine(product);
+  if (parsed) globalThis.localStorage?.setItem(PRODUCT_STORAGE_KEY, parsed);
+}
+
+/** The stored product line, or `null` when none (or a tampered value) is stored. */
+export function getStoredProductLine(): ProductLine | null {
+  /* v8 ignore next */ if (!globalThis.window) return null;
+  try {
+    return parseProductLine(globalThis.localStorage?.getItem(PRODUCT_STORAGE_KEY));
+  } catch {
+    // Storage can throw when blocked (privacy mode, disabled site data).
+    return null;
+  }
 }
 
 /**
@@ -120,14 +146,19 @@ export function clearAuthSession(): void {
  * token still lets API calls succeed — but the user will be bounced back to
  * /login by the server-side gate on their next page load, so callers should
  * surface a warning if this rejects.
+ *
+ * `product` records which product line the user signed in through; the
+ * server re-validates it and stores it in its own httpOnly cookie. Omit it to
+ * create an unrestricted session (and clear any previous product cookie).
  */
-export async function syncServerSession(token: string): Promise<boolean> {
+export async function syncServerSession(token: string, product?: ProductLine | null): Promise<boolean> {
   /* v8 ignore next */ if (!globalThis.window) return false;
+  const productLine = parseProductLine(product);
   try {
     const response = await fetch('/api/auth/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify(productLine ? { token, product: productLine } : { token }),
     });
     return response.ok;
   } catch {
@@ -264,8 +295,10 @@ async function apiRequest( // NOSONAR
   let lastError: Error | null = null;
   let recoveryStarted = false;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+    let responseReceived = false;
     try {
       const response = await fetch(url, init);
+      responseReceived = true;
       const result = { response, data: await parseBody(response) };
 
       if (!result.response.ok) {
@@ -299,7 +332,7 @@ async function apiRequest( // NOSONAR
 
       return result.data;
     } catch (error) {
-      const retryableNetworkFailure = canRetry && attempt < MAX_RETRIES;
+      const retryableNetworkFailure = canRetry && !responseReceived && attempt < MAX_RETRIES;
       if (!retryableNetworkFailure) {
         if (recoveryStarted) {
           dispatchRecoveryEvent('nuxtron:auto-recovery:end', {

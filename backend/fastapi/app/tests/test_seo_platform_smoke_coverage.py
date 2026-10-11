@@ -38,7 +38,7 @@ def _stub_ollama_calls(monkeypatch: pytest.MonkeyPatch) -> None:
 
     from backend.fastapi.app.routers import seo_platform
 
-    monkeypatch.setattr(seo_platform, "_ollama_json", _fake_ollama_json)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json', _fake_ollama_json)
 
 
 class TestSeoPlatformSmokeCoverage:

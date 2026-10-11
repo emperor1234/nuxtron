@@ -142,20 +142,20 @@ export default function LinkbuildingPage() {
   };
   const td: React.CSSProperties = { padding: '10px 12px', fontSize: 12, borderBottom: '1px solid var(--line)' };
   const STATUS_COLORS: Record<string, string> = {
-    new: '#1bc7ff',
-    contacted: '#ffb867',
-    in_progress: '#a78bfa',
-    won: '#26d78e',
-    lost: '#f87171',
+    new: 'var(--info)',
+    contacted: 'var(--warning)',
+    in_progress: 'var(--info)',
+    won: 'var(--success)',
+    lost: 'var(--danger)',
   };
   const OPP_COLORS: Record<string, string> = {
-    guest_post: '#1bc7ff',
-    resource_page: '#26d78e',
-    broken_link: '#ffb867',
-    skyscraper: '#a78bfa',
-    unlinked_mention: '#60a5fa',
-    podcast: '#f97316',
-    interview: '#ec4899',
+    guest_post: 'var(--series-1)',
+    resource_page: 'var(--series-2)',
+    broken_link: 'var(--series-3)',
+    skyscraper: 'var(--series-4)',
+    unlinked_mention: 'var(--series-5)',
+    podcast: 'var(--series-6)',
+    interview: 'var(--series-7)',
   };
   const tabs = [
     { key: 'prospects' as const, label: `Prospects (${result?.total_prospects ?? 0})` },
@@ -179,7 +179,7 @@ export default function LinkbuildingPage() {
         </p>
 
         {error && (
-          <div style={{ ...card, color: '#f87171', borderColor: '#f8717144', background: '#f8717111' }}>{error}</div>
+          <div style={{ ...card, color: 'var(--danger)', borderColor: 'color-mix(in oklab, var(--danger) 27%, transparent)', background: 'color-mix(in oklab, var(--danger) 7%, transparent)' }}>{error}</div>
         )}
 
         <section style={card}>
@@ -277,7 +277,7 @@ export default function LinkbuildingPage() {
               border: 'none',
               borderRadius: 8,
               background: loading ? 'var(--muted)' : 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 800,
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: 14,
@@ -302,12 +302,12 @@ export default function LinkbuildingPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>Cached result</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
                 )}
               </div>
             )}
@@ -345,7 +345,7 @@ export default function LinkbuildingPage() {
                 >
                   Avg Domain Rating
                 </div>
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#26d78e' }}>
+                <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--success)' }}>
                   {Math.round(result.average_domain_rating ?? 0)}
                 </div>
               </div>
@@ -361,7 +361,7 @@ export default function LinkbuildingPage() {
                 >
                   Est. Link Velocity
                 </div>
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#ffb867' }}>
+                <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--warning)' }}>
                   {result.estimated_link_velocity}/mo
                 </div>
               </div>
@@ -523,7 +523,7 @@ export default function LinkbuildingPage() {
                               textAlign: 'right',
                               fontWeight: 800,
                               color:
-                                p.domain_rating >= 70 ? '#26d78e' : p.domain_rating >= 40 ? '#ffb867' : 'var(--muted)',
+                                p.domain_rating >= 70 ? 'var(--success)' : p.domain_rating >= 40 ? 'var(--warning)' : 'var(--muted)',
                             }}
                           >
                             {p.domain_rating}
@@ -538,7 +538,7 @@ export default function LinkbuildingPage() {
                               ...td,
                               textAlign: 'right',
                               fontWeight: 700,
-                              color: p.relevance_score >= 0.7 ? '#26d78e' : '#ffb867',
+                              color: p.relevance_score >= 0.7 ? 'var(--success)' : 'var(--warning)',
                             }}
                           >
                             {Math.round(p.relevance_score * 100)}%

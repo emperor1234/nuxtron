@@ -1,0 +1,132 @@
+.section {
+  max-width: 1200px;
+  margin: auto;
+  padding: 100px 48px;
+}
+
+.heading {
+  max-width: 680px;
+  margin-bottom: 32px;
+}
+.heading h2 {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.13;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  color: var(--text);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.eyebrow > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+/* Proof cards are read, not clicked as a whole, so they do not lift on hover. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: 100%;
+  margin: 0;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.metric strong {
+  font-size: clamp(36px, 4vw, 52px);
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.metric span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.quoteMark {
+  color: var(--brand);
+}
+
+.quote {
+  margin: 0;
+}
+.quote p {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.attribution {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: auto;
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 5px;
+  transition: text-decoration-color 150ms ease;
+}
+
+.citation {
+  margin: auto 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    text-decoration-color: var(--brand);
+  }
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 64px 24px;
+  }
+  .card {
+    padding: 22px;
+  }
+  .quote p {
+    font-size: 16px;
+  }
+}

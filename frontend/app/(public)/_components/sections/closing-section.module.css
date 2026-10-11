@@ -1,0 +1,55 @@
+.section {
+  background: var(--brand-soft);
+  border-top: 1px solid var(--brand-line);
+}
+
+.inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 112px 48px;
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 18px;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(36px, 5.4vw, 60px);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+}
+
+.lead,
+.accent {
+  display: block;
+}
+
+.lead {
+  color: var(--text);
+}
+
+.accent {
+  color: var(--brand);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 36px;
+}
+
+@media (max-width: 640px) {
+  .inner {
+    padding: 80px 20px;
+  }
+}

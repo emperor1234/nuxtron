@@ -458,7 +458,7 @@ class TestRecordLineage:
 
 class TestGetSlaMetrics:
     def test_returns_expected_keys(self):
-        with patch("backend.fastapi.app.routers.platform_intelligence.get_request_latency_snapshot",
+        with patch("backend.fastapi.app.domains.intelligence.platform.services.observability.get_request_latency_snapshot",
                    return_value={"paths": {}}):
             result = pi._get_sla_metrics()
         assert "compliance_pct" in result
@@ -472,7 +472,7 @@ class TestGetSlaMetrics:
                 "/fast-path": {"p95_ms": 100},
             }
         }
-        with patch("backend.fastapi.app.routers.platform_intelligence.get_request_latency_snapshot",
+        with patch("backend.fastapi.app.domains.intelligence.platform.services.observability.get_request_latency_snapshot",
                    return_value=slow_snapshot), \
              patch.dict(os.environ, {"SLA_TARGET_P95_MS": "2000"}):
             result = pi._get_sla_metrics()
@@ -481,7 +481,7 @@ class TestGetSlaMetrics:
 
     def test_all_compliant_gives_green(self):
         fast_snapshot = {"paths": {"/fast": {"p95_ms": 100}}}
-        with patch("backend.fastapi.app.routers.platform_intelligence.get_request_latency_snapshot",
+        with patch("backend.fastapi.app.domains.intelligence.platform.services.observability.get_request_latency_snapshot",
                    return_value=fast_snapshot):
             result = pi._get_sla_metrics()
         assert result["status"] == "green"

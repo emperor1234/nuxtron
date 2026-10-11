@@ -376,6 +376,32 @@ class VendorManager:
         }
         self.rate_limiter.set_limit(vendor_id, rate_limit_per_min, rate_limit_per_hour)
         logger.info(f"Registered vendor: {vendor_id}")
+
+    def ensure_tenant_vendor(self, tenant_id: str, vendor_id: str) -> str:
+        """Register an isolated vendor alias for one tenant."""
+        normalized_tenant = tenant_id.strip()
+        if not normalized_tenant or vendor_id not in self._vendors:
+            raise ValueError("A valid tenant and registered vendor are required")
+        scoped_id = f"tenant:{normalized_tenant}:vendor:{vendor_id}"
+        if scoped_id not in self._vendors:
+            config = self._vendors[vendor_id]
+            limits = self.rate_limiter._limits[vendor_id]
+            self._register_vendor(
+                scoped_id,
+                config['vendor_type'],
+                config['endpoint_url'],
+                rate_limit_per_min=limits['per_minute'],
+                rate_limit_per_hour=limits['per_hour'],
+            )
+        if (
+            os.getenv('ENVIRONMENT', 'development').strip().lower() != 'production'
+            and not self.vault.has(scoped_id)
+            and self.vault.has(vendor_id)
+        ):
+            legacy_credentials = self.vault.retrieve(vendor_id)
+            if legacy_credentials is not None:
+                self.vault.store(scoped_id, legacy_credentials)
+        return scoped_id
     
     def store_credentials(self, vendor_id: str, credentials: VendorCredentials) -> None:
         """Store vendor credentials"""

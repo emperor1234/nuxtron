@@ -30,17 +30,17 @@ export default function PlatformHybridStackSections({
   summary,
 }: Props) {
   const defaultRecommendation = {
-    hybrid: 'OpenLens (Free) + Promptwatch (Paid)',
+    hybrid: 'AI visibility monitoring + optimization workflows',
     score: '100/100 (100%)',
     benefits: [
-      'Multi-LLM monitoring (OpenLens)',
-      'Full optimisation workflows (Promptwatch)',
-      'Crawler logs (Promptwatch)',
-      'Visitor analytics (Promptwatch)',
-      'Zero monitoring cost (OpenLens)',
+      'Multi-LLM visibility monitoring',
+      'End-to-end optimization workflows',
+      'Search crawler diagnostics',
+      'Website traffic analytics',
+      'Consolidated monitoring and reporting',
       'Lowest possible full-stack spend',
     ],
-    positioning: 'This is the only configuration that gives complete GEO + LLMO coverage at the lowest cost.',
+    positioning: 'A unified workflow for visibility monitoring, diagnostics, and prioritized optimization.',
   };
 
   const resolvedRecommendation = recommendation

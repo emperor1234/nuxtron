@@ -168,9 +168,9 @@ export default function InboxPage() {
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
       case 'positive':
-        return '#22c55e';
+        return 'var(--success)';
       case 'negative':
-        return '#ef4444';
+        return 'var(--danger)';
       default:
         return 'var(--muted)';
     }
@@ -208,7 +208,7 @@ export default function InboxPage() {
             style={{
               ...styles.filterTab,
               background: filter === tab ? 'rgba(59, 130, 246, 0.16)' : 'transparent',
-              borderColor: filter === tab ? '#6366f1' : 'rgba(148, 163, 184, 0.16)',
+              borderColor: filter === tab ? "var(--brand)" : 'rgba(148, 163, 184, 0.16)',
             }}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -227,7 +227,7 @@ export default function InboxPage() {
                 onClick={() => setSelectedId(item.id)}
                 style={{
                   ...styles.messageCard,
-                  borderColor: item.id === selectedItem?.id ? '#6366f1' : 'rgba(148, 163, 184, 0.14)',
+                  borderColor: item.id === selectedItem?.id ? "var(--brand)" : 'rgba(148, 163, 184, 0.14)',
                 }}
               >
                 <div style={styles.messageTop}>
@@ -369,8 +369,8 @@ export default function InboxPage() {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(180deg, #09111d 0%, #eef0f4 42%, #eef0f4 100%)',
-    color: '#eceff4',
+    background: "linear-gradient(180deg, #09111d 0%, var(--line-soft) 42%, var(--line-soft) 100%)",
+    color: 'var(--neutral-soft)',
     padding: '32px 24px 64px',
   },
   header: {
@@ -407,7 +407,7 @@ const styles: Record<string, React.CSSProperties> = {
   errorBanner: {
     background: 'rgba(245, 158, 11, 0.12)',
     border: '1px solid rgba(245, 158, 11, 0.4)',
-    color: '#b45309',
+    color: 'var(--warning-ink)',
     padding: '14px',
     borderRadius: '16px',
     marginBottom: '20px',
@@ -418,7 +418,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     border: '1px solid var(--line)',
     background: 'var(--card)',
-    color: '#eceff4',
+    color: 'var(--neutral-soft)',
   },
   filterTabs: {
     display: 'flex',
@@ -525,8 +525,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 14px',
     borderRadius: '12px',
     border: 'none',
-    background: '#6366f1',
-    color: '#eff6ff',
+    background: "var(--brand)",
+    color: 'var(--info-soft)',
     cursor: 'pointer',
     fontWeight: 600,
   },
@@ -587,7 +587,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '16px',
     border: '1px solid var(--line)',
     background: 'rgba(8, 15, 30, 0.76)',
-    color: '#eceff4',
+    color: 'var(--neutral-soft)',
     resize: 'vertical',
   },
   savedReplyRow: {
@@ -601,7 +601,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '999px',
     border: '1px solid rgba(96, 165, 250, 0.26)',
     background: 'rgba(37, 99, 235, 0.14)',
-    color: '#dbeafe',
+    color: 'var(--info-soft)',
     cursor: 'pointer',
   },
   composeActions: {
@@ -631,7 +631,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     border: '1px solid var(--line)',
     background: 'rgba(8, 15, 30, 0.76)',
-    color: '#eceff4',
+    color: 'var(--neutral-soft)',
     resize: 'vertical',
   },
   contactList: {

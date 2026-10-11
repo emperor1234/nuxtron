@@ -27,7 +27,7 @@ def client() -> TestClient:
 @pytest.fixture(autouse=True)
 def no_agent_db_calls():
     # Keep tests deterministic and avoid hanging on local Postgres connection attempts.
-    with patch("backend.fastapi.app.routers.platform_intelligence._try_agent_db_query", return_value=(False, [])):
+    with patch("backend.fastapi.app.domains.intelligence.platform.services.observability._try_agent_db_query", return_value=(False, [])):
         yield
 
 
@@ -199,7 +199,7 @@ class TestAgentConfigRouteBody:
     """Test /platform/agent-config PUT with correct AgentConfigUpdateRequest payload."""
 
     def test_get_agent_config(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.platform_intelligence._try_agent_db_query", return_value=(False, [])):
+        with patch("backend.fastapi.app.domains.intelligence.platform.services.observability._try_agent_db_query", return_value=(False, [])):
             r = client.get("/platform/agent-config", headers=HEADERS)
         assert r.status_code in VALID_CODES
 
@@ -354,7 +354,7 @@ class TestHelperFunctions:
         from unittest.mock import patch
 
         from backend.fastapi.app.routers.platform_intelligence import _get_sla_metrics
-        with patch("backend.fastapi.app.routers.platform_intelligence.get_request_latency_snapshot",
+        with patch("backend.fastapi.app.domains.intelligence.platform.services.observability.get_request_latency_snapshot",
                    return_value={"paths": {}, "window_size": 60, "path_count": 0, "sample_count": 0}):
             result = _get_sla_metrics()
             assert "compliance_pct" in result
@@ -364,7 +364,7 @@ class TestHelperFunctions:
         from unittest.mock import patch
 
         from backend.fastapi.app.routers.platform_intelligence import _get_sla_metrics
-        with patch("backend.fastapi.app.routers.platform_intelligence.get_request_latency_snapshot",
+        with patch("backend.fastapi.app.domains.intelligence.platform.services.observability.get_request_latency_snapshot",
                    return_value={"paths": {
                        "/seo/slow": {"p95_ms": 9999, "avg_ms": 8000},
                        "/seo/fast": {"p95_ms": 100, "avg_ms": 50},
@@ -378,7 +378,7 @@ class TestHelperFunctions:
         from unittest.mock import patch
 
         from backend.fastapi.app.routers.platform_intelligence import _try_agent_db_scalar
-        with patch("backend.fastapi.app.routers.platform_intelligence._try_agent_db_query",
+        with patch("backend.fastapi.app.domains.intelligence.platform.services.observability._try_agent_db_query",
                    return_value=(True, [{"count": 42}])):
             ok, val = _try_agent_db_scalar("SELECT count(*) FROM x")
             assert ok is True
@@ -389,7 +389,7 @@ class TestHelperFunctions:
         from unittest.mock import patch
 
         from backend.fastapi.app.routers.platform_intelligence import _try_agent_db_scalar
-        with patch("backend.fastapi.app.routers.platform_intelligence._try_agent_db_query",
+        with patch("backend.fastapi.app.domains.intelligence.platform.services.observability._try_agent_db_query",
                    return_value=(True, [])):
             ok, val = _try_agent_db_scalar("SELECT count(*) FROM x")
             assert ok is True

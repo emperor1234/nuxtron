@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const fastapiBase = 'http://127.0.0.1:4101';
+const fastapiBase = 'http://localhost:4101';
 
 function mediaInput(page: import('@playwright/test').Page) {
   return uploader(page).getByLabel('Upload media file');

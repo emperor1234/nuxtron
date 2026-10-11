@@ -44,7 +44,7 @@ export default function AEOPage() {
   const [questions, setQuestions] = useState('');
   const [entityTargets, setEntityTargets] = useState('Brand\nProduct\nCategory');
   const [schemaTypes, setSchemaTypes] = useState('FAQPage\nHowTo\nQAPage');
-  const [useOpenLens, setUseOpenLens] = useState(true);
+  const [useAiVisibilityChecks, setUseAiVisibilityChecks] = useState(true);
   const [usePlaywrightValidation, setUsePlaywrightValidation] = useState(true);
   const [result, setResult] = useState<AeoResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,7 +76,7 @@ export default function AEOPage() {
             .split('\n')
             .map((v) => v.trim())
             .filter(Boolean),
-          use_openlens: useOpenLens,
+          use_openlens: useAiVisibilityChecks,
           use_playwright_validation: usePlaywrightValidation,
           retrieval_framework: 'llamaindex',
         },
@@ -115,7 +115,7 @@ export default function AEOPage() {
     padding: '10px 12px',
     borderRadius: 12,
     border: '1px solid var(--line)',
-    background: '#ffffff',
+    background: 'var(--card)fff',
     color: 'var(--text)',
     marginBottom: 10,
     boxSizing: 'border-box' as const,
@@ -154,7 +154,7 @@ export default function AEOPage() {
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     letterSpacing: '0.12em',
-                    color: '#0e7490',
+                    color: 'var(--info-ink)',
                     border: '1px solid rgba(125,211,252,0.45)',
                     borderRadius: 999,
                     padding: '3px 10px',
@@ -189,7 +189,7 @@ export default function AEOPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 8 }}>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -198,13 +198,13 @@ export default function AEOPage() {
                 <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Topic
                 </div>
-                <div style={{ marginTop: 2, fontSize: 13, fontWeight: 700, color: '#0e7490' }}>
+                <div style={{ marginTop: 2, fontSize: 13, fontWeight: 700, color: 'var(--info-ink)' }}>
                   {topic.trim() ? 'Defined' : 'Pending'}
                 </div>
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -222,22 +222,22 @@ export default function AEOPage() {
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
                 }}
               >
                 <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  OpenLens
+                  AI visibility checks
                 </div>
-                <div style={{ marginTop: 2, fontSize: 13, fontWeight: 700, color: '#0e7490' }}>
-                  {useOpenLens ? 'Enabled' : 'Disabled'}
+                <div style={{ marginTop: 2, fontSize: 13, fontWeight: 700, color: 'var(--info-ink)' }}>
+                  {useAiVisibilityChecks ? 'Enabled' : 'Disabled'}
                 </div>
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -251,7 +251,7 @@ export default function AEOPage() {
             </div>
           </div>
         </section>
-        {error && <div style={{ ...card, color: '#b91c1c' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
         <div
           style={{
             display: 'grid',
@@ -319,16 +319,16 @@ export default function AEOPage() {
               placeholder="FAQPage&#10;HowTo&#10;QAPage"
             />
             <label
-              htmlFor="aeo-openlens"
+              htmlFor="aeo-visibility-checks"
               style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 8 }}
             >
               <input
-                id="aeo-openlens"
+                id="aeo-visibility-checks"
                 type="checkbox"
-                checked={useOpenLens}
-                onChange={(e) => setUseOpenLens(e.target.checked)}
+                checked={useAiVisibilityChecks}
+                onChange={(e) => setUseAiVisibilityChecks(e.target.checked)}
               />{' '}
-              Use OpenLens checks
+              Use AI visibility checks
             </label>
             <label
               htmlFor="aeo-playwright"
@@ -360,7 +360,7 @@ export default function AEOPage() {
                 borderRadius: 10,
                 border: '1px solid rgba(125,211,252,0.35)',
                 background: 'linear-gradient(90deg, rgba(6,182,212,0.9) 0%, rgba(20,184,166,0.88) 100%)',
-                color: '#ecfeff',
+                color: 'var(--info-soft)',
                 fontWeight: 700,
                 cursor: 'pointer',
                 opacity: loading ? 0.7 : 1,
@@ -388,7 +388,7 @@ export default function AEOPage() {
                     border: '1px solid rgba(148,163,184,0.16)',
                     borderRadius: 10,
                     padding: '8px 10px',
-                    background: '#f4f5f8',
+                    background: 'var(--bg-soft)',
                   }}
                 >
                   <div
@@ -398,7 +398,7 @@ export default function AEOPage() {
                       borderRadius: 999,
                       border: '1px solid rgba(125,211,252,0.4)',
                       background: 'rgba(34,211,238,0.16)',
-                      color: '#0e7490',
+                      color: 'var(--info-ink)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -418,7 +418,7 @@ export default function AEOPage() {
                 border: '1px solid rgba(148,163,184,0.16)',
                 borderRadius: 10,
                 padding: '10px 12px',
-                background: '#f4f5f8',
+                background: 'var(--bg-soft)',
               }}
             >
               <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -429,7 +429,7 @@ export default function AEOPage() {
                   style={{
                     border: '1px solid rgba(125,211,252,0.35)',
                     background: 'rgba(34,211,238,0.14)',
-                    color: '#0e7490',
+                    color: 'var(--info-ink)',
                     borderRadius: 999,
                     padding: '3px 8px',
                     fontSize: 11,
@@ -468,12 +468,12 @@ export default function AEOPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.15)', color: '#38bdf8' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.15)', color: 'var(--info)' }}>
                     Cached result
                   </span>
                 )}

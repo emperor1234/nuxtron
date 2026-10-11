@@ -9,6 +9,9 @@ import { jwtVerify } from 'jose';
  *     outside production
  *   - never accept a known-default/placeholder secret
  *   - required claims: `sub`, `tenant_id`, `exp` (roles/jti are optional)
+ *   - optional `product` claim: passed through as a raw string. It is NOT
+ *     validated here; callers narrow it with `parseProductLine` (see
+ *     app/lib/product-line.ts `resolveProductLine`).
  */
 
 export type SessionClaims = {
@@ -17,6 +20,8 @@ export type SessionClaims = {
   roles: string[];
   jti: string;
   exp: number;
+  /** Raw `product` claim when the backend issues one; untrusted shape. */
+  product?: string;
 };
 
 // Same denylist as backend/fastapi/app/deps.py `_INSECURE_DEFAULT_SECRETS` —
@@ -62,18 +67,22 @@ export async function verifySessionToken(token: string): Promise<SessionClaims |
   if (!secret || !token) return null;
 
   try {
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ['HS256'] });
+    const { payload } = await jwtVerify(token, new globalThis.TextEncoder().encode(secret), { algorithms: ['HS256'] });
     const tenantId = typeof payload.tenant_id === 'string' ? payload.tenant_id.trim() : '';
     const sub = typeof payload.sub === 'string' ? payload.sub.trim() : '';
     if (!tenantId) return null;
 
-    return {
+    const claims: SessionClaims = {
       sub,
       tenantId,
       roles: sanitizeRoles(payload.roles),
       jti: typeof payload.jti === 'string' ? payload.jti : '',
       exp: typeof payload.exp === 'number' ? payload.exp : 0,
     };
+    if (typeof payload.product === 'string' && payload.product.trim()) {
+      claims.product = payload.product.trim();
+    }
+    return claims;
   } catch {
     return null;
   }

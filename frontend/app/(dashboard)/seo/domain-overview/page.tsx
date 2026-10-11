@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   CardTitle,
+  DataStatus,
   Field,
   Page,
   PageHeader,
@@ -38,6 +39,10 @@ interface DomainSummary {
     authority_score: number;
   }[];
   _source?: string;
+}
+
+function sourceIsPreview(source: string | undefined): boolean {
+  return Boolean(source && /mock|fake|seed|demo|fallback|sample/i.test(source));
 }
 
 export default function DomainOverviewPage() {
@@ -91,10 +96,20 @@ export default function DomainOverviewPage() {
     <Page className={styles.page}>
       <PageHeader
         title="Domain Overview"
-        subtitle="A live snapshot of search visibility, authority, backlinks, and competitors."
+        subtitle="Inspect search visibility, authority, backlinks, and competitors with the response source clearly identified."
         actions={
           data?._source ? (
-            <Badge tone="neutral">Source: {data._source}</Badge>
+            <>
+              <DataStatus
+                state={sourceIsPreview(data._source) ? "preview" : "live"}
+                provider={
+                  sourceIsPreview(data._source)
+                    ? "a data provider"
+                    : data._source
+                }
+              />
+              <Badge tone="neutral">Source: {data._source}</Badge>
+            </>
           ) : undefined
         }
       />

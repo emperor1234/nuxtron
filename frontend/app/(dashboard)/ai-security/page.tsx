@@ -100,21 +100,21 @@ type ChartPoint = {
 };
 
 function accentForAlertSeverity(label: string) {
-  if (label === 'critical') return 'linear-gradient(90deg, #ef4444, #b91c1c)';
-  if (label === 'warning') return 'linear-gradient(90deg, #f59e0b, #f97316)';
-  return 'linear-gradient(90deg, #0ea5e9, #22c55e)';
+  if (label === 'critical') return 'linear-gradient(90deg, var(--danger), var(--danger))';
+  if (label === 'warning') return 'linear-gradient(90deg, var(--warning), var(--warning))';
+  return 'linear-gradient(90deg, var(--info), var(--success))';
 }
 
 function accentForIdsSeverity(label: string) {
-  if (label === 'critical') return 'linear-gradient(90deg, #ef4444, #b91c1c)';
-  if (label === 'high') return 'linear-gradient(90deg, #f97316, #ea580c)';
-  return 'linear-gradient(90deg, #0ea5e9, #14b8a6)';
+  if (label === 'critical') return 'linear-gradient(90deg, var(--danger), var(--danger))';
+  if (label === 'high') return 'linear-gradient(90deg, var(--warning), var(--warning))';
+  return 'linear-gradient(90deg, var(--info), var(--info))';
 }
 
 function accentForDelivery(label: string) {
-  if (label === 'failed') return 'linear-gradient(90deg, #ef4444, #b91c1c)';
-  if (label === 'sent') return 'linear-gradient(90deg, #22c55e, #10b981)';
-  return 'linear-gradient(90deg, #0ea5e9, #14b8a6)';
+  if (label === 'failed') return 'linear-gradient(90deg, var(--danger), var(--danger))';
+  if (label === 'sent') return 'linear-gradient(90deg, var(--success), var(--success))';
+  return 'linear-gradient(90deg, var(--info), var(--info))';
 }
 
 function ChartCard({
@@ -148,7 +148,7 @@ function BarChart({ data, emptyLabel }: Readonly<{ data: ChartPoint[]; emptyLabe
               className="queue-fill"
               style={{
                 width: `${Math.max(6, Math.round((item.value / maxValue) * 100))}%`,
-                background: item.accent || 'linear-gradient(90deg, #0ea5e9, #14b8a6)',
+                background: item.accent || 'linear-gradient(90deg, var(--info), var(--info))',
               }}
             />
           </div>
@@ -330,8 +330,8 @@ export default function AiSecurityPage() {
       value: provider.calls,
       accent:
         provider.color === 'red'
-          ? 'linear-gradient(90deg, #ef4444, #f97316)'
-          : 'linear-gradient(90deg, #10b981, #22c55e)',
+          ? 'linear-gradient(90deg, var(--danger), var(--warning))'
+          : 'linear-gradient(90deg, var(--success), var(--success))',
       note: `ROI ${provider.avg_roi.toFixed(3)}`,
     }));
   }, [analytics]);
@@ -555,7 +555,7 @@ export default function AiSecurityPage() {
             <LineChart
               data={roiTimeline}
               emptyLabel="No ROI points available yet."
-              stroke="#22c55e"
+              stroke="var(--success)"
               formatValue={(value) => value.toFixed(3)}
             />
           </ChartCard>
@@ -564,7 +564,7 @@ export default function AiSecurityPage() {
             <LineChart
               data={latencyTimeline}
               emptyLabel="No latency points available yet."
-              stroke="#0ea5e9"
+              stroke="var(--info)"
               formatValue={(value) => `${value.toFixed(0)} ms`}
             />
           </ChartCard>

@@ -1,7 +1,10 @@
 """Tests for ira_connector_integration.py."""
+
 from __future__ import annotations
 
 import os
+from contextlib import ExitStack
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -17,20 +20,42 @@ from backend.fastapi.app.ira_connector_integration import (
     resolve_webhook_config,
 )
 
+
+def _mock_provider_transport(response=None, error=None):
+    stack = ExitStack()
+    stack.enter_context(
+        patch(
+            "backend.fastapi.app.ira_connector_integration.resolve_outbound_target",
+            return_value=SimpleNamespace(url="https://provider.test/validated"),
+        )
+    )
+    stack.enter_context(
+        patch(
+            "backend.fastapi.app.ira_connector_integration.outbound_request",
+            return_value=response,
+            side_effect=error,
+        )
+    )
+    return stack
+
+
 # --------------------------------------------------------------------------- #
 #  resolve_email_config
 # --------------------------------------------------------------------------- #
 
+
 class TestResolveEmailConfig:
     def test_smtp_provider(self):
-        connector = {"config": {
-            "provider": "smtp",
-            "host": "mail.example.com",
-            "port": 465,
-            "username": "user",
-            "password": "pass",
-            "from_email": "from@example.com",
-        }}
+        connector = {
+            "config": {
+                "provider": "smtp",
+                "host": "mail.example.com",
+                "port": 465,
+                "username": "user",
+                "password": "pass",
+                "from_email": "from@example.com",
+            }
+        }
         cfg = resolve_email_config(connector)
         assert cfg["provider"] == "smtp"
         assert cfg["host"] == "mail.example.com"
@@ -38,14 +63,21 @@ class TestResolveEmailConfig:
         assert cfg["from_email"] == "from@example.com"
 
     def test_resend_provider(self):
-        connector = {"config": {
-            "provider": "resend",
-            "api_key": "re_key_123",
-        }}
+        connector = {
+            "config": {
+                "provider": "resend",
+                "api_key": "re_key_123",
+            }
+        }
         cfg = resolve_email_config(connector)
         assert cfg["provider"] == "resend"
         assert cfg["api_key"] == "re_key_123"
         assert "resend.com" in cfg["base_url"]
+
+    def test_tenant_cannot_override_resend_host(self, monkeypatch):
+        monkeypatch.delenv("RESEND_API_BASE_URL", raising=False)
+        cfg = resolve_email_config({"config": {"provider": "resend", "base_url": "https://attacker.example"}})
+        assert cfg["base_url"] == "https://api.resend.com"
 
     def test_default_provider_from_arg(self):
         connector = {"config": {}}
@@ -54,13 +86,16 @@ class TestResolveEmailConfig:
 
     def test_env_fallbacks_for_smtp(self):
         connector = {"config": {"provider": "smtp"}}
-        with patch.dict(os.environ, {
-            "SMTP_HOST": "env.smtp.host",
-            "SMTP_PORT": "25",
-            "SMTP_USERNAME": "envuser",
-            "SMTP_PASSWORD": "envpass",
-            "SMTP_FROM_EMAIL": "env@from.com",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "SMTP_HOST": "env.smtp.host",
+                "SMTP_PORT": "25",
+                "SMTP_USERNAME": "envuser",
+                "SMTP_PASSWORD": "envpass",
+                "SMTP_FROM_EMAIL": "env@from.com",
+            },
+        ):
             cfg = resolve_email_config(connector)
         assert cfg["host"] == "env.smtp.host"
         assert cfg["port"] == 25
@@ -77,12 +112,15 @@ class TestResolveEmailConfig:
 #  resolve_slack_config
 # --------------------------------------------------------------------------- #
 
+
 class TestResolveSlackConfig:
     def test_from_connector(self):
-        connector = {"config": {
-            "webhook_url": "https://hooks.slack.com/xxx",
-            "channel": "#alerts",
-        }}
+        connector = {
+            "config": {
+                "webhook_url": "https://hooks.slack.com/xxx",
+                "channel": "#alerts",
+            }
+        }
         cfg = resolve_slack_config(connector)
         assert cfg["webhook_url"] == "https://hooks.slack.com/xxx"
         assert cfg["channel"] == "#alerts"
@@ -98,40 +136,54 @@ class TestResolveSlackConfig:
 #  resolve_twilio_config
 # --------------------------------------------------------------------------- #
 
+
 class TestResolveTwilioConfig:
     def test_from_connector(self):
-        connector = {"config": {
-            "account_sid": "ACtest",
-            "auth_token": "authtoken",
-            "from_number": "+11234567890",
-        }}
+        connector = {
+            "config": {
+                "account_sid": "ACtest",
+                "auth_token": "authtoken",
+                "from_number": "+11234567890",
+            }
+        }
         cfg = resolve_twilio_config(connector)
         assert cfg["account_sid"] == "ACtest"
         assert cfg["from_number"] == "+11234567890"
 
     def test_env_fallback(self):
         connector = {"config": {}}
-        with patch.dict(os.environ, {
-            "TWILIO_ACCOUNT_SID": "ACENV",
-            "TWILIO_AUTH_TOKEN": "envtoken",
-            "TWILIO_FROM_NUMBER": "+10000000000",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "TWILIO_ACCOUNT_SID": "ACENV",
+                "TWILIO_AUTH_TOKEN": "envtoken",
+                "TWILIO_FROM_NUMBER": "+10000000000",
+            },
+        ):
             cfg = resolve_twilio_config(connector)
         assert cfg["account_sid"] == "ACENV"
+
+    def test_tenant_cannot_override_twilio_host(self, monkeypatch):
+        monkeypatch.delenv("TWILIO_API_BASE_URL", raising=False)
+        cfg = resolve_twilio_config({"config": {"base_url": "https://attacker.example"}})
+        assert cfg["base_url"] == "https://api.twilio.com"
 
 
 # --------------------------------------------------------------------------- #
 #  resolve_webhook_config
 # --------------------------------------------------------------------------- #
 
+
 class TestResolveWebhookConfig:
     def test_from_connector(self):
-        connector = {"config": {
-            "url": "https://my.webhook.com/hook",
-            "method": "PUT",
-            "auth_type": "bearer",
-            "auth_value": "mytoken",
-        }}
+        connector = {
+            "config": {
+                "url": "https://my.webhook.com/hook",
+                "method": "PUT",
+                "auth_type": "bearer",
+                "auth_value": "mytoken",
+            }
+        }
         cfg = resolve_webhook_config(connector)
         assert cfg["url"] == "https://my.webhook.com/hook"
         assert cfg["method"] == "PUT"
@@ -148,23 +200,28 @@ class TestResolveWebhookConfig:
 #  dispatch_email_via_connector
 # --------------------------------------------------------------------------- #
 
+
 class TestDispatchEmail:
     def _smtp_connector(self):
-        return {"config": {
-            "provider": "smtp",
-            "host": "smtp.example.com",
-            "port": 587,
-            "username": "user",
-            "password": "pass",
-            "from_email": "ira@example.com",
-        }}
+        return {
+            "config": {
+                "provider": "smtp",
+                "host": "smtp.example.com",
+                "port": 587,
+                "username": "user",
+                "password": "pass",
+                "from_email": "ira@example.com",
+            }
+        }
 
     def _resend_connector(self):
-        return {"config": {
-            "provider": "resend",
-            "api_key": "re_key",
-            "from_email": "ira@example.com",
-        }}
+        return {
+            "config": {
+                "provider": "resend",
+                "api_key": "re_key",
+                "from_email": "ira@example.com",
+            }
+        }
 
     def test_smtp_success(self):
         connector = self._smtp_connector()
@@ -197,7 +254,7 @@ class TestDispatchEmail:
         connector = self._resend_connector()
         mock_response = MagicMock()
         mock_response.is_success = True
-        with patch("httpx.post", return_value=mock_response):
+        with _mock_provider_transport(mock_response):
             result = dispatch_email_via_connector(
                 ira_connector=connector,
                 recipient="to@example.com",
@@ -212,7 +269,7 @@ class TestDispatchEmail:
         mock_response = MagicMock()
         mock_response.is_success = False
         mock_response.status_code = 422
-        with patch("httpx.post", return_value=mock_response):
+        with _mock_provider_transport(mock_response):
             result = dispatch_email_via_connector(
                 ira_connector=connector,
                 recipient="to@example.com",
@@ -224,7 +281,7 @@ class TestDispatchEmail:
 
     def test_resend_timeout_queues(self):
         connector = self._resend_connector()
-        with patch("httpx.post", side_effect=httpx.TimeoutException("timed out")):
+        with _mock_provider_transport(error=httpx.TimeoutException("timed out")):
             result = dispatch_email_via_connector(
                 ira_connector=connector,
                 recipient="to@example.com",
@@ -236,7 +293,7 @@ class TestDispatchEmail:
 
     def test_resend_http_error_exception_queues(self):
         connector = self._resend_connector()
-        with patch("httpx.post", side_effect=httpx.HTTPError("bad request")):
+        with _mock_provider_transport(error=httpx.HTTPError("bad request")):
             result = dispatch_email_via_connector(
                 ira_connector=connector,
                 recipient="to@example.com",
@@ -261,6 +318,7 @@ class TestDispatchEmail:
 #  dispatch_slack_via_connector
 # --------------------------------------------------------------------------- #
 
+
 class TestDispatchSlack:
     def _slack_connector(self):
         return {"config": {"webhook_url": "https://hooks.slack.com/test"}}
@@ -276,7 +334,7 @@ class TestDispatchSlack:
     def test_success(self):
         mock_response = MagicMock()
         mock_response.is_success = True
-        with patch("httpx.post", return_value=mock_response):
+        with patch("backend.fastapi.app.ira_connector_integration.outbound_request", return_value=mock_response):
             result = dispatch_slack_via_connector(
                 ira_connector=self._slack_connector(),
                 message="alert",
@@ -288,7 +346,7 @@ class TestDispatchSlack:
         mock_response = MagicMock()
         mock_response.is_success = False
         mock_response.status_code = 500
-        with patch("httpx.post", return_value=mock_response):
+        with patch("backend.fastapi.app.ira_connector_integration.outbound_request", return_value=mock_response):
             result = dispatch_slack_via_connector(
                 ira_connector=self._slack_connector(),
                 message="alert",
@@ -296,7 +354,10 @@ class TestDispatchSlack:
         assert result["delivery_status"] == "queued"
 
     def test_timeout_queues(self):
-        with patch("httpx.post", side_effect=httpx.TimeoutException("timeout")):
+        with patch(
+            "backend.fastapi.app.ira_connector_integration.outbound_request",
+            side_effect=httpx.TimeoutException("timeout"),
+        ):
             result = dispatch_slack_via_connector(
                 ira_connector=self._slack_connector(),
                 message="alert",
@@ -305,25 +366,40 @@ class TestDispatchSlack:
         assert result["reason"] == "timeout"
 
     def test_http_exception_queues(self):
-        with patch("httpx.post", side_effect=httpx.HTTPError("bad")):
+        with patch(
+            "backend.fastapi.app.ira_connector_integration.outbound_request", side_effect=httpx.HTTPError("bad")
+        ):
             result = dispatch_slack_via_connector(
                 ira_connector=self._slack_connector(),
                 message="alert",
             )
         assert result["delivery_status"] == "queued"
 
+    def test_private_webhook_is_rejected_before_request(self):
+        with patch("backend.fastapi.app.ira_connector_integration.outbound_request") as mock_post:
+            result = dispatch_slack_via_connector(
+                ira_connector={"config": {"webhook_url": "https://127.0.0.1/hook"}},
+                message="alert",
+            )
+        assert result["delivery_status"] == "failed"
+        assert "unsafe_webhook_url" in result["reason"]
+        mock_post.assert_not_called()
+
 
 # --------------------------------------------------------------------------- #
 #  dispatch_whatsapp_via_connector
 # --------------------------------------------------------------------------- #
 
+
 class TestDispatchWhatsapp:
     def _twilio_connector(self):
-        return {"config": {
-            "account_sid": "ACxxx",
-            "auth_token": "authxxx",
-            "from_number": "+10000000001",
-        }}
+        return {
+            "config": {
+                "account_sid": "ACxxx",
+                "auth_token": "authxxx",
+                "from_number": "+10000000001",
+            }
+        }
 
     def test_missing_credentials_queues(self):
         result = dispatch_whatsapp_via_connector(
@@ -337,7 +413,7 @@ class TestDispatchWhatsapp:
     def test_success(self):
         mock_response = MagicMock()
         mock_response.is_success = True
-        with patch("httpx.post", return_value=mock_response):
+        with _mock_provider_transport(mock_response):
             result = dispatch_whatsapp_via_connector(
                 ira_connector=self._twilio_connector(),
                 recipient="+11234567890",
@@ -349,7 +425,7 @@ class TestDispatchWhatsapp:
         mock_response = MagicMock()
         mock_response.is_success = False
         mock_response.status_code = 400
-        with patch("httpx.post", return_value=mock_response):
+        with _mock_provider_transport(mock_response):
             result = dispatch_whatsapp_via_connector(
                 ira_connector=self._twilio_connector(),
                 recipient="+11234567890",
@@ -358,7 +434,7 @@ class TestDispatchWhatsapp:
         assert result["delivery_status"] == "queued"
 
     def test_timeout_queues(self):
-        with patch("httpx.post", side_effect=httpx.TimeoutException("timeout")):
+        with _mock_provider_transport(error=httpx.TimeoutException("timeout")):
             result = dispatch_whatsapp_via_connector(
                 ira_connector=self._twilio_connector(),
                 recipient="+11234567890",
@@ -368,7 +444,7 @@ class TestDispatchWhatsapp:
         assert result["reason"] == "timeout"
 
     def test_http_exception_queues(self):
-        with patch("httpx.post", side_effect=httpx.HTTPError("err")):
+        with _mock_provider_transport(error=httpx.HTTPError("err")):
             result = dispatch_whatsapp_via_connector(
                 ira_connector=self._twilio_connector(),
                 recipient="+11234567890",
@@ -381,14 +457,17 @@ class TestDispatchWhatsapp:
 #  dispatch_webhook_via_connector
 # --------------------------------------------------------------------------- #
 
+
 class TestDispatchWebhook:
     def _webhook_connector(self, auth_type="none", auth_value=""):
-        return {"config": {
-            "url": "https://my.webhook.com/hook",
-            "method": "POST",
-            "auth_type": auth_type,
-            "auth_value": auth_value,
-        }}
+        return {
+            "config": {
+                "url": "https://hooks.slack.com/test",
+                "method": "POST",
+                "auth_type": auth_type,
+                "auth_value": auth_value,
+            }
+        }
 
     def test_no_url_queues(self):
         result = dispatch_webhook_via_connector(
@@ -402,7 +481,7 @@ class TestDispatchWebhook:
         mock_response = MagicMock()
         mock_response.is_success = True
         mock_response.status_code = 200
-        with patch("httpx.request", return_value=mock_response):
+        with patch("backend.fastapi.app.ira_connector_integration.outbound_request", return_value=mock_response):
             result = dispatch_webhook_via_connector(
                 ira_connector=self._webhook_connector(),
                 payload={"event": "test"},
@@ -413,7 +492,9 @@ class TestDispatchWebhook:
         mock_response = MagicMock()
         mock_response.is_success = True
         mock_response.status_code = 200
-        with patch("httpx.request", return_value=mock_response) as mock_req:
+        with patch(
+            "backend.fastapi.app.ira_connector_integration.outbound_request", return_value=mock_response
+        ) as mock_req:
             dispatch_webhook_via_connector(
                 ira_connector=self._webhook_connector(auth_type="bearer", auth_value="mytoken"),
                 payload={},
@@ -426,7 +507,9 @@ class TestDispatchWebhook:
         mock_response = MagicMock()
         mock_response.is_success = True
         mock_response.status_code = 200
-        with patch("httpx.request", return_value=mock_response) as mock_req:
+        with patch(
+            "backend.fastapi.app.ira_connector_integration.outbound_request", return_value=mock_response
+        ) as mock_req:
             dispatch_webhook_via_connector(
                 ira_connector=self._webhook_connector(auth_type="api_key", auth_value="apikey123"),
                 payload={},
@@ -438,7 +521,7 @@ class TestDispatchWebhook:
         mock_response = MagicMock()
         mock_response.is_success = False
         mock_response.status_code = 503
-        with patch("httpx.request", return_value=mock_response):
+        with patch("backend.fastapi.app.ira_connector_integration.outbound_request", return_value=mock_response):
             result = dispatch_webhook_via_connector(
                 ira_connector=self._webhook_connector(),
                 payload={},
@@ -446,7 +529,10 @@ class TestDispatchWebhook:
         assert result["delivery_status"] == "queued"
 
     def test_timeout_queues(self):
-        with patch("httpx.request", side_effect=httpx.TimeoutException("timeout")):
+        with patch(
+            "backend.fastapi.app.ira_connector_integration.outbound_request",
+            side_effect=httpx.TimeoutException("timeout"),
+        ):
             result = dispatch_webhook_via_connector(
                 ira_connector=self._webhook_connector(),
                 payload={},
@@ -455,22 +541,37 @@ class TestDispatchWebhook:
         assert result["reason"] == "timeout"
 
     def test_http_exception_queues(self):
-        with patch("httpx.request", side_effect=httpx.HTTPError("err")):
+        with patch(
+            "backend.fastapi.app.ira_connector_integration.outbound_request", side_effect=httpx.HTTPError("err")
+        ):
             result = dispatch_webhook_via_connector(
                 ira_connector=self._webhook_connector(),
                 payload={},
             )
         assert result["delivery_status"] == "queued"
 
+    def test_private_webhook_is_rejected_before_request(self):
+        with patch("backend.fastapi.app.ira_connector_integration.outbound_request") as mock_request:
+            result = dispatch_webhook_via_connector(
+                ira_connector={"config": {"url": "https://169.254.169.254/latest/meta-data"}},
+                payload={"event": "test"},
+            )
+        assert result["delivery_status"] == "failed"
+        assert "unsafe_webhook_url" in result["reason"]
+        mock_request.assert_not_called()
+
 
 # --------------------------------------------------------------------------- #
 #  dispatch_via_ira_connector (unified)
 # --------------------------------------------------------------------------- #
 
+
 class TestDispatchViaIraConnector:
     def test_email_dispatch(self):
-        with patch("backend.fastapi.app.ira_connector_integration.dispatch_email_via_connector",
-                   return_value={"delivery_status": "sent"}) as mock_fn:
+        with patch(
+            "backend.fastapi.app.ira_connector_integration.dispatch_email_via_connector",
+            return_value={"delivery_status": "sent"},
+        ) as mock_fn:
             result = dispatch_via_ira_connector(
                 channel="email",
                 ira_connector={},
@@ -482,8 +583,10 @@ class TestDispatchViaIraConnector:
         mock_fn.assert_called_once()
 
     def test_slack_dispatch(self):
-        with patch("backend.fastapi.app.ira_connector_integration.dispatch_slack_via_connector",
-                   return_value={"delivery_status": "sent"}):
+        with patch(
+            "backend.fastapi.app.ira_connector_integration.dispatch_slack_via_connector",
+            return_value={"delivery_status": "sent"},
+        ):
             result = dispatch_via_ira_connector(
                 channel="slack",
                 ira_connector={},
@@ -492,8 +595,10 @@ class TestDispatchViaIraConnector:
         assert result["delivery_status"] == "sent"
 
     def test_whatsapp_dispatch(self):
-        with patch("backend.fastapi.app.ira_connector_integration.dispatch_whatsapp_via_connector",
-                   return_value={"delivery_status": "sent"}):
+        with patch(
+            "backend.fastapi.app.ira_connector_integration.dispatch_whatsapp_via_connector",
+            return_value={"delivery_status": "sent"},
+        ):
             result = dispatch_via_ira_connector(
                 channel="whatsapp",
                 ira_connector={},
@@ -503,8 +608,10 @@ class TestDispatchViaIraConnector:
         assert result["delivery_status"] == "sent"
 
     def test_webhook_dispatch(self):
-        with patch("backend.fastapi.app.ira_connector_integration.dispatch_webhook_via_connector",
-                   return_value={"delivery_status": "sent"}):
+        with patch(
+            "backend.fastapi.app.ira_connector_integration.dispatch_webhook_via_connector",
+            return_value={"delivery_status": "sent"},
+        ):
             result = dispatch_via_ira_connector(
                 channel="webhook",
                 ira_connector={},

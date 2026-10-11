@@ -64,14 +64,14 @@ export function SolutionsGrid() {
           <Reveal key={solution.key} delay={i * 0.08} className="mk-card overflow-hidden p-8 sm:p-10">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="inline-flex w-fit shrink-0 rounded-lg border border-[#18181814] bg-[#466cf314] p-2.5 text-[#466cf3]">
+                <div className="inline-flex w-fit shrink-0 rounded-lg border border-line bg-brand-soft p-2.5 text-brand">
                   <solution.icon size={20} strokeWidth={1.75} aria-hidden="true" />
                 </div>
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#466cf3]">
+                  <span className="text-xs font-bold uppercase tracking-widest text-brand">
                     {solution.category}
                   </span>
-                  <h3 className="mt-1 text-xl font-semibold leading-snug tracking-tight text-[#181818] sm:text-2xl">
+                  <h3 className="mt-1 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
                     {solution.title}
                   </h3>
                 </div>
@@ -81,23 +81,23 @@ export function SolutionsGrid() {
                 onClick={() => setOpen(isOpen ? null : solution.key)}
                 aria-expanded={isOpen}
                 aria-label={isOpen ? `Collapse ${solution.category}` : `Expand ${solution.category}`}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#18181814] text-[#181818] transition-transform hover:bg-[#18181808]"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-ink transition-transform hover:bg-line-soft"
               >
                 <Plus size={17} className={`transition-transform duration-300 ${isOpen ? 'rotate-45' : ''}`} aria-hidden="true" />
               </button>
             </div>
 
             <div
-              className={`grid transition-all duration-300 ease-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+              className={`grid transition-colors duration-300 ease-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
             >
-              <p className="overflow-hidden text-[15px] leading-relaxed text-[#46484d]">{solution.body}</p>
+              <p className="overflow-hidden text-[15px] leading-relaxed text-ink-2">{solution.body}</p>
             </div>
 
-            <div className={`overflow-hidden rounded-xl border border-[#18181814] ${isOpen ? 'mt-6' : ''}`}>
-              <div className="flex items-center gap-1.5 border-b border-[#18181814] bg-[#fafafa] px-3.5 py-2.5">
-                <span className="h-2 w-2 rounded-full bg-[#e5e7eb]" />
-                <span className="h-2 w-2 rounded-full bg-[#e5e7eb]" />
-                <span className="h-2 w-2 rounded-full bg-[#e5e7eb]" />
+            <div className={`overflow-hidden rounded-xl border border-line ${isOpen ? 'mt-6' : ''}`}>
+              <div className="flex items-center gap-1.5 border-b border-line bg-canvas px-3.5 py-2.5">
+                <span className="h-2 w-2 rounded-full bg-line-soft" />
+                <span className="h-2 w-2 rounded-full bg-line-soft" />
+                <span className="h-2 w-2 rounded-full bg-line-soft" />
               </div>
               <Image src={image} alt="" width={1536} height={1024} className="w-full" />
             </div>

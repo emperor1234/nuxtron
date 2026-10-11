@@ -82,7 +82,7 @@ export default function MarketExplorerPage() {
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && analyze()}
-              placeholder="e.g. semrush.com"
+              placeholder="e.g. example.com"
               className="flex-1 border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-400 focus:outline-none"
             />
             <button

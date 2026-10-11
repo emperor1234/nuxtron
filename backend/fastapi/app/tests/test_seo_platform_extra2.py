@@ -36,7 +36,7 @@ class TestSeoAiCoreAnalyze:
 
     def test_seo_ai_analyze_heuristic_fallback(self, client: TestClient) -> None:
         """When Ollama fails, heuristic analysis runs (not fake perfect score)."""
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/seo-ai/analyze", headers=H, json={
                 "domain": "example-seo.com",
                 "primary_keyword": "test keyword",
@@ -51,7 +51,7 @@ class TestSeoAiCoreAnalyze:
 
     def test_seo_ai_analyze_with_result(self, client: TestClient) -> None:
         """When Ollama returns result, use it directly (lines 2285)."""
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/seo-ai/analyze", headers=H, json={
                 "domain": "example-seo.com",
                 "primary_keyword": "content marketing",
@@ -62,7 +62,7 @@ class TestSeoAiCoreAnalyze:
 
     def test_seo_ai_analyze_blocked_input(self, client: TestClient) -> None:
         """Input with blocked content → 400 (line 127)."""
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/seo-ai/analyze", headers=H, json={
                 "domain": "<script>alert(1)</script>",
                 "primary_keyword": "test",
@@ -76,7 +76,7 @@ class TestKeywordResearchFallback:
     """Lines 2308-2325: keyword research fallback branches."""
 
     def test_keyword_research_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/keywords/research", headers=H, json={
                 "seed_keyword": "fastapi testing",
                 "domain": "example-seo.com",
@@ -86,7 +86,7 @@ class TestKeywordResearchFallback:
         assert r.status_code in VALID
 
     def test_keyword_research_with_result(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/keywords/research", headers=H, json={
                 "seed_keyword": "python coverage",
                 "domain": "test.com",
@@ -95,7 +95,7 @@ class TestKeywordResearchFallback:
 
     def test_keyword_research_async_no_cache(self, client: TestClient) -> None:
         """Async route queues job (line 2348)."""
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/keywords/research/async", headers=H, json={
                 "seed_keyword": "coverage test async",
                 "domain": "example-seo.com",
@@ -107,7 +107,7 @@ class TestOnPageAnalyzeFallback:
     """Lines 2350-2400: on-page analyze fallback."""
 
     def test_on_page_analyze_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/on-page/analyze", headers=H, json={
                 "url": SITE,
                 "focus_keyword": "seo testing",
@@ -116,7 +116,7 @@ class TestOnPageAnalyzeFallback:
         assert r.status_code in VALID
 
     def test_on_page_analyze_with_result(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/on-page/analyze", headers=H, json={
                 "url": SITE,
                 "focus_keyword": "fastapi test",
@@ -125,7 +125,7 @@ class TestOnPageAnalyzeFallback:
         assert r.status_code in VALID
 
     def test_on_page_analyze_async(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/on-page/analyze/async", headers=H, json={
                 "url": SITE,
                 "focus_keyword": "async coverage",
@@ -138,7 +138,7 @@ class TestTechnicalAuditFallback:
     """Technical audit fallback branches."""
 
     def test_technical_audit_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/technical/audit", headers=H, json={
                 "url": SITE,
                 "site_id": "site-extra2-001",
@@ -146,7 +146,7 @@ class TestTechnicalAuditFallback:
         assert r.status_code in VALID
 
     def test_technical_audit_with_result(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/technical/audit", headers=H, json={
                 "url": SITE,
                 "site_id": "site-extra2-002",
@@ -154,7 +154,7 @@ class TestTechnicalAuditFallback:
         assert r.status_code in VALID
 
     def test_technical_audit_async(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/technical/audit/async", headers=H, json={
                 "url": SITE,
                 "site_id": "site-extra2-003",
@@ -166,7 +166,7 @@ class TestContentStrategyFallback:
     """Content strategy fallback branches."""
 
     def test_content_strategy_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/content/strategy", headers=H, json={
                 "topic": "AI in marketing",
                 "audience": "marketers",
@@ -174,7 +174,7 @@ class TestContentStrategyFallback:
         assert r.status_code in VALID
 
     def test_content_strategy_with_result(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/content/strategy", headers=H, json={
                 "topic": "Python best practices",
                 "audience": "developers",
@@ -182,7 +182,7 @@ class TestContentStrategyFallback:
         assert r.status_code in VALID
 
     def test_content_strategy_async(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/content/strategy/async", headers=H, json={
                 "topic": "coverage testing",
                 "audience": "qa engineers",
@@ -194,21 +194,21 @@ class TestBacklinkAnalysisFallback:
     """Backlink analysis fallback branches."""
 
     def test_backlinks_analyze_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/backlinks/analyze", headers=H, json={
                 "domain": "example-seo.com",
             })
         assert r.status_code in VALID
 
     def test_backlinks_analyze_with_result(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/backlinks/analyze", headers=H, json={
                 "domain": "test.com",
             })
         assert r.status_code in VALID
 
     def test_backlinks_async(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/backlinks/analyze/async", headers=H, json={
                 "domain": "example-seo.com",
             })
@@ -219,7 +219,7 @@ class TestCompetitorAnalysisFallback:
     """Competitor analysis fallback branches."""
 
     def test_competitor_analyze_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/competitors/analyze", headers=H, json={
                 "domain": "example-seo.com",
                 "competitor_domains": ["competitor1.com", "competitor2.com"],
@@ -227,7 +227,7 @@ class TestCompetitorAnalysisFallback:
         assert r.status_code in VALID
 
     def test_competitor_analyze_with_result(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/competitors/analyze", headers=H, json={
                 "domain": "test.com",
                 "competitor_domains": ["rival.com"],
@@ -235,7 +235,7 @@ class TestCompetitorAnalysisFallback:
         assert r.status_code in VALID
 
     def test_competitor_async(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/competitors/analyze/async", headers=H, json={
                 "domain": "example-seo.com",
                 "competitor_domains": ["comp.com"],
@@ -247,7 +247,7 @@ class TestLocalSeoFallback:
     """Local SEO fallback branches."""
 
     def test_local_seo_optimize_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/local/optimize", headers=H, json={
                 "business_name": "Test Business LLC",
                 "location": "New York, NY",
@@ -256,7 +256,7 @@ class TestLocalSeoFallback:
         assert r.status_code in VALID
 
     def test_local_seo_optimize_with_result(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/local/optimize", headers=H, json={
                 "business_name": "Another Business",
                 "location": "San Francisco, CA",
@@ -265,7 +265,7 @@ class TestLocalSeoFallback:
         assert r.status_code in VALID
 
     def test_local_seo_async(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/local/optimize/async", headers=H, json={
                 "business_name": "Async Business",
                 "location": "Austin, TX",
@@ -278,7 +278,7 @@ class TestEcommerceSeoFallback:
     """E-commerce SEO fallback branches."""
 
     def test_ecommerce_optimize_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/ecommerce/optimize", headers=H, json={
                 "product_name": "Test Product",
                 "category": "Electronics",
@@ -287,7 +287,7 @@ class TestEcommerceSeoFallback:
         assert r.status_code in VALID
 
     def test_ecommerce_optimize_with_result(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/ecommerce/optimize", headers=H, json={
                 "product_name": "Another Product",
                 "category": "Software",
@@ -300,7 +300,7 @@ class TestSchemaGenerationFallback:
     """Schema generation fallback branches."""
 
     def test_schema_generate_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/schemas/generate", headers=H, json={
                 "url": SITE,
                 "schema_type": "Article",
@@ -308,7 +308,7 @@ class TestSchemaGenerationFallback:
         assert r.status_code in VALID
 
     def test_schema_generate_with_result(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/schemas/generate", headers=H, json={
                 "url": SITE,
                 "schema_type": "Product",
@@ -320,14 +320,14 @@ class TestPerformanceAuditFallback:
     """Performance audit fallback branches."""
 
     def test_performance_audit_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/performance/audit", headers=H, json={
                 "url": SITE,
             })
         assert r.status_code in VALID
 
     def test_performance_audit_with_result(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=GOOD_RESULT)):
             r = client.post("/seo-platform/performance/audit", headers=H, json={
                 "url": SITE,
             })
@@ -338,7 +338,7 @@ class TestAiSeoMoreModules:
     """Additional SEO module routes."""
 
     def test_rank_tracker_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/rank-tracker/track", headers=H, json={
                 "domain": "example-seo.com",
                 "keywords": ["test keyword", "another keyword"],
@@ -346,7 +346,7 @@ class TestAiSeoMoreModules:
         assert r.status_code in VALID
 
     def test_international_seo_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/international/optimize", headers=H, json={
                 "domain": "example-seo.com",
                 "target_countries": ["US", "UK", "CA"],
@@ -355,7 +355,7 @@ class TestAiSeoMoreModules:
         assert r.status_code in VALID
 
     def test_voice_search_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/voice-search/optimize", headers=H, json={
                 "query": "how to improve website rankings",
                 "domain": "example-seo.com",
@@ -363,7 +363,7 @@ class TestAiSeoMoreModules:
         assert r.status_code in VALID
 
     def test_content_gap_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/content/gap", headers=H, json={
                 "domain": "example-seo.com",
                 "competitor_domains": ["rival1.com"],
@@ -371,14 +371,14 @@ class TestAiSeoMoreModules:
         assert r.status_code in VALID
 
     def test_site_crawler_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/crawler/crawl", headers=H, json={
                 "url": SITE,
             })
         assert r.status_code in VALID
 
     def test_analytics_insights_fallback(self, client: TestClient) -> None:
-        with patch("backend.fastapi.app.routers.seo_platform._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
+        with patch("backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json", new=AsyncMock(return_value=FALLBACK_RESULT)):
             r = client.post("/seo-platform/analytics/insights", headers=H, json={
                 "domain": "example-seo.com",
                 "metric": "organic_traffic",

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken } from '@/app/lib/auth/jwt-edge';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '@/app/lib/auth/session-cookie';
+import { PRODUCT_COOKIE_NAME, parseProductLine } from '@/app/lib/product-line';
 
 /**
  * Mirrors the session token into an httpOnly cookie so `proxy.ts` can gate
@@ -9,6 +10,13 @@ import { SESSION_COOKIE_NAME, sessionCookieOptions } from '@/app/lib/auth/sessio
  * localStorage too (see app/lib/api-client.ts) for building the
  * `Authorization` header on same-origin API calls — this cookie exists
  * purely for server-side route gating and is never read by client JS.
+ *
+ * An optional `product` ("seo" | "marketing") records which product the user
+ * signed in through, in a second httpOnly cookie with the same lifetime as the
+ * session. proxy.ts uses it to keep the session inside that product. It is a
+ * sign-in mode chosen by the user, not an entitlement, so it is only ever used
+ * for UI routing. Anything that is not a known product line clears the cookie
+ * rather than being stored.
  */
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -34,13 +42,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ detail: 'Token is already expired.' }, { status: 401 });
   }
 
-  const response = NextResponse.json({ ok: true });
+  const product = parseProductLine((body as { product?: unknown })?.product);
+
+  const response = NextResponse.json({ ok: true, product });
   response.cookies.set(SESSION_COOKIE_NAME, token, sessionCookieOptions(maxAgeSeconds));
+  if (product) {
+    response.cookies.set(PRODUCT_COOKIE_NAME, product, sessionCookieOptions(maxAgeSeconds));
+  } else {
+    // A new session without a (valid) product must not inherit the previous
+    // session's restriction.
+    response.cookies.set(PRODUCT_COOKIE_NAME, '', sessionCookieOptions(0));
+  }
   return response;
 }
 
 export async function DELETE(): Promise<NextResponse> {
   const response = NextResponse.json({ ok: true });
   response.cookies.set(SESSION_COOKIE_NAME, '', sessionCookieOptions(0));
+  response.cookies.set(PRODUCT_COOKIE_NAME, '', sessionCookieOptions(0));
   return response;
 }

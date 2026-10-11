@@ -233,8 +233,8 @@ export default function RoutePerformance({ routeName, apiMarkers }: Readonly<Pro
 
   const deltaColor = (delta: number | null) => {
     if (delta === null) return 'var(--text)';
-    if (delta < 0) return '#22c55e';
-    if (delta > 0) return '#ef4444';
+    if (delta < 0) return 'var(--success-ink)';
+    if (delta > 0) return 'var(--danger-ink)';
     return 'var(--text)';
   };
 

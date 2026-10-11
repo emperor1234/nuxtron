@@ -18,14 +18,14 @@
     "jsx": "react-jsx",
     "incremental": true,
     "baseUrl": ".",
-"paths": {
-        "@/*": [
-          "./*"
-        ],
-        "@/app/*": [
-          "./app/*"
-        ]
-      },
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@/app/*": [
+        "./app/*"
+      ]
+    },
     "plugins": [
       {
         "name": "next"
@@ -38,14 +38,18 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    ".next-playwright/types/**/*.ts",
+    ".next-playwright/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     ".next",
+    ".next-playwright",
     "coverage",
     "dist",
     "out",
+    "junk",
     "next-env.d.ts"
   ]
 }

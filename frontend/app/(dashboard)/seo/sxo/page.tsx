@@ -101,10 +101,10 @@ export default function SXOPage() {
     <main className="min-h-screen p-4 md:p-6 lg:p-8 text-[var(--text)]">
       <div className="mx-auto max-w-7xl space-y-6">
         <section>
-          <h1 className="text-[27px] font-semibold tracking-tight text-[var(--nx-ink,var(--text))]">
+          <h1 className="text-[27px] font-semibold tracking-tight text-[var(--nx-ink)]">
             SXO - Search Experience Optimization
           </h1>
-          <p className="mt-2 max-w-3xl text-sm text-[var(--nx-muted,var(--muted))] leading-relaxed">
+          <p className="mt-2 max-w-3xl text-sm text-[var(--nx-muted)] leading-relaxed">
             Align rankings with real experience outcomes. Optimize dwell time, CTR quality, and behavioral engagement.
           </p>
         </section>
@@ -137,7 +137,7 @@ export default function SXOPage() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://your-site.com/page"
-                className="w-full rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-all focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
+                className="w-full rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-colors focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
               />
             </div>
 
@@ -154,7 +154,7 @@ export default function SXOPage() {
                   value={keywords}
                   onChange={(e) => setKeywords(e.target.value)}
                   placeholder="keyword1, keyword2"
-                  className="w-full rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-all focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-colors focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
                 />
               </div>
 
@@ -170,7 +170,7 @@ export default function SXOPage() {
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Paste content for deeper analysis..."
-                  className="min-h-[120px] w-full rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-all focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
+                  className="min-h-[120px] w-full rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-colors focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
                 />
               </div>
             </div>
@@ -178,7 +178,7 @@ export default function SXOPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--line)] bg-gradient-to-r from-cyan-500/80 to-teal-500/80 px-4 py-3 text-sm font-semibold text-[var(--text)] transition-all hover:from-cyan-400 hover:to-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--line)] bg-gradient-to-r from-cyan-500/80 to-teal-500/80 px-4 py-3 text-sm font-semibold text-[var(--text)] transition-colors hover:from-cyan-400 hover:to-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Analyzing SXO...' : 'Analyze Search Experience'}
             </button>
@@ -194,7 +194,7 @@ export default function SXOPage() {
               {SXO_AUDIT_PHASES.map((phase, index) => (
                 <div
                   key={phase}
-                  className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2.5"
+                  className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-3 py-2.5"
                 >
                   <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--brand)]/15 text-[11px] font-semibold text-cyan-200">
                     {index + 1}
@@ -204,7 +204,7 @@ export default function SXOPage() {
               ))}
             </div>
 
-            <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3.5 py-3">
+            <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-3.5 py-3">
               <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Current Scope</div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <span className="rounded-full border border-[var(--line)] bg-[var(--brand)]/12 px-2.5 py-1 text-[11px] font-medium text-cyan-100">
@@ -226,10 +226,10 @@ export default function SXOPage() {
           <>
             <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
               {[
-                { label: 'SXO Score', value: result.sxo_score, color: '#22c55e' },
-                { label: 'Dwell Time', value: result.dwell_time_score, color: '#22d3ee' },
-                { label: 'CTR Score', value: result.ctr_score, color: '#a78bfa' },
-                { label: 'UX Quality', value: result.ux_quality_score, color: '#f59e0b' },
+                { label: 'SXO Score', value: result.sxo_score, color: 'var(--success)' },
+                { label: 'Dwell Time', value: result.dwell_time_score, color: 'var(--info)' },
+                { label: 'CTR Score', value: result.ctr_score, color: 'var(--info)' },
+                { label: 'UX Quality', value: result.ux_quality_score, color: 'var(--warning)' },
               ].map((m) => (
                 <div key={m.label} className="rounded-xl border border-[var(--line)] bg-white p-4 text-center">
                   <div className="text-[10px] uppercase tracking-[0.1em] text-[var(--muted)]">{m.label}</div>
@@ -262,7 +262,7 @@ export default function SXOPage() {
                 <p className="mb-3 text-base font-semibold text-[var(--text)]">Engagement Signals</p>
                 <div className="flex flex-wrap gap-3">
                   {Object.entries(result.engagement_signals as Record<string, unknown>).map(([k, v]) => (
-                    <div key={`item-${k}`} className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-4 py-3">
+                    <div key={`item-${k}`} className="rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3">
                       <div className="text-xs capitalize text-[var(--muted)]">{k.replaceAll('_', ' ')}</div>
                       <div className="text-base font-semibold text-[var(--text)]">{String(v)}</div>
                     </div>

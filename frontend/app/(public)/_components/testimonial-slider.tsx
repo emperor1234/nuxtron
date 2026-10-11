@@ -36,7 +36,7 @@ export function TestimonialSlider({ testimonials }: { testimonials: Testimonial[
             exit={reduced ? undefined : { opacity: 0, x: direction * -24 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="mb-6 flex justify-center gap-1 text-[#f83d69]" aria-hidden="true">
+            <div className="mb-6 flex justify-center gap-1 text-danger" aria-hidden="true">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} size={22} fill="currentColor" />
               ))}
@@ -45,7 +45,7 @@ export function TestimonialSlider({ testimonials }: { testimonials: Testimonial[
               &ldquo;{current.quote}&rdquo;
             </p>
             <div className="mt-8 flex items-center justify-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-full bg-white text-[#181818]">
+              <div className="grid h-11 w-11 place-items-center rounded-full bg-white text-ink">
                 <span className="text-sm font-bold">{current.initials}</span>
               </div>
               <div className="text-left">
@@ -75,7 +75,7 @@ export function TestimonialSlider({ testimonials }: { testimonials: Testimonial[
                 onClick={() => go(i)}
                 aria-label={`Show review ${i + 1}`}
                 aria-current={i === index}
-                className={`h-2 rounded-full transition-all ${i === index ? 'w-6 bg-white' : 'w-2 bg-white/30 hover:bg-white/50'}`}
+                className={`h-2 rounded-full transition-colors ${i === index ? 'w-6 bg-white' : 'w-2 bg-white/30 hover:bg-white/50'}`}
               />
             ))}
           </div>

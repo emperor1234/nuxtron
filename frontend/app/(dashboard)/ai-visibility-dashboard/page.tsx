@@ -145,7 +145,7 @@ export default function AiVisibilityDashboardPage() {
         <button onClick={() => void runCloudflarePlan()} style={{ marginLeft: 12 }}>
           Plan Cloudflare Auto-Sync
         </button>
-        {error ? <p style={{ color: '#f87171', marginTop: 12 }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)', marginTop: 12 }}>{error}</p> : null}
       </section>
 
       {readiness ? (

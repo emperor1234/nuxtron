@@ -73,7 +73,7 @@ export default function LLMOPage() {
   }
 
   const card = {
-    background: '#ffffff',
+    background: 'var(--card)fff',
     border: '1px solid rgba(148, 163, 184, 0.16)',
     borderRadius: 16,
     padding: 16,
@@ -86,16 +86,16 @@ export default function LLMOPage() {
     padding: '10px 12px',
     borderRadius: 12,
     border: '1px solid rgba(148, 163, 184, 0.22)',
-    background: '#ffffff',
+    background: 'var(--card)fff',
     color: 'var(--text)',
     marginBottom: 10,
     boxSizing: 'border-box' as const,
   };
-  let accuracyRiskColor = '#22c55e';
+  let accuracyRiskColor = 'var(--success)';
   if (result?.accuracy_risk === 'high') {
-    accuracyRiskColor = '#ef4444';
+    accuracyRiskColor = 'var(--danger)';
   } else if (result?.accuracy_risk === 'medium') {
-    accuracyRiskColor = '#f59e0b';
+    accuracyRiskColor = 'var(--warning)';
   }
 
   return (
@@ -164,7 +164,7 @@ export default function LLMOPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 8 }}>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -179,7 +179,7 @@ export default function LLMOPage() {
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -197,7 +197,7 @@ export default function LLMOPage() {
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -215,7 +215,7 @@ export default function LLMOPage() {
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -230,7 +230,7 @@ export default function LLMOPage() {
           </div>
         </section>
         <DegradedModeBanner message="Fail-closed mode is active. Only live backend analysis results are shown." />
-        {error && <div style={{ ...card, color: '#b91c1c' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
         <div
           style={{
             display: 'grid',
@@ -308,7 +308,7 @@ export default function LLMOPage() {
                 borderRadius: 10,
                 border: '1px solid rgba(196,181,253,0.45)',
                 background: 'linear-gradient(90deg, rgba(139,92,246,0.9) 0%, rgba(99,102,241,0.85) 100%)',
-                color: '#eef2ff',
+                color: 'var(--info-soft)',
                 fontWeight: 700,
                 cursor: 'pointer',
                 opacity: loading ? 0.7 : 1,
@@ -336,7 +336,7 @@ export default function LLMOPage() {
                     border: '1px solid rgba(148,163,184,0.16)',
                     borderRadius: 10,
                     padding: '8px 10px',
-                    background: '#f4f5f8',
+                    background: 'var(--bg-soft)',
                   }}
                 >
                   <div
@@ -366,7 +366,7 @@ export default function LLMOPage() {
                 border: '1px solid rgba(148,163,184,0.16)',
                 borderRadius: 10,
                 padding: '10px 12px',
-                background: '#f4f5f8',
+                background: 'var(--bg-soft)',
               }}
             >
               <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -422,7 +422,7 @@ export default function LLMOPage() {
                 }}
               >
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>Brand AI Score</div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: '#22c55e' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--success)' }}>
                   {(result.brand_ai_score as number) ?? '—'}
                   <span style={{ fontSize: 13, fontWeight: 400 }}>/100</span>
                 </div>
@@ -462,7 +462,7 @@ export default function LLMOPage() {
                 }}
               >
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>Knowledge Gaps</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b' }}>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--warning)' }}>
                   {(result.knowledge_gap_topics as string[] | undefined)?.length ?? 0}
                 </div>
               </div>
@@ -538,7 +538,7 @@ export default function LLMOPage() {
                         background: 'rgba(239,68,68,0.1)',
                         border: '1px solid rgba(239,68,68,0.3)',
                         borderRadius: 99,
-                        color: '#b91c1c',
+                        color: 'var(--danger)',
                       }}
                     >
                       {t}

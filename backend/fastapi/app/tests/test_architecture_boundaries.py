@@ -15,9 +15,6 @@ CONTEXTS_ROOT = APP_ROOT / "contexts"
 ALLOWED_INCLUDE_ROUTER_PATHS = frozenset(
     {
         Path("bootstrap/context_registry.py"),
-        Path("composition.py"),
-        Path("legacy_main.py"),
-        Path("main_social.py"),
         Path("router_registration.py"),
         Path("routers/ops.py"),
     }
@@ -45,7 +42,7 @@ LEGACY_SIZE_RATCHET = {
     "composition.py": 13,
     "legacy_main.py": 2_740,
     # Contract-freeze baseline (2026-08-29): this ceiling may only decrease.
-    "router_registration.py": 1_123,
+    "router_registration.py": 1_116,
 }
 
 
@@ -373,8 +370,10 @@ def test_legacy_hotspots_may_only_shrink() -> None:
 
 
 def test_composition_allowlist_uses_explicit_paths() -> None:
-    assert _is_allowed_composition_path(APP_ROOT / "composition.py")
+    assert _is_allowed_composition_path(APP_ROOT / "bootstrap" / "context_registry.py")
     assert _is_allowed_composition_path(APP_ROOT / "routers" / "ops.py")
+    assert not _is_allowed_composition_path(APP_ROOT / "composition.py")
+    assert not _is_allowed_composition_path(APP_ROOT / "legacy_main.py")
     assert not _is_allowed_composition_path(APP_ROOT / "bootstrap.py")
     assert not _is_allowed_composition_path(APP_ROOT / "application.py")
     assert not _is_allowed_composition_path(APP_ROOT / "main_unreviewed.py")

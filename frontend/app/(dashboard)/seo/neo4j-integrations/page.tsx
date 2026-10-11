@@ -96,7 +96,7 @@ export default function Neo4jIntegrationsPage() {
             {loading ? 'Probing...' : 'Run Live Probe'}
           </button>
         </div>
-        {error ? <p style={{ color: '#f87171' }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)' }}>{error}</p> : null}
       </section>
 
       {capabilities ? (

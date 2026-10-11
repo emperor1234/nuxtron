@@ -154,7 +154,7 @@ class TestAutoLinkAgentProcessLinks:
             result = await agent.process_links(run_id="run-001", links=links)  # type: ignore[union-attr]
             assert isinstance(result, dict)
 
-        asyncio.get_event_loop().run_until_complete(_run())
+        asyncio.run(_run())
 
     def test_process_links_tier1_no_execute(self) -> None:
         """Lines 167-200: tier 1 just logs, doesn't execute."""
@@ -173,7 +173,7 @@ class TestAutoLinkAgentProcessLinks:
             result = await agent.process_links(run_id="run-002", links=links)  # type: ignore[union-attr]
             assert isinstance(result, dict)
 
-        asyncio.get_event_loop().run_until_complete(_run())
+        asyncio.run(_run())
 
     def test_process_links_with_blocking_violations(self) -> None:
         """Lines 175-200: links with blocking violations → rejected."""
@@ -192,7 +192,7 @@ class TestAutoLinkAgentProcessLinks:
             result = await agent.process_links(run_id="run-003", links=links)  # type: ignore[union-attr]
             assert isinstance(result, dict)
 
-        asyncio.get_event_loop().run_until_complete(_run())
+        asyncio.run(_run())
 
     def test_process_links_empty(self) -> None:
         """Lines 168-169: empty links list returns immediately."""
@@ -202,4 +202,4 @@ class TestAutoLinkAgentProcessLinks:
             result = await agent.process_links(run_id="run-004", links=[])  # type: ignore[union-attr]
             assert isinstance(result, dict)
 
-        asyncio.get_event_loop().run_until_complete(_run())
+        asyncio.run(_run())

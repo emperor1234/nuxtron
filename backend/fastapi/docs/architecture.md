@@ -43,7 +43,7 @@ bootstrap ─> api + application + infrastructure
 
 The AST checks in `app/tests/test_architecture_boundaries.py` enforce these rules as soon as `app/contexts/` contains code. They intentionally pass before the first context exists while still guarding router composition and legacy size ratchets.
 
-`include_router` is receiver-agnostic and permitted only at explicitly reviewed paths. The current transition allowlist is `composition.py`, `legacy_main.py`, `router_registration.py`, `main_social.py`, and the legacy nested-router aggregator `routers/ops.py`. A filename such as `bootstrap.py`, `application.py`, or `main_new.py` does not grant permission. New context routers are exported to `composition.py`; removing a transitional caller must shrink this allowlist.
+`include_router` is receiver-agnostic and permitted only at explicitly reviewed paths. The current transition allowlist is `composition.py`, `legacy_main.py`, `router_registration.py`, and the legacy nested-router aggregator `routers/ops.py`. A filename such as `bootstrap.py`, `application.py`, or `main_new.py` does not grant permission. New context routers are exported to `composition.py`; removing a transitional caller must shrink this allowlist.
 
 ## Naming and public contracts
 

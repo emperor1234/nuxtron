@@ -6,7 +6,7 @@ from pathlib import Path
 
 def test_social_parity_sql_migration_creates_required_tables(tmp_path: Path):
     repo_root = Path(__file__).resolve().parents[4]
-    migration_path = repo_root / "services" / "fastapi" / "sql" / "20260523_social_parity_state_schema.sql"
+    migration_path = repo_root / "backend" / "fastapi" / "sql" / "20260523_social_parity_state_schema.sql"
 
     assert migration_path.exists(), "Expected social parity migration file to exist"
     sql_text = migration_path.read_text(encoding="utf-8")

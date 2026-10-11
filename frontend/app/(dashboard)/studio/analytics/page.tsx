@@ -85,9 +85,9 @@ export default function AnalyticsPage() {
             margin: '12px 0',
             padding: 12,
             borderRadius: 10,
-            border: '1px solid #ef4444',
-            color: '#dc2626',
-            background: '#fee2e222',
+            border: '1px solid var(--danger)',
+            color: 'var(--danger)',
+            background: 'color-mix(in oklab, var(--danger-soft) 13%, transparent)',
             fontSize: 13,
           }}
         >
@@ -137,8 +137,8 @@ export default function AnalyticsPage() {
                 {[
                   { label: 'Social Posts', value: dashboard?.social_posts_scheduled ?? 0, color: 'var(--brand)' },
                   { label: 'Email Campaigns', value: dashboard?.email_campaigns ?? 0, color: 'var(--brand-2)' },
-                  { label: 'CRM Contacts', value: dashboard?.crm_contacts ?? 0, color: '#ffb852' },
-                  { label: 'CRM Deals', value: dashboard?.crm_deals ?? 0, color: '#ff6b6b' },
+                  { label: 'CRM Contacts', value: dashboard?.crm_contacts ?? 0, color: 'var(--warning)' },
+                  { label: 'CRM Deals', value: dashboard?.crm_deals ?? 0, color: 'var(--danger)' },
                 ].map((item) => {
                   const total =
                     (dashboard?.social_posts_scheduled ?? 0) +

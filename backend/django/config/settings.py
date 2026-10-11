@@ -251,6 +251,11 @@ def _build_databases() -> dict[str, dict[str, Any]]:
                 pass
         return {'default': default}
 
+    if IS_PRODUCTION:
+        raise RuntimeError(
+            'Production Django requires DATABASE_URL or POSTGRES_HOST; '
+            'SQLite fallback is disabled.'
+        )
     # Local dev fallback (opt-in via DJANGO_USE_SQLITE=1 or no PG host).
     return {
         'default': {
@@ -300,6 +305,11 @@ if REDIS_URL:
     # Store sessions in Redis for horizontal scaling + automatic expiry.
     SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 else:
+    if IS_PRODUCTION:
+        raise RuntimeError(
+            'Production Django requires REDIS_URL or REDIS_HOST; '
+            'LocMemCache fallback is disabled.'
+        )
     CACHES = {
         'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'nuxtron'}
     }

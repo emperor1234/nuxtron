@@ -55,9 +55,9 @@ const ENTRIES: Entry[] = [
 ];
 
 const TAG_STYLES: Record<Entry['tag'], string> = {
-  New: 'bg-[#0ea5e9]/10 text-[#0c8fcc] border-[#0ea5e9]/30',
-  Improved: 'bg-[#f59e0b]/10 text-[#b45309] border-[#f59e0b]/30',
-  Fixed: 'bg-[#55677c]/10 text-[#33475b] border-[#55677c]/25',
+  New: 'bg-info/10 text-info-ink border-info/30',
+  Improved: 'bg-warning/10 text-warning-ink border-warning/30',
+  Fixed: 'bg-info/10 text-info-ink border-info/25',
 };
 
 function StaggeredEntry({ entry, index }: { entry: Entry; index: number }) {
@@ -67,22 +67,22 @@ function StaggeredEntry({ entry, index }: { entry: Entry; index: number }) {
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: '-50px' }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: index * 0.06 }}
-      className="relative border-l-2 border-[#dbe6ee] pl-8 transition-all duration-300 hover:border-[#0ea5e9] hover:pl-10"
+      className="relative border-l-2 border-line-soft pl-8 transition-colors duration-300 hover:border-info hover:pl-10"
     >
       <span
-        className="absolute -left-[7px] top-1.5 h-3 w-3 rounded-full border-2 border-white bg-[#0ea5e9]"
+        className="absolute -left-[7px] top-1.5 h-3 w-3 rounded-full border-2 border-white bg-info"
         aria-hidden="true"
       />
-      <p className="text-xs font-bold uppercase tracking-widest text-[#8595a8]">{entry.date}</p>
+      <p className="text-xs font-bold uppercase tracking-widest text-info">{entry.date}</p>
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <span
           className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${TAG_STYLES[entry.tag]}`}
         >
           {entry.tag}
         </span>
-        <h2 className="text-lg font-semibold text-[#0b1b2b]">{entry.title}</h2>
+        <h2 className="text-lg font-semibold text-info-ink">{entry.title}</h2>
       </div>
-      <p className="mt-2 text-[15px] leading-relaxed text-[#55677c]">{entry.body}</p>
+      <p className="mt-2 text-[15px] leading-relaxed text-info-ink">{entry.body}</p>
     </motion.li>
   );
 }
@@ -98,8 +98,8 @@ export default function ChangelogClient() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
           <span className="mk-eyebrow mb-5">Changelog</span>
-          <h1 className="mb-4 text-4xl font-semibold tracking-tight text-[#0b1b2b] sm:text-5xl">What&apos;s new</h1>
-          <p className="mb-12 text-lg leading-relaxed text-[#55677c]">
+          <h1 className="mb-4 text-4xl font-semibold tracking-tight text-info-ink sm:text-5xl">What&apos;s new</h1>
+          <p className="mb-12 text-lg leading-relaxed text-info-ink">
             Notable features, improvements, and fixes as they ship — newest first.
           </p>
         </motion.div>

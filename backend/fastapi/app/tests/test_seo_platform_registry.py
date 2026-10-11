@@ -100,8 +100,8 @@ def test_seo_performance_audit_returns_structured_payload(client: TestClient, mo
     async def fake_free_stack(req):
         return None
 
-    monkeypatch.setattr(seo_platform, '_ollama_json', fake_ollama_json)
-    monkeypatch.setattr(seo_platform, '_run_free_performance_stack', fake_free_stack)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json', fake_ollama_json)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._run_free_performance_stack', fake_free_stack)
 
     response = client.post(
         '/seo-platform/performance/audit',
@@ -158,8 +158,8 @@ def test_seo_performance_audit_merges_free_provider_data(client: TestClient, mon
             'data_provenance': {'source': 'free_providers', 'at': '2026-05-24T00:00:00+00:00'},
         }
 
-    monkeypatch.setattr(seo_platform, '_ollama_json', fake_ollama_json)
-    monkeypatch.setattr(seo_platform, '_run_free_performance_stack', fake_free_stack)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json', fake_ollama_json)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._run_free_performance_stack', fake_free_stack)
 
     response = client.post(
         '/seo-platform/performance/audit',
@@ -193,8 +193,8 @@ def test_seo_performance_audit_sets_explicit_provenance_without_free_providers(c
     async def fake_free_stack(req):
         return None
 
-    monkeypatch.setattr(seo_platform, '_ollama_json', fake_ollama_json)
-    monkeypatch.setattr(seo_platform, '_run_free_performance_stack', fake_free_stack)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json', fake_ollama_json)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._run_free_performance_stack', fake_free_stack)
 
     response = client.post(
         '/seo-platform/performance/audit',
@@ -231,8 +231,8 @@ def test_performance_rum_ingest_summary_and_audit_merge(client: TestClient, monk
     async def fake_free_stack(req):
         return None
 
-    monkeypatch.setattr(seo_platform, '_ollama_json', fake_ollama_json)
-    monkeypatch.setattr(seo_platform, '_run_free_performance_stack', fake_free_stack)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json', fake_ollama_json)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._run_free_performance_stack', fake_free_stack)
 
     url = 'https://rum-merge.example.com'
     for metric_name, value, rating in [('LCP', 1800, 'good'), ('INP', 120, 'good'), ('CLS', 0.03, 'good')]:
@@ -311,8 +311,8 @@ def test_performance_monitor_create_run_and_report(client: TestClient, monkeypat
     async def fake_free_stack(req):
         return None
 
-    monkeypatch.setattr(seo_platform, '_ollama_json', fake_ollama_json)
-    monkeypatch.setattr(seo_platform, '_run_free_performance_stack', fake_free_stack)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json', fake_ollama_json)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._run_free_performance_stack', fake_free_stack)
 
     created = client.post(
         '/seo-platform/performance/monitor/create',
@@ -374,12 +374,12 @@ def test_performance_advanced_parity_endpoints(client: TestClient, monkeypatch: 
             'waterfall': {'requests': 29, 'transfer_kb': 490, 'render_blocking': ['main.css']},
         }
 
-    monkeypatch.setattr(seo_platform, '_ollama_json', fake_ollama_json)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json', fake_ollama_json)
 
     async def fake_free_stack(req):
         return None
 
-    monkeypatch.setattr(seo_platform, '_run_free_performance_stack', fake_free_stack)
+    monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._run_free_performance_stack', fake_free_stack)
 
     vendors = client.get('/seo-platform/performance/vendors', headers=_headers())
     assert vendors.status_code == 200

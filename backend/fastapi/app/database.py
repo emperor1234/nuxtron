@@ -27,7 +27,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -127,8 +127,22 @@ def _get_engine() -> Engine:
         engine_kwargs['connect_args'] = {'check_same_thread': False}
         engine_kwargs['poolclass'] = StaticPool
     else:
-        engine_kwargs['pool_size'] = int(os.getenv('DB_POOL_SIZE', '10'))
-        engine_kwargs['max_overflow'] = int(os.getenv('DB_MAX_OVERFLOW', '20'))
+        try:
+            pool_size = int(os.getenv('DB_POOL_SIZE', '10'))
+            max_overflow = int(os.getenv('DB_MAX_OVERFLOW', '20'))
+            pool_timeout = int(os.getenv('DB_POOL_TIMEOUT_SECONDS', '30'))
+        except ValueError as exc:
+            raise RuntimeError('DB_POOL_SIZE, DB_MAX_OVERFLOW, and DB_POOL_TIMEOUT_SECONDS must be integers.') from exc
+        if not 1 <= pool_size <= 500:
+            raise RuntimeError('DB_POOL_SIZE must be between 1 and 500.')
+        if not 0 <= max_overflow <= 1000:
+            raise RuntimeError('DB_MAX_OVERFLOW must be between 0 and 1000.')
+        if not 1 <= pool_timeout <= 300:
+            raise RuntimeError('DB_POOL_TIMEOUT_SECONDS must be between 1 and 300.')
+        engine_kwargs['pool_size'] = pool_size
+        engine_kwargs['max_overflow'] = max_overflow
+        engine_kwargs['pool_timeout'] = pool_timeout
+        engine_kwargs['pool_use_lifo'] = True
     return create_engine(db_url, **engine_kwargs)
 
 
@@ -239,6 +253,41 @@ def get_db_session_sync() -> Session:
     """
     factory = _get_session_factory()
     return factory()
+
+
+@contextmanager
+def organization_scoped_session(organization_id: str) -> Generator[Session, None, None]:
+    """Yield a session scoped to one organization for exactly one transaction.
+
+    PostgreSQL RLS policies read these settings through ``current_setting``.
+    ``set_config(..., true)`` makes both values transaction-local, preventing a
+    pooled connection from retaining one tenant's identity for the next request.
+    SQLite deliberately skips the PostgreSQL GUC because local tests use
+    application-level scoping and do not implement RLS.
+    """
+    normalized_id = organization_id.strip()
+    if not normalized_id:
+        raise ValueError('organization_id is required for a scoped database session')
+
+    session = get_db_session_sync()
+    try:
+        bind = session.get_bind()
+        if bind.dialect.name == 'postgresql':
+            session.execute(
+                text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+                {'tenant_id': normalized_id},
+            )
+            session.execute(
+                text("SELECT set_config('app.current_org_id', :org_id, true)"),
+                {'org_id': normalized_id},
+            )
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def close_db() -> None:

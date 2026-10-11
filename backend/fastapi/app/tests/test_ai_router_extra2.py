@@ -255,6 +255,24 @@ class TestJobStatusRoute:
         assert data["status"] == "error"
         assert "not found" in data.get("error", "").lower()
 
+    def test_get_other_tenant_job_is_hidden(self, client: TestClient) -> None:
+        from backend.fastapi.app.routers.ai import _image_jobs
+
+        job_id = "other-tenant-job-123"
+        _image_jobs[job_id] = {
+            "tenant_id": "tenant-b",
+            "status": "success",
+            "content": "private tenant B result",
+            "media_url": "https://private.example/media",
+        }
+        r = client.get(f"/ai/social-studio/job/{job_id}", headers=HEADERS)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "error"
+        assert data["error"] == "Job not found."
+        assert data["content"] is None
+        assert data["media_url"] is None
+
 
 class TestImageEditingEndpoints:
     """Validate production AI image edit endpoints under /ai/image/*."""

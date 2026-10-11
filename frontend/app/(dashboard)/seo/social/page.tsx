@@ -135,7 +135,7 @@ export default function SocialSeoPage() {
               padding: '10px 20px',
               borderRadius: 8,
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
@@ -144,7 +144,7 @@ export default function SocialSeoPage() {
           >
             {loading ? 'Auditing…' : 'Run Social SEO Audit'}
           </button>
-          {error && <div style={{ color: '#fca5a5', fontSize: 13 }}>{error}</div>}
+          {error && <div style={{ color: 'var(--danger-line)', fontSize: 13 }}>{error}</div>}
         </section>
 
         {result && (
@@ -152,12 +152,12 @@ export default function SocialSeoPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>Cached result</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
                 )}
               </div>
             )}
@@ -180,7 +180,7 @@ export default function SocialSeoPage() {
                             fontSize: 12,
                             color:
                               (data as Record<string, string | string[]>)[field] === 'Missing'
-                                ? '#fca5a5'
+                                ? 'var(--danger-line)'
                                 : 'var(--text)',
                           }}
                         >
@@ -191,7 +191,7 @@ export default function SocialSeoPage() {
                     {data.issues.length > 0 && (
                       <ul style={{ margin: '8px 0 0', paddingLeft: 16 }}>
                         {data.issues.map((issue, i) => (
-                          <li key={`item-${i}`} style={{ fontSize: 11, color: '#fca5a5', marginBottom: 2 }}>
+                          <li key={`item-${i}`} style={{ fontSize: 11, color: 'var(--danger-line)', marginBottom: 2 }}>
                             {issue}
                           </li>
                         ))}
@@ -208,7 +208,7 @@ export default function SocialSeoPage() {
                 <span style={{ color: 'var(--muted)' }}>Canonical URL: </span>
                 {result.canonical_alignment.canonical_url}
                 {' — '}
-                <span style={{ color: result.canonical_alignment.matches_og_url ? '#86efac' : '#fca5a5' }}>
+                <span style={{ color: result.canonical_alignment.matches_og_url ? 'var(--success)' : 'var(--danger-line)' }}>
                   {result.canonical_alignment.matches_og_url ? '✓ Matches og:url' : '✗ Mismatches og:url'}
                 </span>
               </div>

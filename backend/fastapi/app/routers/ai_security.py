@@ -64,12 +64,12 @@ class AiSecurityIdseventRequest(BaseModel):
 
 def create_ai_security_router(  # NOSONAR
     *,
-    enforce_rate_limit: Callable[[str, int, int], None],
+    enforce_rate_limit: Callable[..., None],
     is_tenant_blocked: Callable[[str], tuple[bool, int]],
     prepare_ai_gateway_attempt: Callable[[AiGatewayGenerateRequest, str, str | None, bool], tuple[str, str, object] | None],
     invoke_ai_provider_generation: Callable[[str, object, AuthContext, str], JsonObject],
     update_provider_health: Callable[[str, bool, float], None],
-    record_ai_gateway_success: Callable[[JsonObject, object, str, AuthContext, Request], None],
+    record_ai_gateway_success: Callable[..., None],
     coerce_int: Callable[[object, int], int],
     coerce_float: Callable[[object, float], float],
     load_ai_generated_asset_bytes: Callable[[JsonObject, int, str], bytes],
@@ -93,8 +93,7 @@ def create_ai_security_router(  # NOSONAR
     ai_security_ids_events_memory: list[JsonObject],
     ai_provider_keys_memory: list[JsonObject],
     resend_messages_memory: list[JsonObject],
-    ai_generated_assets_memory: list[JsonObject],
-    ai_generated_assets_lock: threading.Lock,
+    find_ai_generated_asset: Callable[[int, str], JsonObject | None],
     ai_security_lock: threading.Lock,
     ai_providers: tuple[str, ...],
     ai_model_catalog: dict[str, dict[str, dict[str, float]]],
@@ -243,6 +242,10 @@ def create_ai_security_router(  # NOSONAR
 
                 provider, selected_model, scoped_payload = prepared
                 output = invoke_ai_provider_generation(provider, scoped_payload, auth, created_at)
+                result = output.get('result') if isinstance(output, dict) else None
+                output_text = result.get('output_text') if isinstance(result, dict) else None
+                if output.get('status') != 'ok' or not isinstance(output_text, str) or not output_text.strip():
+                    raise RuntimeError(f'Provider {provider} returned no usable AI output.')
                 latency_ms = (time.time() - start_time) * 1000
                 update_provider_health(provider, True, latency_ms)
                 record_ai_gateway_success(
@@ -278,16 +281,7 @@ def create_ai_security_router(  # NOSONAR
     def ai_generated_asset_download(asset_id: int, auth: AuthDep) -> Response:
         enforce_rate_limit(f'{auth.tenant_id}:ai:asset-download', limit=240, window_seconds=60)
 
-        with ai_generated_assets_lock:
-            item = next(
-                (
-                    row
-                    for row in ai_generated_assets_memory
-                    if coerce_int(row.get('id'), 0) == asset_id and str(row.get('tenant_id', '')) == auth.tenant_id
-                ),
-                None,
-            )
-
+        item = find_ai_generated_asset(asset_id, auth.tenant_id)
         if item is None:
             raise HTTPException(status_code=404, detail='Generated asset not found.')
 

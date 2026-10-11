@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   CardTitle,
+  DataStatus,
   Field,
   Page,
   PageHeader,
@@ -120,6 +121,20 @@ export default function SeoAiCorePage() {
       <PageHeader
         title="AI Visibility"
         subtitle="Research competitors and prompts, strengthen brand visibility, and turn search signals into a focused plan."
+        actions={
+          result ? (
+            <DataStatus
+              state={result.fallback ? "preview" : "live"}
+              provider={
+                result.fallback
+                  ? "an AI provider"
+                  : result.analysis_mode === "llm"
+                    ? "AI provider"
+                    : "Nuxtron analysis"
+              }
+            />
+          ) : undefined
+        }
       />
 
       <Card>
@@ -204,7 +219,7 @@ export default function SeoAiCorePage() {
                 tone={result.analysis_mode === "llm" ? "success" : "neutral"}
               >
                 {result.analysis_mode === "llm"
-                  ? "Live AI analysis"
+                  ? "AI-generated analysis"
                   : "Heuristic analysis"}
               </Badge>
             ) : null}

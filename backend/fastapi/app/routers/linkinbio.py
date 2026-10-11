@@ -4,7 +4,7 @@
 
 import threading
 from collections.abc import Callable
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -404,7 +404,9 @@ def create_linkinbio_router(  # NOSONAR
                 if event.get('tenant_id') == auth.tenant_id and event.get('page_id') == page_id
             ]
 
-        start_day = date.today() - timedelta(days=window_days - 1)
+        # Events are bucketed in UTC above, so the reporting window must use
+        # UTC too. Mixing local dates drops today's clicks near midnight UTC.
+        start_day = datetime.now(UTC).date() - timedelta(days=window_days - 1)
         buckets: dict[str, dict[str, int]] = {}
 
         for day_offset in range(window_days):

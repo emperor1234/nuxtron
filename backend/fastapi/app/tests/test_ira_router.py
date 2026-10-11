@@ -1553,7 +1553,7 @@ def test_ira_crm_feature_governance_update():
         'notes': 'Keep multi-tenancy in Corteza only.',
     }
     # Keep this route test deterministic by avoiding live DB connection attempts.
-    with patch('backend.fastapi.app.routers.ira.psycopg.connect', side_effect=RuntimeError('db unavailable')):
+    with patch('backend.fastapi.app.domains.assistant.operations.db_dsn.psycopg.connect', side_effect=RuntimeError('db unavailable')):
         response = client.post('/ira/crm/feature-governance', json=payload, headers=_headers())
     assert response.status_code == 200
     data = response.json()

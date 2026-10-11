@@ -232,10 +232,10 @@ function ProductionVerificationSection({ rows }: Readonly<{ rows: VerificationSc
                           height: '100%',
                           background:
                             row.status === 'pass'
-                              ? '#22c55e'
+                              ? 'var(--success)'
                               : row.status === 'partial'
-                                ? '#f59e0b'
-                                : '#64748b',
+                                ? 'var(--warning)'
+                                : "var(--muted)",
                         }}
                       />
                     </div>
@@ -846,7 +846,7 @@ export default function SproutSocialAutomationPage() {
             Open Vendor Inventory
           </a>
         </div>
-        {error ? <p style={{ color: '#f87171' }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)' }}>{error}</p> : null}
       </section>
 
       <section className="grid" style={{ marginTop: 20 }}>

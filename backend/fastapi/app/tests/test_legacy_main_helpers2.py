@@ -43,7 +43,7 @@ class TestAllowedHosts:
         with patch.dict(os.environ, {"ALLOWED_HOSTS": "host1.com,,host2.com"}):
             result = _allowed_hosts()
             assert "" not in result
-            assert len(result) == 2
+            assert result == ["host1.com", "host2.com", "localhost", "127.0.0.1"]
 
 
 class TestCorsOrigins:

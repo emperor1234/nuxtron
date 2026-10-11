@@ -6,7 +6,7 @@ os.environ.setdefault("APP_ENC_KEY", "00" * 32)
 os.environ.setdefault("NUXTRON_SKIP_STARTUP_DB_INIT", "1")
 os.environ.setdefault("FASTAPI_API_KEY", "test-api-key")
 
-from backend.fastapi.app.core.supabase_client import get_supabase
+from backend.fastapi.app.core.intelligence_store import get_intelligence_store
 from backend.fastapi.app.intelligence import engine, routes
 
 
@@ -141,7 +141,7 @@ async def test_collect_youtube_public_normalizes_videos(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_full_scan_background_includes_youtube_posts(monkeypatch):
-    sb = get_supabase()
+    sb = get_intelligence_store()
 
     target = (
         sb.table("intel_targets")

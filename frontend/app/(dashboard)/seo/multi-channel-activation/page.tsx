@@ -110,7 +110,7 @@ export default function MultiChannelActivationPage() {
           Activation and distribution across search, social, and lifecycle channels.
         </p>
 
-        {error && <div style={{ ...card, color: '#f87171' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
 
         <section style={card}>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Campaign Name</label>
@@ -161,7 +161,7 @@ export default function MultiChannelActivationPage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
               opacity: loading ? 0.7 : 1,

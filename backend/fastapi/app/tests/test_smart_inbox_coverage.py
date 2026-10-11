@@ -423,7 +423,7 @@ class TestSmartInboxCoverage:
         assert stage.status_code == 200
         assert stage.json()["message"]["status"] == "requires_approval"
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(return_value={"id": "vendor-reply-1", "ok": True})
             approve = client.post(
                 f"/inbox/messages/{message_id}/approve-response",
@@ -506,7 +506,7 @@ class TestSmartInboxCoverage:
         assert stage.status_code == 200
         assert stage.json()["message"]["status"] == "requires_approval"
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.get_credentials.return_value = None
             queue = client.get("/inbox/approvals/pending?network=twitter", headers=H)
 
@@ -545,7 +545,7 @@ class TestSmartInboxCoverage:
         assert stage.status_code == 200
         assert stage.json()["message"]["status"] == "requires_approval"
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(side_effect=RuntimeError("provider timeout"))
             approve = client.post(
                 f"/inbox/messages/{message_id}/approve-response",
@@ -591,7 +591,7 @@ class TestSmartInboxCoverage:
         )
         assert stage.status_code == 200
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(side_effect=RuntimeError("provider timeout"))
             approve = client.post(
                 f"/inbox/messages/{message_id}/approve-response",
@@ -605,7 +605,7 @@ class TestSmartInboxCoverage:
         assert dlq.status_code == 200
         failure = next(item for item in dlq.json()["items"] if item["message_id"] == message_id)
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(return_value={"id": "vendor-retry-1", "ok": True})
             replay = client.post(
                 f"/inbox/delivery-failures/{failure['id']}/replay",
@@ -624,7 +624,7 @@ class TestSmartInboxCoverage:
             _, kwargs = mocked_vendor_manager.make_request.await_args
             assert kwargs["headers"]["Idempotency-Key"] == failure["payload"]["idempotency_key"]
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(return_value={"id": "vendor-retry-2", "ok": True})
             replay_again = client.post(
                 f"/inbox/delivery-failures/{failure['id']}/replay",
@@ -664,7 +664,7 @@ class TestSmartInboxCoverage:
         )
         assert stage.status_code == 200
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(side_effect=RuntimeError("provider timeout"))
             approve = client.post(
                 f"/inbox/messages/{message_id}/approve-response",
@@ -736,7 +736,7 @@ class TestSmartInboxCoverage:
             )
             assert stage.status_code == 200
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(side_effect=RuntimeError("provider timeout"))
             for message_id in message_ids:
                 approve = client.post(
@@ -822,7 +822,7 @@ class TestSmartInboxCoverage:
             )
             assert stage.status_code == 200
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(side_effect=RuntimeError("provider timeout"))
             for message_id in message_ids:
                 approve = client.post(
@@ -838,7 +838,7 @@ class TestSmartInboxCoverage:
         assert len(failures) == 2
         failure_ids = [item["id"] for item in failures]
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(side_effect=[
                 {"id": "vendor-bulk-replay-1", "ok": True},
                 {"id": "vendor-bulk-replay-2", "ok": True},
@@ -861,7 +861,7 @@ class TestSmartInboxCoverage:
             assert payload["not_found_count"] == 1
             assert mocked_vendor_manager.make_request.await_count == 2
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(return_value={"id": "vendor-bulk-replay-3", "ok": True})
             bulk_replay_again = client.post(
                 "/inbox/delivery-failures/replay-bulk",
@@ -911,7 +911,7 @@ class TestSmartInboxCoverage:
             )
             assert stage.status_code == 200
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(side_effect=RuntimeError("provider timeout"))
             for message_id in message_ids:
                 approve = client.post(
@@ -921,7 +921,7 @@ class TestSmartInboxCoverage:
                 )
                 assert approve.status_code == 502
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(side_effect=[
                 {"id": "vendor-pending-replay-1", "ok": True},
                 {"id": "vendor-pending-replay-2", "ok": True},
@@ -950,7 +950,7 @@ class TestSmartInboxCoverage:
         }
         assert len(pending_ids) == 1
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(return_value={"id": "vendor-pending-replay-3", "ok": True})
             replay_pending_second = client.post(
                 "/inbox/delivery-failures/replay-pending",
@@ -982,7 +982,7 @@ class TestSmartInboxCoverage:
         monkeypatch.setenv("INBOX_ALERT_OPERATOR_LATENCY_SPIKE_MULTIPLIER", "1.5")
         headers = {"X-API-Key": "test-api-key", "X-Tenant-Id": "smart-inbox-replay-runs-tenant"}
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(side_effect=RuntimeError("provider unavailable"))
 
             create = client.post(
@@ -1014,7 +1014,7 @@ class TestSmartInboxCoverage:
             )
             assert approve.status_code == 502
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(return_value={"id": "vendor-replay-run-1", "ok": True})
             replay = client.post(
                 "/inbox/delivery-failures/replay-pending",
@@ -1118,7 +1118,7 @@ class TestSmartInboxCoverage:
         monkeypatch.setenv("INBOX_DELIVERY_BACKOFF_SECONDS", "0")
         headers = {"X-API-Key": "test-api-key", "X-Tenant-Id": "smart-inbox-metrics-tenant"}
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.make_request = AsyncMock(side_effect=RuntimeError("provider unavailable"))
 
             create = client.post(
@@ -1200,7 +1200,7 @@ class TestSmartInboxCoverage:
         assert single.json()["count"] == 1
         assert single.json()["items"][0]["code"] == "operator_latency_spike"
 
-        with patch("backend.fastapi.app.routers.smart_inbox.vendor_manager") as mocked_vendor_manager:
+        with patch("backend.fastapi.app.domains.social.inbox.constants.vendor_manager") as mocked_vendor_manager:
             mocked_vendor_manager.get_credentials.return_value = object()
             go_live = client.get("/inbox/ops/go-live-gate", headers=headers)
 

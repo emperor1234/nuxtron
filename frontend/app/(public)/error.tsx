@@ -24,12 +24,12 @@ export default function PublicError({ error, reset }: { error: Error & { digest?
       }}
     >
       <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>This page couldn't load</h2>
-      <p style={{ color: '#666', maxWidth: '32rem' }}>Something went wrong. Try again, or head back home.</p>
+      <p style={{ color: 'var(--muted)', maxWidth: '32rem' }}>Something went wrong. Try again, or head back home.</p>
       <div style={{ display: 'flex', gap: '0.75rem' }}>
         <button
           type="button"
           onClick={() => reset()}
-          style={{ padding: '0.6rem 1.4rem', borderRadius: 8, border: '1px solid #ccc', cursor: 'pointer' }}
+          style={{ padding: '0.6rem 1.4rem', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer' }}
         >
           Try again
         </button>
@@ -38,7 +38,7 @@ export default function PublicError({ error, reset }: { error: Error & { digest?
           style={{
             padding: '0.6rem 1.4rem',
             borderRadius: 8,
-            border: '1px solid #ccc',
+            border: '1px solid var(--line)',
             textDecoration: 'none',
             color: 'inherit',
           }}

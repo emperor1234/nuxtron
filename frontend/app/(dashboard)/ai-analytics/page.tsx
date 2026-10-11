@@ -29,7 +29,7 @@ type TabData = {
 
 const DATA: Record<Tab, TabData> = {
   images: {
-    color: '#1bc7ff',
+    color: 'var(--info)',
     totalToday: '0',
     delta: '+0%',
     successRate: '—',
@@ -42,7 +42,7 @@ const DATA: Record<Tab, TabData> = {
     recentActivity: [],
   },
   videos: {
-    color: '#a78bfa',
+    color: 'var(--info)',
     totalToday: '0',
     delta: '+0%',
     successRate: '—',
@@ -55,7 +55,7 @@ const DATA: Record<Tab, TabData> = {
     recentActivity: [],
   },
   voice: {
-    color: '#26d78e',
+    color: 'var(--success)',
     totalToday: '0',
     delta: '+0%',
     successRate: '—',
@@ -68,7 +68,7 @@ const DATA: Record<Tab, TabData> = {
     recentActivity: [],
   },
   text: {
-    color: '#f59e0b',
+    color: 'var(--warning)',
     totalToday: '0',
     delta: '+0%',
     successRate: '—',
@@ -259,19 +259,19 @@ export default function AiAnalyticsPage() {
       label: 'Success Rate',
       value: d.successRate,
       sub: 'last 24 hours',
-      color: '#26d78e',
+      color: 'var(--success)',
     },
     {
       label: 'Avg Latency',
       value: d.avgLatency,
       sub: 'per request',
-      color: '#f59e0b',
+      color: 'var(--warning)',
     },
     {
       label: 'Active Models',
       value: String(d.activeModels),
       sub: 'all healthy',
-      color: '#a78bfa',
+      color: 'var(--info)',
     },
   ];
 
@@ -316,14 +316,14 @@ export default function AiAnalyticsPage() {
                   borderRadius: 999,
                   padding: '7px 18px',
                   background: active ? DATA[t.key].color : 'transparent',
-                  color: active ? '#0a1120' : 'var(--muted)',
+                  color: active ? 'var(--on-status)' : 'var(--muted)',
                   fontSize: 13,
                   fontWeight: active ? 700 : 400,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  transition: 'all 0.15s',
+                  transition: 'background-color 150ms ease, color 150ms ease',
                 }}
               >
                 <span aria-hidden="true">{t.emoji}</span>
@@ -632,7 +632,7 @@ export default function AiAnalyticsPage() {
                 alignItems: 'center',
                 gap: 5,
                 fontSize: 10,
-                color: '#26d78e',
+                color: 'var(--success)',
                 fontWeight: 600,
               }}
             >
@@ -641,7 +641,7 @@ export default function AiAnalyticsPage() {
                   width: 6,
                   height: 6,
                   borderRadius: '50%',
-                  background: '#26d78e',
+                  background: 'var(--success)',
                   display: 'inline-block',
                   animation: 'pulse 2s infinite',
                 }}

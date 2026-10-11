@@ -4,7 +4,7 @@ test.describe('Social Manychat Workspace', () => {
   test('manychat workspace route renders core UI sections', async ({ page }) => {
     await page.goto('/studio/social-studio/manychat');
 
-    await expect(page.getByRole('heading', { name: 'Manychat Automation Workspace' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'ManyChat integration' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Automation Simulation' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Vendor Map' })).toBeVisible();
 

@@ -37,7 +37,7 @@ function ScoreGauge({ score }: { score: number }) {
   const r = 38,
     s = 7,
     c = Math.PI * r;
-  const color = score >= 75 ? '#26d78e' : score >= 50 ? '#ffb867' : '#f87171';
+  const color = score >= 75 ? 'var(--success)' : score >= 50 ? 'var(--warning)' : 'var(--danger)';
   return (
     <svg width={100} height={60} viewBox="0 0 100 60">
       <path
@@ -165,8 +165,8 @@ export default function InternalLinkingPage() {
     borderBottom: '1px solid var(--line)',
   };
   const td: React.CSSProperties = { padding: '9px 12px', fontSize: 12, borderBottom: '1px solid var(--line)' };
-  const LINK_COLORS = { hub: '#1bc7ff', spoke: '#26d78e', bridge: '#ffb867', support: '#a78bfa' };
-  const TRAFFIC_COLORS = { high: '#f87171', medium: '#ffb867', low: 'var(--muted)' };
+  const LINK_COLORS = { hub: 'var(--info)', spoke: 'var(--success)', bridge: 'var(--warning)', support: 'var(--info)' };
+  const TRAFFIC_COLORS = { high: 'var(--danger)', medium: 'var(--warning)', low: 'var(--muted)' };
 
   const tabs = [
     { key: 'opportunities' as const, label: `Opportunities (${result?.total_opportunities ?? 0})` },
@@ -192,7 +192,7 @@ export default function InternalLinkingPage() {
         </p>
 
         {error && (
-          <div style={{ ...card, color: '#f87171', borderColor: '#f8717144', background: '#f8717111' }}>{error}</div>
+          <div style={{ ...card, color: 'var(--danger)', borderColor: 'color-mix(in oklab, var(--danger) 27%, transparent)', background: 'color-mix(in oklab, var(--danger) 7%, transparent)' }}>{error}</div>
         )}
 
         <section style={card}>
@@ -251,7 +251,7 @@ export default function InternalLinkingPage() {
               border: 'none',
               borderRadius: 8,
               background: loading ? 'var(--muted)' : 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 800,
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: 14,
@@ -276,12 +276,12 @@ export default function InternalLinkingPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>Cached result</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
                 )}
               </div>
             )}
@@ -326,7 +326,7 @@ export default function InternalLinkingPage() {
                 <div
                   style={{
                     fontSize: 10,
-                    color: '#f87171',
+                    color: 'var(--danger)',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     marginBottom: 6,
@@ -334,7 +334,7 @@ export default function InternalLinkingPage() {
                 >
                   Orphan Pages
                 </div>
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#f87171' }}>
+                <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--danger)' }}>
                   {result.orphan_pages?.length ?? 0}
                 </div>
               </div>
@@ -479,9 +479,9 @@ export default function InternalLinkingPage() {
                               fontWeight: 700,
                               color:
                                 o.relevance_score >= 0.7
-                                  ? '#26d78e'
+                                  ? 'var(--success)'
                                   : o.relevance_score >= 0.4
-                                    ? '#ffb867'
+                                    ? 'var(--warning)'
                                     : 'var(--muted)',
                             }}
                           >
@@ -497,11 +497,11 @@ export default function InternalLinkingPage() {
 
             {activeTab === 'orphans' && (
               <div style={card}>
-                <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: '#f87171' }}>
+                <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--danger)' }}>
                   Orphan Pages — No Inbound Internal Links
                 </h3>
                 {result.orphan_pages?.length === 0 ? (
-                  <div style={{ color: '#26d78e', fontSize: 13 }}>No orphan pages found!</div>
+                  <div style={{ color: 'var(--success)', fontSize: 13 }}>No orphan pages found!</div>
                 ) : (
                   <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
@@ -514,7 +514,7 @@ export default function InternalLinkingPage() {
                     <tbody>
                       {result.orphan_pages?.map((p, i) => (
                         <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
-                          <td style={{ ...td, color: '#f87171' }}>{p.url}</td>
+                          <td style={{ ...td, color: 'var(--danger)' }}>{p.url}</td>
                           <td style={td}>{p.title}</td>
                           <td style={td}>
                             <span
@@ -570,7 +570,7 @@ export default function InternalLinkingPage() {
                             style={{
                               fontSize: 18,
                               fontWeight: 800,
-                              color: cl.coverage_pct >= 70 ? '#26d78e' : '#ffb867',
+                              color: cl.coverage_pct >= 70 ? 'var(--success)' : 'var(--warning)',
                             }}
                           >
                             {cl.coverage_pct}%
@@ -586,7 +586,7 @@ export default function InternalLinkingPage() {
                               borderRadius: 4,
                               fontSize: 10,
                               background: 'rgba(38,215,142,0.08)',
-                              color: '#26d78e',
+                              color: 'var(--success)',
                               border: '1px solid rgba(38,215,142,0.2)',
                             }}
                           >
@@ -604,12 +604,12 @@ export default function InternalLinkingPage() {
               <div style={card}>
                 {result.crawl_depth_issues?.length > 0 && (
                   <div style={{ marginBottom: 20 }}>
-                    <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#f87171' }}>
+                    <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: 'var(--danger)' }}>
                       Crawl Depth Issues
                     </h3>
                     {result.crawl_depth_issues.map((issue, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-                        <AlertCircle size={13} color="#f87171" style={{ flexShrink: 0, marginTop: 1 }} />
+                        <AlertCircle size={13} color="var(--danger)" style={{ flexShrink: 0, marginTop: 1 }} />
                         <span style={{ fontSize: 13 }}>{issue}</span>
                       </div>
                     ))}

@@ -52,8 +52,6 @@ const statusPayload = {
   tenant_id: 'tenant-demo',
   integrations: {
     hashicorp_vault_configured: true,
-    supabase_configured: true,
-    supabase_vault_ready: true,
   },
 };
 
@@ -62,6 +60,7 @@ function sendJson(res, statusCode, payload) {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, X-API-Key, X-Tenant-Id',
     'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Private-Network': 'true',
     'Content-Type': 'application/json',
   });
   res.end(JSON.stringify(payload));
@@ -72,6 +71,7 @@ function sendText(res, statusCode, body) {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, X-API-Key, X-Tenant-Id',
     'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Private-Network': 'true',
     'Content-Type': 'text/plain; charset=utf-8',
   });
   res.end(body);
@@ -656,6 +656,7 @@ const server = http.createServer(async (req, res) => {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Headers': 'Content-Type, X-API-Key, X-Tenant-Id',
       'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Private-Network': 'true',
     });
     res.end();
     return;
@@ -700,6 +701,7 @@ const server = http.createServer(async (req, res) => {
     const streamTenantId = url.searchParams.get('tenant_id') || String(tenantId);
     res.writeHead(200, {
       'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Private-Network': 'true',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
       'Content-Type': 'text/event-stream',
@@ -869,6 +871,7 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, {
       'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Private-Network': 'true',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
       'Content-Type': 'text/event-stream',

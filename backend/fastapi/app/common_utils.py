@@ -12,14 +12,7 @@ def _security_alert_from_email() -> str:
 
 
 def _queue_security_alert_email(email_event: dict) -> None:
-    """Queue a security alert email. This is a placeholder - actual implementation in services."""
-    # This will be overridden by the actual implementation in services
-    pass
-
-
-# Provide the real implementations as well
-def _real_queue_security_alert_email(email_event: dict) -> None:
-    """Queue a security alert email to the memory store."""
+    """Queue a security alert email in the configured application queue."""
     from . import memory_stores
     item = {
         'id': len(memory_stores.security_alert_emails) + 1,
@@ -34,7 +27,3 @@ def _real_queue_security_alert_email(email_event: dict) -> None:
         'created_at': __import__('datetime').datetime.now(__import__('datetime').UTC).isoformat(),
     }
     memory_stores.security_alert_emails.append(item)
-
-
-# Assign the real implementation by default
-_queue_security_alert_email = _real_queue_security_alert_email

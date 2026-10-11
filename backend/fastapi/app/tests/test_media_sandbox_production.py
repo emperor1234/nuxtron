@@ -23,6 +23,7 @@ from collections.abc import Generator, Mapping
 from typing import Any
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 # Keep import-time app startup on the lightweight test path.
@@ -451,14 +452,97 @@ class TestSandboxDispatch:
 # ---------------------------------------------------------------------------
 
 class TestRawInputDelete:
-    def test_delete_own_key_accepted(self, client: TestClient) -> None:
+    def test_delete_own_key_requires_configured_storage(self, client: TestClient, monkeypatch) -> None:
+        monkeypatch.delenv('MINIO_ENDPOINT', raising=False)
+        monkeypatch.delenv('MINIO_ACCESS_KEY', raising=False)
+        monkeypatch.delenv('MINIO_SECRET_KEY', raising=False)
         res = client.delete(
             '/media/raw-input',
             params={'storage_key': f'raw-input/{TENANT}/myfile.jpg'},
             headers=AUTH_HEADERS,
         )
-        # 200 → deleted; 404 → not found (no MinIO); both are acceptable
-        assert res.status_code in (200, 404)
+        assert res.status_code == 503
+
+    def test_delete_own_key_reports_success_only_after_storage_ack(self, client: TestClient, monkeypatch) -> None:
+        calls: list[tuple[str, str]] = []
+
+        def delete_minio_object(bucket: str, object_key: str) -> None:
+            calls.append((bucket, object_key))
+
+        monkeypatch.setattr(
+            'backend.fastapi.app.domains.content.media.operations.purge_raw_input.delete_minio_object',
+            delete_minio_object,
+        )
+        key = f'raw-input/{TENANT}/myfile.jpg'
+        res = client.delete('/media/raw-input', params={'storage_key': key}, headers=AUTH_HEADERS)
+        assert res.status_code == 200
+        assert res.json()['deleted_from_storage'] is True
+        assert calls == [('raw-input', key)]
+
+    def test_delete_storage_failure_is_not_reported_as_success(self, client: TestClient, monkeypatch) -> None:
+        def fail_delete(bucket: str, object_key: str) -> None:
+            raise HTTPException(status_code=502, detail='Object storage deletion failed.')
+
+        monkeypatch.setattr(
+            'backend.fastapi.app.domains.content.media.operations.purge_raw_input.delete_minio_object',
+            fail_delete,
+        )
+        res = client.delete(
+            '/media/raw-input',
+            params={'storage_key': f'raw-input/{TENANT}/myfile.jpg'},
+            headers=AUTH_HEADERS,
+        )
+        assert res.status_code == 502
+
+    def test_storage_delete_uses_signed_url_without_redirects_or_environment_proxy(self, monkeypatch) -> None:
+        from backend.fastapi.app.domains.content import storage
+
+        monkeypatch.setenv('MINIO_ENDPOINT', 'https://minio.example.test')
+        monkeypatch.setenv('MINIO_ACCESS_KEY', 'test-access-key')
+        monkeypatch.setenv('MINIO_SECRET_KEY', 'test-secret-key')
+        monkeypatch.setenv('ENVIRONMENT', 'production')
+        signer_calls: list[tuple[str, ...]] = []
+        sent_requests: list[tuple[str, str]] = []
+        client_options: list[dict[str, Any]] = []
+
+        def signer(*args: str) -> str:
+            signer_calls.append(args)
+            return 'https://minio.example.test/signed-delete'
+
+        class Response:
+            is_success = True
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return None
+
+        class Client:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return None
+
+            def stream(self, method: str, url: str) -> Response:
+                sent_requests.append((method, url))
+                return Response()
+
+        def client_factory(**kwargs):
+            client_options.append(kwargs)
+            return Client()
+
+        monkeypatch.setattr(storage, '_minio_presign', signer)
+        monkeypatch.setattr(storage.httpx, 'Client', client_factory)
+        storage.delete_minio_object('raw-input', f'raw-input/{TENANT}/myfile.jpg')
+
+        assert signer_calls == [
+            ('https://minio.example.test', 'test-access-key', 'test-secret-key', 'raw-input',
+             f'raw-input/{TENANT}/myfile.jpg', 'DELETE', 60)
+        ]
+        assert sent_requests == [('DELETE', 'https://minio.example.test/signed-delete')]
+        assert client_options == [{'timeout': 10.0, 'trust_env': False, 'follow_redirects': False}]
 
     def test_delete_other_tenant_key_rejected(self, client: TestClient) -> None:
         """IDOR: tenant A must not delete tenant B's files."""

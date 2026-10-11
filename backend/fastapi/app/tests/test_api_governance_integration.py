@@ -76,7 +76,6 @@ def client() -> Generator:
         ira_events_store=[],
         siem_cases_store=[],
         vault_hashicorp_health=lambda: {"enabled": False},
-        vault_supabase_health=lambda: {"enabled": False},
         persist=_noop_persist,
     )
 

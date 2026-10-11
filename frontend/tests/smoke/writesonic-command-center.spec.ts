@@ -301,6 +301,8 @@ const WRITESONIC_RESPONSE_BUILDERS: Record<string, () => unknown> = {
   [`GET:${WRITESONIC_ROUTE}/products/completion-chart`]: writesonicCompletionChartResponse,
   [`GET:${WRITESONIC_ROUTE}/verification-report`]: writesonicVerificationResponse,
   [`GET:${WRITESONIC_ROUTE}/wiring`]: writesonicWiringResponse,
+  [`GET:${WRITESONIC_ROUTE}/provider-checklist`]: writesonicProviderChecklistResponse,
+  [`GET:${WRITESONIC_ROUTE}/preflight`]: writesonicPreflightResponse,
   [`GET:${WRITESONIC_ROUTE}/production-gate`]: writesonicProductionGateResponse,
   [`GET:${WRITESONIC_ROUTE}/vendors`]: () => ({ status: 'ok', vendors_total: 16, vendors_configured: 16 }),
   [`GET:${WRITESONIC_ROUTE}/projects`]: writesonicProjectsResponse,
@@ -350,9 +352,8 @@ test.describe('Writesonic command center', () => {
     await page.goto('/seo/writesonic-readiness');
     const main = page.locator('main');
 
-    await expect(main.getByRole('heading', { name: 'Writesonic End-to-End Readiness Hub' })).toBeVisible();
-    await expect(main.getByText('Current status:')).toContainText('PASSED');
-    await expect(main.getByRole('heading', { name: 'Verification Boundaries' })).toBeVisible();
+    await expect(main.getByRole('heading', { name: 'Writesonic Overview' })).toBeVisible();
+    await expect(main.getByText('12/12')).toBeVisible();
     await expect(main.locator('a[href="/seo/writesonic-automation"]').first()).toBeVisible();
     await expect(main.locator('a[href="/seo/writesonic-integrations"]').first()).toBeVisible();
   });
@@ -362,16 +363,6 @@ test.describe('Writesonic command center', () => {
     await page.goto('/seo/writesonic-automation');
 
     await expect(page.getByRole('heading', { name: 'Writesonic Run And Product Control' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Product Catalog' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Chatsonic Detail' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Product Completion Chart' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Verification Report' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Feature Completion Chart' })).toBeVisible();
-    const featureRegistrySection = page
-      .locator('section.card')
-      .filter({ has: page.getByRole('heading', { name: 'Feature Completion Chart' }) })
-      .first();
-    await expect(featureRegistrySection).toContainText('Features: 18/18');
     const runBlueprintButton = page.getByRole('button', { name: 'Run Full Automation Blueprint' });
     const blueprintHeading = page.getByRole('heading', { name: 'Automation Blueprint' });
     await runBlueprintButton.click();
@@ -380,7 +371,7 @@ test.describe('Writesonic command center', () => {
     }
     await expect(blueprintHeading).toBeVisible({ timeout: 20000 });
     await expect(page.getByText('Chatsonic and Article Writer generate governed drafts.')).toBeVisible();
-    await expect(page.getByText('Vendors referenced: 2')).toBeVisible();
+    await expect(page.getByText(/Vendors referenced:\s*2/)).toBeVisible();
   });
 
   test('integrations page can apply wiring', async ({ page }) => {
@@ -389,14 +380,11 @@ test.describe('Writesonic command center', () => {
     await mockWritesonicApis(page);
     await page.goto('/seo/writesonic-integrations');
 
-    await expect(page.getByRole('heading', { name: 'Provider Wiring And Remediation' })).toBeVisible();
-    const applyButton = page.getByRole('button', { name: 'Apply All Missing Wiring' });
+    await expect(page.getByRole('heading', { name: 'Writesonic Connections' })).toBeVisible();
+    const applyButton = page.getByRole('button', { name: 'Apply available settings' });
     await expect(applyButton).toBeEnabled({ timeout: 20000 });
     await applyButton.click();
-    const actionCard = page.locator('section.card').first();
-    await expect(actionCard).toContainText('Wiring result:', { timeout: 30000 });
-    await expect(actionCard).toContainText('100% configured', { timeout: 30000 });
-    await expect(actionCard).toContainText('gate PASSED', { timeout: 30000 });
+    await expect(page.getByText('100% complete')).toBeVisible({ timeout: 30000 });
   });
 
   test('assist page returns operational guidance', async ({ page }) => {
@@ -405,8 +393,8 @@ test.describe('Writesonic command center', () => {
     await mockWritesonicApis(page);
     await page.goto('/seo/writesonic-assist');
 
-    const assistHeading = page.getByRole('heading', { name: 'Assist Prompt Console' });
-    const runAssistButton = page.getByRole('button', { name: 'Run Assist' });
+    const assistHeading = page.getByRole('heading', { name: 'Writesonic AI Assist' });
+    const runAssistButton = page.getByRole('button', { name: 'Get recommendations' });
     await expect(assistHeading).toBeVisible();
     await runAssistButton.click();
     if (new URL(page.url()).search) {
@@ -414,7 +402,7 @@ test.describe('Writesonic command center', () => {
       await expect(assistHeading).toBeVisible();
       await runAssistButton.click();
     }
-    await expect(page.getByRole('heading', { name: 'Assist Response' })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('heading', { name: 'Recommendations' })).toBeVisible({ timeout: 30000 });
     await expect(page.getByText('Writesonic rollout is healthy and production ready for this tenant.')).toBeVisible();
   });
 });

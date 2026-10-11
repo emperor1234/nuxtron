@@ -3836,7 +3836,7 @@ export default function WorkflowOrchestratorPage() {
         </article>
       </section>
 
-      {error ? <p style={{ margin: 0, color: '#ef4444' }}>{error}</p> : null}
+      {error ? <p style={{ margin: 0, color: 'var(--danger)' }}>{error}</p> : null}
 
       <section style={{ border: '1px solid var(--line)', borderRadius: 12, padding: 12, background: 'var(--panel)' }}>
         <h2 style={{ marginTop: 0, fontSize: 18 }}>Last API Result</h2>

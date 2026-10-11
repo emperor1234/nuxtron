@@ -114,8 +114,8 @@ def _stub_vendor_seams(monkeypatch):
             }
         return {"status": "ok"}
 
-    monkeypatch.setattr(social_workspace, "_fetch_ugc_assets", mock_fetch_ugc)
-    monkeypatch.setattr(social_workspace, "_ugc_http_json_request", mock_ugc_http_request)
+    monkeypatch.setattr("backend.fastapi.app.domains.social.services.brand._fetch_ugc_assets", mock_fetch_ugc)
+    monkeypatch.setattr("backend.fastapi.app.domains.social.services.brand._ugc_http_json_request", mock_ugc_http_request)
 
 
 class TestUGCManagement:
@@ -555,7 +555,7 @@ class TestUGCVendorIntegration:
     def test_fail_closed_on_missing_discovery_config(self, monkeypatch):
         """Fail-closed when UGC_DISCOVERY_ENDPOINT not configured."""
         # Restore real _fetch_ugc_assets so the env-var check actually runs
-        monkeypatch.setattr(social_workspace, "_fetch_ugc_assets", _REAL_FETCH_UGC_ASSETS)
+        monkeypatch.setattr("backend.fastapi.app.domains.social.services.brand._fetch_ugc_assets", _REAL_FETCH_UGC_ASSETS)
         monkeypatch.delenv("UGC_DISCOVERY_ENDPOINT", raising=False)
 
         client = TestClient(app)
@@ -570,7 +570,7 @@ class TestUGCVendorIntegration:
     def test_fail_closed_on_missing_discovery_key(self, monkeypatch):
         """Fail-closed when UGC_DISCOVERY_API_KEY not configured."""
         # Restore real _fetch_ugc_assets so the env-var check actually runs
-        monkeypatch.setattr(social_workspace, "_fetch_ugc_assets", _REAL_FETCH_UGC_ASSETS)
+        monkeypatch.setattr("backend.fastapi.app.domains.social.services.brand._fetch_ugc_assets", _REAL_FETCH_UGC_ASSETS)
         monkeypatch.delenv("UGC_DISCOVERY_API_KEY", raising=False)
 
         client = TestClient(app)
@@ -589,7 +589,7 @@ class TestUGCVendorIntegration:
         def _timeout_fetch(*args: object, **kwargs: object) -> list:
             raise _HTTPException(status_code=504, detail="UGC vendor timeout")
 
-        monkeypatch.setattr(social_workspace, "_fetch_ugc_assets", _timeout_fetch)
+        monkeypatch.setattr("backend.fastapi.app.domains.social.services.brand._fetch_ugc_assets", _timeout_fetch)
 
         client = TestClient(app)
         response = client.post(
@@ -607,7 +607,7 @@ class TestUGCVendorIntegration:
         def _error_fetch(*args: object, **kwargs: object) -> list:
             raise _HTTPException(status_code=502, detail="Bad Gateway from UGC vendor")
 
-        monkeypatch.setattr(social_workspace, "_fetch_ugc_assets", _error_fetch)
+        monkeypatch.setattr("backend.fastapi.app.domains.social.services.brand._fetch_ugc_assets", _error_fetch)
 
         client = TestClient(app)
         response = client.post(

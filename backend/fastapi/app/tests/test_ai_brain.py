@@ -242,7 +242,7 @@ class TestReason:
              patch.object(brain, "_ollama_reason", side_effect=Exception("connection refused")):
             result = brain.reason(prompt="what to do?")
         assert result["status"] == "fallback"
-        assert "fallback_stub" in result["reasoning"]["provider"]
+        assert "deterministic_rule_based" in result["reasoning"]["provider"]
 
     def test_returns_ok_on_first_success(self):
         brain = _make_brain()

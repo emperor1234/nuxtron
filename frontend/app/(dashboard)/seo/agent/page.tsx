@@ -97,7 +97,7 @@ export default function AgentPage() {
               fontSize: 11,
               fontWeight: 700,
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               borderRadius: 4,
               padding: '2px 7px',
             }}
@@ -109,7 +109,7 @@ export default function AgentPage() {
           Describe your SEO goal and let the AI agent create a complete multi-phase execution plan with tasks, KPIs, and
           expected outcomes.
         </p>
-        {error && <div style={{ ...card, color: '#f87171' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
         <section style={card}>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>SEO Goal</label>
           <textarea
@@ -128,7 +128,7 @@ export default function AgentPage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
               opacity: loading ? 0.7 : 1,
@@ -167,7 +167,7 @@ export default function AgentPage() {
                       borderRadius: 999,
                       background:
                         result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
-                      color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)',
+                      color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)',
                     }}
                   >
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
@@ -181,7 +181,7 @@ export default function AgentPage() {
                       padding: '4px 10px',
                       borderRadius: 999,
                       background: 'rgba(56,189,248,0.12)',
-                      color: '#38bdf8',
+                      color: 'var(--info)',
                     }}
                   >
                     Cached result
@@ -276,7 +276,7 @@ export default function AgentPage() {
                                   borderRadius: 99,
                                   fontWeight: 700,
                                   background: t.priority === 'high' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
-                                  color: t.priority === 'high' ? '#ef4444' : '#f59e0b',
+                                  color: t.priority === 'high' ? 'var(--danger)' : 'var(--warning)',
                                 }}
                               >
                                 {t.priority}
@@ -340,7 +340,7 @@ export default function AgentPage() {
                           background: 'rgba(27,199,255,0.1)',
                           border: '1px solid rgba(27,199,255,0.3)',
                           borderRadius: 99,
-                          color: '#22d3ee',
+                          color: 'var(--info)',
                         }}
                       >
                         {m}

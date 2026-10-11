@@ -60,7 +60,7 @@ export default function CostSavingCalculatorPage() {
         <button onClick={() => void runCalculation()} disabled={loading}>
           {loading ? 'Calculating...' : 'Run Cost Saving Model'}
         </button>
-        {error ? <p style={{ color: '#f87171', marginTop: 12 }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)', marginTop: 12 }}>{error}</p> : null}
       </section>
 
       {result ? (

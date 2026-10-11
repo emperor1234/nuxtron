@@ -14,6 +14,10 @@ import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const INTERNAL_CONSOLE_PATHS = new Set(
+  JSON.parse(readFileSync(new URL('../app/lib/internal-consoles.json', import.meta.url), 'utf8')).paths,
+);
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = resolve(HERE, '..', 'app');
 const DASHBOARD_ROOT = join(APP_ROOT, '(dashboard)');
@@ -202,7 +206,18 @@ for (const file of walk(DASHBOARD_ROOT).sort()) {
   if (/production-gate|Production Gate|implementation_pct|parity_pct|parity-audit/.test(source)) {
     entry.internal = true;
   }
+  // Admin-only vendor-integration consoles (app/lib/internal-consoles.json).
+  if (INTERNAL_CONSOLE_PATHS.has(route)) {
+    entry.internal = true;
+  }
   pages.push(entry);
+}
+
+// Renamed/merged routes (app/lib/route-renames.json) redirect in next.config.ts;
+// listing them as aliases keeps old names resolvable without indexing twice.
+const ROUTE_RENAMES = JSON.parse(readFileSync(join(APP_ROOT, 'lib', 'route-renames.json'), 'utf8'));
+for (const { from, to } of ROUTE_RENAMES.redirects) {
+  if (!aliases.some((a) => a.route === from)) aliases.push({ route: from, alias: to });
 }
 
 pages.sort((a, b) => a.route.localeCompare(b.route));

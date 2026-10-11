@@ -7,9 +7,12 @@ database-backed persistence. Set NUXTRON_ALLOW_MEMORY_STORES=1 to override.
 """
 
 import os
+import threading
 
 StoreItem = dict[str, object]
 StoreList = list[StoreItem]
+ObjectStore = dict[str, object]
+ProcessStore = StoreList | ObjectStore
 
 
 def _is_memory_store_allowed() -> bool:
@@ -25,9 +28,10 @@ def _is_memory_store_allowed() -> bool:
 
 
 _MEMORY_ALLOWED = _is_memory_store_allowed()
+_PROCESS_STORES: list[ProcessStore] = []
 
 
-def _create_store() -> StoreList:
+def _create_store(*, owner_managed: bool = False) -> StoreList:
     """Create a process-local list used as a cache or fallback store.
 
     Production still needs these list objects as the identity routers share.
@@ -35,7 +39,17 @@ def _create_store() -> StoreList:
     pretends that returning ``[]`` disables the store.
     """
     _ = _MEMORY_ALLOWED
-    return []
+    store: StoreList = []
+    if not owner_managed:
+        _PROCESS_STORES.append(store)
+    return store
+
+
+def _create_object_store() -> ObjectStore:
+    """Create a canonical identity-preserving mapping for aggregate owners."""
+    store: ObjectStore = {}
+    _PROCESS_STORES.append(store)
+    return store
 
 
 # ── Social & Content ──────────────────────────────────────
@@ -103,6 +117,11 @@ auth_security: StoreList = _create_store()
 tenant_profiles: StoreList = _create_store()
 api_usage_audit: StoreList = _create_store()
 users: StoreList = _create_store()
+
+# ── Brand Management ────────────────────────────────────
+# The context adapter owns access; this module owns process identity and locking.
+brand_hub_brands: ObjectStore = _create_object_store()
+brand_hub_brands_lock = threading.RLock()
 
 # ── API Governance ──────────────────────────────────────
 api_governance_providers: StoreList = _create_store()
@@ -240,9 +259,6 @@ white_label_events: StoreList = _create_store()
 # ── Media Job Queue (Sandboxed Media SaaS Architecture) ──
 media_jobs: StoreList = _create_store()
 media_jobs_dlq: StoreList = _create_store()  # dead-letter queue for failed jobs
-# tracks job lifecycle — queued → processing → complete/failed
-media_jobs: StoreList = _create_store()
-media_jobs_dlq: StoreList = _create_store()  # dead-letter queue for failed jobs
 
 # ── Content Approval Workflows (Hootsuite §4.5) ──────────
 # ADDED: multi-level approval chain before social post publishing
@@ -306,6 +322,28 @@ trend_selections: StoreList = _create_store()            # user-selected trends 
 trend_content_generations: StoreList = _create_store()   # AI-ready content outputs generated from selected trends
 trend_performance_tracks: StoreList = _create_store()    # live post/ad performance tracking for trend plays
 trend_recommendations: StoreList = _create_store()       # optimization suggestions to improve traction and ROI
+content_generation_jobs: StoreList = _create_store()     # async content generation job lifecycle
+ai_generated_assets: StoreList = _create_store(owner_managed=True)  # synchronized by generated_asset_store
+
+# ── Site Experience & Editing ───────────────────────────────
+ace_sites: StoreList = _create_store()
+ace_crawler_events: StoreList = _create_store()
+ace_ssr_cache: StoreList = _create_store()
+ace_crawler_rules: StoreList = _create_store()
+ace_audit_results: StoreList = _create_store()
+portfolio_sites: StoreList = _create_store()
+portfolio_rules: StoreList = _create_store()
+portfolio_deployments: StoreList = _create_store()
+live_editor_sessions: StoreList = _create_store()
+live_editor_changes: StoreList = _create_store()
+live_editor_history: StoreList = _create_store()
+
+# ── Platform Intelligence ───────────────────────────────────
+platform_prompt_versions: StoreList = _create_store()
+platform_lineage_events: StoreList = _create_store()
+platform_recovery_queue: StoreList = _create_store()
+platform_agent_sessions: StoreList = _create_store()
+platform_agent_tool_calls: StoreList = _create_store()
 
 # ── Viral Singularity Engine (VSE) ────────────────────────
 # 12 VSE Engines + 47 Sub-Systems data stores
@@ -422,8 +460,13 @@ benchmarks: StoreList = _create_store()              # tenant-level metric data 
 segment_benchmarks: StoreList = _create_store()      # published segment-level p50/p75/p90 benchmarks
 
 
+def iter_process_stores() -> tuple[ProcessStore, ...]:
+    """Return the explicit registry populated by canonical store declarations."""
+    return tuple(_PROCESS_STORES)
+
+
 def get_all_stores() -> dict[str, StoreList]:
-    """Get all memory stores as a dict for monitoring and metrics."""
+    """Return the historical list-store catalog used by health and test resets."""
     return {
         'suitecrm': suitecrm_jobs,
         'refferq': refferq_jobs,

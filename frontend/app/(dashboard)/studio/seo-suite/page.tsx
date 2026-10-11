@@ -39,7 +39,7 @@ export default function SEOSuitePage() {
               padding: '8px 12px',
               borderRadius: 8,
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               textDecoration: 'none',
             }}
@@ -96,7 +96,7 @@ export default function SEOSuitePage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
               marginBottom: 12,

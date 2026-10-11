@@ -58,6 +58,26 @@ def test_save_all_replaces_each_table() -> None:
     assert any('INSERT INTO gov_incidents' in sql for sql in executed_sql)
 
 
+def test_production_schema_failure_does_not_fall_back_to_sqlite(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv('ENVIRONMENT', 'production')
+    with patch(
+        'backend.fastapi.app.governance_db.psycopg.connect',
+        side_effect=RuntimeError('postgres unavailable'),
+    ):
+        with pytest.raises(RuntimeError, match='schema initialization failed'):
+            GovernanceDB(db_dsn='postgresql://example')
+
+
+def test_production_write_failure_is_propagated(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv('ENVIRONMENT', 'production')
+    conn, cur = _make_mock_conn()
+    with patch('backend.fastapi.app.governance_db.psycopg.connect', return_value=conn):
+        db = GovernanceDB(db_dsn='postgresql://example')
+        cur.execute.side_effect = RuntimeError('write failed')
+        with pytest.raises(RuntimeError, match='write failed'):
+            db.save_providers([{'tenant_id': 'tenant-a', 'name': 'Provider A'}])
+
+
 class TestValidatedTable:
     """WO-5: SQL identifier allowlist validation."""
 

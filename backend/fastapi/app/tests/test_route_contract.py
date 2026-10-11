@@ -31,6 +31,9 @@ def _sample_openapi() -> dict[str, object]:
             "/widgets/{widget_id}": {
                 "get": {
                     "operationId": "get_widget",
+                    "summary": "Get widget",
+                    "tags": ["widgets"],
+                    "deprecated": True,
                     "responses": {
                         "200": {
                             "content": {
@@ -80,6 +83,29 @@ def test_route_manifest_is_deterministic_and_schema_sensitive() -> None:
         manifest["routes"][0]["response_schema_hash"]
         != changed_manifest["routes"][0]["response_schema_hash"]
     )
+
+
+@pytest.mark.parametrize(
+    ("field", "changed_value"),
+    [
+        ("summary", "Fetch widget"),
+        ("tags", ["widgets", "legacy"]),
+        ("deprecated", False),
+    ],
+)
+def test_route_manifest_is_operation_metadata_sensitive(field: str, changed_value: object) -> None:
+    spec = _sample_openapi()
+    original = build_route_manifest(spec)
+    get_record = original["routes"][0]
+
+    assert get_record["summary"] == "Get widget"
+    assert get_record["tags"] == ["widgets"]
+    assert get_record["deprecated"] is True
+
+    changed = copy.deepcopy(spec)
+    changed["paths"]["/widgets/{widget_id}"]["get"][field] = changed_value
+
+    assert build_route_manifest(changed) != original
 
 
 def test_openapi_31_ref_siblings_affect_request_and_response_hashes() -> None:

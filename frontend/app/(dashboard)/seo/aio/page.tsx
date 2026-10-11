@@ -87,7 +87,7 @@ export default function AIOPage() {
               fontSize: 11,
               fontWeight: 700,
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               borderRadius: 4,
               padding: '2px 7px',
             }}
@@ -98,7 +98,7 @@ export default function AIOPage() {
         <p style={{ color: 'var(--muted)' }}>
           Score content for machine readability, entity clarity, and extractability for AI systems.
         </p>
-        {error && <div style={{ ...card, color: '#f87171' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
         <section style={card}>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Topic (optional)</label>
           <input
@@ -122,7 +122,7 @@ export default function AIOPage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
               opacity: loading ? 0.7 : 1,
@@ -143,7 +143,7 @@ export default function AIOPage() {
                 }}
               >
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>AIO Score</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#22c55e' }}>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--success)' }}>
                   {(result.aio_score as number) ?? '—'}
                 </div>
                 <div style={{ fontSize: 11, marginTop: 6, color: 'var(--muted)' }}>
@@ -168,7 +168,7 @@ export default function AIOPage() {
                       style={{
                         width: `${(result[d.key] as number) ?? 0}%`,
                         height: '100%',
-                        background: '#22c55e',
+                        background: 'var(--success)',
                         borderRadius: 4,
                       }}
                     />
@@ -191,12 +191,12 @@ export default function AIOPage() {
                     }}
                   >
                     {imp.before && (
-                      <div style={{ fontSize: 12, color: '#ef4444', marginBottom: 4 }}>
+                      <div style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4 }}>
                         Before: <em>{imp.before}</em>
                       </div>
                     )}
                     {imp.after && (
-                      <div style={{ fontSize: 12, color: '#22c55e', marginBottom: 4 }}>
+                      <div style={{ fontSize: 12, color: 'var(--success)', marginBottom: 4 }}>
                         After: <em>{imp.after}</em>
                       </div>
                     )}

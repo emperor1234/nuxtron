@@ -31,11 +31,10 @@ Policy guard:
 
 - scripts/security/check-postgres-only.sh (executed in CI)
 
-## Supabase + pgvector + Vault
+## PostgreSQL + pgvector + Vault
 
-For the recommended production architecture and schema patterns, see:
-
-- SUPABASE_PGVECTOR_VAULT_GUIDE.md
+The production data plane uses PostgreSQL directly, pgvector for embeddings,
+and HashiCorp Vault for secrets.
 
 Apply SQL migrations (including pgvector baseline) with:
 
@@ -408,7 +407,7 @@ Security additions now implemented:
 - Argon2id alternative (`PASSWORD_HASH_ALGO=argon2id`)
 - Pepper support from environment or Vault
 - Application-Level Encryption (ALE) for sensitive social content fields
-- Supabase-ready RLS SQL policies for multi-tenant isolation
+- PostgreSQL RLS policies for multi-tenant isolation
 - HashiCorp Vault integration for pepper/encryption-key retrieval
 - Rate-limit protection on sensitive FastAPI security/email endpoints
 
@@ -606,19 +605,11 @@ Behavior:
 - Ops status returns tenant-scoped integration readiness and queue telemetry.
 - Metrics summary exposes tenant-scoped queue totals and in-memory rate limiter telemetry.
 
-## Supabase Security SQL
+## PostgreSQL Security SQL
 
-Run these in Supabase SQL editor:
-
-- `sql/supabase-rls.sql`
-- `sql/supabase-secure-sendgrid-stack.sql`
-- `sql/fastapi-email-module.sql`
-
-These scripts include:
-
-- RLS tenant isolation policies (contacts, campaigns, API keys, analytics)
-- pgsodium extension baseline
-- Supabase Vault secret examples
+Apply the SQL files under `backend/fastapi/sql/` through the migration command
+documented above. The pgvector baseline includes tenant-scoped PostgreSQL RLS
+policies for AI embeddings.
 
 Email module behavior:
 

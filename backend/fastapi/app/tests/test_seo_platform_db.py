@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 
 VALID = (200, 201, 202, 400, 401, 403, 404, 409, 422, 500, 503)
 H = {"X-API-Key": "test-api-key", "X-Tenant-Id": "seo-db-tenant"}
-OLLAMA_MOCK = "backend.fastapi.app.routers.seo_platform._ollama_json"
+OLLAMA_MOCK = "backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json"
 
 # Patch _ollama_json at module level to return fallback (avoids HTTP calls)
 _FALLBACK = {"fallback": True, "error": "mocked"}

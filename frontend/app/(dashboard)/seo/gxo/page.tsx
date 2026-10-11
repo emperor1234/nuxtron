@@ -112,8 +112,8 @@ export default function GXOPage() {
     <main className="min-h-screen p-4 md:p-6 lg:p-8 text-[var(--text)]">
       <div className="mx-auto max-w-7xl space-y-6">
         <section>
-          <h1 className="text-[27px] font-semibold tracking-tight text-[var(--nx-ink,var(--text))]">GXO</h1>
-          <p className="mt-2 max-w-3xl text-sm text-[var(--nx-muted,var(--muted))] leading-relaxed">
+          <h1 className="text-[27px] font-semibold tracking-tight text-[var(--nx-ink)]">GXO</h1>
+          <p className="mt-2 max-w-3xl text-sm text-[var(--nx-muted)] leading-relaxed">
             Optimize structure and narrative for citation probability in Google AI Overviews and generative search.
           </p>
         </section>
@@ -147,7 +147,7 @@ export default function GXOPage() {
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="e.g. how to choose a CRM"
-                  className="w-full rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-all focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-colors focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
                 />
               </div>
               <div>
@@ -162,7 +162,7 @@ export default function GXOPage() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://your-site.com/page"
-                  className="w-full rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-all focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-colors focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
                 />
               </div>
             </div>
@@ -179,14 +179,14 @@ export default function GXOPage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Paste content to optimize for Google AI Overviews..."
-                className="min-h-[220px] w-full rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-all focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
+                className="min-h-[220px] w-full rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-colors focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--line)] bg-gradient-to-r from-indigo-500/80 to-cyan-500/80 px-4 py-3 text-sm font-semibold text-[var(--text)] transition-all hover:from-indigo-400 hover:to-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--line)] bg-gradient-to-r from-indigo-500/80 to-cyan-500/80 px-4 py-3 text-sm font-semibold text-[var(--text)] transition-colors hover:from-indigo-400 hover:to-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Optimizing for GXO...' : 'Optimize for Google AI Overviews'}
             </button>
@@ -202,7 +202,7 @@ export default function GXOPage() {
               {GXO_AUDIT_PHASES.map((phase, index) => (
                 <div
                   key={phase}
-                  className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2.5"
+                  className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-3 py-2.5"
                 >
                   <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--brand)]/15 text-[11px] font-semibold text-indigo-200">
                     {index + 1}
@@ -212,7 +212,7 @@ export default function GXOPage() {
               ))}
             </div>
 
-            <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3.5 py-3">
+            <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-3.5 py-3">
               <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Current Scope</div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <span className="rounded-full border border-[var(--line)] bg-[var(--brand)]/12 px-2.5 py-1 text-[11px] font-medium text-indigo-100">

@@ -1,0 +1,1 @@
+"""Search automation bounded context."""

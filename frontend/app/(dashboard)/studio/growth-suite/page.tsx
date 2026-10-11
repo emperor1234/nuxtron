@@ -1,5 +1,6 @@
 'use client';
 
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -25,9 +26,9 @@ type BannerState = {
 };
 
 const FEATURE_LINKS: Record<string, { href: string; label: string }> = {
-  brand_voice_dna: { href: '/studio/lately/brand-voice', label: 'Open Brand Voice DNA' },
-  auto_ab_testing: { href: '/studio/lately/ab-testing', label: 'Open A/B Testing' },
-  roi_forecaster: { href: '/studio/lately/roi-forecast', label: 'Open ROI Forecaster' },
+  brand_voice_dna: { href: '/studio/content-hub/brand-voice', label: 'Open Brand Voice DNA' },
+  auto_ab_testing: { href: '/studio/content-hub/ab-testing', label: 'Open A/B Testing' },
+  roi_forecaster: { href: '/studio/content-hub/roi-forecast', label: 'Open ROI Forecaster' },
   ai_content_calendar: { href: '/studio/social-calendar', label: 'Open Content Calendar' },
   smart_scheduler: { href: '/studio/social-best-time', label: 'Open Smart Scheduler' },
   link_in_bio_builder: { href: '/studio/social-link-in-bio', label: 'Open Link-in-Bio Builder' },
@@ -156,7 +157,7 @@ export default function GrowthSuitePage() {
                 </ul>
 
                 {relatedLink ? (
-                  <Link href={relatedLink.href} style={styles.cardLink}>
+                  <Link href={relatedLink.href as Route} style={styles.cardLink}>
                     {relatedLink.label}
                   </Link>
                 ) : (
@@ -250,7 +251,7 @@ const styles: Record<string, CSSProperties> = {
     border: 'none',
     borderRadius: 999,
     padding: '12px 18px',
-    background: 'linear-gradient(135deg, #22c55e, #06b6d4)',
+    background: 'linear-gradient(135deg, var(--success), var(--info))',
     color: '#04111d',
     fontWeight: 800,
     cursor: 'pointer',
@@ -274,7 +275,7 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 16,
     background: 'rgba(14, 165, 233, 0.12)',
     border: '1px solid rgba(14, 165, 233, 0.2)',
-    color: '#dbeafe',
+    color: 'var(--info-soft)',
   },
   errorBanner: {
     marginTop: 16,
@@ -283,7 +284,7 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 16,
     background: 'rgba(239, 68, 68, 0.1)',
     border: '1px solid rgba(239, 68, 68, 0.22)',
-    color: '#fecaca',
+    color: 'var(--danger-line)',
   },
   summaryPanel: {
     display: 'grid',
@@ -370,7 +371,7 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     fontWeight: 800,
     background: 'rgba(34, 197, 94, 0.16)',
-    color: '#15803d',
+    color: 'var(--success-ink)',
     border: '1px solid rgba(34, 197, 94, 0.22)',
     textTransform: 'capitalize',
   },
@@ -380,7 +381,7 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     fontWeight: 800,
     background: 'rgba(251, 191, 36, 0.14)',
-    color: '#b45309',
+    color: 'var(--warning-ink)',
     border: '1px solid rgba(251, 191, 36, 0.18)',
     textTransform: 'capitalize',
   },

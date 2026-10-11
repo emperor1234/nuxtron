@@ -45,8 +45,8 @@ function StaggeredSection({ section, index }: { section: typeof SECTIONS[0]; ind
       viewport={{ once: true, margin: '-50px' }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: index * 0.05 }}
     >
-      <h2 className="mb-2.5 text-lg font-semibold text-[#181818]">{section.title}</h2>
-      <p className="text-[15px] leading-relaxed text-[#46484d]">{section.body}</p>
+      <h2 className="mb-2.5 text-lg font-semibold text-ink">{section.title}</h2>
+      <p className="text-[15px] leading-relaxed text-ink-2">{section.body}</p>
     </motion.div>
   );
 }
@@ -62,8 +62,8 @@ export default function PrivacyClient() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
           <span className="mk-eyebrow mb-5">Legal</span>
-          <h1 className="mb-4 text-4xl font-semibold tracking-tight text-[#181818] sm:text-5xl">Privacy Policy</h1>
-          <p className="mb-12 text-sm text-[#8a8d93]">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <h1 className="mb-4 text-4xl font-semibold tracking-tight text-ink sm:text-5xl">Privacy Policy</h1>
+          <p className="mb-12 text-sm text-ink-faint">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </motion.div>
 
         <motion.div
@@ -78,9 +78,9 @@ export default function PrivacyClient() {
           ))}
         </motion.div>
 
-        <p className="mt-14 border-t border-[#18181814] pt-8 text-sm text-[#8a8d93]">
+        <p className="mt-14 border-t border-line pt-8 text-sm text-ink-faint">
           Questions about this policy? Contact us at{' '}
-          <a href="mailto:privacy@nuxtron.app" className="text-[#466cf3] hover:underline">
+          <a href="mailto:privacy@nuxtron.app" className="text-brand hover:underline">
             privacy@nuxtron.app
           </a>
           .

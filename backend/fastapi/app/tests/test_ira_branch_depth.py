@@ -208,7 +208,7 @@ def test_actions_delivery_paths_queue_results(client: TestClient) -> None:
         'delivery_status': 'queued',
         'channel': '#ops',
     }
-    with patch('backend.fastapi.app.routers.ira.dispatch_via_ira_connector', return_value=connector_result):
+    with patch('backend.fastapi.app.ira_connector_integration.dispatch_via_ira_connector', return_value=connector_result):
         chat_connector = client.post(
             '/ira/connectors/upsert',
             headers=_headers(),

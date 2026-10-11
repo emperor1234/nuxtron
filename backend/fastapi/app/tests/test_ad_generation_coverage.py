@@ -447,19 +447,19 @@ class TestSocialPosting:
 
     def test_publish_now_reddit_threads(self):
         """Publish-now should dispatch to Reddit and Threads provider adapters."""
-        from datetime import datetime, timedelta
+        from datetime import UTC, datetime, timedelta
 
         ad_id = str(uuid.uuid4())
         schedule_r = client.post(
             f"{BASE_SOCIAL}/schedule/{ad_id}",
             json={
                 "platforms": ["reddit", "threads"],
-                "scheduled_time": (datetime.now() + timedelta(hours=4)).isoformat(),
+                "scheduled_time": (datetime.now(UTC) + timedelta(hours=4)).isoformat(),
                 "captions": {"reddit": "Ship it", "threads": "Thread it"},
             },
             headers=H,
         )
-        assert schedule_r.status_code == 200
+        assert schedule_r.status_code == 200, schedule_r.json()
         post_id = schedule_r.json()["scheduled_post"]["id"]
 
         publish_r = client.post(f"{BASE_SOCIAL}/posts/{post_id}/publish-now", headers=H)

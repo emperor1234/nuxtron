@@ -13,7 +13,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator
 
 from ..core.auth import get_current_org, get_current_user
-from ..core.supabase_client import get_supabase
+from ..core.intelligence_store import get_intelligence_store
 from .engine import (
     analyze_serp,
     audit_content_optimization,
@@ -140,7 +140,7 @@ async def add_target(
 ):
     """Add new competitor target for tracking"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         
         # Validate not duplicate
         existing = sb.table("intel_targets").select("id").eq("org_id", current_org).eq("name", req.name).execute()
@@ -206,7 +206,7 @@ async def list_targets(
 ):
     """List all tracked competitor targets"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         query = sb.table("intel_targets").select("*").eq("org_id", current_org).eq("is_active", True).limit(limit)
         
         if category:
@@ -237,7 +237,7 @@ async def trigger_scan(
 ):
     """Manually trigger full scan of target"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         
         # Verify target exists and belongs to org
         target = sb.table("intel_targets").select("id").eq("id", target_id).eq("org_id", current_org).single().execute()
@@ -264,7 +264,7 @@ async def trigger_scan(
 async def _full_scan_background(target_id: str, org_id: str):
     """Full competitive intelligence scan"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         
         # Get target details
         target_result = sb.table("intel_targets").select("*").eq("id", target_id).single().execute()
@@ -380,7 +380,7 @@ async def get_posts(
 ):
     """Get analyzed posts with filtering"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         query = (sb.table("intel_social_posts")
                  .select("*, intel_targets(name, domain, category)")
                  .eq("org_id", current_org)
@@ -423,7 +423,7 @@ async def get_viral_posts(
 ):
     """Get posts with virality coefficient > 40"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         result = (sb.table("intel_social_posts")
                   .select("*, intel_targets(name)")
                   .eq("org_id", current_org)
@@ -456,7 +456,7 @@ async def get_ads(
 ):
     """Get competitor ad spend analysis"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         query = (sb.table("intel_ads")
                  .select("*, intel_targets(name, domain)")
                  .eq("org_id", current_org)
@@ -498,7 +498,7 @@ async def scan_trends(
 ):
     """Scan keywords for trend phases with ROI scoring"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         results = []
         
         for keyword in req.keywords[:20]:
@@ -577,7 +577,7 @@ async def get_trends(
 ):
     """Get tracked trends with phase and ROI scoring"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         query = (sb.table("intel_trends")
                  .select("*")
                  .eq("org_id", current_org)
@@ -612,7 +612,7 @@ async def predict_content_roi(
 ):
     """ML-based ROI prediction with P25/P50/P75 scenarios"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         
         # Get benchmarks
         benchmark_result = (sb.table("intel_social_posts")
@@ -671,7 +671,7 @@ async def get_content_brief(
 ):
     """AI-generated content strategy brief"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         
         # Get competitor context
         competitor_data = {}
@@ -757,7 +757,7 @@ async def frase_serp_analyze(
 ):
     """Run SERP analysis and persist snapshot for keyword intelligence."""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         analysis = await analyze_serp(
             keyword=req.keyword,
             location=req.location,
@@ -792,7 +792,7 @@ async def frase_question_mining(
 ):
     """Mine high-intent questions and persist them for content planning."""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         mined = await mine_questions(keyword=req.keyword, limit=req.limit)
 
         sb.table("intel_reports").insert({
@@ -822,7 +822,7 @@ async def frase_topic_clusters(
 ):
     """Build topic clusters and persist planning map."""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         clusters = await build_topic_clusters(req.seed_keywords, max_clusters=req.max_clusters)
 
         sb.table("intel_reports").insert({
@@ -852,7 +852,7 @@ async def frase_content_gap(
 ):
     """Compare draft content to SERP language coverage and report gaps."""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         serp = await analyze_serp(
             keyword=req.keyword,
             location=req.location,
@@ -895,7 +895,7 @@ async def frase_optimize_content(
 ):
     """Compute optimization score and persist audit output for review workflows."""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         audit = await audit_content_optimization(
             target_keyword=req.keyword,
             draft_content=req.draft_content,
@@ -924,7 +924,7 @@ async def frase_optimize_content(
 async def intelligence_dashboard(current_org=Depends(get_current_org)):
     """Aggregated intelligence dashboard data"""
     try:
-        sb = get_supabase()
+        sb = get_intelligence_store()
         
         # Parallel queries
         targets_r, posts_r, ads_r, trends_r = await asyncio.gather(

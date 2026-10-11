@@ -6,43 +6,36 @@ Extracted from legacy_main.py: Appwrite user creation, session creation.
 from __future__ import annotations
 
 import os
-from fastapi import Depends
 from datetime import UTC, datetime
-from typing import Annotated, TYPE_CHECKING
+from typing import Annotated
 
 import httpx
+from fastapi import Depends
+from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from ..deps import AuthContext
+from .. import memory_stores
+from ..deps import AuthContext, require_auth
+from ..rate_limiter import enforce_rate_limit as _enforce_rate_limit
 
 JsonObject = dict[str, object]
-from ..deps import AuthContext, require_auth
+
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
 
 CONTENT_TYPE_JSON = 'application/json'
 
 # ── Memory Store References (set by legacy_main.py) ──────────
-_appwrite_events_memory = []
-_rate_buckets = {}
-_rate_lock = None
-from ..rate_limiter import enforce_rate_limit as _enforce_rate_limit  # default; may be overwritten by set_memory_stores
+_appwrite_events_memory = memory_stores.appwrite_events
 
 
 def set_memory_stores(
     appwrite_events_memory=None,
-    rate_buckets=None,
-    rate_lock=None,
     enforce_rate_limit=None,
 ) -> None:
     """Inject memory store references from legacy_main.py."""
-    global _appwrite_events_memory, _rate_buckets, _rate_lock, _enforce_rate_limit
+    global _appwrite_events_memory, _enforce_rate_limit
     if appwrite_events_memory is not None:
         _appwrite_events_memory = appwrite_events_memory
-    if rate_buckets is not None:
-        _rate_buckets = rate_buckets
-    if rate_lock is not None:
-        _rate_lock = rate_lock
     if enforce_rate_limit is not None:
         _enforce_rate_limit = enforce_rate_limit
 
@@ -183,7 +176,6 @@ def appwrite_create_session(payload: AppwriteCreateSessionRequest, auth: AuthDep
 
 # ── Request Models ────────────────────────────────────────────
 
-from pydantic import BaseModel, Field
 
 
 class AppwriteCreateUserRequest(BaseModel):

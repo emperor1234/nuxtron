@@ -30,8 +30,8 @@ type Props = {
 };
 
 function trendColor(trend: ExecutiveKpi['trend']): string {
-  if (trend === 'up') return '#22c55e';
-  if (trend === 'down') return '#ef4444';
+  if (trend === 'up') return 'var(--success)';
+  if (trend === 'down') return 'var(--danger)';
   return 'var(--muted)';
 }
 
@@ -51,9 +51,9 @@ function linePath(values: number[], width: number, height: number, pad: number):
 }
 
 function barGradientByIndex(index: number): string {
-  if (index % 3 === 0) return 'linear-gradient(90deg, #60a5fa, #2563eb)';
-  if (index % 3 === 1) return 'linear-gradient(90deg, #34d399, #059669)';
-  return 'linear-gradient(90deg, #fb7185, #e11d48)';
+  if (index % 3 === 0) return 'linear-gradient(90deg, var(--info), var(--info))';
+  if (index % 3 === 1) return 'linear-gradient(90deg, var(--success), var(--success-ink))';
+  return 'linear-gradient(90deg, var(--danger), var(--danger))';
 }
 
 function ringArc(segments: ExecutiveRing[]): string[] {
@@ -98,14 +98,14 @@ export default function AnalyticsExecutiveBoard({ title, subtitle, kpis, bars, l
         marginBottom: 18,
         borderRadius: 20,
         border: '1px solid var(--line)',
-        background: 'linear-gradient(160deg, #dbeafe 0%, #eff6ff 62%, #f8fafc 100%)',
+        background: 'linear-gradient(160deg, var(--info-soft) 0%, var(--info-soft) 62%, var(--line) 100%)',
         padding: 18,
         boxShadow: '0 14px 24px rgba(2, 6, 23, 0.08)',
       }}
     >
       <div style={{ marginBottom: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 22, color: '#0f172a' }}>{title}</h2>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: '#334155' }}>{subtitle}</p>
+        <h2 style={{ margin: 0, fontSize: 22, color: 'var(--text)' }}>{title}</h2>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ink-2)' }}>{subtitle}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12 }}>
@@ -118,15 +118,15 @@ export default function AnalyticsExecutiveBoard({ title, subtitle, kpis, bars, l
               boxShadow: '0 8px 18px rgba(15, 23, 42, 0.12)',
             }}
           >
-            <div style={{ fontSize: 12, color: '#334155', marginBottom: 8 }}>Content Distribution</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-2)', marginBottom: 8 }}>Content Distribution</div>
             <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 8, alignItems: 'center' }}>
               <svg viewBox="0 0 180 180" style={{ width: 170, height: 160 }} aria-label="Distribution ring chart">
-                <circle cx="90" cy="90" r="66" stroke="#e2e8f0" strokeWidth="18" fill="none" />
+                <circle cx="90" cy="90" r="66" stroke="var(--line)" strokeWidth="18" fill="none" />
                 {ringPaths.map((path, index) => (
                   <path
                     key={`ring-${ring[index]?.label || index}`}
                     d={path}
-                    stroke={ring[index]?.color || '#0ea5e9'}
+                    stroke={ring[index]?.color || 'var(--info)'}
                     strokeWidth="18"
                     fill="none"
                     strokeLinecap="round"
@@ -138,7 +138,7 @@ export default function AnalyticsExecutiveBoard({ title, subtitle, kpis, bars, l
                 {ring.slice(0, 4).map((segment) => (
                   <div
                     key={segment.label}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#0f172a' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text)' }}
                   >
                     <span
                       style={{
@@ -164,7 +164,7 @@ export default function AnalyticsExecutiveBoard({ title, subtitle, kpis, bars, l
               boxShadow: '0 8px 18px rgba(15, 23, 42, 0.12)',
             }}
           >
-            <div style={{ fontSize: 12, color: '#334155', marginBottom: 8 }}>Performance Breakdown</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-2)', marginBottom: 8 }}>Performance Breakdown</div>
             <div style={{ display: 'grid', gap: 8 }}>
               {normalizedBars.map((item, index) => (
                 <div key={item.label}>
@@ -173,14 +173,14 @@ export default function AnalyticsExecutiveBoard({ title, subtitle, kpis, bars, l
                       display: 'flex',
                       justifyContent: 'space-between',
                       fontSize: 11,
-                      color: '#334155',
+                      color: 'var(--ink-2)',
                       marginBottom: 4,
                     }}
                   >
                     <span>{item.label}</span>
                     <span>{item.value}</span>
                   </div>
-                  <div style={{ height: 9, borderRadius: 999, background: '#e2e8f0' }}>
+                  <div style={{ height: 9, borderRadius: 999, background: 'var(--line)' }}>
                     <div
                       style={{
                         height: '100%',
@@ -204,12 +204,12 @@ export default function AnalyticsExecutiveBoard({ title, subtitle, kpis, bars, l
               gridColumn: '1 / span 2',
             }}
           >
-            <div style={{ fontSize: 12, color: '#334155', marginBottom: 8 }}>Post Performance</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-2)', marginBottom: 8 }}>Post Performance</div>
             <svg viewBox="0 0 520 130" style={{ width: '100%', height: 120 }} aria-label="Trend line chart">
               <path
                 d={linePath(line, 520, 130, 12)}
                 fill="none"
-                stroke="#3b82f6"
+                stroke="var(--info)"
                 strokeWidth="4"
                 strokeLinecap="round"
               />
@@ -230,8 +230,8 @@ export default function AnalyticsExecutiveBoard({ title, subtitle, kpis, bars, l
                 gap: 6,
               }}
             >
-              <div style={{ fontSize: 12, color: '#475569' }}>{kpi.label}</div>
-              <div style={{ fontSize: 30, fontWeight: 800, color: '#020617', lineHeight: 1 }}>{kpi.value}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>{kpi.label}</div>
+              <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>{kpi.value}</div>
               {kpi.delta ? (
                 <div style={{ fontSize: 12, color: trendColor(kpi.trend), fontWeight: 700 }}>{kpi.delta}</div>
               ) : null}

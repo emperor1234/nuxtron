@@ -6,13 +6,27 @@ import os
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from backend.fastapi.app.ira_memory import (
     IRAMemorySystem,
     _cosine_similarity,
     _db_dsn_from_env,
-    _load_vault_secrets,
     _vault_get,
 )
+
+@pytest.fixture(autouse=True)
+def isolated_memory_provider_configuration(monkeypatch):
+    """These are unit tests; provider adapters have their own integration suites."""
+    from backend.fastapi.app.vault import secrets_manager
+    for key in ('REDIS_URL', 'REDIS_HOST', 'DATABASE_URL', 'POSTGRES_HOST',
+                'PINECONE_API_KEY', 'PINECONE_INDEX_HOST', 'WEAVIATE_URL'):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setattr(
+        secrets_manager, 'get_secrets_manager',
+        lambda: type('EnvironmentSecrets', (), {'get_secret': staticmethod(lambda name: os.getenv(name, ''))})(),
+    )
+
 
 # --------------------------------------------------------------------------- #
 #  Helpers
@@ -45,12 +59,12 @@ def _make_memory(**kwargs) -> IRAMemorySystem:
 
 class TestDbDsnFromEnv:
     def test_direct_url_takes_priority(self):
-        with patch.dict(os.environ, {"SUPABASE_DB_URL": "postgres://direct"}):
+        with patch.dict(os.environ, {"DATABASE_URL": "postgres://direct"}):
             assert _db_dsn_from_env() == "postgres://direct"
 
     def test_builds_from_parts_when_no_direct_url(self):
         env = {
-            "SUPABASE_DB_URL": "",
+            "DATABASE_URL": "",
             "POSTGRES_HOST": "myhost",
             "POSTGRES_PORT": "5433",
             "POSTGRES_DB": "mydb",
@@ -62,40 +76,6 @@ class TestDbDsnFromEnv:
         assert "myhost" in dsn
         assert "5433" in dsn
         assert "mydb" in dsn
-
-
-class TestLoadVaultSecrets:
-    def test_returns_empty_when_no_postgres(self):
-        """No env vars → returns {} without attempting DB connection."""
-        import backend.fastapi.app.ira_memory as mod
-        orig_cache = mod._vault_cache
-        orig_attempted = mod._vault_cache_attempted
-        try:
-            mod._vault_cache = None
-            mod._vault_cache_attempted = False
-            env = {"SUPABASE_DB_URL": "", "POSTGRES_HOST": ""}
-            with patch.dict(os.environ, env, clear=False):
-                # Forcibly clear the offending vars
-                os.environ.pop("SUPABASE_DB_URL", None)
-                os.environ.pop("POSTGRES_HOST", None)
-                result = _load_vault_secrets()
-            assert result == {}
-        finally:
-            mod._vault_cache = orig_cache
-            mod._vault_cache_attempted = orig_attempted
-
-    def test_returns_cached_on_second_call(self):
-        import backend.fastapi.app.ira_memory as mod
-        orig_cache = mod._vault_cache
-        orig_attempted = mod._vault_cache_attempted
-        try:
-            mod._vault_cache = {"key": "val"}
-            mod._vault_cache_attempted = True
-            result = _load_vault_secrets()
-            assert result == {"key": "val"}
-        finally:
-            mod._vault_cache = orig_cache
-            mod._vault_cache_attempted = orig_attempted
 
 
 class TestVaultGet:
@@ -136,8 +116,8 @@ class TestCosineSimilarity:
 class TestProviderStatus:
     def test_in_memory_when_nothing_configured(self):
         m = _make_memory()
-        with patch.dict(os.environ, {"SUPABASE_DB_URL": "", "POSTGRES_HOST": ""}, clear=False):
-            os.environ.pop("SUPABASE_DB_URL", None)
+        with patch.dict(os.environ, {"DATABASE_URL": "", "POSTGRES_HOST": ""}, clear=False):
+            os.environ.pop("DATABASE_URL", None)
             os.environ.pop("POSTGRES_HOST", None)
             os.environ.pop("PINECONE_API_KEY", None)
             os.environ.pop("WEAVIATE_URL", None)
@@ -148,7 +128,7 @@ class TestProviderStatus:
     def test_pinecone_long_term_backend(self):
         m = _make_memory()
         env = {
-            "SUPABASE_DB_URL": "",
+            "DATABASE_URL": "",
             "POSTGRES_HOST": "",
             "PINECONE_API_KEY": "pk-xxx",
             "PINECONE_INDEX_HOST": "index.pinecone.io",
@@ -161,7 +141,7 @@ class TestProviderStatus:
     def test_weaviate_long_term_backend(self):
         m = _make_memory()
         env = {
-            "SUPABASE_DB_URL": "",
+            "DATABASE_URL": "",
             "POSTGRES_HOST": "",
             "PINECONE_API_KEY": "",
             "PINECONE_INDEX_HOST": "",
@@ -257,14 +237,14 @@ class TestShortTermMemory:
 
 class TestStructuredMemory:
     def _no_postgres_env(self):
-        return patch.dict(os.environ, {"SUPABASE_DB_URL": "", "POSTGRES_HOST": ""}, clear=False)
+        return patch.dict(os.environ, {"DATABASE_URL": "", "POSTGRES_HOST": ""}, clear=False)
 
     def test_upsert_creates_record(self):
         store = []
         m = _make_memory(structured_store=store)
         with self._no_postgres_env():
             os.environ.pop("POSTGRES_HOST", None)
-            os.environ.pop("SUPABASE_DB_URL", None)
+            os.environ.pop("DATABASE_URL", None)
             record = m.upsert_structured_memory(
                 tenant_id="t1", memory_type="preferences", memory_key="theme", payload={"color": "dark"}
             )
@@ -278,7 +258,7 @@ class TestStructuredMemory:
         m = _make_memory(structured_store=store)
         with self._no_postgres_env():
             os.environ.pop("POSTGRES_HOST", None)
-            os.environ.pop("SUPABASE_DB_URL", None)
+            os.environ.pop("DATABASE_URL", None)
             record = m.upsert_structured_memory(
                 tenant_id="t1", memory_type="preferences", memory_key="theme", payload={"color": "dark"}
             )
@@ -293,7 +273,7 @@ class TestStructuredMemory:
         m = _make_memory(structured_store=store)
         with self._no_postgres_env():
             os.environ.pop("POSTGRES_HOST", None)
-            os.environ.pop("SUPABASE_DB_URL", None)
+            os.environ.pop("DATABASE_URL", None)
             results = m.list_structured_memory("t1")
         assert all(r["tenant_id"] == "t1" for r in results)
 
@@ -305,7 +285,7 @@ class TestStructuredMemory:
         m = _make_memory(structured_store=store)
         with self._no_postgres_env():
             os.environ.pop("POSTGRES_HOST", None)
-            os.environ.pop("SUPABASE_DB_URL", None)
+            os.environ.pop("DATABASE_URL", None)
             results = m.list_structured_memory("t1", memory_type="prefs")
         assert all(r["memory_type"] == "prefs" for r in results)
 
@@ -410,13 +390,13 @@ class TestInternalHelpers:
 
     def test_postgres_ready_with_url(self):
         m = _make_memory()
-        with patch.dict(os.environ, {"SUPABASE_DB_URL": "postgres://host/db"}):
+        with patch.dict(os.environ, {"DATABASE_URL": "postgres://host/db"}):
             assert m._postgres_ready() is True
 
     def test_postgres_not_ready_without_config(self):
         m = _make_memory()
         with patch.dict(os.environ, {}, clear=False):
-            os.environ.pop("SUPABASE_DB_URL", None)
+            os.environ.pop("DATABASE_URL", None)
             os.environ.pop("POSTGRES_HOST", None)
             assert m._postgres_ready() is False
 

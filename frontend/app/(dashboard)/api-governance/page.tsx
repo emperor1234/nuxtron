@@ -56,7 +56,6 @@ type EncryptionPosture = {
     };
     vaults: {
       hashicorp: { enabled: boolean; backend: string; address?: string };
-      supabase: { enabled: boolean; backend: string };
     };
   };
 };
@@ -123,9 +122,9 @@ export default function ApiGovernancePage() {
   const [addFormBusy, setAddFormBusy] = useState(false);
 
   const formatSectionStatus = (status: GovernanceSectionStatus) => {
-    if (status === 'ready') return { label: 'Ready', color: '#10b981', border: '#10b981' };
-    if (status === 'error') return { label: 'Unavailable', color: '#ef4444', border: '#ef4444' };
-    if (status === 'loading') return { label: 'Loading', color: '#f59e0b', border: '#f59e0b' };
+    if (status === 'ready') return { label: 'Ready', color: 'var(--success)', border: 'var(--success)' };
+    if (status === 'error') return { label: 'Unavailable', color: 'var(--danger)', border: 'var(--danger)' };
+    if (status === 'loading') return { label: 'Loading', color: 'var(--warning)', border: 'var(--warning)' };
     return { label: 'Idle', color: 'var(--muted)', border: 'var(--line)' };
   };
 
@@ -247,9 +246,9 @@ export default function ApiGovernancePage() {
   const ring = useMemo(() => {
     if (!kpi) return [];
     return [
-      { label: 'Revenue', value: Math.max(0, kpi.kpis.revenue_total_usd), color: '#16a34a' },
-      { label: 'Cost', value: Math.max(0, kpi.kpis.cost_total_usd), color: '#ef4444' },
-      { label: 'Profit', value: Math.max(0, kpi.kpis.profit_total_usd), color: '#6366f1' },
+      { label: 'Revenue', value: Math.max(0, kpi.kpis.revenue_total_usd), color: 'var(--success-ink)' },
+      { label: 'Cost', value: Math.max(0, kpi.kpis.cost_total_usd), color: 'var(--danger)' },
+      { label: 'Profit', value: Math.max(0, kpi.kpis.profit_total_usd), color: "var(--brand)" },
     ];
   }, [kpi]);
 
@@ -322,10 +321,10 @@ export default function ApiGovernancePage() {
       {error ? (
         <div
           style={{
-            border: '1px solid #ef4444',
+            border: '1px solid var(--danger)',
             borderRadius: 10,
             padding: 12,
-            color: '#ef4444',
+            color: 'var(--danger)',
             display: 'flex',
             justifyContent: 'space-between',
             gap: 10,
@@ -346,10 +345,10 @@ export default function ApiGovernancePage() {
       {loadWarning ? (
         <div
           style={{
-            border: '1px solid #f59e0b',
+            border: '1px solid var(--warning)',
             borderRadius: 10,
             padding: 12,
-            color: '#f59e0b',
+            color: 'var(--warning)',
             display: 'flex',
             justifyContent: 'space-between',
             gap: 10,
@@ -368,7 +367,7 @@ export default function ApiGovernancePage() {
         </div>
       ) : null}
       {statusMessage ? (
-        <div style={{ border: '1px solid #10b981', borderRadius: 10, padding: 12, color: '#10b981' }}>
+        <div style={{ border: '1px solid var(--success)', borderRadius: 10, padding: 12, color: 'var(--success)' }}>
           {statusMessage}
         </div>
       ) : null}
@@ -422,7 +421,6 @@ export default function ApiGovernancePage() {
               {posture?.encryption.quantum_nist.algorithm ?? 'ML-KEM-768'})
             </li>
             <li>HashiCorp Vault: {posture?.encryption.vaults.hashicorp.enabled ? 'connected' : 'not connected'}</li>
-            <li>Supabase Vault: {posture?.encryption.vaults.supabase.enabled ? 'connected' : 'not connected'}</li>
           </ul>
         </article>
 
@@ -453,11 +451,11 @@ export default function ApiGovernancePage() {
         {addFormError && (
           <div
             style={{
-              border: '1px solid #ef4444',
+              border: '1px solid var(--danger)',
               borderRadius: 8,
               padding: '8px 12px',
               marginBottom: 12,
-              color: '#ef4444',
+              color: 'var(--danger)',
               fontSize: 13,
             }}
           >
@@ -467,11 +465,11 @@ export default function ApiGovernancePage() {
         {addFormSuccess && (
           <div
             style={{
-              border: '1px solid #10b981',
+              border: '1px solid var(--success)',
               borderRadius: 8,
               padding: '8px 12px',
               marginBottom: 12,
-              color: '#10b981',
+              color: 'var(--success)',
               fontSize: 13,
             }}
           >

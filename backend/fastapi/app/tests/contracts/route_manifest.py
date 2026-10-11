@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 HTTP_METHODS = frozenset({"delete", "get", "head", "options", "patch", "post", "put", "trace"})
-MANIFEST_VERSION = 1
+MANIFEST_VERSION = 2
 DEFAULT_BASELINE = Path(__file__).with_name("route_openapi_manifest.json")
 
 
@@ -108,6 +108,33 @@ def _stable_hash(value: Mapping[str, Any]) -> str | None:
     return f"sha256:{hashlib.sha256(canonical.encode()).hexdigest()}"
 
 
+def _operation_metadata(operation: Mapping[str, Any]) -> dict[str, Any]:
+    metadata: dict[str, Any] = {}
+    if isinstance(operation.get("summary"), str):
+        metadata["summary"] = operation["summary"]
+    tags = operation.get("tags")
+    if isinstance(tags, Sequence) and not isinstance(tags, (str, bytes, bytearray)):
+        metadata["tags"] = [str(tag) for tag in tags]
+    if isinstance(operation.get("deprecated"), bool):
+        metadata["deprecated"] = operation["deprecated"]
+    return metadata
+
+
+def _route_metadata(route: Any) -> dict[str, Any]:
+    summary = getattr(route, "summary", None)
+    name = getattr(route, "name", None)
+    source: dict[str, Any] = {}
+    if isinstance(summary, str):
+        source["summary"] = summary
+    elif isinstance(name, str):
+        source["summary"] = name.replace("_", " ").title()
+    if tags := getattr(route, "tags", None):
+        source["tags"] = tags
+    if getattr(route, "deprecated", None):
+        source["deprecated"] = True
+    return _operation_metadata(source)
+
+
 def build_route_manifest(openapi: Mapping[str, Any]) -> dict[str, Any]:
     """Return one deterministic contract record per OpenAPI HTTP operation."""
     paths = openapi.get("paths")
@@ -131,6 +158,7 @@ def build_route_manifest(openapi: Mapping[str, Any]) -> dict[str, Any]:
                     "path": str(path),
                     "request_schema_hash": _stable_hash(_request_schemas(path_item, operation, openapi)),
                     "response_schema_hash": _stable_hash(_response_schemas(operation, openapi)),
+                    **_operation_metadata(operation),
                 }
             )
 
@@ -231,6 +259,7 @@ def build_app_route_manifest(app: Any) -> dict[str, Any]:
                     "path": path,
                     "request_schema_hash": None,
                     "response_schema_hash": None,
+                    **_route_metadata(route),
                     "schema_generation_failure": {
                         "exception": expectation.exception,
                         "normalized_detail": expectation.normalized_detail,

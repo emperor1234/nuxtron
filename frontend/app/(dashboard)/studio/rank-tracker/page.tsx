@@ -48,14 +48,6 @@ interface Competitor {
   added_at: string;
 }
 
-interface PositionData {
-  date: string;
-  position: number;
-  impressions: number;
-  clicks: number;
-  ctr: number;
-}
-
 interface Alert {
   id: string;
   keyword_id: string;
@@ -64,6 +56,50 @@ interface Alert {
   threshold: number;
   is_active: boolean;
   created_at: string;
+}
+
+interface RankTrackerOverview {
+  positions?: { summary?: Record<string, number> };
+  visibility?: Record<string, number>;
+}
+
+interface RankingHistoryPoint {
+  date?: string;
+  avg_position?: number;
+}
+
+interface RankingHistory {
+  timeseries?: RankingHistoryPoint[];
+}
+
+interface RankForecast {
+  position?: number;
+  estimated_ctr?: number | string;
+  estimated_monthly_clicks?: number;
+  relative_traffic?: number | string;
+}
+
+interface RankingMover {
+  keyword: string;
+  current_position: number;
+  previous_position: number;
+}
+
+interface RankingAnalytics {
+  total_keywords?: number;
+  improved_count?: number;
+  declined_count?: number;
+  stable_count?: number;
+  top_movers_up?: RankingMover[];
+  top_movers_down?: RankingMover[];
+}
+
+interface SerpCheckResult {
+  keyword: string;
+  position?: number | null;
+  search_volume?: number;
+  keyword_difficulty?: number;
+  ctr_estimate?: number;
 }
 
 interface KeywordResearchSource {
@@ -156,8 +192,8 @@ const INPUT_STYLE: React.CSSProperties = {
   fontSize: 14,
 };
 const BTN_PRIMARY: React.CSSProperties = {
-  backgroundColor: '#06B6D4',
-  color: '#eef0f4',
+  backgroundColor: 'var(--info)',
+  color: "var(--line-soft)",
   border: 'none',
   borderRadius: 6,
   padding: '9px 18px',
@@ -175,16 +211,16 @@ const BTN_SM: React.CSSProperties = {
   fontSize: 12,
 };
 const BADGE_UP: React.CSSProperties = {
-  backgroundColor: '#dcfce7',
-  color: '#34D399',
+  backgroundColor: 'var(--success-soft)',
+  color: 'var(--success)',
   borderRadius: 4,
   padding: '2px 7px',
   fontSize: 11,
   fontWeight: 600,
 };
 const BADGE_DOWN: React.CSSProperties = {
-  backgroundColor: '#fee2e2',
-  color: '#dc2626',
+  backgroundColor: 'var(--danger-soft)',
+  color: 'var(--danger)',
   borderRadius: 4,
   padding: '2px 7px',
   fontSize: 11,
@@ -235,40 +271,6 @@ const KEYWORD_RESEARCH_TAB_QUERY = 'keyword-research';
 // Utility components
 // ---------------------------------------------------------------------------
 
-function PositionRing({ position, size = 100 }: { position: number; size?: number }) {
-  const color = position <= 3 ? '#10B981' : position <= 10 ? '#F59E0B' : position <= 30 ? 'var(--brand)' : '#dc2626';
-  const r = (size - 20) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ * (1 - Math.min(100, position) / 100);
-  return (
-    <svg width={size} height={size}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef0f4" strokeWidth={8} />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth={8}
-        strokeDasharray={circ}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-      />
-      <text
-        x={size / 2}
-        y={size / 2 + 4}
-        textAnchor="middle"
-        fill={color}
-        fontSize={size === 100 ? 20 : 16}
-        fontWeight="700"
-      >
-        {position}
-      </text>
-    </svg>
-  );
-}
-
 function PositionBadge({ change }: { change: number }) {
   if (change < -1) return <span style={BADGE_UP}>↑ {Math.abs(change)} spots</span>;
   if (change > 1) return <span style={BADGE_DOWN}>↓ {change} spots</span>;
@@ -277,10 +279,10 @@ function PositionBadge({ change }: { change: number }) {
 
 function IntentBadge({ intent }: { intent: string }) {
   const colors: Record<string, string> = {
-    commercial: '#F59E0B',
+    commercial: 'var(--warning)',
     informational: 'var(--brand)',
-    navigational: '#06B6D4',
-    transactional: '#10B981',
+    navigational: 'var(--info)',
+    transactional: 'var(--success)',
   };
   return (
     <span
@@ -302,7 +304,7 @@ function MetricCard({
   label,
   value,
   sub,
-  color = '#06B6D4',
+  color = 'var(--info)',
 }: {
   label: string;
   value: string | number;
@@ -313,7 +315,7 @@ function MetricCard({
     <div style={CARD}>
       <div style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 4 }}>{label}</div>
       <div style={{ color, fontSize: 26, fontWeight: 700 }}>{value}</div>
-      {sub && <div style={{ color: '#e7e9ef', fontSize: 12, marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ color: "var(--line)", fontSize: 12, marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -325,14 +327,18 @@ function MetricCard({
 export default function RankTrackerPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [tab, setTab] = useState<Tab>('Overview');
-  const [overview, setOverview] = useState<any>(null);
-  const [ovLoading, setOvLoading] = useState(false);
+  const [localTab, setTab] = useState<Tab>('Overview');
+  const tab =
+    pathname.endsWith('/keyword-research') ||
+    searchParams.get('tab') === KEYWORD_RESEARCH_TAB_QUERY
+      ? KEYWORD_RESEARCH_TAB
+      : localTab;
+  const [overview, setOverview] = useState<RankTrackerOverview | null>(null);
+  const [ovLoading, setOvLoading] = useState(true);
 
   const fetchOverview = useCallback(async () => {
-    setOvLoading(true);
     try {
-      const p = await apiGet<{ positions?: Keyword[]; summary?: Record<string, number> }>('/rank-tracker/positions');
+      const p = await apiGet<{ summary?: Record<string, number> }>('/rank-tracker/positions');
       const vis = await apiGet<{ visibility?: Record<string, number> }>('/rank-tracker/visibility-score');
       setOverview({ positions: p, visibility: vis.visibility });
     } catch {
@@ -342,20 +348,20 @@ export default function RankTrackerPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchOverview();
+  const refreshOverview = useCallback(() => {
+    setOvLoading(true);
+    void fetchOverview();
   }, [fetchOverview]);
 
   useEffect(() => {
-    if (pathname.endsWith('/keyword-research')) {
-      setTab(KEYWORD_RESEARCH_TAB);
-      return;
-    }
-    const tabParam = searchParams.get('tab');
-    if (tabParam === KEYWORD_RESEARCH_TAB_QUERY) {
-      setTab(KEYWORD_RESEARCH_TAB);
-    }
-  }, [pathname, searchParams]);
+    let active = true;
+    globalThis.queueMicrotask(() => {
+      if (active) void fetchOverview();
+    });
+    return () => {
+      active = false;
+    };
+  }, [fetchOverview]);
 
   const handleTabClick = useCallback((nextTab: Tab) => {
     setTab(nextTab);
@@ -374,7 +380,7 @@ export default function RankTrackerPage() {
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #eef0f4 0%, #eef0f4 100%)',
+          background: "linear-gradient(135deg, var(--line-soft) 0%, var(--line-soft) 100%)",
           borderBottom: '1px solid var(--line)',
           padding: '28px 40px 0',
         }}
@@ -384,8 +390,7 @@ export default function RankTrackerPage() {
           <div>
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text)' }}>Rank Tracker</h1>
             <p style={{ margin: 0, color: 'var(--muted)', fontSize: 14 }}>
-              Ahrefs-grade keyword position monitoring: real-time SERP tracking, traffic forecasts, competitor
-              benchmarking &amp; lost/gained keywords
+              Track keyword positions, forecast traffic, benchmark competitors, and spot ranking gains or losses.
             </p>
           </div>
         </div>
@@ -396,8 +401,8 @@ export default function RankTrackerPage() {
               key={t}
               onClick={() => handleTabClick(t)}
               style={{
-                background: tab === t ? '#06B6D4' : 'transparent',
-                color: tab === t ? '#eef0f4' : 'var(--muted)',
+                background: tab === t ? 'var(--info)' : 'transparent',
+                color: tab === t ? "var(--line-soft)" : 'var(--muted)',
                 border: 'none',
                 borderRadius: '6px 6px 0 0',
                 padding: '10px 18px',
@@ -405,7 +410,7 @@ export default function RankTrackerPage() {
                 cursor: 'pointer',
                 fontSize: 13,
                 whiteSpace: 'nowrap',
-                transition: 'all 0.15s',
+                transition: 'background-color 150ms ease, color 150ms ease',
               }}
             >
               {t}
@@ -415,7 +420,7 @@ export default function RankTrackerPage() {
       </div>
 
       <div style={{ padding: '32px 40px' }}>
-        {tab === 'Overview' && <OverviewTab overview={overview} loading={ovLoading} onRefresh={fetchOverview} />}
+        {tab === 'Overview' && <OverviewTab overview={overview} loading={ovLoading} onRefresh={refreshOverview} />}
         {tab === 'Keywords' && <KeywordsTab />}
         {tab === KEYWORD_RESEARCH_TAB && <KeywordResearchTab />}
         {tab === 'Projects' && <ProjectsTab />}
@@ -434,7 +439,15 @@ export default function RankTrackerPage() {
 // Tab: Overview
 // ---------------------------------------------------------------------------
 
-function OverviewTab({ overview, loading, onRefresh }: { overview: any; loading: boolean; onRefresh: () => void }) {
+function OverviewTab({
+  overview,
+  loading,
+  onRefresh,
+}: {
+  overview: RankTrackerOverview | null;
+  loading: boolean;
+  onRefresh: () => void;
+}) {
   const pos = overview?.positions?.summary ?? {};
   const vis = overview?.visibility ?? {};
 
@@ -457,10 +470,10 @@ function OverviewTab({ overview, loading, onRefresh }: { overview: any; loading:
         }}
       >
         <MetricCard label="Total Keywords" value={pos.total_keywords ?? 0} sub="Tracked keywords" />
-        <MetricCard label="Top 3" value={pos.top_3 ?? 0} sub="Position ≤ 3" color="#10B981" />
-        <MetricCard label="Top 10" value={pos.top_10 ?? 0} sub="Position ≤ 10" color="#F59E0B" />
-        <MetricCard label="Improved 30d" value={pos.improved_count ?? 0} sub="Gained positions" color="#34D399" />
-        <MetricCard label="Declined 30d" value={pos.declined_count ?? 0} sub="Lost positions" color="#dc2626" />
+        <MetricCard label="Top 3" value={pos.top_3 ?? 0} sub="Position ≤ 3" color="var(--success)" />
+        <MetricCard label="Top 10" value={pos.top_10 ?? 0} sub="Position ≤ 10" color="var(--warning)" />
+        <MetricCard label="Improved 30d" value={pos.improved_count ?? 0} sub="Gained positions" color="var(--success)" />
+        <MetricCard label="Declined 30d" value={pos.declined_count ?? 0} sub="Lost positions" color="var(--danger)" />
         <MetricCard
           label="Visibility Score"
           value={`${vis.visibility_score ?? 0}%`}
@@ -471,7 +484,7 @@ function OverviewTab({ overview, loading, onRefresh }: { overview: any; loading:
           label="Est. Monthly Traffic"
           value={`${(vis.estimated_monthly_traffic ?? 0) / 1000}k`}
           sub="Organic clicks"
-          color="#06B6D4"
+          color="var(--info)"
         />
       </div>
 
@@ -480,8 +493,8 @@ function OverviewTab({ overview, loading, onRefresh }: { overview: any; loading:
         <div style={{ ...PANEL, padding: 24 }}>
           <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Ranking Distribution</h3>
           {[
-            { label: 'Rank 1-3', count: pos.top_3 ?? 0, color: '#10B981' },
-            { label: 'Rank 4-10', count: (pos.top_10 ?? 0) - (pos.top_3 ?? 0), color: '#F59E0B' },
+            { label: 'Rank 1-3', count: pos.top_3 ?? 0, color: 'var(--success)' },
+            { label: 'Rank 4-10', count: (pos.top_10 ?? 0) - (pos.top_3 ?? 0), color: 'var(--warning)' },
             { label: 'Rank 11-30', count: (pos.total_keywords ?? 0) - (pos.top_10 ?? 0), color: 'var(--brand)' },
           ].map(({ label, count, color: c }) => (
             <div key={label} style={{ marginBottom: 14 }}>
@@ -516,7 +529,7 @@ function OverviewTab({ overview, loading, onRefresh }: { overview: any; loading:
                 key={a}
                 style={{
                   fontSize: 13,
-                  color: '#06B6D4',
+                  color: 'var(--info)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -542,12 +555,11 @@ function KeywordsTab() {
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [newKw, setNewKw] = useState('');
   const [newUrl, setNewUrl] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetch = async () => {
-    setLoading(true);
     try {
-      const d = await apiGet<any>('/rank-tracker/tracked-keywords');
+      const d = await apiGet<{ keywords?: Keyword[] }>('/rank-tracker/tracked-keywords');
       setKeywords(d.keywords ?? []);
     } finally {
       setLoading(false);
@@ -563,11 +575,13 @@ function KeywordsTab() {
     await apiSend('/rank-tracker/tracked-keywords', 'POST', { keyword: newKw, target_url: newUrl });
     setNewKw('');
     setNewUrl('');
+    setLoading(true);
     fetch();
   };
 
   const remove = async (id: string) => {
     await apiSend(`/rank-tracker/tracked-keywords/${id}`, 'DELETE', undefined);
+    setLoading(true);
     fetch();
   };
 
@@ -630,7 +644,7 @@ function KeywordsTab() {
                       href={kw.target_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#06B6D4', textDecoration: 'none' }}
+                      style={{ color: 'var(--info)', textDecoration: 'none' }}
                     >
                       {kw.keyword}
                     </a>
@@ -639,7 +653,7 @@ function KeywordsTab() {
                     style={{
                       ...TABLE_TD,
                       fontWeight: 700,
-                      color: kw.current_position <= 10 ? '#10B981' : kw.current_position <= 30 ? '#F59E0B' : '#dc2626',
+                      color: kw.current_position <= 10 ? 'var(--success)' : kw.current_position <= 30 ? 'var(--warning)' : 'var(--danger)',
                     }}
                   >
                     {kw.current_position}
@@ -652,11 +666,11 @@ function KeywordsTab() {
                   <td style={TABLE_TD}>
                     <IntentBadge intent={kw.search_intent} />
                   </td>
-                  <td style={{ ...TABLE_TD, fontWeight: 700, color: '#06B6D4' }}>
+                  <td style={{ ...TABLE_TD, fontWeight: 700, color: 'var(--info)' }}>
                     {kw.traffic_potential.toLocaleString()}
                   </td>
                   <td style={TABLE_TD}>
-                    <button onClick={() => remove(kw.id)} style={{ ...BTN_SM, color: '#dc2626' }}>
+                    <button onClick={() => remove(kw.id)} style={{ ...BTN_SM, color: 'var(--danger)' }}>
                       ✕
                     </button>
                   </td>
@@ -685,7 +699,7 @@ function KeywordResearchTab() {
   const [opportunities, setOpportunities] = useState<KeywordResearchOpportunity[]>([]);
   const [clusters, setClusters] = useState<KeywordResearchCluster[]>([]);
   const [gapDomain, setGapDomain] = useState('nuxtron.ai');
-  const [competitorDomains, setCompetitorDomains] = useState('semrush.com, ahrefs.com, moz.com');
+  const [competitorDomains, setCompetitorDomains] = useState('');
   const [gapResults, setGapResults] = useState<ContentGapOpportunity[]>([]);
   const [discoverProvider, setDiscoverProvider] = useState<string>('');
   const [discoverProviderAttempts, setDiscoverProviderAttempts] = useState<ProviderAttempt[]>([]);
@@ -839,10 +853,10 @@ function KeywordResearchTab() {
         <div
           style={{
             ...PANEL,
-            border: '1px solid #fee2e2',
+            border: '1px solid var(--danger-soft)',
             padding: 14,
             marginBottom: 16,
-            color: '#dc2626',
+            color: 'var(--danger)',
             fontSize: 13,
           }}
         >
@@ -973,19 +987,19 @@ function KeywordResearchTab() {
             </div>
             <div style={{ ...CARD, padding: 12 }}>
               <div style={{ color: 'var(--muted)', fontSize: 12 }}>Fallback response</div>
-              <div style={{ color: discoverFallbackUsed ? '#F59E0B' : '#10B981', fontWeight: 700, fontSize: 13 }}>
+              <div style={{ color: discoverFallbackUsed ? 'var(--warning)' : 'var(--success)', fontWeight: 700, fontSize: 13 }}>
                 {discoverFallbackUsed ? 'yes' : 'no'}
               </div>
             </div>
             <div style={{ ...CARD, padding: 12 }}>
               <div style={{ color: 'var(--muted)', fontSize: 12 }}>Pipeline latency</div>
-              <div style={{ color: '#06B6D4', fontWeight: 700, fontSize: 13 }}>
+              <div style={{ color: 'var(--info)', fontWeight: 700, fontSize: 13 }}>
                 {discoverTelemetry ? `${discoverTelemetry.pipeline_latency_ms} ms` : '-'}
               </div>
             </div>
             <div style={{ ...CARD, padding: 12 }}>
               <div style={{ color: 'var(--muted)', fontSize: 12 }}>Provider latency</div>
-              <div style={{ color: '#06B6D4', fontWeight: 700, fontSize: 13 }}>
+              <div style={{ color: 'var(--info)', fontWeight: 700, fontSize: 13 }}>
                 {discoverTelemetry ? `${discoverTelemetry.provider_latency_total_ms} ms` : '-'}
               </div>
             </div>
@@ -999,13 +1013,13 @@ function KeywordResearchTab() {
             </div>
             <div style={{ ...CARD, padding: 12 }}>
               <div style={{ color: 'var(--muted)', fontSize: 12 }}>Failed live attempts</div>
-              <div style={{ color: '#F59E0B', fontWeight: 700, fontSize: 13 }}>
+              <div style={{ color: 'var(--warning)', fontWeight: 700, fontSize: 13 }}>
                 {discoverTelemetry ? discoverTelemetry.failed_live_attempts : '-'}
               </div>
             </div>
           </div>
           {discoverFallbackReason && (
-            <div style={{ color: '#F59E0B', fontSize: 12, marginBottom: 10 }}>
+            <div style={{ color: 'var(--warning)', fontSize: 12, marginBottom: 10 }}>
               Fallback response reason: {discoverFallbackReason}
             </div>
           )}
@@ -1027,7 +1041,7 @@ function KeywordResearchTab() {
                     {attempt.error_code ?? 'no error'}
                   </div>
                   {attempt.error_message && (
-                    <div style={{ color: '#F59E0B', fontSize: 11 }}>{attempt.error_message}</div>
+                    <div style={{ color: 'var(--warning)', fontSize: 11 }}>{attempt.error_message}</div>
                   )}
                 </div>
               ))}
@@ -1057,8 +1071,8 @@ function KeywordResearchTab() {
                   </td>
                   <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{item.search_volume.toLocaleString()}</td>
                   <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{item.keyword_difficulty}</td>
-                  <td style={{ ...TABLE_TD, color: '#10B981', fontWeight: 700 }}>${item.cpc_usd.toFixed(2)}</td>
-                  <td style={{ ...TABLE_TD, color: '#06B6D4', fontWeight: 700 }}>{item.priority_score}</td>
+                  <td style={{ ...TABLE_TD, color: 'var(--success)', fontWeight: 700 }}>${item.cpc_usd.toFixed(2)}</td>
+                  <td style={{ ...TABLE_TD, color: 'var(--info)', fontWeight: 700 }}>{item.priority_score}</td>
                   <td style={{ ...TABLE_TD, color: 'var(--muted)', fontSize: 12 }}>{item.serp_features.join(', ')}</td>
                 </tr>
               ))}
@@ -1077,10 +1091,10 @@ function KeywordResearchTab() {
                 <div style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 2 }}>
                   {cluster.keywords.length} keywords
                 </div>
-                <div style={{ color: '#10B981', fontSize: 12, marginBottom: 2 }}>
+                <div style={{ color: 'var(--success)', fontSize: 12, marginBottom: 2 }}>
                   Volume: {cluster.total_volume.toLocaleString()}
                 </div>
-                <div style={{ color: '#F59E0B', fontSize: 12 }}>Avg difficulty: {cluster.avg_difficulty}</div>
+                <div style={{ color: 'var(--warning)', fontSize: 12 }}>Avg difficulty: {cluster.avg_difficulty}</div>
               </div>
             ))}
           </div>
@@ -1138,19 +1152,19 @@ function KeywordResearchTab() {
             </div>
             <div style={{ ...CARD, padding: 12 }}>
               <div style={{ color: 'var(--muted)', fontSize: 12 }}>Fallback response</div>
-              <div style={{ color: gapFallbackUsed ? '#F59E0B' : '#10B981', fontWeight: 700, fontSize: 13 }}>
+              <div style={{ color: gapFallbackUsed ? 'var(--warning)' : 'var(--success)', fontWeight: 700, fontSize: 13 }}>
                 {gapFallbackUsed ? 'yes' : 'no'}
               </div>
             </div>
             <div style={{ ...CARD, padding: 12 }}>
               <div style={{ color: 'var(--muted)', fontSize: 12 }}>Pipeline latency</div>
-              <div style={{ color: '#06B6D4', fontWeight: 700, fontSize: 13 }}>
+              <div style={{ color: 'var(--info)', fontWeight: 700, fontSize: 13 }}>
                 {gapTelemetry ? `${gapTelemetry.pipeline_latency_ms} ms` : '-'}
               </div>
             </div>
             <div style={{ ...CARD, padding: 12 }}>
               <div style={{ color: 'var(--muted)', fontSize: 12 }}>Provider latency</div>
-              <div style={{ color: '#06B6D4', fontWeight: 700, fontSize: 13 }}>
+              <div style={{ color: 'var(--info)', fontWeight: 700, fontSize: 13 }}>
                 {gapTelemetry ? `${gapTelemetry.provider_latency_total_ms} ms` : '-'}
               </div>
             </div>
@@ -1164,13 +1178,13 @@ function KeywordResearchTab() {
             </div>
             <div style={{ ...CARD, padding: 12 }}>
               <div style={{ color: 'var(--muted)', fontSize: 12 }}>Failed live attempts</div>
-              <div style={{ color: '#F59E0B', fontWeight: 700, fontSize: 13 }}>
+              <div style={{ color: 'var(--warning)', fontWeight: 700, fontSize: 13 }}>
                 {gapTelemetry ? gapTelemetry.failed_live_attempts : '-'}
               </div>
             </div>
           </div>
           {gapFallbackReason && (
-            <div style={{ color: '#F59E0B', fontSize: 12, marginBottom: 10 }}>
+            <div style={{ color: 'var(--warning)', fontSize: 12, marginBottom: 10 }}>
               Fallback response reason: {gapFallbackReason}
             </div>
           )}
@@ -1192,7 +1206,7 @@ function KeywordResearchTab() {
                     {attempt.error_code ?? 'no error'}
                   </div>
                   {attempt.error_message && (
-                    <div style={{ color: '#F59E0B', fontSize: 11 }}>{attempt.error_message}</div>
+                    <div style={{ color: 'var(--warning)', fontSize: 11 }}>{attempt.error_message}</div>
                   )}
                 </div>
               ))}
@@ -1221,8 +1235,8 @@ function KeywordResearchTab() {
                   <td style={TABLE_TD}>{item.keyword}</td>
                   <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{item.search_volume.toLocaleString()}</td>
                   <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{item.difficulty}</td>
-                  <td style={{ ...TABLE_TD, color: '#F59E0B', fontWeight: 700 }}>{item.covered_by_competitors}</td>
-                  <td style={{ ...TABLE_TD, color: '#10B981', fontWeight: 700 }}>
+                  <td style={{ ...TABLE_TD, color: 'var(--warning)', fontWeight: 700 }}>{item.covered_by_competitors}</td>
+                  <td style={{ ...TABLE_TD, color: 'var(--success)', fontWeight: 700 }}>
                     {item.estimated_monthly_clicks.toLocaleString()}
                   </td>
                   <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{item.recommended_content_type}</td>
@@ -1243,20 +1257,20 @@ function KeywordResearchTab() {
 function ProjectsTab() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [newDomain, setNewDomain] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const fetch = async () => {
-    setLoading(true);
-    try {
-      const d = await apiGet<any>('/rank-tracker/projects');
-      setProjects(d.projects ?? []);
-    } finally {
-      setLoading(false);
-    }
+    const d = await apiGet<{ projects?: Project[] }>('/rank-tracker/projects');
+    setProjects(d.projects ?? []);
   };
 
   useEffect(() => {
-    fetch();
+    let active = true;
+    globalThis.queueMicrotask(() => {
+      if (active) void fetch();
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const add = async () => {
@@ -1298,11 +1312,11 @@ function ProjectsTab() {
                 <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{p.domain}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>{p.location}</div>
               </div>
-              <button onClick={() => remove(p.id)} style={{ ...BTN_SM, color: '#dc2626', padding: '4px 8px' }}>
+              <button onClick={() => remove(p.id)} style={{ ...BTN_SM, color: 'var(--danger)', padding: '4px 8px' }}>
                 ✕
               </button>
             </div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#06B6D4', marginBottom: 8 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--info)', marginBottom: 8 }}>
               {p.tracking_keywords}
             </div>
             <div style={{ fontSize: 12, color: 'var(--muted)' }}>keywords tracked</div>
@@ -1320,12 +1334,11 @@ function ProjectsTab() {
 function CompetitorsTab() {
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [newDomain, setNewDomain] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetch = async () => {
-    setLoading(true);
     try {
-      const d = await apiGet<any>('/rank-tracker/competitors');
+      const d = await apiGet<{ competitors?: Competitor[] }>('/rank-tracker/competitors');
       setCompetitors(d.competitors ?? []);
     } finally {
       setLoading(false);
@@ -1340,11 +1353,13 @@ function CompetitorsTab() {
     if (!newDomain) return;
     await apiSend('/rank-tracker/competitors', 'POST', { domain: newDomain });
     setNewDomain('');
+    setLoading(true);
     fetch();
   };
 
   const remove = async (id: string) => {
     await apiSend(`/rank-tracker/competitors/${id}`, 'DELETE', undefined);
+    setLoading(true);
     fetch();
   };
 
@@ -1399,7 +1414,7 @@ function CompetitorsTab() {
                       href={`https://${c.domain}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#06B6D4', textDecoration: 'none' }}
+                      style={{ color: 'var(--info)', textDecoration: 'none' }}
                     >
                       {c.domain}
                     </a>
@@ -1408,17 +1423,17 @@ function CompetitorsTab() {
                     style={{
                       ...TABLE_TD,
                       fontWeight: 700,
-                      color: c.authority_score >= 60 ? '#10B981' : c.authority_score >= 35 ? '#F59E0B' : '#dc2626',
+                      color: c.authority_score >= 60 ? 'var(--success)' : c.authority_score >= 35 ? 'var(--warning)' : 'var(--danger)',
                     }}
                   >
                     {c.authority_score}
                   </td>
                   <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{c.organic_keywords.toLocaleString()}</td>
-                  <td style={{ ...TABLE_TD, fontWeight: 700, color: '#06B6D4' }}>
+                  <td style={{ ...TABLE_TD, fontWeight: 700, color: 'var(--info)' }}>
                     {(c.organic_traffic_estimate / 1000).toFixed(0)}k
                   </td>
                   <td style={TABLE_TD}>
-                    <button onClick={() => remove(c.id)} style={{ ...BTN_SM, color: '#dc2626' }}>
+                    <button onClick={() => remove(c.id)} style={{ ...BTN_SM, color: 'var(--danger)' }}>
                       ✕
                     </button>
                   </td>
@@ -1437,14 +1452,13 @@ function CompetitorsTab() {
 // ---------------------------------------------------------------------------
 
 function HistoryTab() {
-  const [history, setHistory] = useState<any>(null);
+  const [history, setHistory] = useState<RankingHistory | null>(null);
   const [days, setDays] = useState(90);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    apiGet<any>(`/rank-tracker/history?days=${days}`)
-      .then((d) => setHistory(d.history))
+    apiGet<{ history?: RankingHistory }>(`/rank-tracker/history?days=${days}`)
+      .then((d) => setHistory(d.history ?? null))
       .catch(() => setHistory(null))
       .finally(() => setLoading(false));
   }, [days]);
@@ -1452,8 +1466,8 @@ function HistoryTab() {
   if (loading) return <div style={{ color: 'var(--muted)', padding: 40, textAlign: 'center' }}>Loading…</div>;
   if (!history) return <div style={{ color: 'var(--muted)', padding: 40, textAlign: 'center' }}>No history data.</div>;
 
-  const ts = history.timeseries || [];
-  const maxPos = Math.max(1, ...ts.map((t: any) => t.avg_position || 1));
+  const ts = history.timeseries ?? [];
+  const maxPos = Math.max(1, ...ts.map((t) => t.avg_position || 1));
 
   return (
     <div>
@@ -1463,11 +1477,14 @@ function HistoryTab() {
           {[7, 30, 90, 180, 365].map((d) => (
             <button
               key={d}
-              onClick={() => setDays(d)}
+              onClick={() => {
+                setLoading(true);
+                setDays(d);
+              }}
               style={{
                 ...BTN_SM,
-                borderColor: days === d ? '#06B6D4' : '#e7e9ef',
-                color: days === d ? '#06B6D4' : 'var(--muted)',
+                borderColor: days === d ? 'var(--info)' : "var(--line)",
+                color: days === d ? 'var(--info)' : 'var(--muted)',
               }}
             >
               {d}d
@@ -1481,10 +1498,10 @@ function HistoryTab() {
           AVERAGE POSITION OVER TIME
         </div>
         {ts.length === 0 ? (
-          <div style={{ color: '#e7e9ef', textAlign: 'center', padding: 40 }}>No timeseries data.</div>
+          <div style={{ color: "var(--line)", textAlign: 'center', padding: 40 }}>No timeseries data.</div>
         ) : (
           <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 150, overflowX: 'auto' }}>
-            {ts.map((t: any, i: number) => (
+            {ts.map((t, i) => (
               <div
                 key={i}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 20 }}
@@ -1493,7 +1510,7 @@ function HistoryTab() {
                   style={{
                     width: 14,
                     height: Math.max(2, ((maxPos - (t.avg_position || maxPos)) / maxPos) * 120),
-                    backgroundColor: '#06B6D4',
+                    backgroundColor: 'var(--info)',
                     borderRadius: 2,
                   }}
                   title={`Pos: ${t.avg_position}`}
@@ -1501,7 +1518,7 @@ function HistoryTab() {
                 <div
                   style={{
                     fontSize: 8,
-                    color: '#e7e9ef',
+                    color: "var(--line)",
                     height: 30,
                     writingMode: 'vertical-rl',
                     transform: 'rotate(180deg)',
@@ -1523,17 +1540,23 @@ function HistoryTab() {
 // ---------------------------------------------------------------------------
 
 function ForecastsTab() {
-  const [forecasts, setForecasts] = useState<any[]>([]);
+  const [forecasts, setForecasts] = useState<RankForecast[]>([]);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    apiGet<any>('/rank-tracker/forecasts')
+    apiGet<{ forecasts?: RankForecast[] }>('/rank-tracker/forecasts')
       .then((d) => setForecasts(d.forecasts ?? []))
-      .catch(() => {});
+      .catch(() => {
+        setForecasts([]);
+        setLoadError(true);
+      });
   }, []);
 
   return (
     <div>
       <h2 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Traffic Forecast by Rank</h2>
+
+      {loadError && <div role="alert">Forecast data is currently unavailable.</div>}
 
       <div style={{ ...PANEL, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -1549,12 +1572,12 @@ function ForecastsTab() {
           <tbody>
             {forecasts.map((f, i) => (
               <tr key={i}>
-                <td style={{ ...TABLE_TD, fontWeight: 700, color: '#06B6D4' }}>#{f.position}</td>
-                <td style={{ ...TABLE_TD, color: '#F59E0B' }}>{f.estimated_ctr}</td>
-                <td style={{ ...TABLE_TD, fontWeight: 700, color: '#10B981' }}>
-                  {f.estimated_monthly_clicks.toLocaleString()} clicks
+                <td style={{ ...TABLE_TD, fontWeight: 700, color: 'var(--info)' }}>#{f.position ?? '—'}</td>
+                <td style={{ ...TABLE_TD, color: 'var(--warning)' }}>{f.estimated_ctr ?? '—'}</td>
+                <td style={{ ...TABLE_TD, fontWeight: 700, color: 'var(--success)' }}>
+                  {(f.estimated_monthly_clicks ?? 0).toLocaleString()} clicks
                 </td>
-                <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{f.relative_traffic}</td>
+                <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{f.relative_traffic ?? '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -1565,7 +1588,7 @@ function ForecastsTab() {
         <div style={{ color: 'var(--muted)', fontSize: 12, fontWeight: 600, marginBottom: 12 }}>KEY INSIGHT</div>
         <p style={{ margin: 0, color: 'var(--muted)', fontSize: 14, lineHeight: 1.6 }}>
           Based on typical click-through rates, moving from rank 10 to rank 3 can increase your monthly organic traffic
-          by <strong style={{ color: '#10B981' }}>~7-10x</strong>. Focus on improving top keywords to maximize traffic
+          by <strong style={{ color: 'var(--success)' }}>~7-10x</strong>. Focus on improving top keywords to maximize traffic
           impact.
         </p>
       </div>
@@ -1578,37 +1601,43 @@ function ForecastsTab() {
 // ---------------------------------------------------------------------------
 
 function AnalyticsTab() {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<RankingAnalytics | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    apiGet<any>('/rank-tracker/analytics')
-      .then((d) => setAnalytics(d.analytics))
-      .catch(() => {});
+    apiGet<{ analytics?: RankingAnalytics }>('/rank-tracker/analytics')
+      .then((d) => setAnalytics(d.analytics ?? null))
+      .catch(() => setLoadError(true));
   }, []);
 
-  if (!analytics) return <div style={{ color: 'var(--muted)', padding: 40 }}>Loading…</div>;
+  if (!analytics)
+    return (
+      <div role={loadError ? 'alert' : 'status'} style={{ color: 'var(--muted)', padding: 40 }}>
+        {loadError ? 'Ranking analytics are currently unavailable.' : 'Loading…'}
+      </div>
+    );
 
   return (
     <div>
       <h2 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Ranking Analytics</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 14, marginBottom: 24 }}>
-        <MetricCard label="Total Keywords" value={analytics.total_keywords} />
-        <MetricCard label="Improved 30d" value={analytics.improved_count} color="#34D399" />
-        <MetricCard label="Declined 30d" value={analytics.declined_count} color="#dc2626" />
-        <MetricCard label="Stable" value={analytics.stable_count} color="var(--brand)" />
+        <MetricCard label="Total Keywords" value={analytics.total_keywords ?? 0} />
+        <MetricCard label="Improved 30d" value={analytics.improved_count ?? 0} color="var(--success)" />
+        <MetricCard label="Declined 30d" value={analytics.declined_count ?? 0} color="var(--danger)" />
+        <MetricCard label="Stable" value={analytics.stable_count ?? 0} color="var(--brand)" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 20 }}>
         <div style={{ ...PANEL, padding: 20 }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: '#10B981' }}>⬆ Top Gainers</h3>
-          {analytics.top_movers_up.slice(0, 5).map((m: any, i: number) => (
+          <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--success)' }}>⬆ Top Gainers</h3>
+          {(analytics.top_movers_up ?? []).slice(0, 5).map((m, i) => (
             <div
               key={i}
               style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < 4 ? '1px solid var(--line)' : 'none' }}
             >
               <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{m.keyword}</div>
-              <div style={{ fontSize: 12, color: '#34D399' }}>
+              <div style={{ fontSize: 12, color: 'var(--success)' }}>
                 #{m.current_position} (was #{Math.round(m.previous_position)})
               </div>
             </div>
@@ -1616,14 +1645,14 @@ function AnalyticsTab() {
         </div>
 
         <div style={{ ...PANEL, padding: 20 }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: '#dc2626' }}>⬇ Top Decliners</h3>
-          {analytics.top_movers_down.slice(0, 5).map((m: any, i: number) => (
+          <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--danger)' }}>⬇ Top Decliners</h3>
+          {(analytics.top_movers_down ?? []).slice(0, 5).map((m, i) => (
             <div
               key={i}
               style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < 4 ? '1px solid var(--line)' : 'none' }}
             >
               <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{m.keyword}</div>
-              <div style={{ fontSize: 12, color: '#dc2626' }}>
+              <div style={{ fontSize: 12, color: 'var(--danger)' }}>
                 #{m.current_position} (was #{Math.round(m.previous_position)})
               </div>
             </div>
@@ -1644,12 +1673,13 @@ function AlertsTab() {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ keyword_id: '', alert_type: 'rank_drop', threshold: 5 });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
-      apiGet<any>('/rank-tracker/alerts').then((d) => setAlerts(d.alerts ?? [])),
-      apiGet<any>('/rank-tracker/tracked-keywords').then((d) => setKeywords(d.keywords ?? [])),
-    ]).catch(() => {});
+      apiGet<{ alerts?: Alert[] }>('/rank-tracker/alerts').then((d) => setAlerts(d.alerts ?? [])),
+      apiGet<{ keywords?: Keyword[] }>('/rank-tracker/tracked-keywords').then((d) => setKeywords(d.keywords ?? [])),
+    ]).catch(() => setError('Rank alerts could not be loaded. Please retry.'));
   }, []);
 
   const add = async () => {
@@ -1663,8 +1693,11 @@ function AlertsTab() {
       });
       setForm({ keyword_id: '', alert_type: 'rank_drop', threshold: 5 });
       setShowAdd(false);
-      const d = await apiGet<any>('/rank-tracker/alerts');
+      const d = await apiGet<{ alerts?: Alert[] }>('/rank-tracker/alerts');
       setAlerts(d.alerts ?? []);
+      setError(null);
+    } catch {
+      setError('The alert could not be created. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -1738,6 +1771,8 @@ function AlertsTab() {
         </div>
       )}
 
+      {error && <div role="alert">{error}</div>}
+
       <div style={{ ...PANEL, padding: 0 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -1760,11 +1795,11 @@ function AlertsTab() {
               alerts.map((a, i) => (
                 <tr key={i}>
                   <td style={TABLE_TD}>{a.keyword}</td>
-                  <td style={{ ...TABLE_TD, color: a.alert_type === 'rank_drop' ? '#dc2626' : '#34D399' }}>
+                  <td style={{ ...TABLE_TD, color: a.alert_type === 'rank_drop' ? 'var(--danger)' : 'var(--success)' }}>
                     {a.alert_type === 'rank_drop' ? '📉 Rank Drop' : '📈 Rank Gain'}
                   </td>
                   <td style={{ ...TABLE_TD, fontWeight: 700 }}>{a.threshold} positions</td>
-                  <td style={{ ...TABLE_TD, color: a.is_active ? '#34D399' : 'var(--muted)' }}>
+                  <td style={{ ...TABLE_TD, color: a.is_active ? 'var(--success)' : 'var(--muted)' }}>
                     {a.is_active ? '✓ Active' : 'Inactive'}
                   </td>
                 </tr>
@@ -1783,8 +1818,9 @@ function AlertsTab() {
 
 function SERPCheckTab() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<SerpCheckResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const check = async () => {
     if (!query.trim()) return;
@@ -1793,9 +1829,16 @@ function SERPCheckTab() {
       .map((k) => k.trim())
       .filter(Boolean);
     setLoading(true);
+    setError(null);
     try {
-      const d = await apiSend<any>('/rank-tracker/positions/check', 'POST', { keywords: kws });
+      const d = await apiSend<{ serp_check?: SerpCheckResult[] }>(
+        '/rank-tracker/positions/check',
+        'POST',
+        { keywords: kws },
+      );
       setResults(d.serp_check ?? []);
+    } catch {
+      setError('Search results could not be retrieved. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -1820,6 +1863,8 @@ function SERPCheckTab() {
         </button>
       </div>
 
+      {error && <div role="alert">{error}</div>}
+
       {results.length > 0 && (
         <div style={{ ...PANEL, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -1840,14 +1885,21 @@ function SERPCheckTab() {
                     style={{
                       ...TABLE_TD,
                       fontWeight: 700,
-                      color: r.position <= 10 ? '#10B981' : r.position <= 30 ? '#F59E0B' : '#dc2626',
+                      color:
+                        r.position === null || r.position === undefined
+                          ? 'var(--muted)'
+                          : r.position <= 10
+                            ? 'var(--success)'
+                            : r.position <= 30
+                              ? 'var(--warning)'
+                              : 'var(--danger)',
                     }}
                   >
-                    {r.position}
+                    {r.position ?? '—'}
                   </td>
-                  <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{r.search_volume.toLocaleString()}</td>
-                  <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{r.keyword_difficulty}</td>
-                  <td style={{ ...TABLE_TD, fontWeight: 600, color: 'var(--brand)' }}>{r.ctr_estimate}%</td>
+                  <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{r.search_volume?.toLocaleString() ?? '—'}</td>
+                  <td style={{ ...TABLE_TD, color: 'var(--muted)' }}>{r.keyword_difficulty ?? '—'}</td>
+                  <td style={{ ...TABLE_TD, fontWeight: 600, color: 'var(--brand)' }}>{r.ctr_estimate ?? '—'}%</td>
                 </tr>
               ))}
             </tbody>

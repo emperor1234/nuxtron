@@ -7,9 +7,11 @@ import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any, Iterator
+from unittest.mock import patch
 
 import pytest
+from fastapi import Header, Request
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 BASELINE_PATH = Path(__file__).parent / "contracts" / "route_openapi_manifest.json"
@@ -26,18 +28,6 @@ EXPECTED_MIDDLEWARE_STACK = (
     "RequestTracingMiddleware",
     "SensitiveRouteTokenMiddleware",
     "SecurityHeadersMiddleware",
-)
-
-# Frozen 2026-08-29: these paths are served by two different routers today and
-# the first registration wins. Extraction must not add to this set.
-KNOWN_SHADOWED_ROUTE_KEYS = frozenset(
-    {
-        ("/analytics/export", ("GET",)),
-        ("/social/calendar", ("GET",)),
-        ("/social/listening/mentions", ("GET",)),
-        ("/social/team/invite", ("POST",)),
-        ("/social/team/members", ("GET",)),
-    }
 )
 
 IMPORT_SIDE_EFFECT_GUARD = """
@@ -82,17 +72,22 @@ def _route_keys(app: Any) -> Counter[tuple[str, tuple[str, ...]]]:
 
 
 @pytest.fixture(scope="module")
-def created_apps() -> tuple[Any, Any]:
+def created_apps() -> Iterator[tuple[Any, Any]]:
     from backend.fastapi.app.bootstrap.application import create_app
 
-    return create_app(), create_app()
+    with patch.dict(
+        os.environ,
+        {"ALLOW_HEADER_API_KEYS": "1", "FASTAPI_API_KEY": "test-api-key"},
+    ):
+        yield create_app(), create_app()
 
 
 @pytest.mark.no_legacy
 def test_bootstrap_imports_have_no_database_network_or_worker_side_effects() -> None:
+    dependency_paths = [path for path in sys.path if "site-packages" in path]
     environment = {
         **os.environ,
-        "PYTHONPATH": str(REPO_ROOT),
+        "PYTHONPATH": os.pathsep.join([str(REPO_ROOT), *dependency_paths]),
         "NUXTRON_SKIP_STARTUP_DB_INIT": "1",
     }
 
@@ -115,8 +110,203 @@ def test_create_app_registers_every_route_exactly_once(created_apps: tuple[Any, 
     keys = _route_keys(first)
     repeated = {key for key, count in keys.items() if count > 1}
 
-    assert repeated == KNOWN_SHADOWED_ROUTE_KEYS
-    assert all(count <= 2 for count in keys.values())
+    assert repeated == set()
+
+
+def test_bootstrap_legacy_compatibility_imports_are_explicit_and_usable() -> None:
+    from backend.fastapi.app import generated_asset_store
+    from backend.fastapi.app import legacy_main as legacy
+    from backend.fastapi.app.services import ai_providers, integrations
+
+    assert legacy._minio_presign is integrations._minio_presign
+    assert legacy._verify_stripe_signature is integrations._verify_stripe_signature
+    assert legacy._generate_media_asset_bundle is ai_providers._generate_media_asset_bundle
+    assert callable(legacy._run_optional_ai_generation)
+    assert legacy._find_ai_generated_asset is generated_asset_store.find_generated_asset
+    assert legacy._ai_generated_assets_memory is generated_asset_store.ai_generated_assets
+    assert legacy._ai_generated_assets_lock is generated_asset_store.ai_generated_assets_lock
+
+    legacy.reset_rate_limits_for_tests()
+    assert legacy._find_ai_generated_asset(999_999, "missing") is None
+
+    source = (REPO_ROOT / "backend/fastapi/app/legacy_main.py").read_text()
+    assert "_minio_presign as _minio_presign" in source
+    assert "_generate_media_asset_bundle as _generate_media_asset_bundle" in source
+
+
+def test_merged_route_exception_set_is_frozen() -> None:
+    from backend.fastapi.app.bootstrap.route_compatibility import FROZEN_MERGED_HTTP_ROUTE_KEYS
+
+    expected = frozenset(
+        {
+            ("GET", "/analytics/export"),
+            ("GET", "/social/calendar"),
+            ("GET", "/social/listening/mentions"),
+            ("POST", "/social/team/invite"),
+            ("GET", "/social/team/members"),
+        }
+    )
+    assert expected == FROZEN_MERGED_HTTP_ROUTE_KEYS
+
+
+def test_route_merge_rejects_unexpected_and_missing_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backend.fastapi.app.bootstrap import route_compatibility
+    from fastapi import FastAPI
+
+    monkeypatch.setattr(
+        route_compatibility,
+        "FROZEN_MERGED_HTTP_ROUTE_KEYS",
+        frozenset({("GET", "/expected")}),
+    )
+
+    unexpected = FastAPI()
+    unexpected.get("/outside")(lambda: {"winner": "first"})
+    unexpected.get("/outside")(lambda: {"winner": "last"})
+    with pytest.raises(RuntimeError, match="Unexpected shadowed HTTP route"):
+        route_compatibility.merge_frozen_http_route_overlaps(unexpected)
+
+    missing = FastAPI()
+    with pytest.raises(RuntimeError, match="Expected shadowed HTTP routes are absent"):
+        route_compatibility.merge_frozen_http_route_overlaps(missing)
+
+
+def test_route_merge_rejects_partial_and_inconsistent_overlaps(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backend.fastapi.app.bootstrap import route_compatibility
+    from fastapi import FastAPI
+
+    frozen = frozenset({("GET", "/mixed"), ("POST", "/mixed")})
+    monkeypatch.setattr(route_compatibility, "FROZEN_MERGED_HTTP_ROUTE_KEYS", frozen)
+
+    partial = FastAPI()
+    partial.get("/mixed")(lambda: {"winner": "first"})
+    partial.api_route("/mixed", methods=["GET", "POST"])(lambda: {"winner": "last"})
+    with pytest.raises(RuntimeError, match="Partially shadowed HTTP route"):
+        route_compatibility.merge_frozen_http_route_overlaps(partial)
+
+    inconsistent = FastAPI()
+    inconsistent.get("/mixed")(lambda: {"winner": "get"})
+    inconsistent.post("/mixed")(lambda: {"winner": "post"})
+    inconsistent.api_route("/mixed", methods=["GET", "POST"])(lambda: {"winner": "last"})
+    with pytest.raises(RuntimeError, match="Inconsistent shadowed HTTP route"):
+        route_compatibility.merge_frozen_http_route_overlaps(inconsistent)
+
+
+def test_route_merge_preserves_runtime_position_scope_and_openapi(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backend.fastapi.app.bootstrap import route_compatibility
+    from fastapi import Depends, FastAPI
+    from fastapi.testclient import TestClient
+
+    monkeypatch.setattr(
+        route_compatibility,
+        "FROZEN_MERGED_HTTP_ROUTE_KEYS",
+        frozenset({("POST", "/merged")}),
+    )
+    application = FastAPI()
+    application.get("/before")(lambda: {"before": True})
+
+    async def runtime_winner(request: Request) -> dict[str, str]:
+        return {"winner": "runtime", "scope_endpoint": request.scope["endpoint"].__name__}
+
+    def contract_auth(x_contract: Annotated[str, Header()]) -> str:
+        return x_contract
+
+    application.post("/merged", name="runtime-winner")(runtime_winner)
+    runtime_position = next(i for i, route in enumerate(application.routes) if route.name == "runtime-winner")
+
+    async def openapi_winner() -> str:
+        return "openapi"
+
+    application.post(
+        "/merged",
+        name="openapi_winner",
+        operation_id="openapi-winner",
+        response_model=str,
+        dependencies=[Depends(contract_auth)],
+    )(openapi_winner)
+    application.get("/after")(lambda: {"after": True})
+
+    route_compatibility.merge_frozen_http_route_overlaps(application)
+
+    merged = next(route for route in application.routes if getattr(route, "path", None) == "/merged")
+    assert application.routes.index(merged) == runtime_position
+    assert merged.name == "runtime-winner"
+    assert merged.endpoint is runtime_winner
+    assert merged.unique_id == "openapi-winner"
+    assert TestClient(application).post("/merged").json() == {
+        "winner": "runtime",
+        "scope_endpoint": "runtime_winner",
+    }
+    operation = application.openapi()["paths"]["/merged"]["post"]
+    assert operation["operationId"] == "openapi-winner"
+    assert operation["summary"] == "Openapi Winner"
+    assert operation["parameters"][0]["name"] == "x-contract"
+    assert operation["responses"]["200"]["content"]["application/json"]["schema"]["type"] == "string"
+
+
+def test_team_invite_keeps_historical_runtime_auth_and_response(created_apps: tuple[Any, Any]) -> None:
+    from fastapi.testclient import TestClient
+
+    first, _ = created_apps
+    client = TestClient(first, raise_server_exceptions=False)
+    payload = {"email": "milestone-two@example.com", "role": "editor"}
+
+    assert client.post("/social/team/invite", json=payload).status_code == 401
+
+    response = client.post(
+        "/social/team/invite",
+        headers={"X-API-Key": "test-api-key", "X-Tenant-Id": "bootstrap-regression"},
+        json=payload,
+    )
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    assert response.json()["invite"]["email"] == payload["email"]
+
+
+def test_only_frozen_routes_diverge_between_runtime_and_openapi_metadata(
+    created_apps: tuple[Any, Any],
+) -> None:
+    from backend.fastapi.app.bootstrap.route_compatibility import FROZEN_MERGED_HTTP_ROUTE_KEYS
+
+    first, _ = created_apps
+    expected = {
+        ("GET", "/analytics/export"): (
+            "export_data",
+            "export_analytics_csv_analytics_export_get",
+            "Export Analytics Csv",
+        ),
+        ("GET", "/social/calendar"): (
+            "list_calendar_events",
+            "get_content_calendar_social_calendar_get",
+            "Get Content Calendar",
+        ),
+        ("GET", "/social/listening/mentions"): (
+            "list_social_listening_mentions",
+            "list_listening_mentions_social_listening_mentions_get",
+            "List Listening Mentions",
+        ),
+        ("POST", "/social/team/invite"): (
+            "invite_team_member_legacy",
+            "invite_team_member_social_team_invite_post",
+            "Invite Team Member",
+        ),
+        ("GET", "/social/team/members"): (
+            "list_team_members",
+            "list_team_members_social_team_members_get",
+            "List Team Members",
+        ),
+    }
+
+    actual = {}
+    for route in first.routes:
+        for method in getattr(route, "methods", None) or ():
+            key = (method, getattr(route, "path", ""))
+            if key in expected:
+                actual[key] = (route.name, route.unique_id, route.summary)
+                assert route.endpoint.__name__ == expected[key][0]
+
+    assert first.state.merged_http_route_keys == FROZEN_MERGED_HTTP_ROUTE_KEYS
+    assert set(expected) == FROZEN_MERGED_HTTP_ROUTE_KEYS
+    assert actual == expected
 
 
 def test_repeated_create_app_calls_are_independent_with_equal_route_manifests(

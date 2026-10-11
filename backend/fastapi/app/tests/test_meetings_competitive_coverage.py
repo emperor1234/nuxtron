@@ -110,7 +110,7 @@ class TestMeetingsCoverage:
                 "attendee_email": "prospect@example.com",
                 "attendee_name": "Jane Prospect",
                 "attendee_company": "Acme Corp",
-                "start_time": "2026-06-01T10:00:00Z",  # Monday
+                "start_time": "2037-06-01T10:00:00Z",  # Monday
                 "timezone": "UTC",
                 "notes": "Looking forward to this call",
                 "custom_answers": {"how_did_you_hear": "LinkedIn"},
@@ -130,7 +130,7 @@ class TestMeetingsCoverage:
                 "meeting_link_slug": "discovery-30",
                 "attendee_email": "another@example.com",
                 "attendee_name": "Sam Outside",
-                "start_time": "2026-06-06T10:00:00Z",  # Saturday
+                "start_time": "2037-06-06T10:00:00Z",  # Saturday
                 "timezone": "UTC",
             },
         )
@@ -145,7 +145,7 @@ class TestMeetingsCoverage:
                 "meeting_link_slug": "discovery-30",
                 "attendee_email": "conflict@example.com",
                 "attendee_name": "Conflict Person",
-                "start_time": "2026-06-01T10:00:00Z",  # same as booked above
+                "start_time": "2037-06-01T10:00:00Z",  # same as booked above
                 "timezone": "UTC",
             },
         )
@@ -173,7 +173,7 @@ class TestMeetingsCoverage:
                 "meeting_link_slug": "daily-limit-1",
                 "attendee_email": "limit1@example.com",
                 "attendee_name": "Limit One",
-                "start_time": "2026-06-08T10:00:00Z",
+                "start_time": "2037-06-08T10:00:00Z",
                 "timezone": "UTC",
             },
         )
@@ -186,7 +186,7 @@ class TestMeetingsCoverage:
                 "meeting_link_slug": "daily-limit-1",
                 "attendee_email": "limit2@example.com",
                 "attendee_name": "Limit Two",
-                "start_time": "2026-06-08T12:00:00Z",
+                "start_time": "2037-06-08T12:00:00Z",
                 "timezone": "UTC",
             },
         )
@@ -200,7 +200,7 @@ class TestMeetingsCoverage:
                 "meeting_link_slug": "no-such-link",
                 "attendee_email": "x@example.com",
                 "attendee_name": "X Person",
-                "start_time": "2026-06-02T10:00:00Z",
+                "start_time": "2037-06-02T10:00:00Z",
                 "timezone": "UTC",
             },
         )
@@ -227,7 +227,7 @@ class TestMeetingsCoverage:
         assert r.json()["total"] >= 1
 
     def test_list_bookings_with_filters(self, client: TestClient) -> None:
-        r = client.get("/meetings/bookings?status=confirmed&from_date=2026-06-01&to_date=2026-06-30", headers=H)
+        r = client.get("/meetings/bookings?status=confirmed&from_date=2037-06-01&to_date=2037-06-30", headers=H)
         assert r.status_code == 200
 
     def test_update_booking_status(self, client: TestClient) -> None:
@@ -278,7 +278,7 @@ class TestMeetingsCoverage:
                 "meeting_link_slug": "discovery-30",
                 "attendee_email": "skip-empty-start@example.com",
                 "attendee_name": "Skip Empty Start",
-                "start_time": "2026-06-15T10:00:00Z",
+                "start_time": "2037-06-15T10:00:00Z",
                 "timezone": "UTC",
             },
         )
@@ -297,7 +297,7 @@ class TestMeetingsCoverage:
             "meeting_link_id": link_id,
             "meeting_link_slug": "discovery-30",
             "status": "confirmed",
-            "start_time": "2026-06-20TAB:00:00Z",
+            "start_time": "2037-06-20TAB:00:00Z",
         })
 
         r = client.get("/meetings/analytics", headers=H)

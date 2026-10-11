@@ -3,6 +3,7 @@ Tests for bridges.py missing coverage paths.
 Covers Meilisearch query (lines 203-240), Twilio SMS (614+), Twilio call (639+),
 Slack (743+), Resend (803+) by mocking httpx and setting env vars.
 """
+
 from __future__ import annotations
 
 import os
@@ -42,6 +43,7 @@ def _mock_httpx_client(response):
 @pytest.fixture(scope="module")
 def client() -> TestClient:
     from backend.fastapi.app.main import app
+
     return TestClient(app, raise_server_exceptions=False)
 
 
@@ -50,20 +52,23 @@ class TestBridgesMeilisearchQuery:
 
     def test_search_success(self, client: TestClient) -> None:
         """Lines 203-228: meilisearch host configured + successful response."""
-        mock_resp = _mock_http_response(
-            json_data={"hits": [{"id": 1, "title": "test"}], "estimatedTotalHits": 1}
-        )
+        mock_resp = _mock_http_response(json_data={"hits": [{"id": 1, "title": "test"}], "estimatedTotalHits": 1})
         mock_client = _mock_httpx_client(mock_resp)
 
-        with patch.dict(os.environ, {"MEILISEARCH_HOST": "http://mock-ms:7700",
-                                      "MEILISEARCH_API_KEY": "ms-key"}, clear=False):
+        with patch.dict(
+            os.environ, {"MEILISEARCH_HOST": "http://mock-ms:7700", "MEILISEARCH_API_KEY": "ms-key"}, clear=False
+        ):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/search/query", headers=H, json={
-                    "index": "articles",
-                    "query": "test query",
-                    "limit": 10,
-                    "offset": 0,
-                })
+                r = client.post(
+                    "/search/query",
+                    headers=H,
+                    json={
+                        "index": "articles",
+                        "query": "test query",
+                        "limit": 10,
+                        "offset": 0,
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_search_non_success_response(self, client: TestClient) -> None:
@@ -73,12 +78,16 @@ class TestBridgesMeilisearchQuery:
 
         with patch.dict(os.environ, {"MEILISEARCH_HOST": "http://mock-ms:7700"}, clear=False):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/search/query", headers=H, json={
-                    "index": "articles",
-                    "query": "error query",
-                    "limit": 5,
-                    "offset": 0,
-                })
+                r = client.post(
+                    "/search/query",
+                    headers=H,
+                    json={
+                        "index": "articles",
+                        "query": "error query",
+                        "limit": 5,
+                        "offset": 0,
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_search_exception(self, client: TestClient) -> None:
@@ -90,12 +99,16 @@ class TestBridgesMeilisearchQuery:
 
         with patch.dict(os.environ, {"MEILISEARCH_HOST": "http://mock-ms:7700"}, clear=False):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/search/query", headers=H, json={
-                    "index": "docs",
-                    "query": "exception query",
-                    "limit": 5,
-                    "offset": 0,
-                })
+                r = client.post(
+                    "/search/query",
+                    headers=H,
+                    json={
+                        "index": "docs",
+                        "query": "exception query",
+                        "limit": 5,
+                        "offset": 0,
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_search_with_filter(self, client: TestClient) -> None:
@@ -105,13 +118,17 @@ class TestBridgesMeilisearchQuery:
 
         with patch.dict(os.environ, {"MEILISEARCH_HOST": "http://mock-ms:7700"}, clear=False):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/search/query", headers=H, json={
-                    "index": "products",
-                    "query": "widget",
-                    "filter": "category = 'tech'",
-                    "limit": 10,
-                    "offset": 0,
-                })
+                r = client.post(
+                    "/search/query",
+                    headers=H,
+                    json={
+                        "index": "products",
+                        "query": "widget",
+                        "filter": "category = 'tech'",
+                        "limit": 10,
+                        "offset": 0,
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_index_document_success(self, client: TestClient) -> None:
@@ -121,10 +138,14 @@ class TestBridgesMeilisearchQuery:
 
         with patch.dict(os.environ, {"MEILISEARCH_HOST": "http://mock-ms:7700"}, clear=False):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/search/index-document", headers=H, json={
-                    "index": "articles",
-                    "document": {"id": 1, "title": "Test Article", "body": "content"},
-                })
+                r = client.post(
+                    "/search/index-document",
+                    headers=H,
+                    json={
+                        "index": "articles",
+                        "document": {"id": 1, "title": "Test Article", "body": "content"},
+                    },
+                )
                 assert r.status_code in VALID
 
 
@@ -136,16 +157,24 @@ class TestBridgesTwilioSmsWithCreds:
         mock_resp = _mock_http_response(json_data={"sid": "SM123456", "status": "sent"})
         mock_client = _mock_httpx_client(mock_resp)
 
-        with patch.dict(os.environ, {
-            "TWILIO_ACCOUNT_SID": "AC123456",
-            "TWILIO_AUTH_TOKEN": "auth-token-123",
-            "TWILIO_FROM_NUMBER": "+15551234567",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "TWILIO_ACCOUNT_SID": "AC123456",
+                "TWILIO_AUTH_TOKEN": "auth-token-123",
+                "TWILIO_FROM_NUMBER": "+15551234567",
+            },
+            clear=False,
+        ):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/twilio/send-sms", headers=H, json={
-                    "to": "+15559876543",
-                    "body": "Test SMS message from bridges test",
-                })
+                r = client.post(
+                    "/notifications/twilio/send-sms",
+                    headers=H,
+                    json={
+                        "to": "+15559876543",
+                        "body": "Test SMS message from bridges test",
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_sms_non_success_response(self, client: TestClient) -> None:
@@ -153,16 +182,24 @@ class TestBridgesTwilioSmsWithCreds:
         mock_resp = _mock_http_response(status_code=400, is_success=False, text='{"code": 21211}')
         mock_client = _mock_httpx_client(mock_resp)
 
-        with patch.dict(os.environ, {
-            "TWILIO_ACCOUNT_SID": "AC789",
-            "TWILIO_AUTH_TOKEN": "token-789",
-            "TWILIO_FROM_NUMBER": "+15551111111",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "TWILIO_ACCOUNT_SID": "AC789",
+                "TWILIO_AUTH_TOKEN": "token-789",
+                "TWILIO_FROM_NUMBER": "+15551111111",
+            },
+            clear=False,
+        ):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/twilio/send-sms", headers=H, json={
-                    "to": "+15552222222",
-                    "body": "Test fail SMS",
-                })
+                r = client.post(
+                    "/notifications/twilio/send-sms",
+                    headers=H,
+                    json={
+                        "to": "+15552222222",
+                        "body": "Test fail SMS",
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_sms_exception(self, client: TestClient) -> None:
@@ -172,16 +209,24 @@ class TestBridgesTwilioSmsWithCreds:
         mock_client.__exit__ = MagicMock(return_value=False)
         mock_client.post.side_effect = Exception("Network error")
 
-        with patch.dict(os.environ, {
-            "TWILIO_ACCOUNT_SID": "AC567",
-            "TWILIO_AUTH_TOKEN": "token-567",
-            "TWILIO_FROM_NUMBER": "+15553333333",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "TWILIO_ACCOUNT_SID": "AC567",
+                "TWILIO_AUTH_TOKEN": "token-567",
+                "TWILIO_FROM_NUMBER": "+15553333333",
+            },
+            clear=False,
+        ):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/twilio/send-sms", headers=H, json={
-                    "to": "+15554444444",
-                    "body": "Exception test SMS",
-                })
+                r = client.post(
+                    "/notifications/twilio/send-sms",
+                    headers=H,
+                    json={
+                        "to": "+15554444444",
+                        "body": "Exception test SMS",
+                    },
+                )
                 assert r.status_code in VALID
 
 
@@ -193,16 +238,24 @@ class TestBridgesTwilioCallWithCreds:
         mock_resp = _mock_http_response(json_data={"sid": "CA123456", "status": "initiated"})
         mock_client = _mock_httpx_client(mock_resp)
 
-        with patch.dict(os.environ, {
-            "TWILIO_ACCOUNT_SID": "AC_CALL_001",
-            "TWILIO_AUTH_TOKEN": "auth-call-001",
-            "TWILIO_FROM_NUMBER": "+15551000000",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "TWILIO_ACCOUNT_SID": "AC_CALL_001",
+                "TWILIO_AUTH_TOKEN": "auth-call-001",
+                "TWILIO_FROM_NUMBER": "+15551000000",
+            },
+            clear=False,
+        ):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/twilio/make-call", headers=H, json={
-                    "to": "+15558000000",
-                    "twiml_url": "https://example.com/twiml",
-                })
+                r = client.post(
+                    "/notifications/twilio/make-call",
+                    headers=H,
+                    json={
+                        "to": "+15558000000",
+                        "twiml_url": "https://example.com/twiml",
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_call_exception(self, client: TestClient) -> None:
@@ -212,16 +265,24 @@ class TestBridgesTwilioCallWithCreds:
         mock_client.__exit__ = MagicMock(return_value=False)
         mock_client.post.side_effect = Exception("Timeout")
 
-        with patch.dict(os.environ, {
-            "TWILIO_ACCOUNT_SID": "AC_CALL_002",
-            "TWILIO_AUTH_TOKEN": "auth-call-002",
-            "TWILIO_FROM_NUMBER": "+15551000001",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "TWILIO_ACCOUNT_SID": "AC_CALL_002",
+                "TWILIO_AUTH_TOKEN": "auth-call-002",
+                "TWILIO_FROM_NUMBER": "+15551000001",
+            },
+            clear=False,
+        ):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/twilio/make-call", headers=H, json={
-                    "to": "+15558000001",
-                    "twiml_url": "https://example.com/twiml2",
-                })
+                r = client.post(
+                    "/notifications/twilio/make-call",
+                    headers=H,
+                    json={
+                        "to": "+15558000001",
+                        "twiml_url": "https://example.com/twiml2",
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_call_non_success(self, client: TestClient) -> None:
@@ -229,16 +290,24 @@ class TestBridgesTwilioCallWithCreds:
         mock_resp = _mock_http_response(status_code=400, is_success=False, text="Bad request")
         mock_client = _mock_httpx_client(mock_resp)
 
-        with patch.dict(os.environ, {
-            "TWILIO_ACCOUNT_SID": "AC_CALL_003",
-            "TWILIO_AUTH_TOKEN": "auth-call-003",
-            "TWILIO_FROM_NUMBER": "+15551000002",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "TWILIO_ACCOUNT_SID": "AC_CALL_003",
+                "TWILIO_AUTH_TOKEN": "auth-call-003",
+                "TWILIO_FROM_NUMBER": "+15551000002",
+            },
+            clear=False,
+        ):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/twilio/make-call", headers=H, json={
-                    "to": "+15558000002",
-                    "twiml_url": "https://example.com/twiml3",
-                })
+                r = client.post(
+                    "/notifications/twilio/make-call",
+                    headers=H,
+                    json={
+                        "to": "+15558000002",
+                        "twiml_url": "https://example.com/twiml3",
+                    },
+                )
                 assert r.status_code in VALID
 
 
@@ -250,15 +319,23 @@ class TestBridgesSlackWithCreds:
         mock_resp = _mock_http_response(json_data={"ok": True})
         mock_client = _mock_httpx_client(mock_resp)
 
-        with patch.dict(os.environ, {
-            "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/TEST/WEBHOOK",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/TEST/WEBHOOK",
+            },
+            clear=False,
+        ):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/slack/send-message", headers=H, json={
-                    "channel": "#test-channel",
-                    "text": "Test slack message from bridges test",
-                    "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": "Hello"}}],
-                })
+                r = client.post(
+                    "/notifications/slack/send-message",
+                    headers=H,
+                    json={
+                        "channel": "#test-channel",
+                        "text": "Test slack message from bridges test",
+                        "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": "Hello"}}],
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_slack_webhook_with_blocks(self, client: TestClient) -> None:
@@ -266,14 +343,25 @@ class TestBridgesSlackWithCreds:
         mock_resp = _mock_http_response(json_data={"ok": True})
         mock_client = _mock_httpx_client(mock_resp)
 
-        with patch.dict(os.environ, {
-            "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/TEST2/WEBHOOK",
-        }, clear=False):
-            with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/slack/webhook", headers=H, json={
-                    "text": "Webhook test",
-                    "blocks": [{"type": "header", "text": {"type": "plain_text", "text": "Title"}}],
-                })
+        with patch.dict(
+            os.environ,
+            {
+                "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/TEST2/WEBHOOK",
+            },
+            clear=False,
+        ):
+            with (
+                patch("backend.fastapi.app.routers.bridges.resolve_outbound_target", return_value=object()),
+                patch("backend.fastapi.app.routers.bridges.outbound_request", return_value=mock_resp),
+            ):
+                r = client.post(
+                    "/notifications/slack/webhook",
+                    headers=H,
+                    json={
+                        "text": "Webhook test",
+                        "blocks": [{"type": "header", "text": {"type": "plain_text", "text": "Title"}}],
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_slack_webhook_success_response(self, client: TestClient) -> None:
@@ -281,13 +369,24 @@ class TestBridgesSlackWithCreds:
         mock_resp = _mock_http_response(json_data={"ok": True})
         mock_client = _mock_httpx_client(mock_resp)
 
-        with patch.dict(os.environ, {
-            "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/TEST3/WEBHOOK",
-        }, clear=False):
-            with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/slack/webhook", headers=H, json={
-                    "text": "Success webhook test",
-                })
+        with patch.dict(
+            os.environ,
+            {
+                "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/TEST3/WEBHOOK",
+            },
+            clear=False,
+        ):
+            with (
+                patch("backend.fastapi.app.routers.bridges.resolve_outbound_target", return_value=object()),
+                patch("backend.fastapi.app.routers.bridges.outbound_request", return_value=mock_resp),
+            ):
+                r = client.post(
+                    "/notifications/slack/webhook",
+                    headers=H,
+                    json={
+                        "text": "Success webhook test",
+                    },
+                )
                 assert r.status_code in VALID
 
 
@@ -299,16 +398,24 @@ class TestBridgesResendWithKey:
         mock_resp = _mock_http_response(json_data={"id": "email-123", "status": "sent"})
         mock_client = _mock_httpx_client(mock_resp)
 
-        with patch.dict(os.environ, {
-            "RESEND_API_KEY": "re_test_key_bridges",
-            "RESEND_FROM_EMAIL": "test@example.com",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "RESEND_API_KEY": "re_test_key_bridges",
+                "RESEND_FROM_EMAIL": "test@example.com",
+            },
+            clear=False,
+        ):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/resend/send-email", headers=H, json={
-                    "to_email": "recipient@example.com",
-                    "subject": "Test Email from Bridges",
-                    "html_body": "<p>Hello World</p>",
-                })
+                r = client.post(
+                    "/notifications/resend/send-email",
+                    headers=H,
+                    json={
+                        "to_email": "recipient@example.com",
+                        "subject": "Test Email from Bridges",
+                        "html_body": "<p>Hello World</p>",
+                    },
+                )
                 assert r.status_code in VALID
 
     def test_resend_email_exception(self, client: TestClient) -> None:
@@ -318,14 +425,22 @@ class TestBridgesResendWithKey:
         mock_client.__exit__ = MagicMock(return_value=False)
         mock_client.post.side_effect = Exception("API down")
 
-        with patch.dict(os.environ, {
-            "RESEND_API_KEY": "re_test_key_bridges2",
-            "RESEND_FROM_EMAIL": "test2@example.com",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "RESEND_API_KEY": "re_test_key_bridges2",
+                "RESEND_FROM_EMAIL": "test2@example.com",
+            },
+            clear=False,
+        ):
             with patch("httpx.Client", return_value=mock_client):
-                r = client.post("/notifications/resend/send-email", headers=H, json={
-                    "to_email": "target@example.com",
-                    "subject": "Exception test",
-                    "html_body": "<p>test</p>",
-                })
+                r = client.post(
+                    "/notifications/resend/send-email",
+                    headers=H,
+                    json={
+                        "to_email": "target@example.com",
+                        "subject": "Exception test",
+                        "html_body": "<p>test</p>",
+                    },
+                )
                 assert r.status_code in VALID

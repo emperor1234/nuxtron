@@ -4,6 +4,7 @@ Focus on internal helper functions that are uncovered + routes.
 """
 from __future__ import annotations
 
+import copy
 import os
 
 os.environ.setdefault("NUXTRON_SKIP_STARTUP_DB_INIT", "1")
@@ -371,11 +372,37 @@ class TestSecurityAlertHelperFunctions:
         # Should not raise - just verify it works
 
     def test_update_provider_health_failure(self) -> None:
-        """Lines 2601-2633: _update_provider_health failure path."""
+        """The fifth consecutive error returns and disables the provider."""
         import backend.fastapi.app.legacy_main as lm
-        with patch.object(lm, "_disable_provider", return_value=None):
-            for _ in range(5):
-                lm._update_provider_health("test-provider-fail", False, 0)
+        from backend.fastapi.app.services import ai_providers
+
+        provider = "test-provider-fail"
+        record = {"provider": provider, "enabled": True}
+        provider_count = len(lm._ai_provider_keys_memory)
+        alert_count = len(lm._ai_security_alerts_memory)
+        previous_metrics = copy.deepcopy(ai_providers._provider_health_metrics.get(provider))
+
+        try:
+            lm._ai_provider_keys_memory.append(record)
+            with patch.object(ai_providers, "_send_security_email_alert") as send_alert:
+                for _ in range(4):
+                    lm._update_provider_health(provider, False, 0)
+                assert record["enabled"] is True
+
+                lm._update_provider_health(provider, False, 0)
+                send_alert.assert_called_once()
+            assert record["enabled"] is False
+            assert record["disabled_reason"] == "Auto-disabled: 5 consecutive errors"
+        finally:
+            del lm._ai_provider_keys_memory[provider_count:]
+            del lm._ai_security_alerts_memory[alert_count:]
+            if previous_metrics is None:
+                ai_providers._provider_health_metrics.pop(provider, None)
+            else:
+                ai_providers._provider_health_metrics[provider] = previous_metrics
+        assert len(lm._ai_provider_keys_memory) == provider_count
+        assert len(lm._ai_security_alerts_memory) == alert_count
+        assert ai_providers._provider_health_metrics.get(provider) == previous_metrics
 
 
 class TestAiSecurityRoutes:

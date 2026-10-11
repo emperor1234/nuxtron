@@ -1,9 +1,5 @@
 import asyncio
-import base64
-import hashlib
-import hmac
 import html
-import json
 import os
 import smtplib
 import ssl
@@ -20,7 +16,7 @@ from fastapi import Depends, Header, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field, HttpUrl
 
-from . import memory_stores
+from . import auth_utils, generated_asset_store, memory_stores
 from .bootstrap.middleware import (
     allow_api_docs,
     allowed_hosts,
@@ -30,21 +26,39 @@ from .bootstrap.middleware import (
 from .config import validate_startup_security
 from .database import _get_database_url, init_db
 from .db_init import claim_security_alert_email as _db_claim_security_alert_email
-from .deps import AuthContext, JwtClaims, require_auth
+from .deps import AuthContext, require_auth
 from .governance_db import GovernanceDB as _GovernanceDB
 from .production_middleware import StructuredLogger, validate_environment
 from .rate_limiter import (
     RateLimitExceededError,  # noqa: F401 — re-exported for existing importers
+    rate_limit_metrics_snapshot,
+    reset_rate_limits_for_tests as reset_rate_limits_for_tests,
+)
+from .rate_limiter import (
     enforce_rate_limit as _enforce_rate_limit,
-    get_rate_buckets,
-    get_rate_lock,
 )
 from .routers.autonomous_workforce import run_autonomous_workforce_watchdog
 from .routers.ira import run_ira_watchdog
-from .security import get_password_pepper, hash_password, verify_password
-from .transparent_encryption import te_decrypt, te_encrypt
+from .security import (
+    get_password_pepper as get_password_pepper,
+    hash_password as hash_password,
+    verify_password as verify_password,
+)
+from .transparent_encryption import te_decrypt as te_decrypt
+from .transparent_encryption import te_encrypt as te_encrypt
 
 JsonObject = dict[str, object]
+_b64url_decode = auth_utils.b64url_decode
+_b64url_encode = auth_utils.b64url_encode
+_hash_email = auth_utils.hash_email
+_jwt_sign_hs256 = auth_utils.jwt_sign_hs256
+_jwt_verify_hs256 = auth_utils.jwt_verify_hs256
+_totp_code = auth_utils.totp_code
+_totp_secret = auth_utils.totp_secret
+_totp_verify = auth_utils.totp_verify
+_ai_generated_assets_memory = generated_asset_store.ai_generated_assets
+_ai_generated_assets_lock = generated_asset_store.ai_generated_assets_lock
+_find_ai_generated_asset = generated_asset_store.find_generated_asset
 DEFAULT_FROM_EMAIL = 'noreply@nuxtron.local'
 
 # Import memory stores for this module using local names  
@@ -108,8 +122,6 @@ _api_governance_incidents_memory = memory_stores.api_governance_incidents
 _governance_db: _GovernanceDB | None = None
 _governance_state_loaded = False
 _users_memory = memory_stores.users
-_ai_generated_assets_memory: list[JsonObject] = []
-_ai_generated_assets_lock = threading.Lock()
 _crm_contacts_memory = memory_stores.crm_contacts
 _crm_companies_memory = memory_stores.crm_companies
 _crm_deals_memory = memory_stores.crm_deals
@@ -268,19 +280,19 @@ _vse_dark_social_seeds_memory = memory_stores.vse_dark_social_seeds
 _vse_immortal_assets_memory = memory_stores.vse_immortal_assets
 _vse_viral_vault_memory = memory_stores.vse_viral_vault
 # ── AI Crawler Enablement memory stores ─────────────────────────────────────
-_ace_sites_memory: list[JsonObject] = []
-_ace_crawler_events_memory: list[JsonObject] = []
-_ace_ssr_cache_memory: list[JsonObject] = []
-_ace_crawler_rules_memory: list[JsonObject] = []
-_ace_audit_results_memory: list[JsonObject] = []
+_ace_sites_memory = memory_stores.ace_sites
+_ace_crawler_events_memory = memory_stores.ace_crawler_events
+_ace_ssr_cache_memory = memory_stores.ace_ssr_cache
+_ace_crawler_rules_memory = memory_stores.ace_crawler_rules
+_ace_audit_results_memory = memory_stores.ace_audit_results
 # ── Site Portfolio Manager memory stores ─────────────────────────────────────
-_portfolio_sites_memory: list[JsonObject] = []
-_portfolio_rules_memory: list[JsonObject] = []
-_portfolio_deployments_memory: list[JsonObject] = []
+_portfolio_sites_memory = memory_stores.portfolio_sites
+_portfolio_rules_memory = memory_stores.portfolio_rules
+_portfolio_deployments_memory = memory_stores.portfolio_deployments
 # ── Live Editor memory stores ─────────────────────────────────────────────────
-_live_editor_sessions_memory: list[JsonObject] = []
-_live_editor_changes_memory: list[JsonObject] = []
-_live_editor_history_memory: list[JsonObject] = []
+_live_editor_sessions_memory = memory_stores.live_editor_sessions
+_live_editor_changes_memory = memory_stores.live_editor_changes
+_live_editor_history_memory = memory_stores.live_editor_history
 # ── Autonomous Workforce memory stores ───────────────────────────────────────
 _autonomous_workforce_profiles_memory = memory_stores.autonomous_workforce_profiles
 _autonomous_workforce_integrations_memory = memory_stores.autonomous_workforce_integrations
@@ -292,10 +304,8 @@ _autonomous_workforce_outcomes_memory = memory_stores.autonomous_workforce_outco
 _db_ready = False
 _db_init_attempted = False
 _db_init_lock = threading.Lock()
-_rate_lock = get_rate_lock()
 _ai_security_lock = threading.Lock()
 _siem_lock = threading.Lock()
-_rate_buckets = get_rate_buckets()
 _security_alert_worker_stop: asyncio.Event | None = None
 _security_alert_worker_task: asyncio.Task[None] | None = None
 _ira_watchdog_stop: asyncio.Event | None = None
@@ -303,230 +313,6 @@ _ira_watchdog_task: asyncio.Task[None] | None = None
 _autonomous_workforce_watchdog_stop: asyncio.Event | None = None
 _autonomous_workforce_watchdog_task: asyncio.Task[None] | None = None
 
-# Service configuration is deferred until all extracted services and their
-# dependencies have been imported.  Executing this wiring here made app import
-# order-dependent because several callbacks are defined later in this module.
-_configure_platform_memory_stores = lambda: _set_platform_memory_stores(
-    _scheduled_posts_memory=_scheduled_posts_memory,
-    _email_contacts_memory=_email_contacts_memory,
-    _email_campaigns_memory=_email_campaigns_memory,
-    _suitecrm_jobs_memory=_suitecrm_jobs_memory,
-    _refferq_jobs_memory=_refferq_jobs_memory,
-    _posthog_events_memory=_posthog_events_memory,
-    _social_listening_memory=_social_listening_memory,
-    _social_listening_alert_rules_memory=_social_listening_alert_rules_memory,
-    _social_listening_alerts_memory=_social_listening_alerts_memory,
-    _reviews_memory=_reviews_memory,
-    _n8n_jobs_memory=_n8n_jobs_memory,
-    _growthbook_checks_memory=_growthbook_checks_memory,
-    _matomo_events_memory=_matomo_events_memory,
-    _plausible_events_memory=_plausible_events_memory,
-    _meilisearch_index_memory=_meilisearch_index_memory,
-    _webhook_events_memory=_webhook_events_memory,
-    _appwrite_events_memory=_appwrite_events_memory,
-    _drone_builds_memory=_drone_builds_memory,
-    _directus_items_memory=_directus_items_memory,
-    _minio_objects_memory=_minio_objects_memory,
-    _stripe_events_memory=_stripe_events_memory,
-    _audit_log_memory=_audit_log_memory,
-    _notifications_memory=_notifications_memory,
-    _redis_ops_memory=_redis_ops_memory,
-    _twilio_messages_memory=_twilio_messages_memory,
-    _slack_messages_memory=_slack_messages_memory,
-    _resend_messages_memory=_resend_messages_memory,
-    _algolia_sync_memory=_algolia_sync_memory,
-    _ai_gateway_memory=_ai_gateway_memory,
-    _ai_security_usage_memory=_ai_security_usage_memory,
-    _ai_security_alerts_memory=_ai_security_alerts_memory,
-    _ai_security_blocks_memory=_ai_security_blocks_memory,
-    _ai_security_appeals_memory=_ai_security_appeals_memory,
-    _ai_security_ids_events_memory=_ai_security_ids_events_memory,
-    _auth_security_memory=_auth_security_memory,
-    _tenant_profiles_memory=_tenant_profiles_memory,
-    _engagement_streaks_memory=_engagement_streaks_memory,
-    _engagement_referrals_memory=_engagement_referrals_memory,
-    _engagement_companion_profiles_memory=_engagement_companion_profiles_memory,
-    _engagement_fomo_events_memory=_engagement_fomo_events_memory,
-    _engagement_social_proof_events_memory=_engagement_social_proof_events_memory,
-    _engagement_dependency_profiles_memory=_engagement_dependency_profiles_memory,
-    _engagement_dependency_events_memory=_engagement_dependency_events_memory,
-    _engagement_community_circles_memory=_engagement_community_circles_memory,
-    _engagement_community_posts_memory=_engagement_community_posts_memory,
-    _engagement_community_amas_memory=_engagement_community_amas_memory,
-    _engagement_brand_lock_profiles_memory=_engagement_brand_lock_profiles_memory,
-    _engagement_brand_lock_events_memory=_engagement_brand_lock_events_memory,
-    _engagement_autopilot_profiles_memory=_engagement_autopilot_profiles_memory,
-    _engagement_autopilot_events_memory=_engagement_autopilot_events_memory,
-    _engagement_achievement_profiles_memory=_engagement_achievement_profiles_memory,
-    _engagement_achievement_events_memory=_engagement_achievement_events_memory,
-    _money_printer_ideas_memory=_money_printer_ideas_memory,
-    _money_printer_validations_memory=_money_printer_validations_memory,
-    _bank_accounts_memory=_bank_accounts_memory,
-    _bank_transactions_memory=_bank_transactions_memory,
-    _bank_payouts_memory=_bank_payouts_memory,
-    _university_courses_memory=_university_courses_memory,
-    _university_cohorts_memory=_university_cohorts_memory,
-    _university_enrollments_memory=_university_enrollments_memory,
-    _studios_services_memory=_studios_services_memory,
-    _studios_briefs_memory=_studios_briefs_memory,
-    _studios_proposals_memory=_studios_proposals_memory,
-    _studios_escrows_memory=_studios_escrows_memory,
-    _commerce_products_memory=_commerce_products_memory,
-    _commerce_orders_memory=_commerce_orders_memory,
-    _talent_creators_memory=_talent_creators_memory,
-    _talent_deals_memory=_talent_deals_memory,
-    _talent_rate_cards_memory=_talent_rate_cards_memory,
-    _white_label_profiles_memory=_white_label_profiles_memory,
-    _white_label_events_memory=_white_label_events_memory,
-    _crm_contacts_memory=_crm_contacts_memory,
-    _crm_companies_memory=_crm_companies_memory,
-    _crm_deals_memory=_crm_deals_memory,
-    _cms_connections_memory=_cms_connections_memory,
-    _marketplace_installs_memory=_marketplace_installs_memory,
-    _analytics_reports_memory=_analytics_reports_memory,
-    _analytics_trends_memory=_analytics_trends_memory,
-    _analytics_rollups_memory=_analytics_rollups_memory,
-    _api_usage_audit_memory=_api_usage_audit_memory,
-    _notification_delivery_receipts_memory=_notification_delivery_receipts_memory,
-    _smart_inbox_messages_memory=_smart_inbox_messages_memory,
-    _accounting_integrations_memory=_accounting_integrations_memory,
-    _accounting_exports_memory=_accounting_exports_memory,
-    _super_admin_module_settings_memory=_super_admin_module_settings_memory,
-    _social_accounts_memory=_social_accounts_memory,
-    _content_approval_requests_memory=_content_approval_requests_memory,
-    _sm_listening_memory=_social_listening_memory,
-    _rate_buckets=_rate_buckets,
-    _rate_lock=_rate_lock,
-    _db_ready=_db_ready,
-)
-_configure_platform_helpers = lambda: _set_platform_helpers(_coerce_int, _coerce_float, dict)
-_configure_platform_db_ready = lambda: _set_platform_db_ready(_db_ready)
-_configure_platform_rate_limiter = lambda: _set_platform_rate_limiter(_rate_buckets, _rate_lock)
-
-# Wire up analytics module
-_configure_analytics = lambda: _set_analytics_memory_stores(
-    posthog_events_memory=_posthog_events_memory,
-    matomo_events_memory=_matomo_events_memory,
-    plausible_events_memory=_plausible_events_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-)
-
-# Wire up CRM module
-_configure_crm = lambda: _set_crm_memory_stores(
-    suitecrm_jobs_memory=_suitecrm_jobs_memory,
-    refferq_jobs_memory=_refferq_jobs_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-)
-
-# Wire up storage module
-_configure_storage = lambda: _set_storage_memory_stores(
-    minio_objects_memory=_minio_objects_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-    minio_presign=_minio_presign,
-)
-
-# Wire up Stripe module
-_configure_stripe = lambda: _set_stripe_memory_stores(
-    stripe_events_memory=_stripe_events_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-    verify_stripe_signature=_verify_stripe_signature,
-)
-
-# Wire up Directus module
-_configure_directus = lambda: _set_directus_memory_stores(
-    directus_items_memory=_directus_items_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-)
-
-# Wire up Appwrite module
-_configure_appwrite = lambda: _set_appwrite_memory_stores(
-    appwrite_events_memory=_appwrite_events_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-)
-
-# Wire up Webhooks module (n8n, Growthbook)
-_configure_webhooks = lambda: _set_webhooks_memory_stores(
-    n8n_jobs_memory=_n8n_jobs_memory,
-    growthbook_checks_memory=_growthbook_checks_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-    json_object=dict,
-)
-
-# Wire up Social & Reviews module
-_configure_social_reviews = lambda: _set_social_reviews_memory_stores(
-    social_listening_memory=_social_listening_memory,
-    social_listening_alert_rules_memory=_social_listening_alert_rules_memory,
-    social_listening_alerts_memory=_social_listening_alerts_memory,
-    reviews_memory=_reviews_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-    coerce_int=_coerce_int,
-)
-
-# Wire up Content Generation Service module
-_configure_content_generation_service = lambda: _set_content_gen_service_memory_stores(
-    content_generations_memory=_content_generations_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-    run_optional_ai_generation=_run_optional_ai_generation,
-    generate_media_asset_bundle=_generate_media_asset_bundle,
-    json_object=dict,
-    content_generation_note_telemetry=_content_generation_note_telemetry,
-    content_generation_strict_production_mode=_content_generation_strict_production_mode,
-)
-
-# Wire up Email Campaigns module
-_configure_email_campaigns = lambda: _set_email_campaigns_memory_stores(
-    email_contacts_memory=_email_contacts_memory,
-    email_campaigns_memory=_email_campaigns_memory,
-        rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-    db_ready=_db_ready,
-    db_dsn_fn=_db_dsn,
-    te_encrypt=te_encrypt,
-    te_decrypt=te_decrypt,
-    coerce_int=_coerce_int,
-)
-
-# Wire up Social Scheduling module
-_configure_social_scheduling = lambda: _set_social_scheduling_memory_stores(
-    scheduled_posts_memory=_scheduled_posts_memory,
-    social_accounts_memory=_social_accounts_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-    db_ready=_db_ready,
-    db_dsn_fn=_db_dsn,
-    te_encrypt=te_encrypt,
-    te_decrypt=te_decrypt,
-)
-
-# Wire up Drone CI module
-_configure_drone_ci = lambda: _set_drone_ci_memory_stores(
-    drone_builds_memory=_drone_builds_memory,
-    rate_buckets=_rate_buckets,
-    rate_lock=_rate_lock,
-    enforce_rate_limit=_enforce_rate_limit,
-)
-
-# Content-generation state is populated alongside the deferred service wiring.
 
 
 # Environment-driven edge policy is owned by bootstrap/middleware.py; these
@@ -535,73 +321,6 @@ _is_production = is_production_environment
 _allow_api_docs = allow_api_docs
 _allowed_hosts = allowed_hosts
 _cors_origins = cors_origins
-
-
-def _b64url_encode(raw: bytes) -> str:
-    return base64.urlsafe_b64encode(raw).rstrip(b'=').decode('ascii')
-
-
-def _b64url_decode(raw: str) -> bytes:
-    padding = '=' * ((4 - len(raw) % 4) % 4)
-    return base64.urlsafe_b64decode((raw + padding).encode('ascii'))
-
-
-def _jwt_sign_hs256(payload: JsonObject, secret: str) -> str:
-    header = {'alg': 'HS256', 'typ': 'JWT'}
-    head = _b64url_encode(json.dumps(header, separators=(',', ':')).encode('utf-8'))
-    body = _b64url_encode(json.dumps(payload, separators=(',', ':')).encode('utf-8'))
-    signing_input = f'{head}.{body}'.encode('ascii')
-    signature = hmac.new(secret.encode('utf-8'), signing_input, hashlib.sha256).digest()
-    return f'{head}.{body}.{_b64url_encode(signature)}'
-
-
-def _jwt_verify_hs256(token: str, secret: str) -> tuple[bool, JwtClaims | None, str | None]:
-    try:
-        parts = token.split('.')
-        if len(parts) != 3:
-            return False, None, 'Invalid token format.'
-
-        head, body, sig = parts
-        signing_input = f'{head}.{body}'.encode('ascii')
-        expected_sig = hmac.new(secret.encode('utf-8'), signing_input, hashlib.sha256).digest()
-        actual_sig = _b64url_decode(sig)
-        if not hmac.compare_digest(expected_sig, actual_sig):
-            return False, None, 'Invalid token signature.'
-
-        payload = json.loads(_b64url_decode(body).decode('utf-8'))
-        if not isinstance(payload, dict):
-            return False, None, 'Invalid token payload.'
-        claims = cast(JwtClaims, payload)
-        exp = int(claims.get('exp', 0) or 0)
-        if exp and time.time() > exp:
-            return False, claims, 'Token expired.'
-        return True, claims, None
-    except Exception as ex:
-        return False, None, f'Token verification failed: {ex}'
-
-
-def _totp_secret() -> str:
-    return base64.b32encode(os.urandom(20)).decode('ascii').rstrip('=')
-
-
-def _totp_code(secret: str, for_time: int | None = None, step: int = 30, digits: int = 6) -> str:
-    ts = int(time.time() if for_time is None else for_time)
-    counter = ts // step
-    padded = secret + ('=' * ((8 - len(secret) % 8) % 8))
-    key = base64.b32decode(padded.upper())
-    msg = counter.to_bytes(8, byteorder='big')
-    digest = hmac.new(key, msg, hashlib.sha1).digest()
-    offset = digest[-1] & 0x0F
-    code_int = ((digest[offset] & 0x7F) << 24) | ((digest[offset + 1] & 0xFF) << 16) | ((digest[offset + 2] & 0xFF) << 8) | (digest[offset + 3] & 0xFF)
-    return str(code_int % (10 ** digits)).zfill(digits)
-
-
-def _totp_verify(secret: str, code: str, window: int = 1, step: int = 30) -> bool:
-    now = int(time.time())
-    for w in range(-window, window + 1):
-        if hmac.compare_digest(_totp_code(secret, for_time=now + (w * step), step=step), code):
-            return True
-    return False
 
 
 def _send_via_listmonk(recipient_email: str, subject: str, body: str) -> tuple[bool, str]:
@@ -1464,264 +1183,246 @@ def _start_autonomous_workforce_watchdog() -> tuple[asyncio.Event, 'asyncio.Task
 # bootstrap/lifespan.py, which calls the step functions above in order.
 
 # ── Service module imports ────────────────────────────────────
+from .services.ai_providers import (
+    _active_provider_key_record as _active_provider_key_record,
+    _ai_generate_anthropic as _ai_generate_anthropic,
+    _ai_generate_generic as _ai_generate_generic,
+    _ai_generate_google_vertex as _ai_generate_google_vertex,
+    _ai_generate_image_binary as _ai_generate_image_binary,
+    _ai_generate_openai as _ai_generate_openai,
+    _ai_generate_video_binary as _ai_generate_video_binary,
+    _ai_generate_voice_binary as _ai_generate_voice_binary,
+    _ai_queued_item as _ai_queued_item,
+    _ai_security_provider_graph as _ai_security_provider_graph,
+    _ai_security_tenant_alerts as _ai_security_tenant_alerts,
+    _ai_security_timeline as _ai_security_timeline,
+    _ai_security_usage_window as _ai_security_usage_window,
+    _asset_extension_for_mime as _asset_extension_for_mime,
+    _block_tenant as _block_tenant,
+    _coerce_float,
+    _coerce_int,
+    _compute_roi as _compute_roi,
+    _disable_provider as _disable_provider,
+    _evaluate_ai_guardrails as _evaluate_ai_guardrails,
+    _extract_ai_result,
+    _extract_anthropic_result as _extract_anthropic_result,
+    _extract_ip_hash as _extract_ip_hash,
+    _extract_openai_result as _extract_openai_result,
+    _extract_ua_hash as _extract_ua_hash,
+    _generate_media_asset_bundle as _generate_media_asset_bundle,
+    _generate_with_cohere as _generate_with_cohere,
+    _generate_with_mistral as _generate_with_mistral,
+    _generate_with_stability_ai as _generate_with_stability_ai,
+    _generate_with_together_ai as _generate_with_together_ai,
+    _get_provider_health as _get_provider_health,
+    _invoke_ai_provider_generation,
+    _is_provider_disabled as _is_provider_disabled,
+    _is_tenant_blocked as _is_tenant_blocked,
+    _json_object,
+    _load_ai_generated_asset_bytes as _load_ai_generated_asset_bytes,
+    _model_quality as _model_quality,
+    _model_unit_cost as _model_unit_cost,
+    _persist_ai_generated_asset as _persist_ai_generated_asset,
+    _prepare_ai_gateway_attempt as _prepare_ai_gateway_attempt,
+    _provider_default_model as _provider_default_model,
+    _provider_env_key as _provider_env_key,
+    _record_ai_gateway_success as _record_ai_gateway_success,
+    _record_ai_security_alert as _record_ai_security_alert,
+    _record_ai_usage as _record_ai_usage,
+    _resolve_oss_voice_endpoints as _resolve_oss_voice_endpoints,
+    _resolve_provider_api_key,
+    _run_generic_provider_generation as _run_generic_provider_generation,
+    _run_optional_ai_generation,
+    _select_provider_with_tiers,
+    _select_replicate_video_model as _select_replicate_video_model,
+    _send_security_email_alert as _send_security_email_alert,
+    _synth_voice_wave_bytes as _synth_voice_wave_bytes,
+    _try_generate_elevenlabs_voice as _try_generate_elevenlabs_voice,
+    _try_generate_oss_voice as _try_generate_oss_voice,
+    _try_generate_replicate_video as _try_generate_replicate_video,
+    _try_generate_stability_image as _try_generate_stability_image,
+    _try_generate_vertex_image as _try_generate_vertex_image,
+    _update_provider_health as _update_provider_health,
+    _usage_to_tokens as _usage_to_tokens,
+)
+from .services.analytics import (
+    MatomoTrackRequest as MatomoTrackRequest,
+    PlausibleTrackRequest as PlausibleTrackRequest,
+    PosthogCaptureRequest as PosthogCaptureRequest,
+    capture_posthog_event as capture_posthog_event,
+    track_matomo_event as track_matomo_event,
+    track_plausible_event as track_plausible_event,
+)
+from .services.appwrite import (
+    AppwriteCreateSessionRequest as AppwriteCreateSessionRequest,
+    AppwriteCreateUserRequest as AppwriteCreateUserRequest,
+    appwrite_create_session as appwrite_create_session,
+    appwrite_create_user as appwrite_create_user,
+)
+from .domains.content.generation import (
+    ContentGenerationService as ContentGenerationService,
+    _content_generation_inflight_count as _content_generation_inflight_count,
+    _content_generation_job_expires_at as _content_generation_job_expires_at,
+    _content_generation_job_retention_seconds as _content_generation_job_retention_seconds,
+    _content_generation_job_terminal as _content_generation_job_terminal,
+    _content_generation_max_inflight as _content_generation_max_inflight,
+    _content_generation_note_telemetry as _content_generation_note_telemetry,
+    _content_generation_prune_expired_terminal_jobs as _content_generation_prune_expired_terminal_jobs,
+    _content_generation_required_provider_state,
+    _content_generation_strict_production_mode,
+    _env_bool,
+    _find_content_generation_job as _find_content_generation_job,
+    _get_cg_svc,
+    _parse_iso_datetime,
+    _persist_content_generation_job as _persist_content_generation_job,
+    _redis_sync_client,
+    _safe_int,
+)
+from .domains.content.campaigns import (
+    AdsRequest as AdsRequest,
+    ContentRequest as ContentRequest,
+    SeoRequest as SeoRequest,
+    analyze_seo as analyze_seo,
+    generate_ads as generate_ads,
+    generate_content as generate_content,
+)
+from .services.crm import (
+    RefferqReferralRequest as RefferqReferralRequest,
+    SuiteCrmLeadRequest as SuiteCrmLeadRequest,
+    register_refferq_referral as register_refferq_referral,
+    upsert_suitecrm_lead as upsert_suitecrm_lead,
+)
+from .services.directus import (
+    DirectusCreateItemRequest as DirectusCreateItemRequest,
+    DirectusListItemsRequest as DirectusListItemsRequest,
+    directus_create_item as directus_create_item,
+    directus_list_items as directus_list_items,
+)
+from .services.drone_ci import (
+    DroneBuildTriggerRequest as DroneBuildTriggerRequest,
+    drone_trigger_build as drone_trigger_build,
+)
+from .domains.notifications.email_campaigns import (
+    EmailCampaignCreateRequest as EmailCampaignCreateRequest,
+    EmailCampaignSendTestRequest as EmailCampaignSendTestRequest,
+    EmailContactCreateRequest as EmailContactCreateRequest,
+    create_email_campaign as create_email_campaign,
+    create_email_contact as create_email_contact,
+    list_email_campaigns as list_email_campaigns,
+    list_email_contacts as list_email_contacts,
+    send_test_email_campaign as send_test_email_campaign,
+)
+from .domains.integrations.provider_helpers import (
+    _dispatch_security_email as _dispatch_security_email,
+    _ensure_signature_header as _ensure_signature_header,
+    _hashicorp_vault_health as _hashicorp_vault_health,
+    _minio_hmac_sign as _minio_hmac_sign,
+    _minio_presign as _minio_presign,
+    _security_alert_from_email as _security_alert_from_email,
+    _send_via_listmonk as _send_via_listmonk,
+    _send_via_postal as _send_via_postal,
+    _send_via_resend as _send_via_resend,
+    _send_via_ses as _send_via_ses,
+    _validate_generic_webhook_signature as _validate_generic_webhook_signature,
+    _validate_github_webhook_signature as _validate_github_webhook_signature,
+    _validate_stripe_webhook_signature as _validate_stripe_webhook_signature,
+    _validate_webhook_signature as _validate_webhook_signature,
+    _verify_github_signature as _verify_github_signature,
+    _verify_stripe_signature as _verify_stripe_signature,
+)
+from .services.platform import (
+    _build_integrations_dict as _build_integrations_dict,
+    _build_queues_dict,
+    _build_use_cases_dict,
+    _platform_anti_failure_payload as _platform_anti_failure_payload,
+    _platform_api_usage_payload,
+    _platform_capabilities_payload as _platform_capabilities_payload,
+    _platform_hybrid_stacks_payload,
+    _platform_metrics_summary_payload,
+    _platform_module_registry_payload,
+    _platform_status_payload,
+    _platform_super_admin_dashboard_payload as _platform_super_admin_dashboard_payload,
+    _platform_use_case_coverage_payload,
+    _queue_ready,
+)
 from .services.siem import (
+    _platform_siem_advanced_threat_hunt_payload as _platform_siem_advanced_threat_hunt_payload,
+    _platform_siem_apply_endpoint_hardening_payload as _platform_siem_apply_endpoint_hardening_payload,
+    _platform_siem_apply_update_payload,
+    _platform_siem_architecture_payload as _platform_siem_architecture_payload,
+    _platform_siem_auto_pentest_jobs_payload,
+    _platform_siem_auto_pentest_run_payload as _platform_siem_auto_pentest_run_payload,
+    _platform_siem_compliance_payload,
+    _platform_siem_create_case_payload,
+    _platform_siem_data_collection_payload as _platform_siem_data_collection_payload,
+    _platform_siem_dead_code_findings_payload,
+    _platform_siem_dead_code_scan_payload as _platform_siem_dead_code_scan_payload,
+    _platform_siem_detection_payload as _platform_siem_detection_payload,
+    _platform_siem_endpoint_hardening_status_payload,
+    _platform_siem_flow_map_payload as _platform_siem_flow_map_payload,
+    _platform_siem_investigation_payload as _platform_siem_investigation_payload,
+    _platform_siem_list_cases_payload,
+    _platform_siem_network_anomalies_payload as _platform_siem_network_anomalies_payload,
+    _platform_siem_run_soar_payload,
+    _platform_siem_run_zap_scan_payload as _platform_siem_run_zap_scan_payload,
+    _platform_siem_security_controls_payload,
+    _platform_siem_set_retention_policy_payload as _platform_siem_set_retention_policy_payload,
+    _platform_siem_update_case_payload,
+    _platform_siem_update_security_control_payload as _platform_siem_update_security_control_payload,
+    _platform_siem_updates_payload,
+    _platform_siem_vault_encryption_health_payload,
+    _platform_siem_vulnerabilities_payload,
     _siem_bootstrap_advanced_state,
     _siem_extract_ip,
     _siem_extract_user,
     _siem_is_private_ip,
     _siem_retention_policy_for_tenant,
-    _platform_siem_advanced_threat_hunt_payload,
-    _platform_siem_architecture_payload,
-    _platform_siem_apply_endpoint_hardening_payload,
-    _platform_siem_apply_update_payload,
-    _platform_siem_auto_pentest_jobs_payload,
-    _platform_siem_auto_pentest_run_payload,
-    _platform_siem_compliance_payload,
-    _platform_siem_create_case_payload,
-    _platform_siem_data_collection_payload,
-    _platform_siem_dead_code_findings_payload,
-    _platform_siem_dead_code_scan_payload,
-    _platform_siem_detection_payload,
-    _platform_siem_endpoint_hardening_status_payload,
-    _platform_siem_flow_map_payload,
-    _platform_siem_investigation_payload,
-    _platform_siem_list_cases_payload,
-    _platform_siem_network_anomalies_payload,
-    _platform_siem_run_soar_payload,
-    _platform_siem_run_zap_scan_payload,
-    _platform_siem_security_controls_payload,
-    _platform_siem_set_retention_policy_payload,
-    _platform_siem_update_case_payload,
-    _platform_siem_update_security_control_payload,
-    _platform_siem_updates_payload,
-    _platform_siem_vault_encryption_health_payload,
-    _platform_siem_vulnerabilities_payload,
-)
-from .services.ai_providers import (
-    _provider_env_key,
-    _provider_default_model,
-    _model_unit_cost,
-    _model_quality,
-    _extract_ip_hash,
-    _extract_ua_hash,
-    _usage_to_tokens,
-    _compute_roi,
-    _active_provider_key_record,
-    _is_provider_disabled,
-    _resolve_provider_api_key,
-    _record_ai_security_alert,
-    _send_security_email_alert,
-    _block_tenant,
-    _is_tenant_blocked,
-    _disable_provider,
-    _update_provider_health,
-    _get_provider_health,
-    _select_provider_with_tiers,
-    _record_ai_usage,
-    _evaluate_ai_guardrails,
-    _ai_queued_item,
-    _json_object,
-    _coerce_int,
-    _coerce_float,
-    _extract_openai_result,
-    _extract_anthropic_result,
-    _ai_generate_openai,
-    _ai_generate_anthropic,
-    _ai_generate_google_vertex,
-    _generate_with_cohere,
-    _generate_with_mistral,
-    _generate_with_together_ai,
-    _generate_with_stability_ai,
-    _run_generic_provider_generation,
-    _ai_generate_generic,
-    _asset_extension_for_mime,
-    _persist_ai_generated_asset,
-    _load_ai_generated_asset_bytes,
-    _svg_image_placeholder_bytes,
-    _try_generate_vertex_image,
-    _try_generate_stability_image,
-    _ai_generate_image_binary,
-    _try_generate_elevenlabs_voice,
-    _resolve_oss_voice_endpoints,
-    _try_generate_oss_voice,
-    _select_replicate_video_model,
-    _synth_voice_wave_bytes,
-    _ai_generate_voice_binary,
-    _try_generate_replicate_video,
-    _ai_generate_video_binary,
-    _generate_media_asset_bundle,
-    _invoke_ai_provider_generation,
-    _extract_ai_result,
-    _prepare_ai_gateway_attempt,
-    _record_ai_gateway_success,
-    _run_optional_ai_generation,
-    _ai_security_usage_window,
-    _ai_security_provider_graph,
-    _ai_security_timeline,
-    _ai_security_tenant_alerts,
-)
-from .services.integrations import (
-    _send_via_listmonk,
-    _send_via_postal,
-    _send_via_ses,
-    _send_via_resend,
-    _security_alert_from_email,
-    _dispatch_security_email,
-    _verify_github_signature,
-    _verify_stripe_signature,
-    _ensure_signature_header,
-    _validate_github_webhook_signature,
-    _validate_stripe_webhook_signature,
-    _validate_generic_webhook_signature,
-    _validate_webhook_signature,
-    _minio_hmac_sign,
-    _minio_presign,
-    _hashicorp_vault_health,
-    _supabase_vault_health,
-)
-from .services.content_generation import (
-    ContentGenerationService,
-    _env_bool,
-    _safe_int,
-    _parse_iso_datetime,
-    _redis_sync_client,
-    _content_generation_strict_production_mode,
-    _content_generation_required_provider_state,
-    _content_generation_job_retention_seconds,
-    _content_generation_job_terminal,
-    _content_generation_max_inflight,
-    _persist_content_generation_job,
-    _find_content_generation_job,
-    _content_generation_inflight_count,
-    _content_generation_note_telemetry,
-    _content_generation_job_expires_at,
-    _content_generation_prune_expired_terminal_jobs,
-    _get_cg_svc,
-)
-from .services.platform import (
-    set_memory_stores as _set_platform_memory_stores,
-    set_helpers as _set_platform_helpers,
-    set_db_ready as _set_platform_db_ready,
-    set_rate_limiter as _set_platform_rate_limiter,
-    _build_queues_dict,
-    _build_integrations_dict,
-    _queue_ready,
-    _build_use_cases_dict,
-    _platform_status_payload,
-    _platform_metrics_summary_payload,
-    _platform_anti_failure_payload,
-    _platform_use_case_coverage_payload,
-    _platform_capabilities_payload,
-    _platform_hybrid_stacks_payload,
-    _platform_module_registry_payload,
-    _platform_api_usage_payload,
-    _platform_super_admin_dashboard_payload,
-)
-from .services.analytics import (
-    capture_posthog_event,
-    track_matomo_event,
-    track_plausible_event,
-    set_memory_stores as _set_analytics_memory_stores,
-    PosthogCaptureRequest,
-    MatomoTrackRequest,
-    PlausibleTrackRequest,
-)
-from .services.crm import (
-    upsert_suitecrm_lead,
-    register_refferq_referral,
-    set_memory_stores as _set_crm_memory_stores,
-    SuiteCrmLeadRequest,
-    RefferqReferralRequest,
-)
-from .services.storage import (
-    storage_presign,
-    storage_list_objects,
-    set_memory_stores as _set_storage_memory_stores,
-    MinioPresignRequest,
-    MinioListObjectsRequest,
-)
-from .services.stripe import (
-    stripe_create_checkout,
-    stripe_process_webhook,
-    list_stripe_events,
-    set_memory_stores as _set_stripe_memory_stores,
-    StripeCreateCheckoutRequest,
-    StripeWebhookProcessRequest,
-)
-from .services.directus import (
-    directus_create_item,
-    directus_list_items,
-    set_memory_stores as _set_directus_memory_stores,
-    DirectusCreateItemRequest,
-    DirectusListItemsRequest,
-)
-from .services.appwrite import (
-    appwrite_create_user,
-    appwrite_create_session,
-    set_memory_stores as _set_appwrite_memory_stores,
-    AppwriteCreateUserRequest,
-    AppwriteCreateSessionRequest,
-)
-from .services.webhooks import (
-    trigger_n8n_webhook,
-    evaluate_growthbook_flag,
-    receive_webhook,
-    list_webhook_events,
-    set_memory_stores as _set_webhooks_memory_stores,
-    N8nWebhookTriggerRequest,
-    GrowthbookEvaluateRequest,
-    WebhookAcknowledgeRequest,
 )
 from .services.social_reviews import (
-    ingest_social_listening_mention,
-    list_social_listening_mentions,
-    get_social_listening_summary,
-    create_social_listening_alert_rule,
-    list_social_listening_alerts,
-    get_social_listening_clusters,
-    ingest_review,
-    list_reviews,
-    respond_to_review,
-    get_reviews_summary,
-    set_memory_stores as _set_social_reviews_memory_stores,
-    SocialListeningIngestRequest,
-    SocialListeningAlertRuleRequest,
-    ReviewIngestRequest,
-    ReviewResponseRequest,
-)
-from .services.content_generation_service import (
-    generate_content,
-    generate_ads,
-    analyze_seo,
-    set_memory_stores as _set_content_gen_service_memory_stores,
-    ContentRequest,
-    AdsRequest,
-    SeoRequest,
-)
-from .services.email_campaigns import (
-    create_email_contact,
-    list_email_contacts,
-    create_email_campaign,
-    list_email_campaigns,
-    send_test_email_campaign,
-    set_memory_stores as _set_email_campaigns_memory_stores,
-    EmailContactCreateRequest,
-    EmailCampaignCreateRequest,
-    EmailCampaignSendTestRequest,
+    ReviewIngestRequest as ReviewIngestRequest,
+    ReviewResponseRequest as ReviewResponseRequest,
+    SocialListeningAlertRuleRequest as SocialListeningAlertRuleRequest,
+    SocialListeningIngestRequest as SocialListeningIngestRequest,
+    create_social_listening_alert_rule as create_social_listening_alert_rule,
+    get_reviews_summary as get_reviews_summary,
+    get_social_listening_clusters as get_social_listening_clusters,
+    get_social_listening_summary as get_social_listening_summary,
+    ingest_review as ingest_review,
+    ingest_social_listening_mention as ingest_social_listening_mention,
+    list_reviews as list_reviews,
+    list_social_listening_alerts as list_social_listening_alerts,
+    list_social_listening_mentions as list_social_listening_mentions,
+    respond_to_review as respond_to_review,
 )
 from .services.social_scheduling import (
-    schedule_social_post,
-    list_scheduled_posts,
-    move_scheduled_post,
-    delete_scheduled_post,
-    set_memory_stores as _set_social_scheduling_memory_stores,
-    SocialScheduleRequest,
-    SocialMoveRequest,
+    SocialMoveRequest as SocialMoveRequest,
+    SocialScheduleRequest as SocialScheduleRequest,
+    delete_scheduled_post as delete_scheduled_post,
+    list_scheduled_posts as list_scheduled_posts,
+    move_scheduled_post as move_scheduled_post,
+    schedule_social_post as schedule_social_post,
 )
-from .services.drone_ci import (
-    drone_trigger_build,
-    set_memory_stores as _set_drone_ci_memory_stores,
-    DroneBuildTriggerRequest,
+from .domains.content.storage import (
+    MinioListObjectsRequest as MinioListObjectsRequest,
+    MinioPresignRequest as MinioPresignRequest,
+    storage_list_objects as storage_list_objects,
+    storage_presign as storage_presign,
+)
+from .domains.billing.checkout import (
+    StripeCreateCheckoutRequest as StripeCreateCheckoutRequest,
+    StripeWebhookProcessRequest as StripeWebhookProcessRequest,
+    list_stripe_events,
+    stripe_create_checkout as stripe_create_checkout,
+    stripe_process_webhook as stripe_process_webhook,
+)
+from .domains.integrations.webhooks import (
+    GrowthbookEvaluateRequest as GrowthbookEvaluateRequest,
+    N8nWebhookTriggerRequest as N8nWebhookTriggerRequest,
+    WebhookAcknowledgeRequest as WebhookAcknowledgeRequest,
+    evaluate_growthbook_flag as evaluate_growthbook_flag,
+    list_webhook_events as list_webhook_events,
+    receive_webhook as receive_webhook,
+    trigger_n8n_webhook as trigger_n8n_webhook,
 )
 
 # The FastAPI instance, its middleware stack, its exception handlers and its
@@ -1841,12 +1542,6 @@ def _hash_password_ops(password: str, algorithm: str) -> str:
     return hash_password(password)
 
 
-def _hash_email(email: str) -> str:
-    """Deterministic hash for email lookups without decryption."""
-    pepper = get_password_pepper()
-    return hashlib.sha256(f'{email.strip().lower()}:{pepper}'.encode()).hexdigest()
-
-
 class AiGatewayGenerateRequest(BaseModel):
     provider: Literal['auto', 'openai', 'anthropic', 'google_vertex'] = 'auto'
     prompt: str = Field(min_length=1, max_length=12000)
@@ -1920,16 +1615,17 @@ def _run_optional_ai_generation(
 
 def _platform_metrics_summary_payload(auth: AuthContext) -> JsonObject:
     """Generate metrics summary. Refactored to use helper for queue dict."""
-    with _rate_lock:
-        rate_samples = sum(len(samples) for samples in _rate_buckets.values())
-        active_keys = len(_rate_buckets)
+    rate_metrics = rate_limit_metrics_snapshot()
 
     queues = _build_queues_dict()
     return {
         'status': 'ok',
         'tenant_id': auth.tenant_id,
         'queues': queues,
-        'rate_limiter': {'active_keys': active_keys, 'sample_count': rate_samples},
+        'rate_limiter': {
+            'active_keys': rate_metrics.active_keys,
+            'sample_count': rate_metrics.sample_count,
+        },
         'generated_at': datetime.now(UTC).isoformat(),
     }
 
@@ -2541,20 +2237,11 @@ def _content_generation_required_provider_state() -> tuple[bool, dict[str, bool]
 # _find_content_generation_job, _content_generation_inflight_count,
 # _content_generation_max_inflight — all imported at top of file.
 
-# These shim functions delegate to the ContentGenerationService instance:
-
-_cg_svc: ContentGenerationService | None = None
-
-
-def _get_cg_svc() -> ContentGenerationService:
-    global _cg_svc
-    if _cg_svc is None:
-        _cg_svc = ContentGenerationService()
-    return _cg_svc
-
-
 def _content_generation_production_verification_payload(tenant_id: str) -> tuple[JsonObject, bool]:
-    return _get_cg_svc().production_verification_payload(tenant_id)
+    return _get_cg_svc().production_verification_payload(
+        tenant_id,
+        provider_state=_content_generation_required_provider_state,
+    )
 
 
 def _build_content_generation_response(payload: ContentRequest, auth: AuthContext) -> JsonObject:
@@ -2694,33 +2381,6 @@ def get_audit_log(auth: AuthContext = Depends(require_auth)) -> JsonObject:
 # Legacy finance routes — now registered via routers/finance_legacy.py in composition.py
 
 
-# Complete service configuration only after all callbacks and extracted
-# services exist. Keeping this at the composition boundary prevents import-time
-# ordering from becoming a hidden runtime dependency.
-_configure_platform_memory_stores()
-_configure_platform_helpers()
-_configure_platform_db_ready()
-_configure_platform_rate_limiter()
-_configure_analytics()
-_configure_crm()
-_configure_storage()
-_configure_stripe()
-_configure_directus()
-_configure_appwrite()
-_configure_webhooks()
-_configure_social_reviews()
-_configure_content_generation_service()
-_configure_email_campaigns()
-_configure_social_scheduling()
-_configure_drone_ci()
-
-# Initialize content generation service via the shared getter
-_cg_svc = _get_cg_svc()
-_content_generation_jobs_memory = _cg_svc.jobs_memory
-_content_generation_jobs_lock = _cg_svc.jobs_lock
-_content_generation_telemetry_lock = _cg_svc.telemetry_lock
-_content_generation_telemetry = _cg_svc.telemetry
-
 
 # All app.include_router() calls — now in router_registration.py (composed via bootstrap/context_registry.py)
 
@@ -2737,4 +2397,12 @@ def __getattr__(name: str) -> Any:
         from .bootstrap.application import app
 
         return app
+    service_attributes = {
+        '_content_generation_jobs_memory': 'jobs_memory',
+        '_content_generation_jobs_lock': 'jobs_lock',
+        '_content_generation_telemetry_lock': 'telemetry_lock',
+        '_content_generation_telemetry': 'telemetry',
+    }
+    if name in service_attributes:
+        return getattr(_get_cg_svc(), service_attributes[name])
     raise AttributeError(f'module {__name__!r} has no attribute {name!r}')

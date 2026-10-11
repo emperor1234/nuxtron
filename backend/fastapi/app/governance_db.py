@@ -36,6 +36,10 @@ _GOVERNANCE_TABLES = (
 )
 
 
+def _is_production() -> bool:
+    return os.getenv('ENVIRONMENT', 'development').strip().lower() == 'production'
+
+
 class UnknownGovernanceTableError(ValueError):
     """Raised when code attempts to interpolate a table name that is not on the
     reviewed allowlist. This is a security control, not a convenience check — do
@@ -203,6 +207,10 @@ class GovernanceDB:
                 for table in _GOVERNANCE_TABLES:
                     cur.execute(f'CREATE INDEX IF NOT EXISTS {_validated_table(table)}_tenant_idx ON {_validated_table(table)} (tenant_id)')
         except Exception:
+            if _is_production():
+                raise RuntimeError(
+                    'GovernanceDB PostgreSQL schema initialization failed in production.'
+                ) from None
             self._backend = 'sqlite'
             self._init_schema_sqlite()
 
@@ -243,6 +251,10 @@ class GovernanceDB:
             logger.warning('GovernanceDB: PostgreSQL unavailable; using SQLite fallback at %s', self._sqlite_path)
         except Exception:
             logger.exception('GovernanceDB: fallback schema init failed — governance data will not persist')
+            if _is_production():
+                raise RuntimeError(
+                    'GovernanceDB SQLite fallback is disabled in production.'
+                ) from None
 
     def _load_table(self, conn: psycopg.Connection[Any], table: str) -> list[JsonObject]:
         rows: list[JsonObject] = []
@@ -262,6 +274,8 @@ class GovernanceDB:
                         logger.warning('GovernanceDB: skipped corrupt row in %s', table)
         except Exception:
             logger.exception('GovernanceDB: failed to load table %s', table)
+            if _is_production():
+                raise
         return rows
 
     def _replace_table(
@@ -280,6 +294,8 @@ class GovernanceDB:
                     )
         except Exception:
             logger.exception('GovernanceDB: failed to persist table %s', table)
+            if _is_production():
+                raise
 
     def _load_table_sqlite(self, table: str) -> list[JsonObject]:
         rows: list[JsonObject] = []
@@ -298,6 +314,8 @@ class GovernanceDB:
                         logger.warning('GovernanceDB: skipped corrupt SQLite row in %s', table)
         except Exception:
             logger.exception('GovernanceDB: failed to load SQLite table %s', table)
+            if _is_production():
+                raise
         return rows
 
     def _save_table_sqlite(self, table: str, rows: list[JsonObject]) -> None:
@@ -315,6 +333,8 @@ class GovernanceDB:
                 conn.commit()
         except Exception:
             logger.exception('GovernanceDB: failed to persist SQLite table %s', table)
+            if _is_production():
+                raise
 
     def _load_all_sqlite(self) -> tuple[list[JsonObject], list[JsonObject], list[JsonObject]]:
         return (

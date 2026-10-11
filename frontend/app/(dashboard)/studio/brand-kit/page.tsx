@@ -132,8 +132,8 @@ const DEFAULT_KIT: BrandKit = {
   tenant_id: DEFAULT_TENANT_ID,
   colors: {
     primary: '#6366f1',
-    secondary: '#8B5CF6',
-    accent: '#EC4899',
+    secondary: 'var(--series-7)',
+    accent: 'var(--series-5)',
     background: 'var(--card)',
     text: 'var(--text)',
     muted: 'var(--muted)',
@@ -181,10 +181,10 @@ function CompletenessRing({ score }: { score: number }) {
   const r = 52;
   const circ = 2 * Math.PI * r;
   const dash = (score / 100) * circ;
-  const color = score >= 80 ? '#22c55e' : score >= 50 ? '#F59E0B' : '#EF4444';
+  const color = score >= 80 ? 'var(--success)' : score >= 50 ? 'var(--warning)' : 'var(--danger)';
   return (
     <svg width={128} height={128} viewBox="0 0 128 128" style={{ display: 'block' }}>
-      <circle cx={64} cy={64} r={r} fill="none" stroke="#eef0f4" strokeWidth={12} />
+      <circle cx={64} cy={64} r={r} fill="none" stroke="var(--neutral-soft)" strokeWidth={12} />
       <circle
         cx={64}
         cy={64}
@@ -1076,9 +1076,9 @@ export default function BrandKitPage() {
                     style={{
                       ...styles.kbStatusBadge,
                       background:
-                        entry.status === 'indexed' ? '#dcfce7' : entry.status === 'pending' ? '#fef3c7' : '#fee2e2',
+                        entry.status === 'indexed' ? 'var(--success-soft)' : entry.status === 'pending' ? 'var(--warning-line)' : 'var(--danger-soft)',
                       color:
-                        entry.status === 'indexed' ? '#15803d' : entry.status === 'pending' ? '#b45309' : '#dc2626',
+                        entry.status === 'indexed' ? 'var(--success-ink)' : entry.status === 'pending' ? 'var(--warning-ink)' : 'var(--danger)',
                     }}
                   >
                     {entry.status}
@@ -1153,7 +1153,7 @@ export default function BrandKitPage() {
                     { label: 'Tone aligned', ok: previewResult.compliance_check.tone_aligned },
                   ].map(({ label, ok }) => (
                     <div key={label} style={styles.complianceItem}>
-                      <span style={{ color: ok ? '#15803d' : '#EF4444' }}>{ok ? '✓' : '✗'}</span>
+                      <span style={{ color: ok ? 'var(--success-ink)' : 'var(--danger)' }}>{ok ? '✓' : '✗'}</span>
                       <span style={styles.complianceLabel}>{label}</span>
                     </div>
                   ))}
@@ -1224,11 +1224,11 @@ export default function BrandKitPage() {
                     key={key}
                     style={{
                       ...styles.sectionStatusItem,
-                      borderColor: analytics[key] ? '#dcfce7' : '#fee2e2',
-                      background: analytics[key] ? '#0F2719' : '#1C0F0F',
+                      borderColor: analytics[key] ? 'var(--success-line)' : 'var(--danger-line)',
+                      background: analytics[key] ? 'var(--success-soft)' : 'var(--danger-soft)',
                     }}
                   >
-                    <span style={{ color: analytics[key] ? '#15803d' : '#EF4444', fontSize: 18 }}>
+                    <span style={{ color: analytics[key] ? 'var(--success-ink)' : 'var(--danger-ink)', fontSize: 18 }}>
                       {analytics[key] ? '✓' : '○'}
                     </span>
                     <span style={styles.sectionStatusLabel}>{label}</span>
@@ -1288,7 +1288,7 @@ const styles: Record<string, CSSProperties> = {
     width: 36,
     height: 36,
     border: '3px solid var(--line)',
-    borderTopColor: '#6366F1',
+    borderTopColor: 'var(--info)',
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
   },
@@ -1299,21 +1299,21 @@ const styles: Record<string, CSSProperties> = {
   headerSub: { fontSize: 14, color: 'var(--muted)', margin: '6px 0 0', maxWidth: 560 },
   headerRight: { display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 },
   freshPill: { fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 16 },
-  freshLive: { background: '#dcfce7', color: '#15803d' },
-  freshUnavailable: { background: '#fef3c7', color: '#b45309' },
+  freshLive: { background: 'var(--success-soft)', color: 'var(--success-ink)' },
+  freshUnavailable: { background: 'var(--warning-line)', color: 'var(--warning-ink)' },
   completenessChip: { fontSize: 12, color: 'var(--muted)', background: 'var(--card)', padding: '4px 10px', borderRadius: 16 },
 
   toastSuccess: {
-    background: '#dcfce7',
-    color: '#15803d',
+    background: 'var(--success-soft)',
+    color: 'var(--success-ink)',
     padding: '10px 16px',
     borderRadius: 8,
     marginBottom: 16,
     fontSize: 14,
   },
   toastError: {
-    background: '#fee2e2',
-    color: '#dc2626',
+    background: 'var(--danger-soft)',
+    color: 'var(--danger)',
     padding: '10px 16px',
     borderRadius: 8,
     marginBottom: 16,
@@ -1336,7 +1336,7 @@ const styles: Record<string, CSSProperties> = {
     gap: 6,
     transition: 'color 0.15s',
   },
-  tabBtnActive: { color: '#6366F1', borderBottomColor: '#6366F1', background: 'var(--card)' },
+  tabBtnActive: { color: "var(--brand)", borderBottomColor: 'var(--info)', background: 'var(--card)' },
   tabBadge: {
     background: 'var(--card)',
     color: 'var(--muted)',
@@ -1354,8 +1354,8 @@ const styles: Record<string, CSSProperties> = {
   saveBtn: {
     marginTop: 24,
     padding: '11px 24px',
-    background: '#6366F1',
-    color: '#fff',
+    background: "var(--brand)",
+    color: 'var(--on-brand)',
     border: 'none',
     borderRadius: 8,
     fontSize: 14,
@@ -1432,8 +1432,8 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid var(--line)',
   },
   logoPreviewImg: { maxHeight: 68, maxWidth: '100%', objectFit: 'contain' },
-  logoPlaceholder: { fontSize: 12, color: '#e7e9ef' },
-  fieldHint: { fontSize: 11, color: '#e7e9ef', margin: '2px 0 8px' },
+  logoPlaceholder: { fontSize: 12, color: "var(--line)" },
+  fieldHint: { fontSize: 11, color: "var(--line)", margin: '2px 0 8px' },
 
   // Voice
   voicePresetGrid: {
@@ -1454,7 +1454,7 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     transition: 'border-color 0.15s',
   },
-  voicePresetActive: { borderColor: '#6366F1', background: 'var(--text)' },
+  voicePresetActive: { borderColor: "var(--brand)", background: 'var(--text)' },
   voicePresetIcon: { fontSize: 24 },
   voicePresetName: { fontSize: 13, fontWeight: 600, color: 'var(--text)' },
 
@@ -1485,7 +1485,7 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    color: '#6366F1',
+    color: "var(--brand)",
     background: 'var(--text)',
     padding: '2px 6px',
     borderRadius: 4,
@@ -1501,7 +1501,7 @@ const styles: Record<string, CSSProperties> = {
   },
   kbEntryMeta: {
     fontSize: 11,
-    color: '#e7e9ef',
+    color: "var(--line)",
     marginTop: 2,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -1511,8 +1511,8 @@ const styles: Record<string, CSSProperties> = {
   kbStatusBadge: { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10 },
   kbDeleteBtn: {
     background: 'transparent',
-    border: '1px solid #fee2e2',
-    color: '#dc2626',
+    border: '1px solid var(--danger-soft)',
+    color: 'var(--danger)',
     fontSize: 12,
     padding: '4px 10px',
     borderRadius: 6,
@@ -1523,8 +1523,8 @@ const styles: Record<string, CSSProperties> = {
   previewControls: { display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 },
   generateBtn: {
     padding: '12px 28px',
-    background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-    color: '#fff',
+    background: "var(--brand)",
+    color: 'var(--on-brand)',
     border: 'none',
     borderRadius: 10,
     fontSize: 15,
@@ -1532,19 +1532,19 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     alignSelf: 'flex-start',
   },
-  previewCard: { background: 'var(--card)', border: '1px solid #6366F1', borderRadius: 12, padding: '20px 24px' },
+  previewCard: { background: 'var(--card)', border: "1px solid var(--brand)", borderRadius: 12, padding: '20px 24px' },
   previewCardHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: 14 },
   previewTypeLabel: {
     fontSize: 11,
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    color: '#6366F1',
+    color: "var(--brand)",
     background: 'var(--text)',
     padding: '3px 8px',
     borderRadius: 4,
   },
-  previewTimestamp: { fontSize: 12, color: '#e7e9ef' },
+  previewTimestamp: { fontSize: 12, color: "var(--line)" },
   previewText: { fontSize: 16, lineHeight: 1.7, color: 'var(--text)', margin: '0 0 20px', whiteSpace: 'pre-wrap' },
   complianceSection: { background: 'var(--card)', borderRadius: 8, padding: '14px 16px', marginBottom: 14 },
   complianceTitle: {
@@ -1559,15 +1559,15 @@ const styles: Record<string, CSSProperties> = {
   complianceItem: { display: 'flex', alignItems: 'center', gap: 6 },
   complianceLabel: { fontSize: 13, color: 'var(--muted)' },
   complianceIssues: { marginTop: 10 },
-  complianceIssue: { fontSize: 12, color: '#b45309', margin: '3px 0' },
-  previewSnapWrap: { fontSize: 12, color: '#e7e9ef' },
+  complianceIssue: { fontSize: 12, color: 'var(--warning-ink)', margin: '3px 0' },
+  previewSnapWrap: { fontSize: 12, color: "var(--line)" },
   previewSnapText: { color: 'var(--muted)' },
   previewEmpty: {
     background: 'var(--card)',
     borderRadius: 10,
     padding: '40px 24px',
     textAlign: 'center',
-    color: '#e7e9ef',
+    color: "var(--line)",
     fontSize: 14,
   },
 
@@ -1594,7 +1594,7 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: 'center',
     gap: 8,
   },
-  statNum: { fontSize: 40, fontWeight: 800, color: '#6366F1', lineHeight: 1 },
+  statNum: { fontSize: 40, fontWeight: 800, color: "var(--brand)", lineHeight: 1 },
   statLabel: { fontSize: 12, color: 'var(--muted)', textAlign: 'center' },
   sectionStatusGrid: {
     display: 'grid',
@@ -1618,7 +1618,7 @@ const styles: Record<string, CSSProperties> = {
   byTypeBarWrap: { flex: 1, height: 6, background: 'var(--card)', borderRadius: 3, overflow: 'hidden' },
   byTypeBar: {
     height: '100%',
-    background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+    background: "linear-gradient(90deg, var(--brand), var(--brand))",
     borderRadius: 3,
     transition: 'width 0.4s',
   },
@@ -1673,8 +1673,8 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 4,
-    background: '#dcfce7',
-    color: '#15803d',
+    background: 'var(--success-soft)',
+    color: 'var(--success-ink)',
     fontSize: 12,
     padding: '3px 8px 3px 10px',
     borderRadius: 16,
@@ -1683,8 +1683,8 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 4,
-    background: '#fee2e2',
-    color: '#dc2626',
+    background: 'var(--danger-soft)',
+    color: 'var(--danger)',
     fontSize: 12,
     padding: '3px 8px 3px 10px',
     borderRadius: 16,
@@ -1698,7 +1698,7 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1,
     padding: 0,
   },
-  tagEmpty: { fontSize: 12, color: '#e7e9ef' },
+  tagEmpty: { fontSize: 12, color: "var(--line)" },
   toggleRow: { display: 'flex', gap: 8 },
   toggleBtn: {
     padding: '8px 16px',
@@ -1709,6 +1709,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 13,
     cursor: 'pointer',
   },
-  toggleBtnOn: { background: 'var(--text)', borderColor: '#6366F1', color: 'var(--brand)' },
-  emptyState: { color: '#e7e9ef', fontSize: 14, padding: '20px 0', textAlign: 'center' },
+  toggleBtnOn: { background: 'var(--brand)', borderColor: "var(--brand)", color: 'var(--on-brand)' },
+  emptyState: { color: "var(--line)", fontSize: 14, padding: '20px 0', textAlign: 'center' },
 };

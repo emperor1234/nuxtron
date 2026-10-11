@@ -1,12 +1,4 @@
-"""
-Unified Secrets Manager — HashiCorp Vault with environment fallback.
-
-Historically this module coordinated HashiCorp Vault and a Supabase Vault
-backend. Supabase has been removed from the project (we use PostgreSQL
-directly); this manager now resolves secrets from HashiCorp Vault first, then
-the process environment. The ``VaultBackend`` enum is retained for API
-stability but only ``HASHICORP`` is a live backend.
-"""
+"""HashiCorp Vault secrets manager with environment fallback."""
 
 import logging
 import os
@@ -20,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class VaultBackend(StrEnum):
-    """Available vault backends. Only HASHICORP is live after Supabase removal."""
+    """Available secret resolution modes."""
 
     HASHICORP = 'hashicorp'
     AUTO = 'auto'  # Resolves to HASHICORP (the only live backend).
@@ -107,8 +99,7 @@ class SecretsManager:
         """
         Retrieve database credentials.
 
-        ``role_or_source`` is a HashiCorp database-role name. (The previous
-        ``'supabase'`` special-case is removed; Supabase is no longer used.)
+        ``role_or_source`` is a HashiCorp database-role name.
         """
         # Try HashiCorp for dynamic credentials
         if self.hashicorp.is_connected():
@@ -194,3 +185,9 @@ def get_secrets_manager() -> SecretsManager:
     if _secrets_manager is None:
         _secrets_manager = SecretsManager()
     return _secrets_manager
+
+
+def reset_secrets_manager_for_tests() -> None:
+    """Discard the process-local manager after tests patch Vault clients."""
+    global _secrets_manager
+    _secrets_manager = None

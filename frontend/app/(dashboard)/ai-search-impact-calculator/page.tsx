@@ -118,7 +118,7 @@ export default function AiSearchImpactCalculatorPage() {
         <button onClick={() => void runCalculators()} disabled={loading}>
           {loading ? 'Running...' : 'Run Calculators'}
         </button>
-        {error ? <p style={{ color: '#f87171', marginTop: 12 }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)', marginTop: 12 }}>{error}</p> : null}
       </section>
 
       {costSavings ? (

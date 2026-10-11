@@ -70,27 +70,27 @@ type SeverityIconProps = Readonly<{ s: string }>;
 type VitalBadgeProps = Readonly<{ value?: number; unit: string; rating?: string }>;
 
 function getScoreColor(score: number): string {
-  if (score >= 80) return '#26d78e';
-  if (score >= 60) return '#ffb867';
-  return '#dc2626';
+  if (score >= 80) return 'var(--success)';
+  if (score >= 60) return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function getVitalRatingColor(rating?: string): string {
-  if (rating === 'good') return '#26d78e';
-  if (rating === 'needs-improvement') return '#ffb867';
-  return '#dc2626';
+  if (rating === 'good') return 'var(--success)';
+  if (rating === 'needs-improvement') return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function getQuickSignalIcon(ok?: boolean): React.ReactNode {
-  if (ok === true) return <CheckCircle size={16} color="#26d78e" />;
-  if (ok === false) return <AlertTriangle size={16} color="#dc2626" />;
+  if (ok === true) return <CheckCircle size={16} color="var(--success)" />;
+  if (ok === false) return <AlertTriangle size={16} color="var(--danger)" />;
   return <Info size={16} color="var(--muted)" />;
 }
 
 function getPageSpeedColor(pageSpeedMs: number): string {
-  if (pageSpeedMs < 1000) return '#26d78e';
-  if (pageSpeedMs < 3000) return '#ffb867';
-  return '#dc2626';
+  if (pageSpeedMs < 1000) return 'var(--success)';
+  if (pageSpeedMs < 3000) return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function ScoreGauge({ score, label, size = 90 }: ScoreGaugeProps) {
@@ -144,9 +144,9 @@ function ScoreGauge({ score, label, size = 90 }: ScoreGaugeProps) {
 }
 
 function SeverityIcon({ s }: SeverityIconProps) {
-  if (s === 'critical') return <AlertTriangle size={13} color="#dc2626" />;
-  if (s === 'warning') return <AlertTriangle size={13} color="#ffb867" />;
-  return <Info size={13} color="#1bc7ff" />;
+  if (s === 'critical') return <AlertTriangle size={13} color="var(--danger)" />;
+  if (s === 'warning') return <AlertTriangle size={13} color="var(--warning)" />;
+  return <Info size={13} color="var(--info)" />;
 }
 
 function VitalBadge({ value, unit, rating }: VitalBadgeProps) {
@@ -249,7 +249,7 @@ export default function TechnicalSEOPage() {
   const infos = result?.issues?.filter((i) => i.severity === 'info').length ?? 0;
 
   const card: React.CSSProperties = {
-    background: '#ffffff',
+    background: 'var(--card)fff',
     border: '1px solid rgba(148, 163, 184, 0.16)',
     borderRadius: 16,
     padding: '20px 24px',
@@ -262,7 +262,7 @@ export default function TechnicalSEOPage() {
     padding: '10px 12px',
     borderRadius: 12,
     border: '1px solid rgba(148, 163, 184, 0.22)',
-    background: '#ffffff',
+    background: 'var(--card)fff',
     color: 'var(--text)',
     marginBottom: 10,
     boxSizing: 'border-box',
@@ -291,7 +291,7 @@ export default function TechnicalSEOPage() {
     { key: 'actions' as const, label: 'Quick Wins' },
   ];
 
-  const SEVERITY_COLORS = { critical: '#dc2626', warning: '#ffb867', info: '#1bc7ff' };
+  const SEVERITY_COLORS = { critical: 'var(--danger)', warning: 'var(--warning)', info: 'var(--info)' };
 
   return (
     <Page className="seo-advanced-page">
@@ -309,7 +309,7 @@ export default function TechnicalSEOPage() {
         />
 
         {error && (
-          <div style={{ ...card, color: '#dc2626', borderColor: '#dc262644', background: '#dc262611' }}>{error}</div>
+          <div style={{ ...card, color: 'var(--danger)', borderColor: 'color-mix(in oklab, var(--danger) 27%, transparent)', background: 'color-mix(in oklab, var(--danger) 7%, transparent)' }}>{error}</div>
         )}
 
         <Card>
@@ -365,12 +365,12 @@ export default function TechnicalSEOPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.15)', color: '#38bdf8' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.15)', color: 'var(--info)' }}>
                     Cached result
                   </span>
                 )}
@@ -416,7 +416,7 @@ export default function TechnicalSEOPage() {
                 <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Critical
                 </span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: critical > 0 ? '#dc2626' : '#26d78e' }}>
+                <span style={{ fontSize: 22, fontWeight: 800, color: critical > 0 ? 'var(--danger)' : 'var(--success)' }}>
                   {critical}
                 </span>
               </div>
@@ -424,7 +424,7 @@ export default function TechnicalSEOPage() {
                 <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Warnings
                 </span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: warnings > 0 ? '#ffb867' : '#26d78e' }}>
+                <span style={{ fontSize: 22, fontWeight: 800, color: warnings > 0 ? 'var(--warning)' : 'var(--success)' }}>
                   {warnings}
                 </span>
               </div>
@@ -453,18 +453,18 @@ export default function TechnicalSEOPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 3, height: 16, borderRadius: 8, overflow: 'hidden' }}>
                   {critical > 0 && (
-                    <div style={{ flex: critical, background: '#dc2626' }} title={`${critical} critical`} />
+                    <div style={{ flex: critical, background: 'var(--danger)' }} title={`${critical} critical`} />
                   )}
                   {warnings > 0 && (
-                    <div style={{ flex: warnings, background: '#ffb867' }} title={`${warnings} warnings`} />
+                    <div style={{ flex: warnings, background: 'var(--warning)' }} title={`${warnings} warnings`} />
                   )}
-                  {infos > 0 && <div style={{ flex: infos, background: '#1bc7ff33' }} title={`${infos} info`} />}
+                  {infos > 0 && <div style={{ flex: infos, background: 'color-mix(in oklab, var(--info) 20%, transparent)' }} title={`${infos} info`} />}
                 </div>
                 <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
                   {[
-                    ['Critical', critical, '#dc2626'],
-                    ['Warnings', warnings, '#ffb867'],
-                    ['Info', infos, '#1bc7ff'],
+                    ['Critical', critical, 'var(--danger)'],
+                    ['Warnings', warnings, 'var(--warning)'],
+                    ['Info', infos, 'var(--info)'],
                   ].map(([l, v, c]) => (
                     <div key={l as string} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                       <div style={{ width: 10, height: 10, borderRadius: 2, background: c as string }} />
@@ -526,7 +526,7 @@ export default function TechnicalSEOPage() {
                                 padding: '3px 10px',
                                 borderRadius: 999,
                                 background: 'rgba(38,215,142,0.12)',
-                                color: '#26d78e',
+                                color: 'var(--success)',
                                 fontSize: 11,
                                 fontWeight: 700,
                                 border: '1px solid rgba(38,215,142,0.3)',
@@ -673,7 +673,7 @@ export default function TechnicalSEOPage() {
                           </td>
                           <td style={{ ...td, fontWeight: 600 }}>{issue.type}</td>
                           <td style={{ ...td, color: 'var(--muted)', maxWidth: 300 }}>{issue.detail}</td>
-                          <td style={{ ...td, color: '#26d78e', maxWidth: 280 }}>
+                          <td style={{ ...td, color: 'var(--success)', maxWidth: 280 }}>
                             <Zap size={11} style={{ marginRight: 4 }} />
                             {issue.fix}
                           </td>
@@ -786,7 +786,7 @@ export default function TechnicalSEOPage() {
                           height: 24,
                           borderRadius: 6,
                           background: 'rgba(38,215,142,0.15)',
-                          color: '#26d78e',
+                          color: 'var(--success)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',

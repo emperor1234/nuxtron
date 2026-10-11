@@ -65,7 +65,7 @@ export default function Hero4({
 
   return (
     <section
-      className="relative w-full h-screen min-h-[700px] overflow-hidden bg-[#181818] group"
+      className="relative w-full h-screen min-h-[700px] overflow-hidden bg-ink group"
       onMouseMove={handleMouseMove}
     >
       <motion.div
@@ -84,8 +84,8 @@ export default function Hero4({
         />
       </motion.div>
 
-      <div className="absolute inset-0 bg-gradient-to-t from-[#181818]/80 via-transparent to-[#181818]/40" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#181818]/60 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-ink/40" />
+      <div className="absolute inset-0 bg-gradient-to-r from-ink/60 via-transparent to-transparent" />
 
       <div
         className="absolute inset-0 opacity-[0.035] mix-blend-overlay pointer-events-none"
@@ -117,10 +117,10 @@ export default function Hero4({
           transition={{ duration: 0.9, delay: 0.15, ease: 'easeOut' }}
         >
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group/logo" style={{ textDecoration: 'none' }}>
-            <div className="size-8 rounded-lg bg-gradient-to-br from-[#466cf3] to-[#f83d69] flex items-center justify-center">
+            <div className="size-8 rounded-lg bg-gradient-to-br from-info to-danger flex items-center justify-center">
               <span className="text-white text-lg font-bold">N</span>
             </div>
-            <span className="text-white text-lg font-semibold tracking-tight transition-all duration-300">
+            <span className="text-white text-lg font-semibold tracking-tight transition-colors duration-300">
               {brandName}
             </span>
           </Link>
@@ -139,7 +139,7 @@ export default function Hero4({
                 {link.hasDropdown && (
                   <ChevronDown size={14} strokeWidth={2} className="text-white/50 group-hover/nav:text-white/80 transition-colors" />
                 )}
-                <span className="absolute -bottom-1 left-0 w-0 h-px bg-white/60 group-hover/nav:w-full transition-all duration-300" />
+                <span className="absolute -bottom-1 left-0 w-0 h-px bg-white/60 group-hover/nav:w-full transition-colors duration-300" />
               </motion.a>
             ))}
           </div>
@@ -153,8 +153,8 @@ export default function Hero4({
               transition={{ duration: 0.6, delay: 0.6 }}
             >
               <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#466cf3] opacity-60" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#466cf3]" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-60" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand" />
               </span>
               {loginLabel}
             </motion.a>
@@ -239,14 +239,14 @@ export default function Hero4({
             <div className="flex items-center gap-4 md:gap-5">
               <motion.a
                 href={primaryCtaHref}
-                className="relative bg-white text-[#181818] rounded-full px-7 py-3 text-[14px] font-semibold overflow-hidden group/btn"
+                className="relative bg-white text-ink rounded-full px-7 py-3 text-[14px] font-semibold overflow-hidden group/btn"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 1.55 }}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
               >
-                <span className="absolute inset-0 bg-[#181818] translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300 ease-out rounded-full" />
+                <span className="absolute inset-0 bg-ink translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300 ease-out rounded-full" />
                 <span className="relative z-10 group-hover/btn:text-white transition-colors duration-300">
                   {primaryCtaLabel}
                 </span>
@@ -254,7 +254,7 @@ export default function Hero4({
 
               <motion.a
                 href={secondaryCtaHref}
-                className="flex items-center gap-2.5 bg-white/8 hover:bg-white/[0.14] backdrop-blur-sm border border-white/10 text-white rounded-full px-6 py-3 text-[14px] font-medium transition-all duration-300 group"
+                className="flex items-center gap-2.5 bg-white/8 hover:bg-white/[0.14] backdrop-blur-sm border border-white/10 text-white rounded-full px-6 py-3 text-[14px] font-medium transition-colors duration-300 group"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 1.7 }}
@@ -281,7 +281,7 @@ export default function Hero4({
           >
             <div className="flex -space-x-2">
               {['wm_alex.png', 'wm_olivia.png', 'wm_mia.png'].map((i) => (
-                <div key={i} className="w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-[#181818] bg-white/5 backdrop-blur-md overflow-hidden relative">
+                <div key={i} className="w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-ink bg-white/5 backdrop-blur-md overflow-hidden relative">
                   <Image
                     src={`https://assets.watermelon.sh/${i}`}
                     alt="User avatar"

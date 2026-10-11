@@ -583,7 +583,7 @@ export default function AutomationPage() {
                   onClick={() => handlePauseAll(!(queue?.pause_all.paused ?? false))}
                   style={{
                     ...styles.primaryButton,
-                    background: queue?.pause_all.paused ? '#dcfce7' : '#fee2e2',
+                    background: queue?.pause_all.paused ? 'var(--success-soft)' : 'var(--danger-soft)',
                   }}
                 >
                   {queue?.pause_all.paused ? 'Resume publishing' : 'Pause all publishing'}
@@ -1168,8 +1168,8 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     minHeight: '100vh',
     padding: '32px 24px 64px',
-    background: 'linear-gradient(180deg, #08111d 0%, #eef0f4 45%, #eef0f4 100%)',
-    color: '#e5eef8',
+    background: "linear-gradient(180deg, #08111d 0%, var(--line-soft) 45%, var(--line-soft) 100%)",
+    color: 'var(--info-soft)',
   },
   header: {
     marginBottom: '28px',
@@ -1177,7 +1177,7 @@ const styles: Record<string, React.CSSProperties> = {
   backLink: {
     display: 'inline-block',
     marginBottom: '14px',
-    color: '#8fb9ff',
+    color: 'var(--info-line)',
     textDecoration: 'none',
     fontSize: '14px',
   },
@@ -1205,7 +1205,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '16px',
     background: 'rgba(127, 29, 29, 0.22)',
     border: '1px solid rgba(248, 113, 113, 0.35)',
-    color: '#fecaca',
+    color: 'var(--danger-line)',
   },
   layout: {
     display: 'grid',
@@ -1227,7 +1227,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   eyebrow: {
     margin: '0 0 6px',
-    color: '#5eead4',
+    color: 'var(--info)',
     textTransform: 'uppercase',
     letterSpacing: '0.12em',
     fontSize: '12px',
@@ -1301,7 +1301,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '999px',
     background: 'rgba(45, 212, 191, 0.14)',
     border: '1px solid rgba(45, 212, 191, 0.3)',
-    color: '#99f6e4',
+    color: 'var(--info-line)',
     fontSize: '12px',
     fontWeight: 700,
     textTransform: 'uppercase',
@@ -1335,7 +1335,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     border: '1px solid var(--line)',
     background: 'var(--card)',
-    color: '#e5eef8',
+    color: 'var(--info-soft)',
   },
   textarea: {
     minHeight: '110px',
@@ -1343,14 +1343,14 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     border: '1px solid var(--line)',
     background: 'var(--card)',
-    color: '#e5eef8',
+    color: 'var(--info-soft)',
     resize: 'vertical',
   },
   primaryButton: {
     padding: '12px 16px',
     borderRadius: '12px',
     border: 'none',
-    background: '#0f766e',
+    background: 'var(--info-ink)',
     color: 'var(--text)',
     fontWeight: 600,
     cursor: 'pointer',
@@ -1360,7 +1360,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '12px',
     border: '1px solid var(--line)',
     background: 'transparent',
-    color: '#e5eef8',
+    color: 'var(--info-soft)',
     cursor: 'pointer',
   },
   ruleList: {

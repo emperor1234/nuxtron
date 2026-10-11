@@ -1,5 +1,6 @@
 'use client';
 
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -22,7 +23,7 @@ type FeatureShellProps = {
   title: string;
   description: string;
   probes: ApiProbe[];
-  links: Array<{ href: string; label: string }>;
+  links: Array<{ href: Route; label: string }>;
 };
 
 function toDetail(payload: unknown): string {
@@ -101,7 +102,7 @@ export function AiranklabFeatureShell({ eyebrow, title, description, probes, lin
             {loading ? 'Checking...' : 'Re-check End-to-End'}
           </button>
         </div>
-        {error ? <p style={{ color: '#f87171', marginTop: 12 }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger-ink)', marginTop: 12 }}>{error}</p> : null}
       </section>
 
       <section className="grid" style={{ marginTop: 20 }}>
@@ -113,7 +114,7 @@ export function AiranklabFeatureShell({ eyebrow, title, description, probes, lin
           >
             <h3 style={{ marginTop: 0 }}>{row.label}</h3>
             <p style={{ opacity: 0.8, marginTop: 0 }}>{row.path}</p>
-            <p style={{ marginBottom: 0, color: row.ok ? '#86efac' : '#fca5a5' }}>{row.detail}</p>
+            <p style={{ marginBottom: 0, color: row.ok ? 'var(--success-ink)' : 'var(--danger-ink)' }}>{row.detail}</p>
           </article>
         ))}
       </section>

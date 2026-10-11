@@ -214,6 +214,7 @@ test.describe('Surfer command center', () => {
     test.setTimeout(60000);
     await mockSurferApis(page);
     await page.goto('/seo/surfer-command-center');
+    await expect(page.getByRole('heading', { name: 'Provider Checklist', exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Run Production Gate' }).click();
     const gateCard = page.getByRole('heading', { name: 'Production Gate' }).first().locator('xpath=ancestor::article[1]');

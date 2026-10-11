@@ -176,7 +176,7 @@ export default function ProgrammaticPage() {
     borderBottom: '1px solid var(--line)',
   };
   const td: React.CSSProperties = { padding: '9px 12px', fontSize: 12, borderBottom: '1px solid var(--line)' };
-  const RISK_COLORS = { low: '#15803d', medium: '#ffb867', high: '#f87171' };
+  const RISK_COLORS = { low: 'var(--success-ink)', medium: 'var(--warning)', high: 'var(--danger)' };
 
   const tabs = [
     { key: 'pages' as const, label: `Generated Pages (${result?.total_pages_generated ?? 0})` },
@@ -201,7 +201,7 @@ export default function ProgrammaticPage() {
         </p>
 
         {error && (
-          <div style={{ ...card, color: '#f87171', borderColor: '#f8717144', background: '#f8717111' }}>{error}</div>
+          <div style={{ ...card, color: 'var(--danger)', borderColor: 'color-mix(in oklab, var(--danger) 27%, transparent)', background: 'color-mix(in oklab, var(--danger) 7%, transparent)' }}>{error}</div>
         )}
 
         <section style={card}>
@@ -324,7 +324,7 @@ export default function ProgrammaticPage() {
                   />
                   <button
                     onClick={() => removeVar(i)}
-                    style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: 6 }}
+                    style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 6 }}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -357,7 +357,7 @@ export default function ProgrammaticPage() {
               border: 'none',
               borderRadius: 8,
               background: loading ? 'var(--muted)' : 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 800,
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: 14,
@@ -390,7 +390,7 @@ export default function ProgrammaticPage() {
                       borderRadius: 999,
                       background:
                         result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
-                      color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)',
+                      color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)',
                     }}
                   >
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
@@ -404,7 +404,7 @@ export default function ProgrammaticPage() {
                       padding: '4px 10px',
                       borderRadius: 999,
                       background: 'rgba(56,189,248,0.12)',
-                      color: '#38bdf8',
+                      color: 'var(--info)',
                     }}
                   >
                     Cached result
@@ -450,7 +450,7 @@ export default function ProgrammaticPage() {
                   Template Score
                 </div>
                 <div
-                  style={{ fontSize: 32, fontWeight: 800, color: result.template_score >= 75 ? '#15803d' : '#ffb867' }}
+                  style={{ fontSize: 32, fontWeight: 800, color: result.template_score >= 75 ? 'var(--success-ink)' : 'var(--warning)' }}
                 >
                   {result.template_score}
                 </div>
@@ -489,7 +489,7 @@ export default function ProgrammaticPage() {
                     fontWeight: 700,
                     background: RISK_COLORS[result.cannibalization_risk] + '22',
                     color: RISK_COLORS[result.cannibalization_risk],
-                    border: `1px solid ${RISK_COLORS[result.cannibalization_risk]}44`,
+                    border: `1px solid color-mix(in srgb, ${RISK_COLORS[result.cannibalization_risk]} 26.67%, transparent)`,
                   }}
                 >
                   {result.cannibalization_risk}
@@ -499,7 +499,7 @@ export default function ProgrammaticPage() {
                 <div
                   style={{
                     fontSize: 10,
-                    color: '#15803d',
+                    color: 'var(--success-ink)',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     marginBottom: 6,
@@ -507,7 +507,7 @@ export default function ProgrammaticPage() {
                 >
                   Dupes Removed
                 </div>
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#15803d' }}>{result.deduplication_applied}</div>
+                <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--success-ink)' }}>{result.deduplication_applied}</div>
               </div>
             </div>
 
@@ -585,7 +585,7 @@ export default function ProgrammaticPage() {
                               ...td,
                               textAlign: 'right',
                               fontWeight: 700,
-                              color: p.estimated_traffic > 500 ? '#15803d' : 'var(--muted)',
+                              color: p.estimated_traffic > 500 ? 'var(--success-ink)' : 'var(--muted)',
                             }}
                           >
                             {p.estimated_traffic.toLocaleString()}
@@ -601,7 +601,7 @@ export default function ProgrammaticPage() {
             {activeTab === 'config' && (
               <div style={card}>
                 <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700 }}>Template Preview</h3>
-                <div style={{ background: '#f6f7fa', borderRadius: 10, padding: '16px 20px', marginBottom: 16 }}>
+                <div style={{ background: "var(--bg)", borderRadius: 10, padding: '16px 20px', marginBottom: 16 }}>
                   <div
                     style={{
                       fontSize: 11,
@@ -613,9 +613,9 @@ export default function ProgrammaticPage() {
                   >
                     URL Pattern
                   </div>
-                  <code style={{ color: '#0e7490', fontSize: 14 }}>{template}</code>
+                  <code style={{ color: 'var(--info-ink)', fontSize: 14 }}>{template}</code>
                 </div>
-                <div style={{ background: '#f6f7fa', borderRadius: 10, padding: '16px 20px', marginBottom: 16 }}>
+                <div style={{ background: "var(--bg)", borderRadius: 10, padding: '16px 20px', marginBottom: 16 }}>
                   <div
                     style={{
                       fontSize: 11,
@@ -627,9 +627,9 @@ export default function ProgrammaticPage() {
                   >
                     Title Pattern
                   </div>
-                  <code style={{ color: '#15803d', fontSize: 14 }}>{titleTemplate}</code>
+                  <code style={{ color: 'var(--success-ink)', fontSize: 14 }}>{titleTemplate}</code>
                 </div>
-                <div style={{ background: '#f6f7fa', borderRadius: 10, padding: '16px 20px' }}>
+                <div style={{ background: "var(--bg)", borderRadius: 10, padding: '16px 20px' }}>
                   <div
                     style={{
                       fontSize: 11,
@@ -641,7 +641,7 @@ export default function ProgrammaticPage() {
                   >
                     Meta Description Pattern
                   </div>
-                  <code style={{ color: '#ffb867', fontSize: 13, lineHeight: 1.5 }}>{metaTemplate}</code>
+                  <code style={{ color: 'var(--warning)', fontSize: 13, lineHeight: 1.5 }}>{metaTemplate}</code>
                 </div>
               </div>
             )}

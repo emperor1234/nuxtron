@@ -29,15 +29,15 @@ function MetricBlock({ label, value, color }: Readonly<{ label: string; value: s
   return (
     <div
       style={{
-        background: 'var(--bg, #0a0a0a)',
-        border: '1px solid var(--line, #333)',
+        background: 'var(--bg)',
+        border: '1px solid var(--line)',
         borderRadius: 10,
         padding: '12px 16px',
         textAlign: 'center',
       }}
     >
-      <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
-      <div style={{ fontWeight: 900, fontSize: 22, marginTop: 6, color: color ?? 'var(--text, #f1f5f9)' }}>{value}</div>
+      <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+      <div style={{ fontWeight: 900, fontSize: 22, marginTop: 6, color: color ?? 'var(--text)' }}>{value}</div>
     </div>
   );
 }
@@ -118,10 +118,10 @@ export default function MetricsPatchPage() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: 'var(--bg, #0a0a0a)',
-    border: '1px solid var(--line, #333)',
+    background: 'var(--bg)',
+    border: '1px solid var(--line)',
     borderRadius: 8,
-    color: 'var(--text, #f1f5f9)',
+    color: 'var(--text)',
     padding: '8px 10px',
     fontSize: 13,
     boxSizing: 'border-box',
@@ -129,7 +129,7 @@ export default function MetricsPatchPage() {
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    color: '#64748b',
+    color: "var(--muted)",
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
   };
@@ -137,10 +137,10 @@ export default function MetricsPatchPage() {
   const m = selected?.metrics;
 
   return (
-    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg, #0a0a0a)', color: 'var(--text, #f1f5f9)' }}>
+    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <h1 style={{ margin: 0, fontSize: 26 }}>Campaign Metrics</h1>
-        <p style={{ color: '#64748b', marginTop: 6, marginBottom: 0, fontSize: 14 }}>
+        <p style={{ color: "var(--muted)", marginTop: 6, marginBottom: 0, fontSize: 14 }}>
           Patch engagement and revenue data. ROI and success ratio are calculated automatically.
         </p>
 
@@ -150,9 +150,9 @@ export default function MetricsPatchPage() {
               marginTop: 14,
               padding: 12,
               borderRadius: 10,
-              border: '1px solid #ef4444',
-              color: '#fca5a5',
-              background: '#7f1d1d22',
+              border: '1px solid var(--danger)',
+              color: 'var(--danger-line)',
+              background: 'var(--danger-soft)',
               fontSize: 13,
             }}
           >
@@ -165,9 +165,9 @@ export default function MetricsPatchPage() {
               marginTop: 14,
               padding: 12,
               borderRadius: 10,
-              border: '1px solid #22c55e',
-              color: '#86efac',
-              background: '#14532d22',
+              border: '1px solid var(--success)',
+              color: 'var(--success)',
+              background: 'var(--success-soft)',
               fontSize: 13,
             }}
           >
@@ -178,7 +178,7 @@ export default function MetricsPatchPage() {
         <div style={{ marginTop: 16 }}>
           <div style={labelStyle}>Select Campaign</div>
           {loading ? (
-            <div style={{ color: '#64748b', marginTop: 10 }}>Loading…</div>
+            <div style={{ color: "var(--muted)", marginTop: 10 }}>Loading…</div>
           ) : (
             <select
               value={selected?.id ?? ''}
@@ -210,7 +210,7 @@ export default function MetricsPatchPage() {
                 <MetricBlock
                   label="ROI"
                   value={`${m.roi_pct.toFixed(1)}%`}
-                  color={m.roi_pct >= 0 ? '#22c55e' : '#ef4444'}
+                  color={m.roi_pct >= 0 ? 'var(--success)' : 'var(--danger)'}
                 />
                 <MetricBlock label="Success" value={`${m.success_ratio_pct.toFixed(1)}%`} />
                 <MetricBlock label="Spend" value={`$${m.spend.toFixed(0)}`} />
@@ -229,8 +229,8 @@ export default function MetricsPatchPage() {
               onSubmit={(e) => void handleSave(e)}
               style={{
                 marginTop: 20,
-                background: 'var(--bg-soft, #111)',
-                border: '1px solid var(--line, #333)',
+                background: 'var(--bg-soft)',
+                border: '1px solid var(--line)',
                 borderRadius: 16,
                 padding: 18,
               }}
@@ -273,9 +273,9 @@ export default function MetricsPatchPage() {
                   style={{
                     padding: '8px 22px',
                     borderRadius: 9,
-                    border: '1px solid #22c55e',
-                    color: '#86efac',
-                    background: '#14532d33',
+                    border: '1px solid var(--success)',
+                    color: 'var(--success)',
+                    background: 'var(--success-soft)',
                     cursor: saving ? 'not-allowed' : 'pointer',
                     fontWeight: 800,
                     fontSize: 13,

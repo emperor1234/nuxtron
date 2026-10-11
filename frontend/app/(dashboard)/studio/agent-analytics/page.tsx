@@ -13,6 +13,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiGet, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { ProviderMark } from '@/app/(dashboard)/_ui/provider-mark';
 
 interface DashboardData {
   period_days: number;
@@ -74,21 +75,6 @@ export default function AgentAnalyticsDashboard() {
     } catch (error) {
       console.error('Failed to fetch bot details:', error);
     }
-  };
-
-  const getBotIcon = (bot: string) => {
-    const icons: Record<string, string> = {
-      ChatGPT: '🤖',
-      Gemini: '🔮',
-      Perplexity: '🔎',
-      Claude: '🧠',
-      'Brave Search': '🦁',
-      GoogleBot: '🔍',
-      BingBot: 'Ⓑ',
-      CCBot: '🕷️',
-      AmazonBot: '📦',
-    };
-    return icons[bot] || '🤖';
   };
 
   return (
@@ -166,8 +152,8 @@ export default function AgentAnalyticsDashboard() {
                       }`}
                     >
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-900">
-                          <span className="text-lg mr-2">{getBotIcon(bot)}</span>
+                        <span className="inline-flex items-center gap-2 text-sm font-medium text-gray-900">
+                          <ProviderMark name={bot} size={18} decorative />
                           {bot}
                         </span>
                         <span className="text-sm font-bold text-gray-900">{count}</span>
@@ -247,7 +233,8 @@ export default function AgentAnalyticsDashboard() {
               <div className="bg-white rounded-lg shadow p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {getBotIcon(botDetails.bot_name)} {botDetails.bot_name} Details
+                    <ProviderMark name={botDetails.bot_name} size={20} decorative className="mr-2 inline-block align-middle object-contain" />
+                    {botDetails.bot_name} Details
                   </h3>
                   <button
                     onClick={() => {

@@ -12,119 +12,36 @@ and configuration via function parameters.
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from ..config import env_bool
+from .. import memory_stores
+from ..rate_limiter import rate_limit_metrics_snapshot
 
 if TYPE_CHECKING:
     from ..deps import AuthContext
 
 JsonObject = dict[str, object]
 
-# ── Memory Store References (set by legacy_main.py) ──────────
-
-# These will be assigned by legacy_main.py after import
-_scheduled_posts_memory = []
-_email_contacts_memory = []
-_email_campaigns_memory = []
-_suitecrm_jobs_memory = []
-_refferq_jobs_memory = []
-_posthog_events_memory = []
-_social_listening_memory = []
-_social_listening_alert_rules_memory = []
-_social_listening_alerts_memory = []
-_reviews_memory = []
-_n8n_jobs_memory = []
-_growthbook_checks_memory = []
-_matomo_events_memory = []
-_plausible_events_memory = []
-_meilisearch_index_memory = []
-_webhook_events_memory = []
-_appwrite_events_memory = []
-_drone_builds_memory = []
-_directus_items_memory = []
-_minio_objects_memory = []
-_stripe_events_memory = []
-_audit_log_memory = []
-_notifications_memory = []
-_redis_ops_memory = []
-_twilio_messages_memory = []
-_slack_messages_memory = []
-_resend_messages_memory = []
-_algolia_sync_memory = []
-_ai_gateway_memory = []
-_ai_security_usage_memory = []
-_ai_security_alerts_memory = []
-_ai_security_blocks_memory = []
-_ai_security_appeals_memory = []
-_ai_security_ids_events_memory = []
-_auth_security_memory = []
-_tenant_profiles_memory = []
-_engagement_streaks_memory = []
-_engagement_referrals_memory = []
-_engagement_companion_profiles_memory = []
-_engagement_fomo_events_memory = []
-_engagement_social_proof_events_memory = []
-_engagement_dependency_profiles_memory = []
-_engagement_dependency_events_memory = []
-_engagement_community_circles_memory = []
-_engagement_community_posts_memory = []
-_engagement_community_amas_memory = []
-_engagement_brand_lock_profiles_memory = []
-_engagement_brand_lock_events_memory = []
-_engagement_autopilot_profiles_memory = []
-_engagement_autopilot_events_memory = []
-_engagement_achievement_profiles_memory = []
-_engagement_achievement_events_memory = []
-_money_printer_ideas_memory = []
-_money_printer_validations_memory = []
-_bank_accounts_memory = []
-_bank_transactions_memory = []
-_bank_payouts_memory = []
-_university_courses_memory = []
-_university_cohorts_memory = []
-_university_enrollments_memory = []
-_studios_services_memory = []
-_studios_briefs_memory = []
-_studios_proposals_memory = []
-_studios_escrows_memory = []
-_commerce_products_memory = []
-_commerce_orders_memory = []
-_talent_creators_memory = []
-_talent_deals_memory = []
-_talent_rate_cards_memory = []
-_white_label_profiles_memory = []
-_white_label_events_memory = []
-_crm_contacts_memory = []
-_crm_companies_memory = []
-_crm_deals_memory = []
-_influencer_campaigns_memory = []
-_chatbots_memory = []
-_linkinbio_pages_memory = []
-_subscriptions_memory = []
-_cms_connections_memory = []
-_marketplace_installs_memory = []
-_analytics_reports_memory = []
-_analytics_trends_memory = []
-_analytics_rollups_memory = []
-_api_usage_audit_memory = []
-_notification_delivery_receipts_memory = []
-_smart_inbox_messages_memory = []
-_accounting_integrations_memory = []
-_accounting_exports_memory = []
-_super_admin_module_settings_memory = []
-_social_accounts_memory = []
-_content_approval_requests_memory = []
-_sm_listening_memory = []
-_rate_buckets = {}
-_rate_lock = None
 _db_ready = False
 
 # External dependencies (set by legacy_main.py)
-_coerce_int = int
-_coerce_float = float
-_json_object = dict
+def _default_coerce_int(value: object, default: int) -> int:
+    return int(cast(Any, value)) if value is not None else default
+
+
+def _default_coerce_float(value: object, default: float) -> float:
+    return float(cast(Any, value)) if value is not None else default
+
+
+def _default_json_object(value: object) -> JsonObject | None:
+    return dict(value) if isinstance(value, dict) else None
+
+
+_coerce_int: Callable[[object, int], int] = _default_coerce_int
+_coerce_float: Callable[[object, float], float] = _default_coerce_float
+_json_object: Callable[[object], JsonObject | None] = _default_json_object
 
 # Module-level constants
 _HYBRID_STACKS_IDS: tuple[str, ...] = (
@@ -180,12 +97,12 @@ _HYBRID_STACK_CATEGORY_MAP: dict[str, str] = {
 }
 
 
-def set_memory_stores(**stores) -> None:
-    """Inject memory store references from legacy_main.py."""
-    globals().update(stores)
 
-
-def set_helpers(coerce_int=None, coerce_float=None, json_object=None) -> None:
+def set_helpers(
+    coerce_int: Callable[[object, int], int] | None = None,
+    coerce_float: Callable[[object, float], float] | None = None,
+    json_object: Callable[[object], JsonObject | None] | None = None,
+) -> None:
     """Inject helper functions from legacy_main.py."""
     global _coerce_int, _coerce_float, _json_object
     if coerce_int is not None:
@@ -202,99 +119,92 @@ def set_db_ready(ready: bool) -> None:
     _db_ready = ready
 
 
-def set_rate_limiter(buckets, lock) -> None:
-    """Set rate limiter state."""
-    global _rate_buckets, _rate_lock
-    _rate_buckets = buckets
-    _rate_lock = lock
-
-
 # ── Dict Builders ──────────────────────────────────────────
 
 
 def _build_queues_dict() -> dict[str, int]:
     """Build queue size dictionary from all memory stores."""
     return {
-        'suitecrm': len(_suitecrm_jobs_memory),
-        'refferq': len(_refferq_jobs_memory),
-        'posthog': len(_posthog_events_memory),
-        'social_listening': len(_social_listening_memory),
-        'social_listening_alert_rules': len(_social_listening_alert_rules_memory),
-        'social_listening_alerts': len(_social_listening_alerts_memory),
-        'reviews': len(_reviews_memory),
-        'n8n': len(_n8n_jobs_memory),
-        'growthbook': len(_growthbook_checks_memory),
-        'matomo': len(_matomo_events_memory),
-        'plausible': len(_plausible_events_memory),
-        'meilisearch': len(_meilisearch_index_memory),
-        'webhooks': len(_webhook_events_memory),
-        'appwrite': len(_appwrite_events_memory),
-        'drone': len(_drone_builds_memory),
-        'directus': len(_directus_items_memory),
-        'minio': len(_minio_objects_memory),
-        'stripe': len(_stripe_events_memory),
-        'audit_log': len(_audit_log_memory),
-        'notifications': len(_notifications_memory),
-        'redis': len(_redis_ops_memory),
-        'twilio': len(_twilio_messages_memory),
-        'slack': len(_slack_messages_memory),
-        'resend': len(_resend_messages_memory),
-        'algolia': len(_algolia_sync_memory),
-        'ai_gateway': len(_ai_gateway_memory),
-        'ai_security_usage': len(_ai_security_usage_memory),
-        'ai_security_alerts': len(_ai_security_alerts_memory),
-        'ai_security_blocks': len(_ai_security_blocks_memory),
-        'ai_security_appeals': len(_ai_security_appeals_memory),
-        'ai_security_ids_events': len(_ai_security_ids_events_memory),
-        'auth_security': len(_auth_security_memory),
-        'tenant_management': len(_tenant_profiles_memory),
-        'engagement_streaks': len(_engagement_streaks_memory),
-        'engagement_referrals': len(_engagement_referrals_memory),
-        'engagement_companion_profiles': len(_engagement_companion_profiles_memory),
-        'engagement_fomo_events': len(_engagement_fomo_events_memory),
-        'engagement_social_proof_events': len(_engagement_social_proof_events_memory),
-        'engagement_dependency_profiles': len(_engagement_dependency_profiles_memory),
-        'engagement_dependency_events': len(_engagement_dependency_events_memory),
-        'engagement_community_circles': len(_engagement_community_circles_memory),
-        'engagement_community_posts': len(_engagement_community_posts_memory),
-        'engagement_community_amas': len(_engagement_community_amas_memory),
-        'engagement_brand_lock_profiles': len(_engagement_brand_lock_profiles_memory),
-        'engagement_brand_lock_events': len(_engagement_brand_lock_events_memory),
-        'engagement_autopilot_profiles': len(_engagement_autopilot_profiles_memory),
-        'engagement_autopilot_events': len(_engagement_autopilot_events_memory),
-        'engagement_achievement_profiles': len(_engagement_achievement_profiles_memory),
-        'engagement_achievement_events': len(_engagement_achievement_events_memory),
-        'money_printer_ideas': len(_money_printer_ideas_memory),
-        'money_printer_validations': len(_money_printer_validations_memory),
-        'bank_accounts': len(_bank_accounts_memory),
-        'bank_transactions': len(_bank_transactions_memory),
-        'bank_payouts': len(_bank_payouts_memory),
-        'university_courses': len(_university_courses_memory),
-        'university_cohorts': len(_university_cohorts_memory),
-        'university_enrollments': len(_university_enrollments_memory),
-        'studios_services': len(_studios_services_memory),
-        'studios_briefs': len(_studios_briefs_memory),
-        'studios_proposals': len(_studios_proposals_memory),
-        'studios_escrows': len(_studios_escrows_memory),
-        'commerce_products': len(_commerce_products_memory),
-        'commerce_orders': len(_commerce_orders_memory),
-        'talent_creators': len(_talent_creators_memory),
-        'talent_deals': len(_talent_deals_memory),
-        'talent_rate_cards': len(_talent_rate_cards_memory),
-        'white_label_profiles': len(_white_label_profiles_memory),
-        'white_label_events': len(_white_label_events_memory),
-        'crm_contacts': len(_crm_contacts_memory),
-        'crm_companies': len(_crm_companies_memory),
-        'crm_deals': len(_crm_deals_memory),
-        'influencer_campaigns': len(_influencer_campaigns_memory),
-        'chatbots': len(_chatbots_memory),
-        'linkinbio_pages': len(_linkinbio_pages_memory),
-        'subscriptions': len(_subscriptions_memory),
-        'cms_connections': len(_cms_connections_memory),
-        'marketplace_installs': len(_marketplace_installs_memory),
-        'analytics_reports': len(_analytics_reports_memory),
-        'analytics_trends': len(_analytics_trends_memory),
-        'analytics_rollups': len(_analytics_rollups_memory),
+        'suitecrm': len(memory_stores.suitecrm_jobs),
+        'refferq': len(memory_stores.refferq_jobs),
+        'posthog': len(memory_stores.posthog_events),
+        'social_listening': len(memory_stores.social_listening),
+        'social_listening_alert_rules': len(memory_stores.social_listening_alert_rules),
+        'social_listening_alerts': len(memory_stores.social_listening_alerts),
+        'reviews': len(memory_stores.reviews),
+        'n8n': len(memory_stores.n8n_jobs),
+        'growthbook': len(memory_stores.growthbook_checks),
+        'matomo': len(memory_stores.matomo_events),
+        'plausible': len(memory_stores.plausible_events),
+        'meilisearch': len(memory_stores.meilisearch_index),
+        'webhooks': len(memory_stores.webhook_events),
+        'appwrite': len(memory_stores.appwrite_events),
+        'drone': len(memory_stores.drone_builds),
+        'directus': len(memory_stores.directus_items),
+        'minio': len(memory_stores.minio_objects),
+        'stripe': len(memory_stores.stripe_events),
+        'audit_log': len(memory_stores.audit_log),
+        'notifications': len(memory_stores.notifications),
+        'redis': len(memory_stores.redis_ops),
+        'twilio': len(memory_stores.twilio_messages),
+        'slack': len(memory_stores.slack_messages),
+        'resend': len(memory_stores.resend_messages),
+        'algolia': len(memory_stores.algolia_sync),
+        'ai_gateway': len(memory_stores.ai_gateway),
+        'ai_security_usage': len(memory_stores.ai_security_usage),
+        'ai_security_alerts': len(memory_stores.ai_security_alerts),
+        'ai_security_blocks': len(memory_stores.ai_security_blocks),
+        'ai_security_appeals': len(memory_stores.ai_security_appeals),
+        'ai_security_ids_events': len(memory_stores.ai_security_ids_events),
+        'auth_security': len(memory_stores.auth_security),
+        'tenant_management': len(memory_stores.tenant_profiles),
+        'engagement_streaks': len(memory_stores.engagement_streaks),
+        'engagement_referrals': len(memory_stores.engagement_referrals),
+        'engagement_companion_profiles': len(memory_stores.engagement_companion_profiles),
+        'engagement_fomo_events': len(memory_stores.engagement_fomo_events),
+        'engagement_social_proof_events': len(memory_stores.engagement_social_proof_events),
+        'engagement_dependency_profiles': len(memory_stores.engagement_dependency_profiles),
+        'engagement_dependency_events': len(memory_stores.engagement_dependency_events),
+        'engagement_community_circles': len(memory_stores.engagement_community_circles),
+        'engagement_community_posts': len(memory_stores.engagement_community_posts),
+        'engagement_community_amas': len(memory_stores.engagement_community_amas),
+        'engagement_brand_lock_profiles': len(memory_stores.engagement_brand_lock_profiles),
+        'engagement_brand_lock_events': len(memory_stores.engagement_brand_lock_events),
+        'engagement_autopilot_profiles': len(memory_stores.engagement_autopilot_profiles),
+        'engagement_autopilot_events': len(memory_stores.engagement_autopilot_events),
+        'engagement_achievement_profiles': len(memory_stores.engagement_achievement_profiles),
+        'engagement_achievement_events': len(memory_stores.engagement_achievement_events),
+        'money_printer_ideas': len(memory_stores.money_printer_ideas),
+        'money_printer_validations': len(memory_stores.money_printer_validations),
+        'bank_accounts': len(memory_stores.bank_accounts),
+        'bank_transactions': len(memory_stores.bank_transactions),
+        'bank_payouts': len(memory_stores.bank_payouts),
+        'university_courses': len(memory_stores.university_courses),
+        'university_cohorts': len(memory_stores.university_cohorts),
+        'university_enrollments': len(memory_stores.university_enrollments),
+        'studios_services': len(memory_stores.studios_services),
+        'studios_briefs': len(memory_stores.studios_briefs),
+        'studios_proposals': len(memory_stores.studios_proposals),
+        'studios_escrows': len(memory_stores.studios_escrows),
+        'commerce_products': len(memory_stores.commerce_products),
+        'commerce_orders': len(memory_stores.commerce_orders),
+        'talent_creators': len(memory_stores.talent_creators),
+        'talent_deals': len(memory_stores.talent_deals),
+        'talent_rate_cards': len(memory_stores.talent_rate_cards),
+        'white_label_profiles': len(memory_stores.white_label_profiles),
+        'white_label_events': len(memory_stores.white_label_events),
+        'crm_contacts': len(memory_stores.crm_contacts),
+        'crm_companies': len(memory_stores.crm_companies),
+        'crm_deals': len(memory_stores.crm_deals),
+        'influencer_campaigns': len(memory_stores.influencer_campaigns),
+        'chatbots': len(memory_stores.chatbots),
+        'linkinbio_pages': len(memory_stores.linkinbio_pages),
+        'subscriptions': len(memory_stores.subscriptions),
+        'cms_connections': len(memory_stores.cms_connections),
+        'marketplace_installs': len(memory_stores.marketplace_installs),
+        'analytics_reports': len(memory_stores.analytics_reports),
+        'analytics_trends': len(memory_stores.analytics_trends),
+        'analytics_rollups': len(memory_stores.analytics_rollups),
     }
 
 
@@ -302,9 +212,6 @@ def _build_integrations_dict() -> dict[str, bool]:
     """Build integrations configuration dictionary."""
     vault_addr = os.getenv('VAULT_ADDR', '').strip()
     vault_token = os.getenv('VAULT_TOKEN', '').strip()
-    supabase_url = os.getenv('SUPABASE_URL', '').strip()
-    supabase_service_role_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '').strip()
-    supabase_db_url = os.getenv('SUPABASE_DB_URL', '').strip()
 
     return {
         'postgres_configured': bool(os.getenv('POSTGRES_HOST', '').strip()),
@@ -331,8 +238,6 @@ def _build_integrations_dict() -> dict[str, bool]:
         'anthropic_configured': bool(os.getenv('ANTHROPIC_API_KEY', '').strip()),
         'jwt_configured': bool(os.getenv('JWT_SIGNING_KEY', '').strip()),
         'hashicorp_vault_configured': bool(vault_addr and vault_token),
-        'supabase_configured': bool(supabase_url and supabase_service_role_key),
-        'supabase_vault_ready': bool(supabase_db_url),
     }
 
 
@@ -388,12 +293,12 @@ def _platform_status_payload(auth: AuthContext) -> JsonObject:
     bridges_warn_utilization = round(max(0.0, min(1.0, bridges_warn_utilization_pct / 100.0)), 4)
 
     fallback_stores = {
-        'scheduled_posts': _scheduled_posts_memory,
-        'email_contacts': _email_contacts_memory,
-        'email_campaigns': _email_campaigns_memory,
-        'suitecrm_jobs': _suitecrm_jobs_memory,
-        'meilisearch': _meilisearch_index_memory,
-        'algolia': _algolia_sync_memory,
+        'scheduled_posts': memory_stores.scheduled_posts,
+        'email_contacts': memory_stores.email_contacts,
+        'email_campaigns': memory_stores.email_campaigns,
+        'suitecrm_jobs': memory_stores.suitecrm_jobs,
+        'meilisearch': memory_stores.meilisearch_index,
+        'algolia': memory_stores.algolia_sync,
     }
     fallback_sizes = {name: len(store) for name, store in fallback_stores.items()}
     fallback_utilization = {
@@ -425,16 +330,17 @@ def _platform_status_payload(auth: AuthContext) -> JsonObject:
 
 def _platform_metrics_summary_payload(auth: AuthContext) -> JsonObject:
     """Generate metrics summary."""
-    with _rate_lock:
-        rate_samples = sum(len(samples) for samples in _rate_buckets.values())
-        active_keys = len(_rate_buckets)
+    rate_metrics = rate_limit_metrics_snapshot()
 
     queues = _build_queues_dict()
     return {
         'status': 'ok',
         'tenant_id': auth.tenant_id,
         'queues': queues,
-        'rate_limiter': {'active_keys': active_keys, 'sample_count': rate_samples},
+        'rate_limiter': {
+            'active_keys': rate_metrics.active_keys,
+            'sample_count': rate_metrics.sample_count,
+        },
         'generated_at': datetime.now(UTC).isoformat(),
     }
 
@@ -616,7 +522,7 @@ def _platform_module_registry_payload(auth: AuthContext) -> JsonObject:
 def _platform_api_usage_payload(auth: AuthContext, limit: int) -> JsonObject:
     """Generate API usage payload."""
     tenant_items = [
-        item for item in _api_usage_audit_memory
+        item for item in memory_stores.api_usage_audit
         if str(item.get('tenant_id', '')) == auth.tenant_id
     ]
     recent = tenant_items[-limit:]
@@ -645,44 +551,44 @@ def _platform_super_admin_dashboard_payload(auth: AuthContext) -> JsonObject:
 
     monthly_revenue = sum(
         _coerce_float(order.get('gross_amount', 0.0), 0.0)
-        for order in _commerce_orders_memory
+        for order in memory_stores.commerce_orders
     )
     monthly_payouts = sum(
         _coerce_float(payout.get('amount', 0.0), 0.0)
-        for payout in _bank_payouts_memory
+        for payout in memory_stores.bank_payouts
     )
     profit_estimate = round(monthly_revenue - monthly_payouts, 2)
-    dispute_count = max(0, len(_ai_security_appeals_memory) + len(_ai_security_blocks_memory))
+    dispute_count = max(0, len(memory_stores.ai_security_appeals) + len(memory_stores.ai_security_blocks))
 
     critical_alerts = sum(
         1
-        for alert in _ai_security_alerts_memory
+        for alert in memory_stores.ai_security_alerts
         if str(alert.get('severity', '')).lower() in {'critical', 'high'}
     )
 
     subscription_totals: dict[str, int] = dict.fromkeys(available_plans, 0)
-    for item in _subscriptions_memory:
+    for item in memory_stores.subscriptions:
         plan_name = str(item.get('plan', 'free') or 'free').lower().strip()
         if plan_name in subscription_totals:
             subscription_totals[plan_name] += 1
 
     source_counts = {
-        'audit_log': len(_audit_log_memory),
-        'api_usage': len(_api_usage_audit_memory),
-        'ai_security_usage': len(_ai_security_usage_memory),
-        'ai_security_alerts': len(_ai_security_alerts_memory),
-        'notification_receipts': len(_notification_delivery_receipts_memory),
-        'messaging_events': len(_smart_inbox_messages_memory) + len(_twilio_messages_memory) + len(_slack_messages_memory),
+        'audit_log': len(memory_stores.audit_log),
+        'api_usage': len(memory_stores.api_usage_audit),
+        'ai_security_usage': len(memory_stores.ai_security_usage),
+        'ai_security_alerts': len(memory_stores.ai_security_alerts),
+        'notification_receipts': len(memory_stores.notification_delivery_receipts),
+        'messaging_events': len(memory_stores.smart_inbox_messages) + len(memory_stores.twilio_messages) + len(memory_stores.slack_messages),
     }
 
     accounting_integrations = [
-        item for item in _accounting_integrations_memory if str(item.get('tenant_id', '')) == auth.tenant_id
+        item for item in memory_stores.accounting_integrations if str(item.get('tenant_id', '')) == auth.tenant_id
     ]
     accounting_exports = [
-        item for item in _accounting_exports_memory if str(item.get('tenant_id', '')) == auth.tenant_id
+        item for item in memory_stores.accounting_exports if str(item.get('tenant_id', '')) == auth.tenant_id
     ]
     module_settings = [
-        item for item in _super_admin_module_settings_memory if str(item.get('tenant_id', '')) == auth.tenant_id
+        item for item in memory_stores.super_admin_module_settings if str(item.get('tenant_id', '')) == auth.tenant_id
     ]
     providers_connected = {
         str(item.get('provider', ''))
@@ -693,23 +599,23 @@ def _platform_super_admin_dashboard_payload(auth: AuthContext) -> JsonObject:
     modules: list[JsonObject] = [
         {'id': 'crm', 'name': 'CRM with analytics', 'ready': queues.get('crm_contacts', 0) >= 0, 'count': queues.get('crm_contacts', 0), 'path': '/crm/summary'},
         {'id': 'security', 'name': 'Security and SIEM', 'ready': True, 'count': source_counts['ai_security_alerts'], 'path': '/ops/platform/super-admin/dashboard'},
-        {'id': 'account_balance', 'name': 'Account balance', 'ready': True, 'count': len(_bank_accounts_memory), 'path': '/money-printers/nuxtron-bank/wallet'},
+        {'id': 'account_balance', 'name': 'Account balance', 'ready': True, 'count': len(memory_stores.bank_accounts), 'path': '/money-printers/nuxtron-bank/wallet'},
         {'id': 'profit_loss', 'name': 'Profit and loss analytics', 'ready': True, 'count': int(round(profit_estimate, 0)), 'path': '/ops/platform/super-admin/dashboard'},
-        {'id': 'orders', 'name': 'Orders', 'ready': True, 'count': len(_commerce_orders_memory), 'path': '/money-printers/commerce-pro/orders'},
-        {'id': 'wallet_credits', 'name': 'Wallet credits', 'ready': True, 'count': len(_bank_transactions_memory), 'path': '/money-printers/nuxtron-bank/wallet'},
+        {'id': 'orders', 'name': 'Orders', 'ready': True, 'count': len(memory_stores.commerce_orders), 'path': '/money-printers/commerce-pro/orders'},
+        {'id': 'wallet_credits', 'name': 'Wallet credits', 'ready': True, 'count': len(memory_stores.bank_transactions), 'path': '/money-printers/nuxtron-bank/wallet'},
         {'id': 'disputes', 'name': 'Disputes', 'ready': True, 'count': dispute_count, 'path': '/disputes/dashboard'},
-        {'id': 'messages', 'name': 'Messages inbox', 'ready': True, 'count': len(_smart_inbox_messages_memory), 'path': '/inbox/stats'},
-        {'id': 'affiliate', 'name': 'Affiliate management', 'ready': True, 'count': len(_engagement_referrals_memory), 'path': '/engagement/referrals/summary'},
-        {'id': 'notifications', 'name': 'Notifications', 'ready': True, 'count': len(_notifications_memory), 'path': '/notifications'},
-        {'id': 'files_content', 'name': 'Files and content', 'ready': True, 'count': len(_minio_objects_memory) + len(_ai_gateway_memory), 'path': '/media/library'},
-        {'id': 'marketing_tools', 'name': 'Marketing tools settings', 'ready': True, 'count': len(_analytics_reports_memory), 'path': '/ops/platform/capabilities'},
-        {'id': 'module_settings', 'name': 'Modules settings', 'ready': True, 'count': len(_growthbook_checks_memory), 'path': '/ops/platform/growth-suite'},
+        {'id': 'messages', 'name': 'Messages inbox', 'ready': True, 'count': len(memory_stores.smart_inbox_messages), 'path': '/inbox/stats'},
+        {'id': 'affiliate', 'name': 'Affiliate management', 'ready': True, 'count': len(memory_stores.engagement_referrals), 'path': '/engagement/referrals/summary'},
+        {'id': 'notifications', 'name': 'Notifications', 'ready': True, 'count': len(memory_stores.notifications), 'path': '/notifications'},
+        {'id': 'files_content', 'name': 'Files and content', 'ready': True, 'count': len(memory_stores.minio_objects) + len(memory_stores.ai_gateway), 'path': '/media/library'},
+        {'id': 'marketing_tools', 'name': 'Marketing tools settings', 'ready': True, 'count': len(memory_stores.analytics_reports), 'path': '/ops/platform/capabilities'},
+        {'id': 'module_settings', 'name': 'Modules settings', 'ready': True, 'count': len(memory_stores.growthbook_checks), 'path': '/ops/platform/growth-suite'},
     ]
 
     updates: JsonObject = {
-        'new_available': max(0, len(_growthbook_checks_memory) // 5),
-        'in_progress': max(0, len(_drone_builds_memory) // 3),
-        'pending': max(0, len(_webhook_events_memory) // 4),
+        'new_available': max(0, len(memory_stores.growthbook_checks) // 5),
+        'in_progress': max(0, len(memory_stores.drone_builds) // 3),
+        'pending': max(0, len(memory_stores.webhook_events) // 4),
         'installed_up_to_date': bool(integrations.get('github_actions_configured', False)),
     }
 
@@ -729,12 +635,12 @@ def _platform_super_admin_dashboard_payload(auth: AuthContext) -> JsonObject:
             'monthly_revenue_estimate': round(monthly_revenue, 2),
             'monthly_payout_estimate': round(monthly_payouts, 2),
             'profit_estimate': profit_estimate,
-            'orders': len(_commerce_orders_memory),
-            'wallet_transactions': len(_bank_transactions_memory),
+            'orders': len(memory_stores.commerce_orders),
+            'wallet_transactions': len(memory_stores.bank_transactions),
             'hmrc_quickbooks_xero_ready': {'hmrc', 'quickbooks', 'xero'}.issubset(providers_connected),
         },
         'accounts': {
-            'profiles': len(_tenant_profiles_memory),
+            'profiles': len(memory_stores.tenant_profiles),
             'mfa_ready': True,
             'rbac_ready': True,
             'abac_ready': True,
@@ -760,10 +666,8 @@ def _platform_super_admin_dashboard_payload(auth: AuthContext) -> JsonObject:
 # ── Exported functions for legacy_main.py to import ─────────
 
 __all__ = [
-    'set_memory_stores',
     'set_helpers',
     'set_db_ready',
-    'set_rate_limiter',
     '_build_queues_dict',
     '_build_integrations_dict',
     '_queue_ready',

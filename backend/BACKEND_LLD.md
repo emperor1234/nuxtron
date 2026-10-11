@@ -10,7 +10,7 @@ The backend is not one service — it's a large **FastAPI monolith** carrying ne
 |---|---|
 | `backend/fastapi/` | Product monolith. ~90 routers, 60+ SEO service modules, multi-provider LLM layer, Celery workers, Stripe billing, SAML SSO. |
 | `backend/django/` | Companion service: JWT token issuance (throttled), admin panel with IP allowlist, health checks, a narrower `intelligence` API. |
-| Datastores | PostgreSQL (both services), Redis (cache/queue/session), Neo4j (graph intel, FastAPI only), Supabase (role unclear, see §5), Vault (secrets). |
+| Datastores | PostgreSQL (both services), Redis (cache/queue/session), Neo4j (graph intel, FastAPI only), Vault (secrets). |
 
 ## 2. System Topology
 
@@ -36,7 +36,6 @@ flowchart TB
     fastapi_routes --> pg[("PostgreSQL")]
     fastapi_routes --> redis[("Redis")]
     fastapi_routes --> neo4j[("Neo4j — graph intel")]
-    fastapi_routes --> supabase[("Supabase — role unclear")]
     fastapi_routes --> celery["Celery workers\ntasks/workforce_*"]
     fastapi_routes --> vault[("Vault — secrets")]
 
@@ -118,8 +117,6 @@ Django runs a **parallel, unrelated auth path**: `rest_framework_simplejwt` with
 - `platform_api` — main models + admin.py
 - SSL enforced in prod via `_build_databases()`
 
-Supabase (`app/core/supabase_client.py`) is present alongside direct Postgres access; the repo doesn't make explicit whether it's the primary datastore or an auxiliary one (auth/storage) — flagged in §8 as worth resolving before extending the data model.
-
 ## 5a. Row-Level Security — investigation spike (not implemented)
 
 Per the production-readiness plan, this was scoped as a spike, not a rollout — no RLS policies exist yet. Findings, for whoever picks this up next:
@@ -170,9 +167,13 @@ Security posture: CSP via `config/csp.py`, `corsheaders`, admin IP allowlist, Re
 |---|---|---|
 | 🟡 Medium | `schema.sql` / ad hoc `app/migrations/*` not yet folded into Alembic | Alembic is now wired up and tracks the ORM models (§5), but the separate SEO/graph-intelligence schema (`sites`, `pages`, `entities`, …) is still managed outside it — two schema-management stories instead of one. Downgraded from 🔴 now that the ORM half has a real migration tool; this is the remaining half. |
 | 🟡 Medium | Duplicate route mounts | `intel_router` and `social_media_router` each mounted twice under different prefixes — invites inconsistent versioning and doubled maintenance. |
-| 🟡 Medium | Supabase's role is unstated | Coexists with direct Postgres access; unclear if it's primary storage, auth, or file storage only — matters for where new tables should live. |
 | ⚪ Low | `legacy_main.py` at 10k lines | Nearly the whole app boots from one file; router-splitting is done, but startup/DI wiring is not. |
 | ⚪ Low | RLS not implemented | Scoped as a spike (§5a) with concrete findings recorded — connection-pool GUC scoping is the main design risk, needs a real Postgres instance to validate before rollout. |
+
+### Structural cleanup (2026-10-09)
+
+- Removed the obsolete duplicate `app/main_social.py` application. The supported FastAPI composition root is `app/bootstrap/application.py`, exposed through the compatibility imports in `app/main.py` and `app/composition.py`.
+- Kept `app/router_registration.py` as the single router registration boundary during migration; it remains the next extraction target rather than creating another competing application entry point.
 
 **Resolved in Phases 1–3** (kept here for history — see git log / `.claude/plans` for the full write-ups): JWT self-issue impersonation path, client-controlled RBAC in IRA actions, in-memory rate limiting and MITM detection (now Redis-backed), FastAPI/Django token schemes (Django now validates FastAPI-issued tokens via a shared secret), no Alembic wiring for the ORM schema, no FK constraints on `tenant_id`, dead `SocialMediaContent`/`SocialAnalytics`/`AudienceMetrics` "models" and a disconnected `NotificationRow` base (documented above, not yet deleted), and a SQLite FK-enforcement check that never matched.
 

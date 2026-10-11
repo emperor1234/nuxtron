@@ -1,5 +1,10 @@
-import type { ReactNode, ButtonHTMLAttributes, InputHTMLAttributes, SelectHTMLAttributes } from 'react';
-import styles from './kit.module.css';
+import type {
+  ReactNode,
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  SelectHTMLAttributes,
+} from "react";
+import styles from "./kit.module.css";
 
 /**
  * Dashboard UI kit — the shared primitives every (dashboard) page composes from
@@ -8,11 +13,17 @@ import styles from './kit.module.css';
  */
 
 function cx(...values: Array<string | false | undefined>): string {
-  return values.filter(Boolean).join(' ');
+  return values.filter(Boolean).join(" ");
 }
 
 /** Vertical page container with the standard section gap. */
-export function Page({ children, className }: { children: ReactNode; className?: string }) {
+export function Page({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return <div className={cx(styles.page, className)}>{children}</div>;
 }
 
@@ -70,10 +81,20 @@ export function Card({
   pad?: boolean;
   className?: string;
 }) {
-  return <div className={cx(styles.card, pad && styles.cardPad, className)}>{children}</div>;
+  return (
+    <div className={cx(styles.card, pad && styles.cardPad, className)}>
+      {children}
+    </div>
+  );
 }
 
-export function CardTitle({ children, sub }: { children: ReactNode; sub?: string }) {
+export function CardTitle({
+  children,
+  sub,
+}: {
+  children: ReactNode;
+  sub?: string;
+}) {
   return (
     <div>
       <h2 className={styles.cardTitle}>{children}</h2>
@@ -83,27 +104,83 @@ export function CardTitle({ children, sub }: { children: ReactNode; sub?: string
 }
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'ghost' | 'danger';
+  variant?: "primary" | "ghost" | "danger";
 };
 
-export function Button({ variant = 'ghost', className, type, ...rest }: ButtonProps) {
+export function Button({
+  variant = "ghost",
+  className,
+  type,
+  ...rest
+}: ButtonProps) {
   const variantClass =
-    variant === 'primary' ? styles.btnPrimary : variant === 'danger' ? styles.btnDanger : styles.btnGhost;
-  return <button type={type ?? 'button'} className={cx(styles.btn, variantClass, className)} {...rest} />;
+    variant === "primary"
+      ? styles.btnPrimary
+      : variant === "danger"
+        ? styles.btnDanger
+        : styles.btnGhost;
+  return (
+    <button
+      type={type ?? "button"}
+      className={cx(styles.btn, variantClass, className)}
+      {...rest}
+    />
+  );
 }
 
-type BadgeTone = 'neutral' | 'success' | 'brand' | 'danger';
+type BadgeTone = "neutral" | "success" | "brand" | "danger";
 
-export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: BadgeTone }) {
+export function Badge({
+  children,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  tone?: BadgeTone;
+}) {
   const toneClass =
-    tone === 'success'
+    tone === "success"
       ? styles.badgeSuccess
-      : tone === 'brand'
+      : tone === "brand"
         ? styles.badgeBrand
-        : tone === 'danger'
+        : tone === "danger"
           ? styles.badgeDanger
           : styles.badgeNeutral;
   return <span className={cx(styles.badge, toneClass)}>{children}</span>;
+}
+
+export type DataStatusState = "live" | "preview" | "unavailable";
+
+/**
+ * Declares whether a data-driven surface is backed by live provider data.
+ * Never use the success state for seeded, fallback, demo, or mock responses.
+ */
+export function DataStatus({
+  state,
+  provider,
+}: {
+  state: DataStatusState;
+  provider?: string;
+}) {
+  const providerName = provider?.trim();
+  const label =
+    state === "live"
+      ? `Live data${providerName ? ` · ${providerName}` : ""}`
+      : state === "preview"
+        ? `Preview data${providerName ? ` — connect ${providerName} to activate` : ""}`
+        : `Data unavailable${providerName ? ` · ${providerName}` : ""}`;
+  const stateClass =
+    state === "live"
+      ? styles.dataStatusLive
+      : state === "preview"
+        ? styles.dataStatusPreview
+        : styles.dataStatusUnavailable;
+
+  return (
+    <span className={cx(styles.dataStatus, stateClass)} role="status">
+      <span className={styles.dataStatusDot} aria-hidden="true" />
+      {label}
+    </span>
+  );
 }
 
 /** Grid of key metrics. */
@@ -111,7 +188,15 @@ export function StatGrid({ children }: { children: ReactNode }) {
   return <div className={styles.statGrid}>{children}</div>;
 }
 
-export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
+export function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: ReactNode;
+  hint?: string;
+}) {
   return (
     <div className={styles.stat}>
       <span className={styles.statLabel}>{label}</span>

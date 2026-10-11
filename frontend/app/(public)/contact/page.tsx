@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Mail } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Reveal } from '../_components/reveal';
 import { apiPost, DEFAULT_TENANT_ID } from '@/app/lib/api-client';
 
 export default function ContactPage() {
@@ -44,35 +44,25 @@ export default function ContactPage() {
   return (
     <section className="mk-section mk-pt-hero">
       <div className="mk-container grid max-w-4xl grid-cols-1 gap-12 md:grid-cols-2">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <Reveal>
           <span className="mk-eyebrow mb-5">Contact</span>
-          <h1 className="text-4xl font-semibold tracking-tight text-[#181818] sm:text-5xl">Talk to our team</h1>
-          <p className="mt-5 text-lg leading-relaxed text-[#46484d]">
+          <h1 className="text-4xl font-semibold tracking-tight text-ink sm:text-5xl">Talk to our team</h1>
+          <p className="mt-5 text-lg leading-relaxed text-ink-2">
             Questions about plans, a security review, or just want to see Nuxtron on your own data? Send us a note
             and we&apos;ll get back to you within one business day.
           </p>
-          <div className="mt-8 flex items-center gap-3 text-[#46484d]">
-            <Mail size={18} className="text-[#466cf3]" aria-hidden="true" />
+          <div className="mt-8 flex items-center gap-3 text-ink-2">
+            <Mail size={18} className="text-brand" aria-hidden="true" />
             <span className="text-sm">hello@nuxtron.app</span>
           </div>
-        </motion.div>
+        </Reveal>
 
-        <motion.form
+        <form
           onSubmit={handleSubmit}
-          className="mk-card space-y-5 p-8"
-          noValidate
-          initial={{ opacity: 0, x: 20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          className="mk-card flex flex-col gap-5 p-8"
         >
           <div>
-            <label htmlFor="contact-name" className="mb-1.5 block text-sm font-medium text-[#46484d]">
+            <label htmlFor="contact-name" className="mb-1.5 block text-sm font-medium text-ink-2">
               Name
             </label>
             <input
@@ -81,13 +71,13 @@ export default function ContactPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
-              className="w-full rounded-lg border border-[#18181814] bg-[#18181808] px-3.5 py-2.5 text-[15px] text-[#181818] outline-none transition placeholder:text-[#b7b9be] focus:border-[#466cf3]/60 focus:ring-2 focus:ring-[#466cf3]/20"
+              className="w-full rounded-lg border border-line bg-line-soft px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-ink-faint focus:border-brand/60 focus:ring-2 focus:ring-brand/20"
               placeholder="Jane Doe"
             />
           </div>
           <div>
-            <label htmlFor="contact-email" className="mb-1.5 block text-sm font-medium text-[#46484d]">
-              Email <span className="text-[#466cf3]">*</span>
+            <label htmlFor="contact-email" className="mb-1.5 block text-sm font-medium text-ink-2">
+              Email <span className="text-brand">*</span>
             </label>
             <input
               id="contact-email"
@@ -96,12 +86,12 @@ export default function ContactPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
-              className="w-full rounded-lg border border-[#18181814] bg-[#18181808] px-3.5 py-2.5 text-[15px] text-[#181818] outline-none transition placeholder:text-[#b7b9be] focus:border-[#466cf3]/60 focus:ring-2 focus:ring-[#466cf3]/20"
+              className="w-full rounded-lg border border-line bg-line-soft px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-ink-faint focus:border-brand/60 focus:ring-2 focus:ring-brand/20"
               placeholder="you@company.com"
             />
           </div>
           <div>
-            <label htmlFor="contact-message" className="mb-1.5 block text-sm font-medium text-[#46484d]">
+            <label htmlFor="contact-message" className="mb-1.5 block text-sm font-medium text-ink-2">
               Message
             </label>
             <textarea
@@ -109,7 +99,7 @@ export default function ContactPage() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
-              className="w-full resize-none rounded-lg border border-[#18181814] bg-[#18181808] px-3.5 py-2.5 text-[15px] text-[#181818] outline-none transition placeholder:text-[#b7b9be] focus:border-[#466cf3]/60 focus:ring-2 focus:ring-[#466cf3]/20"
+              className="w-full resize-none rounded-lg border border-line bg-line-soft px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-ink-faint focus:border-brand/60 focus:ring-2 focus:ring-brand/20"
               placeholder="What are you trying to solve?"
             />
           </div>
@@ -122,11 +112,11 @@ export default function ContactPage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg bg-[#181818] px-4 py-3 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+            className="w-full rounded-lg bg-ink px-4 py-3 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
           >
             {busy ? 'Sending…' : 'Send message'}
           </button>
-        </motion.form>
+        </form>
       </div>
     </section>
   );

@@ -52,10 +52,10 @@ class TestDbDsnFromEnv:
         assert isinstance(dsn, str)
         assert len(dsn) > 0
 
-    def test_supabase_url_takes_priority(self) -> None:
+    def test_database_url_takes_priority(self) -> None:
         import os
         from unittest.mock import patch
-        with patch.dict(os.environ, {"SUPABASE_DB_URL": "postgresql://user:pass@host/db"}):
+        with patch.dict(os.environ, {"DATABASE_URL": "postgresql://user:pass@host/db"}):
             from backend.fastapi.app.ira_memory import _db_dsn_from_env
             dsn = _db_dsn_from_env()
             assert dsn == "postgresql://user:pass@host/db"

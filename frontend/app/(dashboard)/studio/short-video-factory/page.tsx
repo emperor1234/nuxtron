@@ -33,10 +33,10 @@ const STYLES = ['ugc-style', 'cinematic', 'product-showcase', 'tutorial', 'vlog'
 const DURATIONS = [15, 30, 45, 60];
 
 const STATUS = {
-  queued: { bg: '#eef0f4', color: 'var(--brand)', label: 'In Queue' },
-  processing: { bg: '#fef3c7', color: '#F59E0B', label: 'Generating…' },
-  completed: { bg: '#dcfce722', color: '#22c55e', label: 'Ready' },
-  failed: { bg: '#fee2e222', color: '#EF4444', label: 'Failed' },
+  queued: { bg: 'var(--neutral-soft)', color: 'var(--brand)', label: 'In Queue' },
+  processing: { bg: 'var(--warning-line)', color: 'var(--warning)', label: 'Generating…' },
+  completed: { bg: 'color-mix(in oklab, var(--success-soft) 13%, transparent)', color: 'var(--success)', label: 'Ready' },
+  failed: { bg: 'color-mix(in oklab, var(--danger-soft) 13%, transparent)', color: 'var(--danger)', label: 'Failed' },
 };
 
 export default function ShortVideoFactoryPage() {
@@ -96,13 +96,13 @@ export default function ShortVideoFactoryPage() {
       <div style={{ background: 'var(--card)', borderBottom: '1px solid var(--line)', padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link href="/studio" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: 14 }}>← Studio</Link>
-          <span style={{ color: '#e7e9ef' }}>|</span>
+          <span style={{ color: "var(--line)" }}>|</span>
           <span style={{ fontSize: 22, fontWeight: 700 }}>📱 Short Video Factory</span>
-          <span style={{ background: '#6366f122', color: 'var(--brand)', fontSize: 11, padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>AI-POWERED</span>
+          <span style={{ background: 'color-mix(in oklab, var(--info) 13%, transparent)', color: 'var(--brand)', fontSize: 11, padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>AI-POWERED</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link href="/studio/reels-factory" style={{ background: 'var(--card)', color: 'var(--text)', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', fontSize: 13 }}>Reels Factory →</Link>
-          <Link href="/studio/faceless-video-engine" style={{ background: '#6366f1', color: '#fff', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', fontSize: 13 }}>Faceless Videos →</Link>
+          <Link href="/studio/faceless-video-engine" style={{ background: "var(--brand)", color: 'var(--on-brand)', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', fontSize: 13 }}>Faceless Videos →</Link>
         </div>
       </div>
 
@@ -114,15 +114,15 @@ export default function ShortVideoFactoryPage() {
 
       <div style={{ padding: '0 32px', borderBottom: '1px solid var(--line)', background: 'var(--card)', display: 'flex' }}>
         {(['create', 'library'] as const).map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: 'none', border: 'none', color: activeTab === tab ? 'var(--brand)' : 'var(--muted)', padding: '14px 20px', cursor: 'pointer', fontSize: 14, fontWeight: activeTab === tab ? 600 : 400, borderBottom: activeTab === tab ? '2px solid #6366f1' : '2px solid transparent' }}>
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: 'none', border: 'none', color: activeTab === tab ? 'var(--brand)' : 'var(--muted)', padding: '14px 20px', cursor: 'pointer', fontSize: 14, fontWeight: activeTab === tab ? 600 : 400, borderBottom: activeTab === tab ? "2px solid var(--brand)" : '2px solid transparent' }}>
             {{ create: '✨ Create', library: '📚 My Videos' }[tab]}
           </button>
         ))}
       </div>
 
       <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
-        {error && <div style={{ background: '#fee2e233', border: '1px solid #EF4444', borderRadius: 8, padding: 12, marginBottom: 16, color: '#dc2626' }}>{error}</div>}
-        {successMsg && <div style={{ background: '#dcfce733', border: '1px solid #22c55e', borderRadius: 8, padding: 12, marginBottom: 16, color: '#15803d' }}>{successMsg}</div>}
+        {error && <div style={{ background: 'color-mix(in oklab, var(--danger-soft) 20%, transparent)', border: '1px solid var(--danger)', borderRadius: 8, padding: 12, marginBottom: 16, color: 'var(--danger)' }}>{error}</div>}
+        {successMsg && <div style={{ background: 'color-mix(in oklab, var(--success-soft) 20%, transparent)', border: '1px solid var(--success)', borderRadius: 8, padding: 12, marginBottom: 16, color: 'var(--success-ink)' }}>{successMsg}</div>}
 
         {activeTab === 'create' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 24 }}>
@@ -132,7 +132,7 @@ export default function ShortVideoFactoryPage() {
                 <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 8, fontWeight: 600 }}>PLATFORM</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {PLATFORMS.map((p) => (
-                    <button key={p.id} type="button" onClick={() => { setPlatform(p.id); setDuration(Math.min(duration, p.maxDuration)); }} style={{ background: platform === p.id ? '#6366f1' : '#eef0f4', color: platform === p.id ? '#fff' : 'var(--text)', border: `1px solid ${platform === p.id ? '#6366f1' : '#e7e9ef'}`, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
+                    <button key={p.id} type="button" onClick={() => { setPlatform(p.id); setDuration(Math.min(duration, p.maxDuration)); }} style={{ background: platform === p.id ? "var(--brand)" : "var(--line-soft)", color: platform === p.id ? '#fff' : 'var(--text)', border: `1px solid ${platform === p.id ? 'var(--info)' : 'var(--neutral-soft)'}`, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
                       {p.icon} {p.label}
                     </button>
                   ))}
@@ -157,7 +157,7 @@ export default function ShortVideoFactoryPage() {
                   <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>DURATION</label>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {DURATIONS.filter((d) => d <= (PLATFORMS.find((p) => p.id === platform)?.maxDuration ?? 60)).map((d) => (
-                      <button key={d} type="button" onClick={() => setDuration(d)} style={{ flex: 1, background: duration === d ? '#6366f1' : '#eef0f4', color: duration === d ? '#fff' : 'var(--text)', border: `1px solid ${duration === d ? '#6366f1' : '#e7e9ef'}`, padding: '8px 6px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>{d}s</button>
+                      <button key={d} type="button" onClick={() => setDuration(d)} style={{ flex: 1, background: duration === d ? "var(--brand)" : "var(--line-soft)", color: duration === d ? '#fff' : 'var(--text)', border: `1px solid ${duration === d ? 'var(--info)' : 'var(--neutral-soft)'}`, padding: '8px 6px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>{d}s</button>
                     ))}
                   </div>
                 </div>
@@ -166,20 +166,20 @@ export default function ShortVideoFactoryPage() {
               {/* Brand Colors */}
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>BRAND COLORS (comma-separated hex, optional)</label>
-                <input value={brandColors} onChange={(e) => setBrandColors(e.target.value)} placeholder="#6366f1, #22c55e, #F59E0B" style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--text)', padding: '10px 14px', borderRadius: 8, fontSize: 14 }} />
+                <input value={brandColors} onChange={(e) => setBrandColors(e.target.value)} placeholder="var(--info), var(--success), var(--warning)" style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--text)', padding: '10px 14px', borderRadius: 8, fontSize: 14 }} />
               </div>
 
               {/* Toggles */}
               <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
                 {[{ id: 'captions', label: 'Auto-captions', checked: addCaptions, onChange: setAddCaptions }, { id: 'voiceover', label: 'AI voiceover', checked: addVoiceover, onChange: setAddVoiceover }].map((tog) => (
                   <label key={tog.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, color: 'var(--text)' }}>
-                    <input type="checkbox" checked={tog.checked} onChange={(e) => tog.onChange(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#6366f1' }} />
+                    <input type="checkbox" checked={tog.checked} onChange={(e) => tog.onChange(e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--info)' }} />
                     {tog.label}
                   </label>
                 ))}
               </div>
 
-              <button type="submit" disabled={generating} style={{ width: '100%', background: generating ? '#e7e9ef' : '#6366f1', color: '#fff', border: 'none', padding: '14px 24px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: generating ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={generating} style={{ width: '100%', background: generating ? "var(--line)" : "var(--brand)", color: 'var(--on-brand)', border: 'none', padding: '14px 24px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: generating ? 'not-allowed' : 'pointer' }}>
                 {generating ? '⏳ Generating Short Video…' : '📱 Generate Short Video'}
               </button>
 
@@ -196,8 +196,8 @@ export default function ShortVideoFactoryPage() {
                           <span style={{ background: s.bg, color: s.color, fontSize: 11, padding: '2px 10px', borderRadius: 12, fontWeight: 600 }}>{s.label}</span>
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>{String(job.prompt ?? prompt).slice(0, 80)}…</div>
-                        {job.status === 'processing' && <div style={{ height: 3, background: '#e7e9ef', borderRadius: 2 }}><div style={{ height: '100%', width: `${job.progress_pct ?? 35}%`, background: '#6366f1' }} /></div>}
-                        {job.status === 'completed' && job.video_url && <a href={job.video_url} target="_blank" rel="noopener noreferrer" style={{ background: '#22c55e', color: '#fff', padding: '5px 14px', borderRadius: 6, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>⬇ Download</a>}
+                        {job.status === 'processing' && <div style={{ height: 3, background: "var(--line)", borderRadius: 2 }}><div style={{ height: '100%', width: `${job.progress_pct ?? 35}%`, background: "var(--brand)" }} /></div>}
+                        {job.status === 'completed' && job.video_url && <a href={job.video_url} target="_blank" rel="noopener noreferrer" style={{ background: 'var(--success)', color: 'var(--on-brand)', padding: '5px 14px', borderRadius: 6, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>⬇ Download</a>}
                       </div>
                     );
                   })}
@@ -210,7 +210,7 @@ export default function ShortVideoFactoryPage() {
               <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: 20, marginBottom: 16 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--brand)' }}>📐 Platform Specs</div>
                 {PLATFORMS.map((p) => (
-                  <div key={p.id} style={{ marginBottom: 10, padding: 10, background: platform === p.id ? '#6366f122' : '#eef0f4', borderRadius: 8, border: `1px solid ${platform === p.id ? '#6366f1' : '#eef0f4'}` }}>
+                  <div key={p.id} style={{ marginBottom: 10, padding: 10, background: platform === p.id ? 'color-mix(in oklab, var(--info) 13%, transparent)' : "var(--line-soft)", borderRadius: 8, border: `1px solid ${platform === p.id ? 'var(--info)' : 'var(--neutral-soft)'}` }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{p.icon} {p.label}</div>
                     <div style={{ fontSize: 11, color: 'var(--muted)' }}>Max {p.maxDuration}s · 9:16 · 1080×1920</div>
                   </div>
@@ -222,7 +222,7 @@ export default function ShortVideoFactoryPage() {
                 {[{ name: 'Runway ML', env: 'RUNWAY_API_KEY' }, { name: 'Pika Labs', env: 'PIKA_API_KEY' }, { name: 'Kling AI', env: 'KLING_API_KEY' }, { name: 'ElevenLabs', env: 'ELEVENLABS_API_KEY' }].map((v) => (
                   <div key={v.name} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                     <span style={{ fontSize: 12, color: 'var(--text)' }}>{v.name}</span>
-                    <span style={{ fontSize: 10, color: '#6366f1' }}>{v.env}</span>
+                    <span style={{ fontSize: 10, color: "var(--brand)" }}>{v.env}</span>
                   </div>
                 ))}
               </div>
@@ -236,7 +236,7 @@ export default function ShortVideoFactoryPage() {
               <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)' }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>📱</div>
                 <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>No videos yet</div>
-                <button onClick={() => setActiveTab('create')} style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>Start Creating</button>
+                <button onClick={() => setActiveTab('create')} style={{ background: "var(--brand)", color: 'var(--on-brand)', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>Start Creating</button>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))', gap: 16 }}>
@@ -244,7 +244,7 @@ export default function ShortVideoFactoryPage() {
                   const s = STATUS[job.status] ?? STATUS.queued;
                   return (
                     <div key={job.id} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-                      <div style={{ height: 150, background: `#e7e9ef url(${job.thumbnail_url}) center/cover no-repeat`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ height: 150, background: `var(--neutral-soft) url(${job.thumbnail_url}) center/cover no-repeat`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <div style={{ fontSize: 28 }}>{job.status === 'completed' ? '▶' : '⏳'}</div>
                       </div>
                       <div style={{ padding: 12 }}>
@@ -252,7 +252,7 @@ export default function ShortVideoFactoryPage() {
                           <span style={{ fontSize: 12, fontWeight: 600 }}>{job.platform} · {job.duration_s ?? '?'}s</span>
                           <span style={{ background: s.bg, color: s.color, fontSize: 10, padding: '1px 8px', borderRadius: 10 }}>{s.label}</span>
                         </div>
-                        {job.status === 'completed' && job.video_url && <a href={job.video_url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', background: '#6366f1', color: '#fff', padding: '5px 0', borderRadius: 6, fontSize: 11, textDecoration: 'none', textAlign: 'center', marginTop: 6, fontWeight: 600 }}>⬇ Download</a>}
+                        {job.status === 'completed' && job.video_url && <a href={job.video_url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', background: "var(--brand)", color: 'var(--on-brand)', padding: '5px 0', borderRadius: 6, fontSize: 11, textDecoration: 'none', textAlign: 'center', marginTop: 6, fontWeight: 600 }}>⬇ Download</a>}
                       </div>
                     </div>
                   );

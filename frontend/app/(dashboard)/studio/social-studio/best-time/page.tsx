@@ -41,18 +41,18 @@ const NETWORK_COLORS: Record<string, string> = {
   facebook: '#1877F2',
   linkedin: '#0A66C2',
   tiktok: '#69C9D0',
-  youtube: '#FF0000',
+  youtube: 'var(--danger)',
 };
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const HOURS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
 
 function scoreToColor(score: number): string {
-  if (score >= 90) return '#22c55e';
-  if (score >= 75) return '#84CC16';
-  if (score >= 60) return '#F59E0B';
-  if (score >= 40) return '#EF4444';
-  return '#eef0f4';
+  if (score >= 90) return 'var(--success)';
+  if (score >= 75) return 'var(--warning)';
+  if (score >= 60) return 'var(--warning)';
+  if (score >= 40) return 'var(--danger)';
+  return 'var(--neutral-soft)';
 }
 
 function scoreToOpacity(score: number): number {
@@ -72,7 +72,7 @@ function rankLabel(index: number): string {
 }
 
 function networkColorRgb(network: string): string {
-  const hex = NETWORK_COLORS[network] ?? '#eef0f4';
+  const hex = NETWORK_COLORS[network] ?? 'var(--neutral-soft)';
   const channels = hex
     .slice(1)
     .match(/.{2}/g)
@@ -158,7 +158,7 @@ export default function BestTimeToPostPage() {
             style={{
               ...styles.networkTab,
               ...(selectedNetwork === rec.network
-                ? { background: NETWORK_COLORS[rec.network], color: '#fff', borderColor: NETWORK_COLORS[rec.network] }
+                ? { background: NETWORK_COLORS[rec.network], color: 'var(--on-status)', borderColor: NETWORK_COLORS[rec.network] }
                 : {}),
             }}
           >
@@ -199,7 +199,7 @@ export default function BestTimeToPostPage() {
                 {currentRec.best_slots.map((slot, i) => (
                   <div
                     key={`${slot.day}-${slot.hour}`}
-                    style={{ ...styles.slotCard, borderColor: i === 0 ? NETWORK_COLORS[selectedNetwork] : '#e7e9ef' }}
+                    style={{ ...styles.slotCard, borderColor: i === 0 ? NETWORK_COLORS[selectedNetwork] : "var(--line)" }}
                   >
                     <div style={styles.slotRank}>{rankLabel(i)}</div>
                     <div style={styles.slotMain}>
@@ -213,7 +213,7 @@ export default function BestTimeToPostPage() {
                       </div>
                     </div>
                     <div style={styles.slotEngagement}>
-                      Expected: <strong style={{ color: '#22c55e' }}>{slot.expected_engagement}%</strong> engagement
+                      Expected: <strong style={{ color: 'var(--success)' }}>{slot.expected_engagement}%</strong> engagement
                     </div>
                     <div style={styles.slotReason}>{slot.reason}</div>
                   </div>
@@ -324,7 +324,7 @@ const styles: Record<string, React.CSSProperties> = {
   errorBanner: {
     background: 'rgba(245, 158, 11, 0.12)',
     border: '1px solid rgba(245, 158, 11, 0.4)',
-    color: '#b45309',
+    color: 'var(--warning-ink)',
     padding: '12px 14px',
     borderRadius: 10,
     marginBottom: 16,
@@ -361,12 +361,12 @@ const styles: Record<string, React.CSSProperties> = {
   slotEngagement: { fontSize: 14, color: 'var(--muted)', marginBottom: 10 },
   slotReason: { fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 },
   avoidSection: { background: 'var(--card)', borderRadius: 12, padding: '16px 20px', border: '1px solid var(--line)' },
-  avoidTitle: { fontSize: 14, fontWeight: 600, color: '#F59E0B', marginBottom: 10 },
+  avoidTitle: { fontSize: 14, fontWeight: 600, color: 'var(--warning)', marginBottom: 10 },
   avoidList: { display: 'flex', gap: 8, flexWrap: 'wrap' },
   avoidTag: {
-    background: '#fee2e222',
-    border: '1px solid #EF444444',
-    color: '#EF4444',
+    background: 'color-mix(in oklab, var(--danger-soft) 13%, transparent)',
+    border: '1px solid color-mix(in oklab, var(--danger) 27%, transparent)',
+    color: 'var(--danger)',
     padding: '4px 12px',
     borderRadius: 6,
     fontSize: 13,
@@ -398,7 +398,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     height: 8,
     borderRadius: 4,
-    background: 'linear-gradient(to right, #eef0f4, #6366f1, #22c55e)',
+    background: "linear-gradient(to right, var(--line-soft), var(--brand), var(--success))",
   },
   legendLabel: { fontSize: 11, color: 'var(--muted)' },
   muted: { color: 'var(--muted)', fontSize: 14 },

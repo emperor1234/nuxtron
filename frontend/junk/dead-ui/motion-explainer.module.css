@@ -1,0 +1,899 @@
+/* ---------------------------------------------------------------------------
+   Motion explainer — a ten-second looping product story under the hero.
+
+   Rule for every animated element: its base style is the FINAL state, and
+   keyframes only describe where it enters from. So when motion is reduced
+   (animation: none) everything simply renders complete.
+
+   Motion budget: enters 280–420ms var(--ease-out), 70ms stagger via --d;
+   typing reveal and progress fills are linear (constant progress); the whole
+   scene's animations pause with the player.
+   --------------------------------------------------------------------------- */
+
+.player {
+  container: explainer / inline-size;
+  max-width: 980px;
+  margin: 36px auto 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
+  text-align: left;
+}
+
+.stage {
+  position: relative;
+  height: 340px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0) 0 0 / 22px 22px,
+    var(--bg);
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  animation: sceneIn 420ms var(--ease-out) both;
+}
+
+.player[data-playing="false"] .scene,
+.player[data-playing="false"] .scene * {
+  animation-play-state: paused;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Layout helpers --------------------------------------------------------- */
+
+.center {
+  width: min(560px, 100%);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+  width: min(820px, 100%);
+}
+
+/* Generic entrance used by list rows and cards. */
+.rise {
+  animation: rise 380ms var(--ease-out) both;
+  animation-delay: calc(var(--d, 0) * 90ms + 120ms);
+}
+
+/* Chat window ------------------------------------------------------------ */
+
+.window {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-md);
+}
+
+.windowBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--bg);
+}
+
+.windowDots {
+  width: 34px;
+  height: 8px;
+  background: radial-gradient(circle, var(--line) 3.5px, transparent 4px) 0 0 / 12px 8px repeat-x;
+}
+
+.windowTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.windowTitle svg {
+  color: var(--brand);
+}
+
+.windowBody {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.question {
+  justify-self: end;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px 14px 4px 14px;
+  background: var(--ink-surface);
+  color: var(--on-ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Typing: a linear left-to-right reveal. */
+.typing {
+  animation: type 1200ms linear both;
+}
+
+.thinking {
+  display: inline-flex;
+  gap: 5px;
+  padding: 10px 14px;
+  border-radius: 14px 14px 14px 4px;
+  background: var(--brand-soft);
+  animation: rise 300ms var(--ease-out) both;
+  animation-delay: 1250ms;
+}
+
+.thinking span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--brand);
+  animation: blink 900ms ease-in-out infinite;
+}
+
+.thinking span:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.thinking span:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+.answer {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px 14px 14px 4px;
+  list-style: none;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.answer li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--faint);
+}
+
+.missing {
+  padding: 8px 10px;
+  border: 1px dashed var(--faint);
+  border-radius: 8px;
+  color: var(--text);
+  font-weight: 600;
+  animation-name: rise, nudge;
+  animation-duration: 380ms, 420ms;
+  animation-delay: calc(var(--d) * 90ms + 120ms), 1300ms;
+  animation-timing-function: var(--ease-out), var(--ease-in-out);
+}
+
+.cited {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--brand-soft);
+  color: var(--brand-hover);
+  font-weight: 600;
+}
+
+.cite {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 11px;
+  animation: pop 320ms var(--ease-out) both;
+  animation-delay: 700ms;
+}
+
+/* Panels ----------------------------------------------------------------- */
+
+.panel {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-md);
+}
+
+.panelKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.panelBig {
+  position: relative;
+  margin: 8px 0 2px;
+  color: var(--text);
+  font-size: 34px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.panelSmall {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Number change: the old value hands over to the new one mid-scene. */
+.from {
+  position: absolute;
+  opacity: 0;
+  animation: hold-out 1400ms linear both;
+}
+
+.to {
+  animation: fade-in 300ms var(--ease-out) both;
+  animation-delay: 1200ms;
+}
+
+.meter {
+  height: 8px;
+  margin: 10px 0 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line-soft);
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand), var(--brand-light));
+  transform: scaleX(0.31);
+  transform-origin: left center;
+  animation: meter 1400ms var(--ease-in-out) both;
+  animation-delay: 300ms;
+}
+
+/* Gap scan: bars and a cyan sweep. */
+.scan {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 64px;
+  margin-top: 14px;
+  overflow: hidden;
+}
+
+.scanBar {
+  flex: 1;
+  height: 100%;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--brand), color-mix(in oklab, var(--brand) 35%, var(--brand-light)));
+  opacity: 0.85;
+  transform: scaleY(var(--h));
+  transform-origin: bottom;
+  animation: grow 520ms var(--ease-out) both;
+  animation-delay: calc(var(--d) * 70ms + 200ms);
+}
+
+.scanLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: var(--brand-light);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand-light) 25%, transparent);
+  transform: translateX(-4px);
+  animation: sweep 1600ms var(--ease-in-out) both;
+  animation-delay: 300ms;
+}
+
+.checklist {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.checklist li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.tick {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+/* Marketing story -------------------------------------------------------- */
+
+.briefTitle {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.briefLine {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.assets {
+  display: flex;
+  gap: 16px;
+}
+
+.asset {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  width: 168px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-md);
+}
+
+/* Fan out from the middle card. */
+.fan {
+  animation: fan 480ms var(--ease-out) both;
+  animation-delay: calc(var(--d) * 80ms + 120ms);
+}
+
+.assetIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.assetName {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.assetMeta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  width: min(760px, 100%);
+}
+
+.day {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 170px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.dayName {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.slot {
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.drop {
+  animation: drop 420ms var(--ease-out) both;
+  animation-delay: calc(var(--d) * 140ms + 150ms);
+}
+
+.inbox {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inbox li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px 12px 12px 4px;
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.inbox svg {
+  flex: none;
+  color: var(--brand);
+}
+
+.bars {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.barTrack {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line-soft);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand), var(--brand-light));
+  transform: scaleX(var(--v));
+  transform-origin: left center;
+  animation: grow-x 700ms var(--ease-out) both;
+  animation-delay: calc(var(--d) * 90ms + 120ms);
+}
+
+/* Timeline bar ----------------------------------------------------------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.play {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.play:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.play:focus-visible,
+.segment:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.timeline {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.segment {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--faint);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.segment[data-state="active"],
+.segment[data-state="done"] {
+  color: var(--text);
+}
+
+.segmentLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.segmentIndex {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  font-size: 10px;
+}
+
+.segment[data-state="active"] .segmentIndex {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.segmentTrack {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.segmentFill {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.segment[data-state="done"] .segmentFill {
+  transform: scaleX(1);
+}
+
+.segment[data-state="active"] .segmentFill {
+  animation: progress var(--scene-ms) linear both;
+}
+
+.player[data-playing="false"] .segment[data-state="active"] .segmentFill {
+  animation-play-state: paused;
+}
+
+.player[data-reduced="true"] .segment[data-state="active"] .segmentFill {
+  animation: none;
+  transform: scaleX(1);
+}
+
+.tag {
+  flex: none;
+  padding: 4px 10px;
+  border: 1px solid var(--brand-line);
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-hover);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Keyframes (from-states only; bases are the final state) ----------------- */
+
+@keyframes sceneIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes nudge {
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes meter {
+  from {
+    transform: scaleX(0.18);
+  }
+}
+
+@keyframes sweep {
+  to {
+    transform: translateX(calc(100cqw + 4px));
+    opacity: 0;
+  }
+}
+
+@keyframes hold-out {
+  0%,
+  80% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fan {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--i) * -100%)) scale(0.96);
+  }
+}
+
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.97);
+  }
+}
+
+@keyframes progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.scan {
+  container-type: inline-size;
+}
+
+/* Reduced motion: no entrances, no loop — the still frame is complete. */
+@media (prefers-reduced-motion: reduce) {
+  .scene,
+  .scene * {
+    animation: none !important;
+  }
+
+  .from {
+    display: none;
+  }
+}
+
+/* Responsive ------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .player {
+    margin-top: 32px;
+    border-radius: 14px;
+  }
+
+  .tag {
+    display: none;
+  }
+}
+
+/* Compact layout whenever the explainer itself is narrow — on phones and in
+   the two-column desktop hero alike. */
+@container explainer (max-width: 720px) {
+  .stage {
+    height: 440px;
+  }
+
+  .scene {
+    padding: 16px;
+  }
+
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .assets {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .asset {
+    width: 240px;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "icon name"
+      "icon meta";
+    column-gap: 12px;
+    padding: 12px;
+  }
+
+  .assetIcon {
+    grid-area: icon;
+    margin: 0;
+  }
+
+  .assetName {
+    grid-area: name;
+  }
+
+  .assetMeta {
+    grid-area: meta;
+  }
+
+  .calendar {
+    gap: 6px;
+  }
+
+  .day {
+    min-height: 130px;
+    padding: 8px;
+  }
+
+  .slot {
+    padding: 6px 4px;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+
+  .checklist li {
+    padding: 8px 10px;
+  }
+
+  .panelBig {
+    font-size: 28px;
+  }
+
+  .bar {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+}
+
+/* Compact timeline: the active step gets the room for its label, the
+   others shrink to their number. Width changes transition so the shift
+   reads as movement, not a jump. */
+@container explainer (max-width: 720px) {
+  .timeline {
+    display: flex;
+    gap: 8px;
+  }
+
+  .timeline > li {
+    flex: 1 1 0;
+    min-width: 0;
+    transition: flex-grow 320ms var(--ease-in-out);
+  }
+
+  .timeline > li:has([data-state="active"]) {
+    flex-grow: 4;
+  }
+
+  .segment:not([data-state="active"]) .segmentLabel {
+    font-size: 0;
+  }
+
+  .segment:not([data-state="active"]) .segmentIndex {
+    font-size: 10px;
+  }
+}
+
+/* Very narrow: timeline shows step numbers only. */
+@container explainer (max-width: 480px) {
+  .segmentLabel {
+    font-size: 0;
+  }
+
+  .segmentIndex {
+    font-size: 10px;
+  }
+
+  .tag {
+    display: none;
+  }
+}

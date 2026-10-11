@@ -19,11 +19,6 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 
-def get_tenant_id() -> str:
-    """Placeholder tenant ID extractor"""
-    return 'default_tenant'
-
-
 router = APIRouter(prefix='/api/v1/agents', tags=['Agents'])
 
 AGENT_NOT_FOUND = 'Agent not found'

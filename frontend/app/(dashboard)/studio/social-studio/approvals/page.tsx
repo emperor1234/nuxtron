@@ -18,12 +18,7 @@ export default function ApprovalsPage() {
   const [autoPublish, setAutoPublish] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadApprovals();
-  }, []);
-
   async function loadApprovals() {
-    setError(null);
     try {
       const result = await socialApi.listPendingApprovals();
       setRequests(result || []);
@@ -39,6 +34,16 @@ export default function ApprovalsPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    let active = true;
+    globalThis.queueMicrotask(() => {
+      if (active) void loadApprovals();
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleApprove(requestId: string) {
     try {
@@ -79,7 +84,7 @@ export default function ApprovalsPage() {
           onClick={() => setShowForm(!showForm)}
           style={{
             ...styles.requestBtn,
-            backgroundColor: showForm ? '#e7e9ef' : '#6366f1',
+            backgroundColor: showForm ? "var(--line)" : "var(--brand)",
           }}
         >
           {showForm ? 'Cancel' : '+ Request Approval'}
@@ -117,8 +122,8 @@ export default function ApprovalsPage() {
                   }
                   style={{
                     ...styles.approverChip,
-                    backgroundColor: selectedApprovers.includes(email) ? '#6366f1' : '#eef0f4',
-                    borderColor: selectedApprovers.includes(email) ? '#6366f1' : '#e7e9ef',
+                    backgroundColor: selectedApprovers.includes(email) ? "var(--brand)" : "var(--line-soft)",
+                    borderColor: selectedApprovers.includes(email) ? "var(--brand)" : "var(--line)",
                   }}
                 >
                   {email}
@@ -150,7 +155,7 @@ export default function ApprovalsPage() {
           {/* Pending Approvals */}
           {pending.length > 0 && (
             <section style={styles.section}>
-              <h2 style={{ ...styles.sectionTitle, color: '#F59014' }}>⏳ Pending Approvals ({pending.length})</h2>
+              <h2 style={{ ...styles.sectionTitle, color: 'var(--warning)' }}>⏳ Pending Approvals ({pending.length})</h2>
               <div style={styles.requestsList}>
                 {pending.map((req) => (
                   <div key={req.id} style={styles.requestCard}>
@@ -188,7 +193,7 @@ export default function ApprovalsPage() {
                       </button>
                       <button
                         onClick={() => {
-                          const reason = prompt('Enter rejection reason:');
+                          const reason = globalThis.prompt('Enter rejection reason:');
                           if (reason) handleReject(req.id, reason);
                         }}
                         style={styles.rejectBtn}
@@ -205,14 +210,14 @@ export default function ApprovalsPage() {
           {/* Approved */}
           {approved.length > 0 && (
             <section style={styles.section}>
-              <h2 style={{ ...styles.sectionTitle, color: '#10B981' }}>✓ Approved ({approved.length})</h2>
+              <h2 style={{ ...styles.sectionTitle, color: 'var(--success)' }}>✓ Approved ({approved.length})</h2>
               <div style={styles.requestsList}>
                 {approved.map((req) => (
                   <div
                     key={req.id}
                     style={{
                       ...styles.requestCard,
-                      borderLeftColor: '#10B981',
+                      borderLeftColor: 'var(--success)',
                       opacity: 0.8,
                     }}
                   >
@@ -234,14 +239,14 @@ export default function ApprovalsPage() {
           {/* Rejected */}
           {rejected.length > 0 && (
             <section style={styles.section}>
-              <h2 style={{ ...styles.sectionTitle, color: '#EF4444' }}>✗ Rejected ({rejected.length})</h2>
+              <h2 style={{ ...styles.sectionTitle, color: 'var(--danger)' }}>✗ Rejected ({rejected.length})</h2>
               <div style={styles.requestsList}>
                 {rejected.map((req) => (
                   <div
                     key={req.id}
                     style={{
                       ...styles.requestCard,
-                      borderLeftColor: '#EF4444',
+                      borderLeftColor: 'var(--danger)',
                       opacity: 0.6,
                     }}
                   >
@@ -302,19 +307,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   requestBtn: {
     padding: '10px 20px',
-    backgroundColor: '#6366f1',
+    backgroundColor: "var(--brand)",
     color: 'var(--text)',
     border: 'none',
     borderRadius: '6px',
     fontSize: '14px',
     fontWeight: 600,
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'background-color 200ms ease',
   },
   errorBanner: {
     backgroundColor: 'rgba(245, 158, 11, 0.12)',
     border: '1px solid rgba(245, 158, 11, 0.4)',
-    color: '#b45309',
+    color: 'var(--warning-ink)',
     padding: '12px 14px',
     borderRadius: '10px',
     marginBottom: '16px',
@@ -363,7 +368,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '13px',
     fontWeight: 500,
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'background-color 200ms ease, border-color 200ms ease',
     textAlign: 'left',
   },
   checkboxLabel: {
@@ -381,7 +386,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   submitBtn: {
     padding: '10px 20px',
-    backgroundColor: '#10B981',
+    backgroundColor: 'var(--success)',
     color: 'var(--text)',
     border: 'none',
     borderRadius: '6px',
@@ -404,7 +409,7 @@ const styles: Record<string, React.CSSProperties> = {
   requestCard: {
     backgroundColor: 'var(--card)',
     border: '1px solid var(--line)',
-    borderLeft: '4px solid #F59014',
+    borderLeft: '4px solid var(--warning)',
     borderRadius: '8px',
     padding: '16px',
   },
@@ -435,7 +440,7 @@ const styles: Record<string, React.CSSProperties> = {
   platformBadge: {
     display: 'inline-block',
     padding: '3px 8px',
-    backgroundColor: '#e7e9ef',
+    backgroundColor: "var(--line)",
     color: 'var(--text)',
     borderRadius: '3px',
     fontSize: '11px',
@@ -462,7 +467,7 @@ const styles: Record<string, React.CSSProperties> = {
   approverItem: {
     display: 'inline-block',
     padding: '2px 6px',
-    backgroundColor: '#1119274D',
+    backgroundColor: 'var(--scrim)',
     color: 'var(--muted)',
     borderRadius: '3px',
     fontSize: '11px',
@@ -474,32 +479,30 @@ const styles: Record<string, React.CSSProperties> = {
   approveBtn: {
     flex: 1,
     padding: '8px',
-    backgroundColor: '#10B98126',
-    color: '#15803d',
-    border: '1px solid #10B98126',
+    backgroundColor: 'color-mix(in oklab, var(--success) 15%, transparent)',
+    color: 'var(--success-ink)',
+    border: '1px solid color-mix(in oklab, var(--success) 15%, transparent)',
     borderRadius: '4px',
     fontSize: '13px',
     fontWeight: 600,
     cursor: 'pointer',
-    transition: 'all 0.2s',
   },
   rejectBtn: {
     flex: 1,
     padding: '8px',
-    backgroundColor: '#EF444426',
-    color: '#dc2626',
-    border: '1px solid #EF444426',
+    backgroundColor: 'color-mix(in oklab, var(--danger) 15%, transparent)',
+    color: 'var(--danger)',
+    border: '1px solid color-mix(in oklab, var(--danger) 15%, transparent)',
     borderRadius: '4px',
     fontSize: '13px',
     fontWeight: 600,
     cursor: 'pointer',
-    transition: 'all 0.2s',
   },
   rejectedLabel: {
     display: 'block',
     marginTop: '6px',
     fontSize: '11px',
-    color: '#EF4444',
+    color: 'var(--danger)',
     fontWeight: 600,
   },
   skeleton: {
@@ -517,7 +520,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '60px 24px',
     backgroundColor: 'var(--card)',
     borderRadius: '12px',
-    border: '1px dashed #e7e9ef',
+    border: "1px dashed var(--line)",
   },
   emptyIcon: {
     fontSize: '48px',

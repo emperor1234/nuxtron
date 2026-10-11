@@ -52,25 +52,25 @@ function StaggeredStudy({ study, index }: { study: typeof STUDIES[0]; index: num
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: index * 0.1 }}
       className="mk-card p-8 sm:p-10 group"
     >
-      <p className="text-xs font-bold uppercase tracking-widest text-[#0c8fcc]">{study.company}</p>
-      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[#0b1b2b] sm:text-3xl">{study.headline}</h2>
+      <p className="text-xs font-bold uppercase tracking-widest text-info-ink">{study.company}</p>
+      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-info-ink sm:text-3xl">{study.headline}</h2>
 
-      <div className="mt-6 grid grid-cols-3 gap-4 border-y border-[#dbe6ee] py-6">
+      <div className="mt-6 grid grid-cols-3 gap-4 border-y border-line-soft py-6">
         {study.stats.map((stat) => (
-          <div key={stat.label} className="transition-all duration-300 group-hover:scale-105 group-hover:text-[#0ea5e9]">
-            <div className="flex items-center gap-1.5 text-2xl font-bold text-[#0ea5e9]">
-              <TrendingUp size={18} className="text-[#f59e0b]" aria-hidden="true" />
+          <div key={stat.label} className="transition-colors duration-300 group-hover:scale-105 group-hover:text-info-ink">
+            <div className="flex items-center gap-1.5 text-2xl font-bold text-info-ink">
+              <TrendingUp size={18} className="text-warning-ink" aria-hidden="true" />
               {stat.value}
             </div>
-            <p className="mt-1 text-xs text-[#8595a8]">{stat.label}</p>
+            <p className="mt-1 text-xs text-info">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      <blockquote className="mt-6 text-lg leading-relaxed text-[#33475b]">
+      <blockquote className="mt-6 text-lg leading-relaxed text-info-ink">
         &ldquo;{study.quote}&rdquo;
       </blockquote>
-      <p className="mt-4 text-sm font-semibold text-[#8595a8]">{study.role}</p>
+      <p className="mt-4 text-sm font-semibold text-info">{study.role}</p>
     </motion.article>
   );
 }
@@ -87,10 +87,10 @@ export default function CaseStudiesClient() {
           className="mk-container max-w-2xl"
         >
           <span className="mk-eyebrow mb-5">Case studies</span>
-          <h1 className="text-5xl font-semibold tracking-tight text-[#0b1b2b] sm:text-6xl">
+          <h1 className="text-5xl font-semibold tracking-tight text-info-ink sm:text-6xl">
             Teams running on Nuxtron
           </h1>
-          <p className="mt-5 text-lg text-[#55677c]">
+          <p className="mt-5 text-lg text-info-ink">
             A look at how growth and security teams use Nuxtron to consolidate tools, catch what other platforms
             miss, and move faster with AI agents doing real work.
           </p>
@@ -113,7 +113,7 @@ export default function CaseStudiesClient() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
           className="mk-container max-w-2xl"
         >
-          <h2 className="text-4xl font-semibold tracking-tight text-[#0b1b2b] sm:text-5xl">Want results like these?</h2>
+          <h2 className="text-4xl font-semibold tracking-tight text-info-ink sm:text-5xl">Want results like these?</h2>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link href="/register" className="mk-shiny-cta group">
               Start free <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />

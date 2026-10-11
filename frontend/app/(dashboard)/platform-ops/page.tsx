@@ -21,12 +21,12 @@ function criterionSeverity(id: string): Severity {
 
 function severityBadgeStyle(severity: Severity): React.CSSProperties {
   if (severity === 'critical') {
-    return { background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5' };
+    return { background: 'var(--danger-soft)', color: 'var(--danger)', border: '1px solid var(--danger-line)' };
   }
   if (severity === 'high') {
-    return { background: '#fef3c7', color: '#b45309', border: '1px solid #fcd34d' };
+    return { background: 'var(--warning-line)', color: 'var(--warning-ink)', border: '1px solid var(--warning)' };
   }
-  return { background: '#dbeafe', color: '#6366f1', border: '1px solid #93c5fd' };
+  return { background: 'var(--info-soft)', color: "var(--brand)", border: '1px solid var(--info-line)' };
 }
 
 function readFailedCriteria(payload: Json): VerifyCriterion[] {
@@ -112,10 +112,10 @@ export default function PlatformOpsPage() {
           <div
             style={{
               background: 'var(--bg-soft)',
-              border: '1px solid #ef444488',
+              border: '1px solid color-mix(in oklab, var(--danger) 53%, transparent)',
               borderRadius: 12,
               padding: 12,
-              color: '#f87171',
+              color: 'var(--danger)',
               marginBottom: 10,
             }}
           >

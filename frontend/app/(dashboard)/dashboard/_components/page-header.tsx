@@ -34,11 +34,11 @@ export default function PageHeader({ title, domain, scope, updatedLabel }: PageH
       </div>
       <div className={styles.headerActions}>
         <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
-          <DownloadIcon size={15} style={{ color: '#5b6478' }} />
+          <DownloadIcon size={15} style={{ color: 'var(--ink-2)' }} />
           Export
         </button>
         <button type="button" className={`${styles.btn} ${styles.btnGhost}`}>
-          <SlidersIcon size={15} style={{ color: '#5b6478' }} />
+          <SlidersIcon size={15} style={{ color: 'var(--ink-2)' }} />
           Customize
         </button>
       </div>

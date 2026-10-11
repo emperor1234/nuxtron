@@ -12,6 +12,7 @@
     "lint": "eslint . --max-warnings 0",
     "lint:check": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "check:contrast": "node scripts/check-contrast.mjs",
     "test:smoke": "playwright test --config=./playwright.config.ts",
     "test:smoke:ci": "playwright test --config=./playwright.config.ts",
     "test:unit": "vitest",

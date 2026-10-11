@@ -65,16 +65,16 @@ export default function TrafficTrendCard() {
       >
         <defs>
           <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6d5efc" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="#6d5efc" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--info)" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="var(--info)" stopOpacity="0" />
           </linearGradient>
         </defs>
         {GRID_LINES.map((y) => (
-          <line key={y} x1="0" y1={y} x2={CHART_W} y2={y} stroke="#eef0f4" strokeWidth="1" />
+          <line key={y} x1="0" y1={y} x2={CHART_W} y2={y} stroke="var(--neutral-soft)" strokeWidth="1" />
         ))}
         <path d={area} fill="url(#trendFill)" />
-        <path d={line} fill="none" stroke="#6d5efc" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-        <circle className={styles.trendDot} cx={last[0]} cy={last[1]} r="5" fill="#6d5efc" stroke="#fff" strokeWidth="2.5" />
+        <path d={line} fill="none" stroke="var(--info)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        <circle className={styles.trendDot} cx={last[0]} cy={last[1]} r="5" fill="var(--info)" stroke="#fff" strokeWidth="2.5" />
       </svg>
 
       <div className={styles.trendMonths}>

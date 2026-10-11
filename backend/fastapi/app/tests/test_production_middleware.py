@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import threading
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -226,17 +226,15 @@ class TestGetHealthCheckData:
 
 class TestGetMetricsData:
     def test_returns_metrics_structure(self):
-        lock = threading.Lock()
         queues = {"queue_a": [1, 2, 3], "queue_b": [4]}
-        rate_buckets = {"ip1": [10.0, 20.0], "ip2": [30.0]}
-        result = get_metrics_data(queues, rate_buckets, lock)
+        rate_metrics = SimpleNamespace(active_keys=2, sample_count=3)
+        result = get_metrics_data(queues, rate_metrics)
         assert "metrics" in result
         assert result["metrics"]["queue_total_items"] == 4
         assert result["metrics"]["queues"]["queue_a"] == 3
 
     def test_empty_queues(self):
-        lock = threading.Lock()
-        result = get_metrics_data({}, {}, lock)
+        result = get_metrics_data({}, SimpleNamespace(active_keys=0, sample_count=0))
         assert result["metrics"]["queue_total_items"] == 0
 
 

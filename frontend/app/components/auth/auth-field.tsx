@@ -44,12 +44,12 @@ export function AuthField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-[#46484d]">
+      <label htmlFor={id} className="text-sm font-medium text-ink-2">
         {label}
       </label>
       <div className="relative">
         {icon ? (
-          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[#8a8d93]">
+          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-ink-faint">
             {icon}
           </span>
         ) : null}
@@ -65,19 +65,19 @@ export function AuthField({
           placeholder={placeholder}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full rounded-xl border bg-white py-2.5 text-[15px] text-[#181818] outline-none transition placeholder:text-[#b7b9be] focus:ring-2 focus:ring-[#466cf3]/20 ${
+          className={`w-full rounded-xl border bg-white py-2.5 text-[15px] text-ink outline-none transition placeholder:text-ink-faint focus:ring-2 focus:ring-brand/20 ${
             icon ? 'pl-10' : 'pl-3.5'
           } ${isPassword ? 'pr-11' : 'pr-3.5'} ${
-            error ? 'border-rose-500/60 focus:border-rose-500' : 'border-[#18181822] focus:border-[#466cf3]/60'
+            error ? 'border-rose-500/60 focus:border-rose-500' : 'border-line focus:border-brand/60'
           }`}
         />
         {isPassword ? (
           <button
             type="button"
             onClick={() => setRevealed((v) => !v)}
-            className="absolute inset-y-0 right-3 flex items-center text-[#8a8d93] transition-colors hover:text-[#46484d]"
+            className="absolute inset-y-0 right-1 flex min-w-10 items-center justify-center border-0 bg-transparent p-0 text-ink-faint transition-colors hover:text-ink-2"
             aria-label={revealed ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
-            tabIndex={-1}
+            aria-pressed={revealed}
           >
             {revealed ? <EyeOff size={17} /> : <Eye size={17} />}
           </button>

@@ -93,11 +93,11 @@ export default function SmartInboxPage() {
   return (
     <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <h1 style={{ marginTop: 0 }}>Smart Inbox</h1>
+        <h1 style={{ marginTop: 0 }}>Customer Inbox</h1>
         <p style={{ color: 'var(--muted)' }}>
           Inbound messages with AI classification, sentiment, and team workflow status.
         </p>
-        {error && <div style={{ ...card, color: '#f87171', marginBottom: 10 }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)', marginBottom: 10 }}>{error}</div>}
 
         <div
           style={{
@@ -148,7 +148,7 @@ export default function SmartInboxPage() {
                 border: 'none',
                 borderRadius: 8,
                 background: 'var(--brand)',
-                color: '#00101e',
+                color: 'var(--on-brand)',
                 fontWeight: 700,
               }}
             >

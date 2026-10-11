@@ -685,8 +685,8 @@ const TEMPLATES: TemplateItem[] = [
     title: 'Live Webinar Promo',
     category: 'image_ad',
     subtitle: 'Conversion-focused social ad',
-    colorA: '#0ea5e9',
-    colorB: '#6366f1',
+    colorA: 'var(--info)',
+    colorB: 'var(--info)',
     aspectRatio: '1:1',
     channel: 'LinkedIn',
     hook: 'High-intent lead gen',
@@ -696,8 +696,8 @@ const TEMPLATES: TemplateItem[] = [
     title: 'Zero Stress Exchange',
     category: 'image_ad',
     subtitle: 'Crypto + gifting campaign',
-    colorA: '#6366f1',
-    colorB: '#6366f1',
+    colorA: 'var(--info)',
+    colorB: 'var(--info)',
     aspectRatio: '1:1',
     channel: 'Instagram',
     hook: 'Fast conversion angle',
@@ -707,8 +707,8 @@ const TEMPLATES: TemplateItem[] = [
     title: 'End Of Season Sale',
     category: 'story_ad',
     subtitle: 'Story ad with urgency',
-    colorA: '#0f766e',
-    colorB: '#06b6d4',
+    colorA: 'var(--info-ink)',
+    colorB: 'var(--info)',
     aspectRatio: '9:16',
     channel: 'Stories',
     hook: 'Urgency-driven offer',
@@ -718,8 +718,8 @@ const TEMPLATES: TemplateItem[] = [
     title: 'Carousel Product Grid',
     category: 'carousel',
     subtitle: 'Multi-slide ecommerce set',
-    colorA: '#ef4444',
-    colorB: '#f59e0b',
+    colorA: 'var(--danger)',
+    colorB: 'var(--warning)',
     aspectRatio: '4:5',
     channel: 'Instagram',
     hook: 'Swipeable product reveal',
@@ -729,8 +729,8 @@ const TEMPLATES: TemplateItem[] = [
     title: 'Agency Case Study',
     category: 'carousel',
     subtitle: 'B2B proof sequence',
-    colorA: '#6366f1',
-    colorB: '#6366f1',
+    colorA: 'var(--info)',
+    colorB: 'var(--info)',
     aspectRatio: '4:5',
     channel: 'LinkedIn',
     hook: 'Proof and credibility',
@@ -740,8 +740,8 @@ const TEMPLATES: TemplateItem[] = [
     title: 'New Collection Drop',
     category: 'story_ad',
     subtitle: 'Visual-first conversion story',
-    colorA: '#ec4899',
-    colorB: '#db2777',
+    colorA: 'var(--series-5)',
+    colorB: 'var(--series-5)',
     aspectRatio: '9:16',
     channel: 'Instagram',
     hook: 'Visual product launch',
@@ -899,7 +899,7 @@ export default function StudioEditorPage() {
   const [selectedSlideIndex, setSelectedSlideIndex] = useState(0);
   const tone: string = 'casual';
   const fontName = 'Sora';
-  const fontColor = '#12b76a';
+  const fontColor = 'var(--success)';
   const [tenantId] = useState(resolveSessionTenant);
   const ugcTemplateHydratedRef = useRef(false);
   const ugcTemplateSavingRef = useRef(false);
@@ -968,7 +968,7 @@ export default function StudioEditorPage() {
   const [fxShadowColor, setFxShadowColor] = useState('#000000');
   const [fxShadowOpacity, setFxShadowOpacity] = useState(50);
   const [fxGlow, setFxGlow] = useState(0);
-  const [fxGlowColor, setFxGlowColor] = useState('#6366f1');
+  const [fxGlowColor, setFxGlowColor] = useState('var(--info)');
   const [fxBlur, setFxBlur] = useState(0);
   const [fxBrightness, setFxBrightness] = useState(100);
   const [fxContrast, setFxContrast] = useState(100);
@@ -980,10 +980,10 @@ export default function StudioEditorPage() {
 
   // ── Timeline ──────────────────────────────────────────────────────────────
   const [timelineTracks, setTimelineTracks] = useState<TimelineTrack[]>([
-    { id: 'trk-video', label: 'Video', type: 'video', locked: false, grouped: false, muted: false, color: '#6366f1' },
-    { id: 'trk-audio', label: 'Audio', type: 'audio', locked: false, grouped: false, muted: false, color: '#10b981' },
-    { id: 'trk-text', label: 'Text', type: 'text', locked: false, grouped: false, muted: false, color: '#f59e0b' },
-    { id: 'trk-fx', label: 'Effects', type: 'effect', locked: false, grouped: false, muted: false, color: '#8b5cf6' },
+    { id: 'trk-video', label: 'Video', type: 'video', locked: false, grouped: false, muted: false, color: "var(--brand)" },
+    { id: 'trk-audio', label: 'Audio', type: 'audio', locked: false, grouped: false, muted: false, color: 'var(--success)' },
+    { id: 'trk-text', label: 'Text', type: 'text', locked: false, grouped: false, muted: false, color: 'var(--warning)' },
+    { id: 'trk-fx', label: 'Effects', type: 'effect', locked: false, grouped: false, muted: false, color: "var(--brand)" },
   ]);
   const [keyframes, setKeyframes] = useState<Keyframe[]>([
     { id: 'kf-1', trackId: 'trk-video', time: 0, type: 'opacity', value: 0 },
@@ -1016,7 +1016,7 @@ export default function StudioEditorPage() {
   const [fxSharpen, setFxSharpen] = useState(0);
   const [fxVignette, setFxVignette] = useState(0);
   const [fxChromaKey, setFxChromaKey] = useState(false);
-  const [fxChromaColor, setFxChromaColor] = useState('#00ff00');
+  const [fxChromaColor, setFxChromaColor] = useState('var(--success)');
   const [fxChromaThreshold, setFxChromaThreshold] = useState(40);
   const [fxMotionBlur, setFxMotionBlur] = useState(0);
   const [fxNoiseReduction, setFxNoiseReduction] = useState(0);
@@ -2480,8 +2480,8 @@ export default function StudioEditorPage() {
     const lightAlpha = fxLightIntensity / 100;
     const sourceBackground =
       videoBackgroundMedia === 'AI Videos'
-        ? 'linear-gradient(140deg, #eef0f4 4%, #eef0f4 36%, #0ea5a4 100%)'
-        : 'linear-gradient(130deg, #eef0f4 0%, #eef0f4 45%, #e7e9ef 100%)';
+        ? 'linear-gradient(140deg, var(--neutral-soft) 4%, var(--neutral-soft) 36%, var(--info-ink) 100%)'
+        : 'linear-gradient(130deg, var(--neutral-soft) 0%, var(--neutral-soft) 45%, var(--neutral-soft) 100%)';
 
     return {
       width: canvasWidth,
@@ -3117,7 +3117,7 @@ export default function StudioEditorPage() {
                         </button>
                         <button
                           type="button"
-                          className={layer.visible ? 'layer-visibility-pill visible' : 'layer-visibility-pill hidden'}
+                          className={layer.visible ? 'layer-visibility-pill visible' : 'layer-visibility-pill is-hidden'}
                           onClick={(event) => {
                             event.stopPropagation();
                             setLayerVisibility(layer.id, !layer.visible);
@@ -4497,19 +4497,19 @@ export default function StudioEditorPage() {
                     <path
                       d={`M0,100 Q${gradeCurveR},${100 - gradeCurveR} 100,0`}
                       fill="none"
-                      stroke="#ef4444"
+                      stroke="var(--danger)"
                       strokeWidth="2"
                     />
                     <path
                       d={`M0,100 Q${gradeCurveG},${100 - gradeCurveG} 100,0`}
                       fill="none"
-                      stroke="#10b981"
+                      stroke="var(--success)"
                       strokeWidth="2"
                     />
                     <path
                       d={`M0,100 Q${gradeCurveB},${100 - gradeCurveB} 100,0`}
                       fill="none"
-                      stroke="#6366f1"
+                      stroke="var(--info)"
                       strokeWidth="2"
                     />
                   </svg>
@@ -5795,7 +5795,7 @@ export default function StudioEditorPage() {
         }
 
         .text-style-script {
-          color: #fda4af;
+          color: var(--danger-line);
         }
 
         .text-style-script .text-style-line-primary {
@@ -5807,7 +5807,7 @@ export default function StudioEditorPage() {
         }
 
         .text-style-stamp {
-          color: #fef08a;
+          color: var(--warning);
           background: linear-gradient(120deg, rgba(217, 119, 6, 0.2), rgba(255, 255, 255, 0.02));
         }
 
@@ -5819,7 +5819,7 @@ export default function StudioEditorPage() {
         }
 
         .text-style-modern {
-          color: #15803d;
+          color: var(--success-ink);
         }
 
         .text-style-modern .text-style-line-primary {
@@ -5830,7 +5830,7 @@ export default function StudioEditorPage() {
         }
 
         .text-style-serif {
-          color: #f5d0fe;
+          color: var(--info-soft);
         }
 
         .text-style-serif .text-style-line-primary {
@@ -5885,7 +5885,7 @@ export default function StudioEditorPage() {
           background: color-mix(in oklab, var(--brand) 16%, rgba(255, 255, 255, 0.04));
         }
 
-        .layer-visibility-pill.hidden {
+        .layer-visibility-pill.is-hidden {
           opacity: 0.82;
         }
 
@@ -5914,7 +5914,7 @@ export default function StudioEditorPage() {
         .canvas-stage {
           min-height: 620px;
           border-radius: 20px;
-          background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 48%), #eef0f4;
+          background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 48%), var(--neutral-soft);
           display: grid;
           place-items: center;
           padding: 18px;
@@ -5924,7 +5924,7 @@ export default function StudioEditorPage() {
           width: 100%;
           min-height: 100%;
           border-radius: 26px;
-          background: linear-gradient(180deg, #eef0f4, #eef0f4 48%, #eef0f4);
+          background: linear-gradient(180deg, var(--neutral-soft), var(--neutral-soft) 48%, var(--neutral-soft));
           color: white;
           padding: 26px;
           position: relative;
@@ -6046,19 +6046,19 @@ export default function StudioEditorPage() {
         }
 
         .hoodie-gold {
-          background: linear-gradient(180deg, #fbbf24, #d97706);
+          background: linear-gradient(180deg, var(--warning), var(--warning));
         }
 
         .hoodie-green {
-          background: linear-gradient(180deg, #15803d, #16a34a);
+          background: linear-gradient(180deg, var(--success-ink), var(--success-ink));
         }
 
         .hoodie-red {
-          background: linear-gradient(180deg, #dc2626, #dc2626);
+          background: linear-gradient(180deg, var(--danger), var(--danger));
         }
 
         .hoodie-blue {
-          background: linear-gradient(180deg, var(--brand), #6366f1);
+          background: linear-gradient(180deg, var(--brand), var(--info));
         }
 
         .creative-artboard-footer {
@@ -6078,7 +6078,7 @@ export default function StudioEditorPage() {
 
         .creative-artboard-cta {
           background: white;
-          color: #eef0f4;
+          color: var(--neutral-soft);
         }
 
         .editor-primary-actions {
@@ -6269,7 +6269,7 @@ export default function StudioEditorPage() {
           top: 0;
           bottom: 0;
           width: 2px;
-          background: #ef4444;
+          background: var(--danger);
           transform: translateX(-50%);
           z-index: 2;
         }
@@ -6394,13 +6394,13 @@ export default function StudioEditorPage() {
         }
 
         .range-red {
-          accent-color: #ef4444;
+          accent-color: var(--danger);
         }
         .range-green {
-          accent-color: #10b981;
+          accent-color: var(--success);
         }
         .range-blue {
-          accent-color: #6366f1;
+          accent-color: var(--info);
         }
 
         /* Color Wheels */
@@ -6421,7 +6421,7 @@ export default function StudioEditorPage() {
           width: 60px;
           height: 60px;
           border-radius: 50%;
-          background: conic-gradient(#ef4444, #f59e0b, #10b981, #6366f1, #8b5cf6, #ef4444);
+          background: conic-gradient(var(--danger), var(--warning), var(--success), var(--info), var(--info), var(--danger));
           display: grid;
           place-items: center;
           box-shadow: inset 0 0 0 6px color-mix(in oklab, var(--bg-soft) 96%, transparent);
@@ -6885,7 +6885,7 @@ export default function StudioEditorPage() {
           min-height: 620px;
           border-radius: 12px;
           border: 1px solid var(--line);
-          background-color: #eef5ff;
+          background-color: var(--info-soft);
           position: relative;
           overflow: hidden;
           padding: 30px 28px;
@@ -6895,7 +6895,7 @@ export default function StudioEditorPage() {
         }
 
         .brand {
-          color: #6366f1;
+          color: var(--info);
           font-weight: 800;
           letter-spacing: 0.01em;
           font-size: 28px;
@@ -6912,7 +6912,7 @@ export default function StudioEditorPage() {
 
         .subheadline {
           margin: 10px 0 0;
-          color: #eef0f4;
+          color: var(--neutral-soft);
           font-weight: 600;
           font-size: 21px;
           max-width: 58%;
@@ -6921,7 +6921,7 @@ export default function StudioEditorPage() {
         .cta {
           margin-top: 14px;
           border: 0;
-          background: #6366f1;
+          background: var(--info);
           color: white;
           border-radius: 999px;
           padding: 11px 18px;
@@ -6942,7 +6942,7 @@ export default function StudioEditorPage() {
           background: rgba(255, 255, 255, 0.5);
           display: grid;
           place-items: center;
-          color: #e7e9ef;
+          color: var(--neutral-soft);
           font-weight: 700;
         }
 
@@ -6951,7 +6951,7 @@ export default function StudioEditorPage() {
           width: 74px;
           height: 74px;
           border-radius: 50%;
-          background: radial-gradient(circle at 30% 25%, #fef3c7, #f59e0b 70%);
+          background: radial-gradient(circle at 30% 25%, var(--warning-line), var(--warning) 70%);
           box-shadow: 0 12px 18px rgba(245, 158, 11, 0.28);
         }
 
@@ -7036,13 +7036,13 @@ export default function StudioEditorPage() {
 
         .ghost-btn.danger {
           border-color: rgba(239, 68, 68, 0.55);
-          color: #ef4444;
+          color: var(--danger);
         }
 
         .publish-btn {
           border: 0;
           border-radius: 10px;
-          background: linear-gradient(120deg, #6366f1, #6366f1);
+          background: linear-gradient(120deg, var(--info), var(--info));
           color: white;
           font-weight: 800;
           padding: 10px 16px;
@@ -7058,7 +7058,7 @@ export default function StudioEditorPage() {
             radial-gradient(circle at top left, rgba(96, 165, 250, 0.26), transparent 34%),
             linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(236, 245, 255, 0.98));
           box-shadow: 0 20px 45px rgba(30, 41, 59, 0.12);
-          color: #eef0f4;
+          color: var(--neutral-soft);
           display: grid;
           gap: 14px;
         }
@@ -7072,7 +7072,7 @@ export default function StudioEditorPage() {
 
         .insights-eyebrow {
           margin: 0 0 6px;
-          color: #6366f1;
+          color: var(--info);
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 0.14em;
@@ -7087,7 +7087,7 @@ export default function StudioEditorPage() {
 
         .insights-copy {
           margin: 8px 0 0;
-          color: #e7e9ef;
+          color: var(--neutral-soft);
           max-width: 720px;
         }
 
@@ -7135,7 +7135,7 @@ export default function StudioEditorPage() {
           margin: 0;
           font-size: clamp(24px, 3vw, 38px);
           line-height: 1;
-          color: #eef0f4;
+          color: var(--neutral-soft);
         }
 
         .insight-title {
@@ -7145,7 +7145,7 @@ export default function StudioEditorPage() {
         .insight-subtle,
         .insight-copy-card {
           margin: 0;
-          color: #e7e9ef;
+          color: var(--neutral-soft);
           font-size: 13px;
           line-height: 1.5;
         }
@@ -7168,7 +7168,7 @@ export default function StudioEditorPage() {
         .trend-bar {
           width: 100%;
           border-radius: 999px 999px 10px 10px;
-          background: linear-gradient(180deg, #6366f1, var(--brand));
+          background: linear-gradient(180deg, var(--info), var(--brand));
           min-height: 12px;
         }
 
@@ -7204,7 +7204,7 @@ export default function StudioEditorPage() {
 
         .metric-pair strong {
           font-size: 18px;
-          color: #eef0f4;
+          color: var(--neutral-soft);
         }
 
         .insight-pill-row {
@@ -7220,14 +7220,14 @@ export default function StudioEditorPage() {
           border-radius: 999px;
           padding: 8px 12px;
           background: rgba(148,163,184,0.10);
-          color: #eef0f4;
+          color: var(--neutral-soft);
           font-size: 12px;
           font-weight: 800;
         }
 
         .insight-pill.positive {
           background: rgba(16, 185, 129, 0.16);
-          color: #047857;
+          color: var(--success-ink);
         }
 
         .insight-post-meta {
@@ -7241,7 +7241,7 @@ export default function StudioEditorPage() {
           border-radius: 999px;
           padding: 7px 10px;
           background: rgba(37, 99, 235, 0.08);
-          color: #6366f1;
+          color: var(--info);
           font-size: 12px;
           font-weight: 700;
         }
@@ -7292,7 +7292,7 @@ export default function StudioEditorPage() {
         .topbar-send-btn {
           border: 0;
           border-radius: 10px;
-          background: linear-gradient(120deg, #6366f1, #6366f1);
+          background: linear-gradient(120deg, var(--info), var(--info));
           color: white;
           font-weight: 800;
           padding: 9px 14px;
@@ -7308,7 +7308,7 @@ export default function StudioEditorPage() {
         .topbar-promo-btn {
           border: 0;
           border-radius: 10px;
-          background: linear-gradient(120deg, #1e3a8a, #6366f1);
+          background: linear-gradient(120deg, var(--info-ink), var(--info));
           color: white;
           font-weight: 800;
           padding: 9px 14px;
@@ -7412,7 +7412,7 @@ export default function StudioEditorPage() {
         }
 
         .captions-sync-error {
-          color: #ef4444;
+          color: var(--danger);
           font-weight: 700;
         }
 
@@ -7494,8 +7494,8 @@ export default function StudioEditorPage() {
         }
 
         .captions-generate-btn-strong {
-          background: linear-gradient(120deg, #0f766e, #0ea5a4);
-          border-color: color-mix(in oklab, #0f766e 65%, var(--line));
+          background: linear-gradient(120deg, var(--info-ink), var(--info-ink));
+          border-color: color-mix(in oklab, var(--info-ink) 65%, var(--line));
           color: white;
         }
 
@@ -7600,7 +7600,7 @@ export default function StudioEditorPage() {
         }
 
         .captions-item.selected {
-          border-color: color-mix(in oklab, #10b981 70%, var(--line));
+          border-color: color-mix(in oklab, var(--success) 70%, var(--line));
         }
 
         .captions-check {
@@ -7611,7 +7611,7 @@ export default function StudioEditorPage() {
           background: transparent;
           border: 0;
           border-right: 1px solid var(--line);
-          color: #10b981;
+          color: var(--success);
           font-size: 20px;
           font-weight: 900;
           cursor: pointer;
@@ -7619,7 +7619,7 @@ export default function StudioEditorPage() {
         }
 
         .captions-item.selected .captions-check {
-          background: color-mix(in oklab, #10b981 16%, transparent);
+          background: color-mix(in oklab, var(--success) 16%, transparent);
         }
 
         .captions-textarea-wrap {
@@ -7732,7 +7732,7 @@ export default function StudioEditorPage() {
         .hashtags-reload-btn {
           border: 0;
           background: transparent;
-          color: #6366f1;
+          color: var(--info);
           font-weight: 700;
           font-size: 13px;
           cursor: pointer;
@@ -8193,7 +8193,7 @@ export default function StudioEditorPage() {
 
         .publish-error {
           margin: 0 0 8px;
-          color: #ef4444;
+          color: var(--danger);
           font-weight: 700;
           font-size: 13px;
         }

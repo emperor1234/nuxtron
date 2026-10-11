@@ -131,7 +131,7 @@ export default function CompetitiveBenchmarkingPage() {
         <p style={{ color: 'var(--muted)' }}>
           Track competitor profiles, snapshots, side-by-side comparison, and share of voice.
         </p>
-        {error && <div style={{ ...card, color: '#f87171', marginBottom: 10 }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)', marginBottom: 10 }}>{error}</div>}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 10 }}>
           <section style={card}>
@@ -152,7 +152,7 @@ export default function CompetitiveBenchmarkingPage() {
                 border: 'none',
                 borderRadius: 8,
                 background: 'var(--brand)',
-                color: '#00101e',
+                color: 'var(--on-brand)',
                 fontWeight: 700,
                 marginBottom: 10,
               }}
@@ -209,7 +209,7 @@ export default function CompetitiveBenchmarkingPage() {
                   border: 'none',
                   borderRadius: 8,
                   background: 'var(--brand)',
-                  color: '#00101e',
+                  color: 'var(--on-brand)',
                   fontWeight: 700,
                 }}
               >
@@ -224,7 +224,7 @@ export default function CompetitiveBenchmarkingPage() {
                 border: 'none',
                 borderRadius: 8,
                 background: 'var(--brand)',
-                color: '#00101e',
+                color: 'var(--on-brand)',
                 fontWeight: 700,
               }}
             >

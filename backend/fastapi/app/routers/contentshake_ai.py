@@ -44,6 +44,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..deps import AuthContext, require_auth
+from ..domains.identity.secure_egress import outbound_request
+from ..domains.identity.secure_egress import resolve_outbound_target
 
 logger = logging.getLogger(__name__)
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
@@ -59,6 +61,7 @@ def _now() -> str:
 
 
 # ── LLM helpers ───────────────────────────────────────────────────────────────
+
 
 def _ollama_generate(prompt: str, model: str | None = None) -> str | None:
     base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
@@ -115,6 +118,7 @@ def _ai_generate(prompt: str) -> tuple[str, str]:
 
 # ── DataForSEO keyword data for briefs ────────────────────────────────────────
 
+
 def _dataforseo_keyword_data(keyword: str) -> dict | None:
     login = os.getenv("DATAFORSEO_LOGIN", "").strip()
     password = os.getenv("DATAFORSEO_PASSWORD", "").strip()
@@ -167,25 +171,35 @@ def _seed_article(topic: str, word_count: int = 1200) -> str:
     sections = [f"# {topic.title()}\n\n{intro}\n"]
     for h in headings:
         h_text = h.format(topic=topic)
-        para = (f"When it comes to {h_text.lower()}, there are several key considerations. "
-                f"First and foremost, you need to understand the foundational principles. "
-                f"Next, implementing a systematic approach will yield consistent results. "
-                f"Finally, measuring and iterating based on data ensures continuous improvement.")
+        para = (
+            f"When it comes to {h_text.lower()}, there are several key considerations. "
+            f"First and foremost, you need to understand the foundational principles. "
+            f"Next, implementing a systematic approach will yield consistent results. "
+            f"Finally, measuring and iterating based on data ensures continuous improvement."
+        )
         sections.append(f"\n## {h_text}\n\n{para}\n")
-    sections.append("\n## Conclusion\n\nBy applying these strategies around {topic}, you'll be well-positioned to achieve your goals. "
-                    "Remember to stay data-driven and continually optimize based on performance metrics.")
+    sections.append(
+        "\n## Conclusion\n\nBy applying these strategies around {topic}, you'll be well-positioned to achieve your goals. "
+        "Remember to stay data-driven and continually optimize based on performance metrics."
+    )
     return "\n".join(sections)
 
 
 def _seed_ideas(topic: str, count: int = 10) -> list[dict[str, Any]]:
     random.seed(int(hashlib.md5(f"{topic}:ideas".encode(), usedforsecurity=False).hexdigest(), 16) % (2**32))
     idea_templates = [
-        f"The Ultimate Guide to {topic}", f"How to Master {topic} in 30 Days",
-        f"{topic}: A Beginner's Complete Handbook", f"10 Proven Strategies for {topic}",
-        f"Why {topic} Is Changing in 2026", f"{topic} vs. Traditional Methods: What Works Best",
-        f"Case Study: How We Improved {topic} by 300%", f"The Future of {topic}: Expert Predictions",
-        f"Common {topic} Mistakes and How to Avoid Them", f"{topic} Tools You Need in 2026",
-        f"How to Build a {topic} Strategy from Scratch", f"Advanced {topic} Techniques for Experts",
+        f"The Ultimate Guide to {topic}",
+        f"How to Master {topic} in 30 Days",
+        f"{topic}: A Beginner's Complete Handbook",
+        f"10 Proven Strategies for {topic}",
+        f"Why {topic} Is Changing in 2026",
+        f"{topic} vs. Traditional Methods: What Works Best",
+        f"Case Study: How We Improved {topic} by 300%",
+        f"The Future of {topic}: Expert Predictions",
+        f"Common {topic} Mistakes and How to Avoid Them",
+        f"{topic} Tools You Need in 2026",
+        f"How to Build a {topic} Strategy from Scratch",
+        f"Advanced {topic} Techniques for Experts",
     ]
     ideas_pool = [t.format(topic=topic) if "{topic}" in t else t for t in idea_templates]
     return [
@@ -206,12 +220,15 @@ def _seo_score(content: str) -> dict[str, Any]:
     words = len(content.split())
     headings = content.count("##")
     has_meta = "meta" in content.lower() or len(content) > 100
-    score = min(100, int(
-        (min(words, 2000) / 2000) * 40
-        + (min(headings, 5) / 5) * 20
-        + (20 if has_meta else 0)
-        + random.randint(10, 20)
-    ))
+    score = min(
+        100,
+        int(
+            (min(words, 2000) / 2000) * 40
+            + (min(headings, 5) / 5) * 20
+            + (20 if has_meta else 0)
+            + random.randint(10, 20)
+        ),
+    )
     return {
         "overall_score": score,
         "word_count": words,
@@ -223,17 +240,20 @@ def _seo_score(content: str) -> dict[str, Any]:
         "image_alt_texts": random.randint(0, 5),
         "meta_description_present": has_meta,
         "recommendations": [
-            r for r in [
+            r
+            for r in [
                 "Add more internal links" if random.random() > 0.5 else None,
                 "Expand content to 1500+ words" if words < 1500 else None,
                 "Improve meta description" if not has_meta else None,
                 "Add structured data markup" if random.random() > 0.5 else None,
-            ] if r is not None
+            ]
+            if r is not None
         ],
     }
 
 
 # ── Models ────────────────────────────────────────────────────────────────────
+
 
 class GenerateArticleRequest(BaseModel):
     topic: str = Field(max_length=300)
@@ -283,6 +303,7 @@ class KeywordBriefRequest(BaseModel):
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+
 @router.get("/ideas")
 def get_content_ideas(
     topic: str = Query(min_length=2, max_length=200),
@@ -292,8 +313,8 @@ def get_content_ideas(
     """AI-generated content ideas for a topic."""
     prompt = (
         f"Generate {count} compelling SEO blog post title ideas about '{topic}'. "
-        "Return as JSON array: [{\"title\": str, \"search_intent\": str, \"estimated_traffic\": int, "
-        "\"difficulty\": \"Easy|Medium|Hard\"}]. Respond with only the JSON array."
+        'Return as JSON array: [{"title": str, "search_intent": str, "estimated_traffic": int, '
+        '"difficulty": "Easy|Medium|Hard"}]. Respond with only the JSON array.'
     )
     text, source = _ai_generate(prompt)
     if source != "fallback" and text:
@@ -415,7 +436,9 @@ def get_draft(draft_id: str, auth: AuthContext = Depends(require_auth)) -> dict[
 
 
 @router.patch("/drafts/{draft_id}")
-def update_draft(draft_id: str, payload: DraftUpdateRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
+def update_draft(
+    draft_id: str, payload: DraftUpdateRequest, auth: AuthContext = Depends(require_auth)
+) -> dict[str, Any]:
     with _lock:
         draft = next((d for d in _drafts.get(auth.tenant_id, []) if d["id"] == draft_id), None)
         if not draft:
@@ -459,11 +482,17 @@ def publish_draft(draft_id: str, payload: PublishRequest, auth: AuthContext = De
     webhook_result: dict[str, Any] | None = None
     if payload.webhook_url:
         try:
-            with httpx.Client(timeout=10) as client:
-                r = client.post(payload.webhook_url, json={"draft_id": draft_id, "title": draft["title"], "cms": payload.cms})
-                webhook_result = {"status": r.status_code, "ok": r.is_success}
+            target = resolve_outbound_target(str(payload.webhook_url))
+            response = outbound_request(
+                "POST",
+                target,
+                json={"draft_id": draft_id, "title": draft["title"], "cms": payload.cms},
+                timeout=10.0,
+                max_response_bytes=64_000,
+            )
+            webhook_result = {"status": response.status_code, "ok": response.is_success}
         except Exception as exc:
-            webhook_result = {"error": str(exc)}
+            webhook_result = {"error": f"Webhook delivery failed ({type(exc).__name__})."}
     return {"published": True, "draft_id": draft_id, "cms": payload.cms, "webhook": webhook_result}
 
 
@@ -471,14 +500,39 @@ def publish_draft(draft_id: str, payload: PublishRequest, auth: AuthContext = De
 def list_templates(auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
     """Pre-built article templates."""
     templates = [
-        {"id": "how-to", "name": "How-To Guide", "description": "Step-by-step instructional content", "word_count": 1500},
+        {
+            "id": "how-to",
+            "name": "How-To Guide",
+            "description": "Step-by-step instructional content",
+            "word_count": 1500,
+        },
         {"id": "listicle", "name": "Listicle", "description": "Top N list format", "word_count": 1200},
-        {"id": "ultimate-guide", "name": "Ultimate Guide", "description": "Comprehensive deep-dive", "word_count": 3000},
+        {
+            "id": "ultimate-guide",
+            "name": "Ultimate Guide",
+            "description": "Comprehensive deep-dive",
+            "word_count": 3000,
+        },
         {"id": "comparison", "name": "Comparison Article", "description": "X vs Y format", "word_count": 1800},
-        {"id": "case-study", "name": "Case Study", "description": "Real-world example with results", "word_count": 1500},
+        {
+            "id": "case-study",
+            "name": "Case Study",
+            "description": "Real-world example with results",
+            "word_count": 1500,
+        },
         {"id": "news", "name": "News / Announcement", "description": "Timely news format", "word_count": 600},
-        {"id": "faq", "name": "FAQ Page", "description": "Question-answer format for featured snippets", "word_count": 1000},
-        {"id": "product-review", "name": "Product Review", "description": "In-depth product analysis", "word_count": 1500},
+        {
+            "id": "faq",
+            "name": "FAQ Page",
+            "description": "Question-answer format for featured snippets",
+            "word_count": 1000,
+        },
+        {
+            "id": "product-review",
+            "name": "Product Review",
+            "description": "In-depth product analysis",
+            "word_count": 1500,
+        },
     ]
     return {"templates": templates, "total": len(templates)}
 
@@ -505,8 +559,19 @@ def generate_keyword_brief(payload: KeywordBriefRequest, auth: AuthContext = Dep
         brief_data = {
             "target_audience": f"Professionals interested in {payload.keyword}",
             "search_intent": "Informational",
-            "structure": [f"H2: What is {payload.keyword}?", f"H2: Benefits of {payload.keyword}", f"H2: How to implement {payload.keyword}", "H2: Tools & Resources", "H2: Conclusion"],
-            "key_points": [f"Define {payload.keyword}", "Explain core concepts", "Provide actionable steps", "Include examples"],
+            "structure": [
+                f"H2: What is {payload.keyword}?",
+                f"H2: Benefits of {payload.keyword}",
+                f"H2: How to implement {payload.keyword}",
+                "H2: Tools & Resources",
+                "H2: Conclusion",
+            ],
+            "key_points": [
+                f"Define {payload.keyword}",
+                "Explain core concepts",
+                "Provide actionable steps",
+                "Include examples",
+            ],
         }
     return {
         "keyword": payload.keyword,
@@ -515,4 +580,3 @@ def generate_keyword_brief(payload: KeywordBriefRequest, auth: AuthContext = Dep
         "brief": brief_data,
         "_source": source,
     }
-

@@ -9,10 +9,10 @@ export default function DegradedModeBanner({ message, marginTop = 0 }: DegradedM
       style={{
         marginTop,
         background: 'var(--bg-soft)',
-        border: '1px solid #f59e0b',
+        border: '1px solid var(--warning-line)',
         borderRadius: 12,
         padding: '14px 16px',
-        color: '#fde68a',
+        color: 'var(--warning-ink)',
       }}
     >
       {message}

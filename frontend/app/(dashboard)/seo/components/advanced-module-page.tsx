@@ -125,7 +125,7 @@ export default function AdvancedModulePage(props: Readonly<AdvancedModulePagePro
 
       {error && (
         <Card>
-          <p style={{ margin: 0, color: '#b91c1c' }}>{error}</p>
+          <p style={{ margin: 0, color: 'var(--danger)' }}>{error}</p>
         </Card>
       )}
 

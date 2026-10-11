@@ -1,0 +1,502 @@
+/* ---------------------------------------------------------------------------
+   Homepage hero.
+
+   Motion budget (seen once per visit, so it may run longer than UI motion):
+   - Entrance: CSS keyframes with fill-mode backwards. No JS, so the copy is in
+     the HTML and readable even if scripts never run. 640ms var(--ease-out),
+     12px rise, 60ms stagger top-to-bottom (eyebrow → lead → accent → intro →
+     actions → coverage). Reduced motion keeps the fade and drops the rise.
+   - Coverage marquee (6+ entries): constant motion, so linear, 40s per loop.
+     Pauses on hover, focus-within and via an explicit toggle; reduced motion
+     shows a static wrapped row.
+   --------------------------------------------------------------------------- */
+
+.hero {
+  /* Hero theme: swap these to re-colour the backdrop in one place. */
+  --hero-bg: var(--bg);
+  --hero-line: var(--brand-line);
+  --hero-glow: var(--brand-sky);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  --hero-enter: 640ms;
+  --hero-stagger: 60ms;
+  --marquee-loop: 40s;
+  --chip-gap: 10px;
+  background: var(--hero-bg);
+  color: var(--text);
+}
+
+.inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 152px 48px 56px;
+  text-align: center;
+}
+
+/* Eyebrow ---------------------------------------------------------------- */
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 28px;
+  padding: 6px 14px 6px 10px;
+  border: 1px solid var(--brand-line);
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-hover);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+
+.eyebrowDot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+/* Headline --------------------------------------------------------------- */
+
+.title {
+  margin: 0;
+  font-size: clamp(2.5rem, 5.6vw, 5rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+/* Block so each line can carry its own transform in the entrance. */
+.titleLead,
+.titleAccent {
+  display: block;
+}
+
+.titleLead {
+  color: var(--text);
+}
+
+.titleAccent {
+  color: var(--brand);
+}
+
+.intro {
+  max-width: 620px;
+  margin: 22px auto 0;
+  color: var(--muted);
+  font-size: clamp(16px, 1.5vw, 18px);
+  line-height: 1.65;
+}
+
+/* Actions ---------------------------------------------------------------- */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.primaryCta,
+.secondaryCta {
+  min-height: 44px;
+}
+
+.ctaArrow {
+  transition: transform 160ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .primaryCta:hover .ctaArrow {
+    transform: translateX(2px);
+  }
+}
+
+/* Coverage strip --------------------------------------------------------- */
+
+.coverage {
+  margin-top: 32px;
+}
+
+.coverageLabel {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 550;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.coverageRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.viewport {
+  min-width: 0;
+}
+
+.track {
+  display: flex;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--chip-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* Marquee variant: two identical lists side by side; translating the track by
+   -50% moves exactly one list (its trailing padding equals the gap), so the
+   loop has no seam. The edge fade is a mask, not a painted gradient: it only
+   tells the reader the row continues past the edge. */
+.coverage[data-marquee="true"] .viewport {
+  flex: 1;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--text) 6%,
+    var(--text) 94%,
+    transparent
+  );
+}
+
+.coverage[data-marquee="true"] .track {
+  width: max-content;
+}
+
+.coverage[data-marquee="true"] .chips {
+  flex-wrap: nowrap;
+  padding-right: var(--chip-gap);
+}
+
+/* Pause toggle: a native checkbox inside a 44px label. */
+.toggle {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.toggle > svg {
+  grid-area: 1 / 1;
+}
+
+.toggleInput {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.toggleText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.iconPlay {
+  display: none;
+}
+
+.toggle:has(.toggleInput:checked) .iconPause {
+  display: none;
+}
+
+.toggle:has(.toggleInput:checked) .iconPlay {
+  display: block;
+}
+
+.toggle:has(.toggleInput:focus-visible) {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .toggle:hover {
+    border-color: var(--brand-line);
+    background: var(--brand-soft);
+  }
+}
+
+/* Motion ----------------------------------------------------------------- */
+
+@keyframes heroRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes heroFade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .eyebrow,
+  .titleLead,
+  .titleAccent,
+  .intro,
+  .actions,
+  .coverage {
+    animation: heroRise var(--hero-enter) var(--ease-out) backwards;
+  }
+  .titleLead {
+    animation-delay: calc(var(--hero-stagger) * 1);
+  }
+  .titleAccent {
+    animation-delay: calc(var(--hero-stagger) * 2);
+  }
+  .intro {
+    animation-delay: calc(var(--hero-stagger) * 3);
+  }
+  .actions {
+    animation-delay: calc(var(--hero-stagger) * 4);
+  }
+  .coverage {
+    animation-delay: calc(var(--hero-stagger) * 5);
+  }
+
+  .coverage[data-marquee="true"] .track {
+    animation: marquee var(--marquee-loop) linear infinite;
+  }
+  .coverage[data-marquee="true"]:hover .track,
+  .coverage[data-marquee="true"]:focus-within .track,
+  .coverage:has(.toggleInput:checked) .track {
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eyebrow,
+  .titleLead,
+  .titleAccent,
+  .intro,
+  .actions,
+  .coverage {
+    animation: heroFade 400ms var(--ease-out) backwards;
+  }
+
+  /* No movement: the marquee becomes the static wrapped row. */
+  .coverage[data-marquee="true"] .viewport {
+    mask-image: none;
+  }
+  .coverage[data-marquee="true"] .track {
+    width: auto;
+  }
+  .coverage[data-marquee="true"] .chips {
+    flex-wrap: wrap;
+    padding-right: 0;
+  }
+  .chips[data-copy],
+  .toggle {
+    display: none;
+  }
+}
+
+/* Responsive ------------------------------------------------------------- */
+
+@media (max-width: 860px) {
+  .inner {
+    padding: 120px 24px 64px;
+  }
+}
+
+@media (max-width: 520px) {
+  .inner {
+    padding: 108px 16px 56px;
+  }
+  .eyebrow {
+    font-size: 11px;
+  }
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .coverage {
+    margin-top: 48px;
+  }
+  .chip {
+    font-size: 12px;
+    padding: 7px 12px;
+  }
+}
+
+
+
+/* Centred hero + product stage ---------------------------------------------
+   The highlighter sweeps in once after the headline lands: a transformed
+   pseudo-element (scaleX 0 → 1 from the left), 700ms var(--ease-out). */
+
+.inner {
+  position: relative;
+  z-index: 1;
+}
+
+.mark {
+  position: relative;
+  z-index: 0;
+  padding: 0 0.08em;
+  background: none;
+  color: inherit;
+}
+
+.mark::before {
+  content: "";
+  position: absolute;
+  inset: 0.12em -0.04em 0.06em;
+  z-index: -1;
+  border-radius: 0.16em;
+  background: color-mix(in oklab, var(--hero-glow) 30%, transparent);
+  transform-origin: left center;
+}
+
+.stage {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* The product shot dissolves into the next section instead of ending on a
+   hard edge. */
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 34%;
+  background: linear-gradient(to bottom, transparent, var(--hero-bg) 92%);
+  pointer-events: none;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* Fade the lines out toward the copy so text always sits on clean ground. */
+  mask-image: radial-gradient(ellipse 62% 46% at 50% 26%, transparent 30%, var(--text) 80%);
+}
+
+.line {
+  fill: none;
+  stroke: var(--hero-line);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.glint {
+  fill: none;
+  stroke: var(--hero-glow);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-dasharray: 0.08 0.92;
+  stroke-dashoffset: 1;
+  opacity: 0;
+}
+
+.glow {
+  position: absolute;
+  left: 50%;
+  bottom: -120px;
+  width: min(1100px, 92%);
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--hero-glow) 42%, transparent), transparent);
+  filter: blur(30px);
+  transform: translateX(-50%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mark::before {
+    animation: sweep 700ms var(--ease-out) 700ms both;
+  }
+
+  /* Light travelling down the lines toward the product: constant motion,
+     so linear; slow enough to read as ambience, not activity. */
+  .glint {
+    opacity: 1;
+    animation: glint 6.4s linear infinite;
+  }
+}
+
+@keyframes sweep {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes glint {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: -0.1;
+  }
+}
+
+@media (max-width: 760px) {
+  .inner {
+    padding: 112px 20px 40px;
+  }
+
+  .stage {
+    padding: 0 16px;
+  }
+}

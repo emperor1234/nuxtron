@@ -1,15 +1,15 @@
 import { expect, test } from '@playwright/test';
 
 test('api governance page renders and navigation link is present', async ({ page }) => {
-  await page.goto('/');
-
-  // Verify the top nav link exists
-  const govLink = page.locator('a[href="/api-governance"]').first();
+  await page.goto('/dashboard');
+  await page.getByRole('button', { name: 'Operations', exact: true }).click();
+  await expect(page).toHaveURL(/\/crm$/);
+  const govLink = page.getByRole('link', { name: 'API Access', exact: true });
   await expect(govLink).toBeVisible();
+  await expect(govLink).toHaveAttribute('href', '/api-governance');
 
-  // Navigate to the page and check it loads without a crash
-  await page.goto('/api-governance');
-  await expect(page).toHaveURL(/api-governance/);
+  await govLink.click();
+  await expect(page).toHaveURL(/\/api-governance$/);
 
   // The page heading must be visible
   await expect(

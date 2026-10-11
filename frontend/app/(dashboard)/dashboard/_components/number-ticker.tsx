@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { animate, useInView, useReducedMotion } from 'framer-motion';
+import { useEffect, useRef, type ComponentRef } from "react";
+import { animate, useInView, useReducedMotion } from "framer-motion";
 
 type NumberTickerProps = {
   value: number;
@@ -22,18 +22,18 @@ type NumberTickerProps = {
  */
 export default function NumberTicker({
   value,
-  prefix = '',
-  suffix = '',
+  prefix = "",
+  suffix = "",
   decimals = 0,
-  durationMs = 1100,
+  durationMs = 200,
   className,
 }: NumberTickerProps) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: '0px 0px -10% 0px' });
+  const ref = useRef<ComponentRef<"span">>(null);
+  const inView = useInView(ref, { once: true, margin: "0px 0px -10% 0px" });
   const prefersReducedMotion = useReducedMotion();
 
   const format = (n: number) =>
-    `${prefix}${n.toLocaleString('en-US', {
+    `${prefix}${n.toLocaleString("en-US", {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     })}${suffix}`;
@@ -50,7 +50,7 @@ export default function NumberTicker({
 
     const controls = animate(0, value, {
       duration: durationMs / 1000,
-      ease: [0.22, 1, 0.36, 1],
+      ease: [0.23, 1, 0.32, 1],
       onUpdate(latest) {
         node.textContent = format(latest);
       },
@@ -59,7 +59,15 @@ export default function NumberTicker({
     return () => controls.stop();
     // format derives only from stable props; intentionally minimal deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inView, prefersReducedMotion, value, decimals, prefix, suffix, durationMs]);
+  }, [
+    inView,
+    prefersReducedMotion,
+    value,
+    decimals,
+    prefix,
+    suffix,
+    durationMs,
+  ]);
 
   // Render a deterministic starting value (server + first client paint) so
   // hydration always matches; the effect drives the animation or final value.

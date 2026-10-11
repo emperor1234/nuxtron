@@ -55,31 +55,31 @@ interface MetricsData {
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const GROUP_COLORS: Record<string, string> = {
-  'Search Intelligence': '#6366f1',
-  'Experience Optimization': '#8b5cf6',
-  'Growth & Governance': '#06b6d4',
-  'Core Foundations': '#22c55e',
-  'Expansion Modules': '#f59e0b',
-  'SaaS Platform': '#ec4899',
-  'Monitoring & Observability': '#14b8a6',
-  'Schema & Optimization': '#a78bfa',
-  'Content & Distribution': '#fb923c',
-  'Accessibility & Media': '#34d399',
-  'Performance & Audits': '#f43f5e',
+  'Search Intelligence': 'var(--info)',
+  'Experience Optimization': 'var(--info)',
+  'Growth & Governance': 'var(--info)',
+  'Core Foundations': 'var(--success)',
+  'Expansion Modules': 'var(--warning)',
+  'SaaS Platform': 'var(--series-5)',
+  'Monitoring & Observability': 'var(--info)',
+  'Schema & Optimization': 'var(--info)',
+  'Content & Distribution': 'var(--warning)',
+  'Accessibility & Media': 'var(--success)',
+  'Performance & Audits': 'var(--danger)',
 };
 
 const C = {
-  bg: 'var(--bg, #f5f6f9)',
-  card: 'var(--card, #ffffff)',
-  border: 'var(--line, #e7e9ef)',
-  text: 'var(--text, #0e1525)',
-  muted: 'var(--muted, #6b7385)',
-  green: '#22c55e',
-  amber: '#f59e0b',
-  red: '#ef4444',
-  blue: '#6366f1',
-  purple: '#8b5cf6',
-  cyan: '#06b6d4',
+  bg: 'var(--bg)',
+  card: 'var(--card)',
+  border: "var(--line)",
+  text: 'var(--text)',
+  muted: 'var(--muted)',
+  green: 'var(--success)',
+  amber: 'var(--warning)',
+  red: 'var(--danger)',
+  blue: 'var(--info)',
+  purple: 'var(--series-7)',
+  cyan: 'var(--series-8)',
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -312,7 +312,7 @@ function ModuleCard({ m, globalIdx }: { m: SeoModule; globalIdx: number }) {
                 style={{
                   background: color + '22',
                   color,
-                  border: `1px solid ${color}44`,
+                  border: `1px solid color-mix(in srgb, ${color} 26.67%, transparent)`,
                   borderRadius: 4,
                   padding: '1px 6px',
                   fontSize: 9,
@@ -355,7 +355,7 @@ function ModuleCard({ m, globalIdx }: { m: SeoModule; globalIdx: number }) {
                   borderRadius: 4,
                   background: ok ? C.green + '18' : C.red + '18',
                   color: ok ? C.green : C.red,
-                  border: `1px solid ${ok ? C.green : C.red}33`,
+                  border: `1px solid color-mix(in srgb, ${ok ? C.green : C.red} 20.0%, transparent)`,
                 }}
               >
                 {ok ? '✓' : '✗'} {label}
@@ -535,7 +535,7 @@ export default function PlatformMatrixPage() {
         <div
           style={{
             background: C.red + '15',
-            border: `1px solid ${C.red}44`,
+            border: `1px solid color-mix(in srgb, ${C.red} 26.67%, transparent)`,
             borderRadius: 10,
             padding: '10px 14px',
             marginBottom: 20,
@@ -767,7 +767,7 @@ export default function PlatformMatrixPage() {
             }}
             style={{
               background: C.red + '22',
-              border: `1px solid ${C.red}44`,
+              border: `1px solid color-mix(in srgb, ${C.red} 26.67%, transparent)`,
               color: C.red,
               borderRadius: 8,
               padding: '8px 14px',
@@ -830,7 +830,7 @@ export default function PlatformMatrixPage() {
                       style={{
                         marginLeft: 'auto',
                         background: color + '20',
-                        border: `1px solid ${color}44`,
+                        border: `1px solid color-mix(in srgb, ${color} 26.67%, transparent)`,
                         borderRadius: 16,
                         padding: '3px 12px',
                         fontSize: 12,
@@ -971,7 +971,7 @@ export default function PlatformMatrixPage() {
                   gap: 12,
                   padding: '10px 14px',
                   background: priorityColor(a.priority) + '10',
-                  border: `1px solid ${priorityColor(a.priority)}33`,
+                  border: `1px solid color-mix(in srgb, ${priorityColor(a.priority)} 20.0%, transparent)`,
                   borderRadius: 10,
                 }}
               >

@@ -11,71 +11,91 @@ from typing import cast
 
 from fastapi import FastAPI, Request
 
-from . import memory_stores
 from . import legacy_main as lg
-from .auth_utils import jwt_sign_hs256, jwt_verify_hs256
-from .routers.auth import AuthSecurityRecord
-from .routers.api_governance import ApiGovernanceContext, create_api_governance_router
-from .routers.benchmarks import BenchmarksContext
-from .routers.growth_suite import GrowthSuiteContext
-from .routers.ira import IRAContext
-from .routers.ops import _OpsCallbacks
-from .routers.outcome_attribution import OutcomeAttributionContext
-from .routers.playbooks import PlaybooksContext
-from .routers.trust_center import TrustCenterContext, create_trust_center_router
-from .services.ai_providers import _provider_health_metrics
+from . import memory_stores
+from .domains.identity.auth_utils import jwt_sign_hs256, jwt_verify_hs256
+
+# ── Intelligence router ──────────────────────────────────────────────────────
+from .intelligence.routes import router as intel_router
 
 # ── Router factory functions ──────────────────────────────────────────────────
 from .routers.ad_generation import router as ad_generation_router
-from .routers.ads_control_tower import create_ads_control_tower_router
+from .domains.marketing.ads.bootstrap import create_ads_control_tower_router
+
+# ── Pre-built router instances ────────────────────────────────────────────────
+from .routers.agent_analytics import router as agent_analytics_router
+from .routers.agents import router as agents_router
 from .routers.ai import create_ai_router
-from .routers.ai_crawler_enablement import create_ai_crawler_enablement_router
+from .domains.search.crawlers.bootstrap import create_ai_crawler_enablement_router
 from .routers.ai_security import create_ai_security_router
 from .routers.analytics_dashboard import create_analytics_router
-from .routers.auth import create_auth_router
-from .routers.autonomous_workforce import create_autonomous_workforce_router
-from .routers.benchmarks import create_benchmarks_router
+from .routers.answer_engine import router as answer_engine_router
+from .routers.api_governance import ApiGovernanceContext, create_api_governance_router
+from .routers.auth import AuthSecurityRecord, create_auth_router
+from .domains.automation.workforce.bootstrap import create_autonomous_workforce_router
+from .routers.backlink_intelligence import router as backlink_intelligence_router
+from .routers.benchmarks import BenchmarksContext, create_benchmarks_router
 from .routers.billing import create_billing_router
+from .routers.brandkit import router as brandkit_router
 from .routers.bridges import create_bridges_router
+from .routers.cdn_analytics import router as cdn_analytics_router
 from .routers.chatbot import create_chatbot_router
-from .routers.cms_integration import create_cms_router
+
+# ── SEMrush feature-parity routers ───────────────────────────────────────────
+from .routers.client_portal import router as client_portal_router  # noqa: E402
+from .domains.integrations.cms.bootstrap import create_cms_router
 from .routers.competitive import create_competitive_router
+from .routers.competitor_analysis import router as competitor_analysis_router
 from .routers.content_approval import create_content_approval_router
 from .routers.content_integrations import create_content_integrations_router
-from .routers.crm import create_crm_router
+from .routers.contentshake_ai import router as contentshake_ai_router  # noqa: E402
+from .domains.crm.bootstrap import create_crm_router
 from .routers.crm_abm import create_crm_abm_router
 from .routers.documents import create_documents_router
+from .routers.domain_overview import router as domain_overview_router  # noqa: E402
 from .routers.email_provider import create_email_router
 from .routers.employee_advocacy import create_employee_advocacy_router
 from .routers.engagement import create_engagement_router
-from .routers.growth_suite import create_growth_suite_router
+from .routers.eyeon_monitor import router as eyeon_monitor_router  # noqa: E402
+from .domains.marketing.growth.bootstrap import GrowthSuiteContext, create_growth_suite_router
 from .routers.influencer import create_influencer_router
-from .routers.ira import create_ira_router
+from .domains.assistant.bootstrap import IRAContext, create_ira_router
 from .routers.knowledge_base import create_knowledge_base_router
+from .routers.lindy_email_management import router as lindy_email_management_router
 from .routers.linkinbio import create_linkinbio_router
 from .routers.live_editor import create_live_editor_router
+from .routers.local_heatmap import router as local_heatmap_router  # noqa: E402
+from .routers.map_rank_tracker import router as map_rank_tracker_router  # noqa: E402
+from .routers.market_explorer import router as market_explorer_router  # noqa: E402
 from .routers.marketplace import create_marketplace_router
-from .routers.media_jobs import create_media_jobs_router
+from .domains.content.media.bootstrap import create_media_jobs_router
 from .routers.media_library import create_media_library_router
 from .routers.meetings import create_meetings_router
 from .routers.neo4j_graph_intelligence import create_neo4j_graph_intelligence_router
-from .routers.notifications import create_notifications_router
-from .routers.ops import create_ops_router
-from .routers.outcome_attribution import create_outcome_attribution_router
+from .domains.notifications.delivery.bootstrap import create_notifications_router
+from .routers.one2target import router as one2target_router  # noqa: E402
+from .routers.ops import _OpsCallbacks, create_ops_router
+from .routers.outcome_attribution import OutcomeAttributionContext, create_outcome_attribution_router
 from .routers.pentest import create_pentest_router
 from .routers.pentest_sync import create_pentest_sync_router
-from .routers.platform_integration import create_platform_integration_router
-from .routers.platform_intelligence import create_platform_intelligence_router
-from .routers.playbooks import create_playbooks_router
+from .routers.pla_research import router as pla_research_router  # noqa: E402
+from .domains.integrations.platforms.bootstrap import create_platform_integration_router
+from .domains.intelligence.platform.bootstrap import create_platform_intelligence_router
+from .routers.playbooks import PlaybooksContext, create_playbooks_router
+from .routers.predis_features import predis_router
 from .routers.products import create_products_router
+from .routers.prompt_volumes import router as prompt_volumes_router
+from .routers.rank_tracker import router as rank_tracker_router
 from .routers.revenue_attribution import create_revenue_attribution_router
-from .routers.search_everywhere_automation import create_search_everywhere_automation_router
-from .routers.seo_platform import create_seo_platform_router
+from .domains.search.bootstrap import create_search_everywhere_automation_router
+from .domains.seo.platform.bootstrap import create_seo_platform_router
 from .routers.sequences import create_sequences_router
 from .routers.site_portfolio_manager import create_site_portfolio_router
-from .routers.smart_inbox import create_smart_inbox_router
+from .domains.social.inbox.bootstrap import create_smart_inbox_router
 from .routers.social_manychat import create_social_manychat_router
-from .routers.social_workspace import create_social_workspace_router
+from .routers.social_media_router import router as social_media_router
+from .routers.social_posting import router as social_posting_router
+from .domains.social.bootstrap import create_social_workspace_router
 from .routers.stripe_billing import create_stripe_billing_router
 from .routers.super_admin_finance import create_super_admin_finance_router
 from .routers.surveys import create_surveys_router
@@ -84,43 +104,15 @@ from .routers.tickets import create_tickets_router
 from .routers.tool_integrations import create_tool_integrations_router
 from .routers.translation_studio import create_translation_studio_router
 from .routers.trend_intelligence import create_trend_intelligence_router
+from .routers.trust_center import TrustCenterContext, create_trust_center_router
 from .routers.utm_builder import create_utm_builder_router
 from .routers.v1_loop import create_v1_loop_router
 from .routers.viralpost import create_viralpost_router
-from .routers.vse import create_vse_router
-from .routers.workflows import create_workflows_router
+from .domains.search.visibility.bootstrap import create_vse_router
+from .domains.workflows.bootstrap import create_workflows_router
+from .services.ai_providers import _provider_health_metrics
 
-# ── Pre-built router instances ────────────────────────────────────────────────
-from .routers.agent_analytics import router as agent_analytics_router
-from .routers.agents import router as agents_router
-from .routers.answer_engine import router as answer_engine_router
-from .routers.backlink_intelligence import router as backlink_intelligence_router
-from .routers.brand_hub import router as brand_hub_router
-from .routers.brandkit import router as brandkit_router
-from .routers.cdn_analytics import router as cdn_analytics_router
-from .routers.competitor_analysis import router as competitor_analysis_router
-from .routers.predis_features import predis_router
-from .routers.prompt_volumes import router as prompt_volumes_router
-from .routers.rank_tracker import router as rank_tracker_router
-from .routers.social_media_router import router as social_media_router
-from .routers.social_posting import router as social_posting_router
-
-# ── Intelligence router ──────────────────────────────────────────────────────
-from .intelligence.routes import router as intel_router
-
-# ── SEMrush feature-parity routers ───────────────────────────────────────────
-from .routers.client_portal import router as client_portal_router  # noqa: E402
-from .routers.contentshake_ai import router as contentshake_ai_router  # noqa: E402
-from .routers.domain_overview import router as domain_overview_router  # noqa: E402
-from .routers.eyeon_monitor import router as eyeon_monitor_router  # noqa: E402
-from .routers.local_heatmap import router as local_heatmap_router  # noqa: E402
-from .routers.map_rank_tracker import router as map_rank_tracker_router  # noqa: E402
-from .routers.market_explorer import router as market_explorer_router  # noqa: E402
-from .routers.one2target import router as one2target_router  # noqa: E402
-from .routers.pla_research import router as pla_research_router  # noqa: E402
-
-
-# ── Thin wrappers for helper functions defined in legacy_main ──────────────────
+# ── Late-bound compatibility adapters ────────────────────────────────────────
 
 def _ops_require_super_admin_access(request: Request, x_super_admin_key: str | None) -> None:
     from .security_admin import require_super_admin_access
@@ -132,8 +124,9 @@ def _hashicorp_vault_health() -> dict[str, object]:
     return lg._hashicorp_vault_health()
 
 
-def _supabase_vault_health() -> dict[str, object]:
-    return lg._supabase_vault_health()
+def _is_tenant_blocked_late_bound(tenant_id: str) -> tuple[bool, int]:
+    """Resolve through legacy_main so compatibility monkeypatches remain visible."""
+    return lg._is_tenant_blocked(tenant_id)
 
 
 def _persist_governance_stores() -> None:
@@ -521,9 +514,8 @@ def register_all_routers(app: FastAPI) -> None:
             audit_log_memory=lg._audit_log_memory,
         )
     )
-
     app.include_router(create_email_router())
-
+    app.include_router(lindy_email_management_router)
     app.include_router(
         create_super_admin_finance_router(
             enforce_rate_limit=lg._enforce_rate_limit,
@@ -940,7 +932,7 @@ def register_all_routers(app: FastAPI) -> None:
     app.include_router(
         create_ai_security_router(
             enforce_rate_limit=lg._enforce_rate_limit,
-            is_tenant_blocked=lg._is_tenant_blocked,
+            is_tenant_blocked=_is_tenant_blocked_late_bound,
             prepare_ai_gateway_attempt=lg._prepare_ai_gateway_attempt,
             invoke_ai_provider_generation=lg._invoke_ai_provider_generation,
             update_provider_health=lg._update_provider_health,
@@ -968,8 +960,7 @@ def register_all_routers(app: FastAPI) -> None:
             ai_security_ids_events_memory=lg._ai_security_ids_events_memory,
             ai_provider_keys_memory=lg._ai_provider_keys_memory,
             resend_messages_memory=lg._resend_messages_memory,
-            ai_generated_assets_memory=lg._ai_generated_assets_memory,
-            ai_generated_assets_lock=lg._ai_generated_assets_lock,
+            find_ai_generated_asset=lg._find_ai_generated_asset,
             ai_security_lock=lg._ai_security_lock,
             ai_providers=lg.AI_PROVIDERS,
             ai_model_catalog=lg.AI_MODEL_CATALOG,
@@ -1015,7 +1006,6 @@ def register_all_routers(app: FastAPI) -> None:
     app.include_router(agent_analytics_router)
     app.include_router(agents_router)
     app.include_router(answer_engine_router)
-    app.include_router(brand_hub_router)
     app.include_router(cdn_analytics_router)
     app.include_router(predis_router)
     app.include_router(prompt_volumes_router)
@@ -1043,7 +1033,6 @@ def register_all_routers(app: FastAPI) -> None:
                 ira_events_store=lg._ira_events_memory,
                 siem_cases_store=lg._siem_cases_memory,
                 vault_hashicorp_health=_hashicorp_vault_health,
-                vault_supabase_health=_supabase_vault_health,
                 persist=_persist_governance_stores,
             )
         )

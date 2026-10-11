@@ -54,16 +54,18 @@ class TestToolIntegrationsCoverage:
         response = MagicMock()
         response.status_code = 401
 
-        async_client = AsyncMock()
-        async_client.__aenter__.return_value = async_client
-        async_client.__aexit__.return_value = False
-        async_client.get.return_value = response
-
         with patch.dict(os.environ, {"SERPER_API_KEY": "serper-secret"}, clear=False), patch(
-            "backend.fastapi.app.routers.tool_integrations.httpx.AsyncClient",
-            return_value=async_client,
-        ):
+            "backend.fastapi.app.routers.tool_integrations.resolve_outbound_target_async",
+            new_callable=AsyncMock,
+            return_value=object(),
+        ) as resolve_target, patch(
+            "backend.fastapi.app.routers.tool_integrations.outbound_async_request",
+            new_callable=AsyncMock,
+            return_value=response,
+        ) as outbound_request:
             r = client.post("/integrations/tools/serper/test", headers=H)
+        resolve_target.assert_awaited_once()
+        outbound_request.assert_awaited_once()
         assert r.status_code == 200
         if r.status_code == 200:
             data = r.json()
@@ -74,14 +76,14 @@ class TestToolIntegrationsCoverage:
         response = MagicMock()
         response.status_code = 503
 
-        async_client = AsyncMock()
-        async_client.__aenter__.return_value = async_client
-        async_client.__aexit__.return_value = False
-        async_client.get.return_value = response
-
         with patch(
-            "backend.fastapi.app.routers.tool_integrations.httpx.AsyncClient",
-            return_value=async_client,
+            "backend.fastapi.app.routers.tool_integrations.resolve_outbound_target_async",
+            new_callable=AsyncMock,
+            return_value=object(),
+        ), patch(
+            "backend.fastapi.app.routers.tool_integrations.outbound_async_request",
+            new_callable=AsyncMock,
+            return_value=response,
         ):
             r = client.post("/integrations/tools/google_search_console/test", headers=H)
         assert r.status_code == 200
@@ -91,21 +93,22 @@ class TestToolIntegrationsCoverage:
             assert data["http_status"] == 503
 
     def test_tool_test_exception_path(self, client: TestClient) -> None:
-        async_client = AsyncMock()
-        async_client.__aenter__.return_value = async_client
-        async_client.__aexit__.return_value = False
-        async_client.get.side_effect = RuntimeError("network down")
-
         with patch(
-            "backend.fastapi.app.routers.tool_integrations.httpx.AsyncClient",
-            return_value=async_client,
+            "backend.fastapi.app.routers.tool_integrations.resolve_outbound_target_async",
+            new_callable=AsyncMock,
+            return_value=object(),
+        ), patch(
+            "backend.fastapi.app.routers.tool_integrations.outbound_async_request",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("network down"),
         ):
             r = client.post("/integrations/tools/google_business_profile/test", headers=H)
         assert r.status_code == 200
         if r.status_code == 200:
             data = r.json()
             assert data["status"] == "error"
-            assert "network down" in data["reason"]
+            assert data["reason"] == "Connection test failed."
+            assert "network down" not in data["reason"]
 
 
 class TestUtmBuilderCoverage:

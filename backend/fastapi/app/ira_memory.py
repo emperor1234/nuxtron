@@ -8,30 +8,10 @@ from typing import Any, cast
 import httpx
 import psycopg
 
-# ---------------------------------------------------------------------------
-# Supabase Vault resolver
-# ---------------------------------------------------------------------------
-# When SUPABASE_DB_URL or POSTGRES_HOST is configured, the memory system can
-# look up sensitive credentials from Supabase's built-in encrypted secret
-# store (vault.decrypted_secrets) instead of relying on plain env vars.
-#
-# To store a secret in Supabase Vault:
-#   SELECT vault.create_secret('redis-password-value', 'IRA_REDIS_PASSWORD');
-#
-# Then set the corresponding IRA_VAULT_SECRET_* env var to that secret name:
-#   IRA_VAULT_SECRET_REDIS_PASSWORD=IRA_REDIS_PASSWORD
-#
-# The resolver is called lazily and caches results per process lifetime so
-# there is no extra DB round-trip on each request.
-# ---------------------------------------------------------------------------
-
-_vault_cache: dict[str, str] | None = None
-_vault_cache_attempted = False
-
 
 def _db_dsn_from_env() -> str:
     """Build a psycopg DSN from individual env vars (mirrors IRA router logic)."""
-    direct = os.getenv('SUPABASE_DB_URL', '').strip()
+    direct = os.getenv('DATABASE_URL', '').strip()
     if direct:
         return direct
     host = os.getenv('POSTGRES_HOST', 'localhost')
@@ -41,44 +21,12 @@ def _db_dsn_from_env() -> str:
     password = os.getenv('POSTGRES_PASSWORD', '')
     return f'host={host} port={port} dbname={db_name} user={user} password={password} connect_timeout=2'
 
-
-def _load_vault_secrets() -> dict[str, str]:
-    """Fetch all decrypted secrets from vault.decrypted_secrets. Returns {} on failure."""
-    global _vault_cache, _vault_cache_attempted  # noqa: PLW0603
-    if _vault_cache_attempted:
-        return _vault_cache or {}
-    _vault_cache_attempted = True
-
-    postgres_ready = bool(os.getenv('SUPABASE_DB_URL', '').strip() or os.getenv('POSTGRES_HOST', '').strip())
-    if not postgres_ready:
-        _vault_cache = {}
-        return {}
-
-    try:
-        with psycopg.connect(_db_dsn_from_env()) as conn, conn.cursor() as cur:
-            cur.execute("SELECT name, decrypted_secret FROM vault.decrypted_secrets")
-            rows = cur.fetchall()
-        _vault_cache = {str(name): str(secret) for name, secret in rows if name and secret}
-    except Exception:
-        _vault_cache = {}
-
-    return _vault_cache
-
-
 def _vault_get(env_key: str, vault_name_env: str, fallback: str = '') -> str:
-    """
-    Resolve a credential in priority order:
-      1. Supabase Vault secret (named by IRA_VAULT_SECRET_<suffix>)
-      2. Direct env var (env_key)
-      3. fallback
-    """
-    vault_secret_name = os.getenv(vault_name_env, '').strip()
-    if vault_secret_name:
-        secrets = _load_vault_secrets()
-        vault_value = secrets.get(vault_secret_name, '').strip()
-        if vault_value:
-            return vault_value
-    return os.getenv(env_key, fallback).strip()
+    """Resolve a credential from HashiCorp Vault, then the environment."""
+    from .vault.secrets_manager import get_secrets_manager
+
+    secret_name = os.getenv(vault_name_env, '').strip() or env_key
+    return (get_secrets_manager().get_secret(secret_name) or fallback).strip()
 
 
 def _cosine_similarity(left: list[float], right: list[float]) -> float:
@@ -137,7 +85,7 @@ class IRAMemorySystem:
         weaviate_ready = bool(os.getenv('WEAVIATE_URL', '').strip())
 
         if postgres_ready:
-            long_term_backend = 'supabase_postgres'
+            long_term_backend = 'postgres'
         elif pinecone_ready:
             long_term_backend = 'pinecone'
         elif weaviate_ready:
@@ -152,13 +100,13 @@ class IRAMemorySystem:
             },
             'long_term': {
                 'active_backend': long_term_backend,
-                'supabase_postgres_ready': postgres_ready,
+                'postgres_ready': postgres_ready,
                 'pinecone_ready': pinecone_ready,
                 'weaviate_ready': weaviate_ready,
             },
             'structured': {
-                'active_backend': 'supabase_postgres' if postgres_ready else 'in_memory',
-                'supabase_postgres_ready': postgres_ready,
+                'active_backend': 'postgres' if postgres_ready else 'in_memory',
+                'postgres_ready': postgres_ready,
             },
         }
 
@@ -263,7 +211,7 @@ class IRAMemorySystem:
                         (tenant_id, memory_type, memory_key, json.dumps(payload)),
                     )
                     conn.commit()
-                stored['source'] = 'supabase_postgres'
+                stored['source'] = 'postgres'
             except Exception:
                 stored['source'] = 'in_memory'
         else:
@@ -294,7 +242,7 @@ class IRAMemorySystem:
                         'memory_key': str(memory_key_value),
                         'payload': payload_value if isinstance(payload_value, dict) else {},
                         'updated_at': updated_at.isoformat() if isinstance(updated_at, datetime) else '',
-                        'source': 'supabase_postgres',
+                        'source': 'postgres',
                     }
                     for memory_type_value, memory_key_value, payload_value, updated_at in rows
                 ]
@@ -312,7 +260,7 @@ class IRAMemorySystem:
         provider = 'in_memory'
 
         if self._postgres_ready():
-            provider = 'supabase_postgres'
+            provider = 'postgres'
             self._ensure_tables()
             try:
                 with psycopg.connect(self._db_dsn_fn()) as conn, conn.cursor() as cur:
@@ -373,9 +321,9 @@ class IRAMemorySystem:
         fallback_items: list[dict[str, Any]],
     ) -> tuple[str, list[dict[str, Any]]]:
         if self._postgres_ready():
-            results = self._query_supabase_postgres(tenant_id=tenant_id, query=query, top_k=top_k, min_score=min_score)
+            results = self._query_postgres(tenant_id=tenant_id, query=query, top_k=top_k, min_score=min_score)
             if results:
-                return 'supabase_postgres', results
+                return 'postgres', results
 
         results = self._query_fallback(query=query, top_k=top_k, min_score=min_score, items=fallback_items)
         return 'in_memory', results
@@ -401,7 +349,7 @@ class IRAMemorySystem:
         ranked.sort(key=lambda item: (-float(item.get('score', 0.0)), str(item.get('chunk_id', ''))))
         return ranked[:top_k]
 
-    def _query_supabase_postgres(self, *, tenant_id: str, query: str, top_k: int, min_score: float) -> list[dict[str, Any]]:
+    def _query_postgres(self, *, tenant_id: str, query: str, top_k: int, min_score: float) -> list[dict[str, Any]]:
         self._ensure_tables()
         _, query_vectors = self._embed_texts([query])
         query_vector = query_vectors[0] if query_vectors else []
@@ -435,13 +383,12 @@ class IRAMemorySystem:
                 'source': str(source or ''),
                 'content': str(content or ''),
                 'score': round(score, 4),
-                'provider': 'supabase_postgres',
+                'provider': 'postgres',
             })
         ranked.sort(key=lambda item: (-float(item.get('score', 0.0)), str(item.get('chunk_id', ''))))
         return ranked[:top_k]
 
     def _redis_client(self) -> Any | None:
-        # Prefer Supabase Vault secret; fall back to env var
         host = _vault_get('REDIS_HOST', 'IRA_VAULT_SECRET_REDIS_HOST')
         if not host:
             return None
@@ -469,7 +416,7 @@ class IRAMemorySystem:
             del self._short_term_store[:-limit * 10]
 
     def _postgres_ready(self) -> bool:
-        return bool(os.getenv('SUPABASE_DB_URL', '').strip() or os.getenv('POSTGRES_HOST', '').strip())
+        return bool(os.getenv('DATABASE_URL', '').strip() or os.getenv('POSTGRES_HOST', '').strip())
 
     def _ensure_tables(self) -> None:
         if self._tables_ready or not self._postgres_ready():

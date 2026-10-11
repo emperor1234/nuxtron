@@ -208,7 +208,7 @@ export default function HootsuiteAutomationPage() {
             {loading ? 'Executing...' : 'Run Full Automation Blueprint'}
           </button>
         </div>
-        {error ? <p style={{ color: '#f87171' }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)' }}>{error}</p> : null}
       </section>
 
       <section className="grid" style={{ marginTop: 20 }}>

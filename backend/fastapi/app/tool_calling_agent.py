@@ -14,7 +14,8 @@ Supports multi-step workflows and branching logic.
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
+import os
+from collections.abc import Callable, Mapping
 from typing import Any
 
 import httpx
@@ -34,7 +35,9 @@ class ToolRegistry:
         """Generate JSON Schema for tools (for LLM context)."""
         return {
             "type": "object",
-            "properties": {tool_name: {"type": "string", "description": f"Tool: {tool_name}"} for tool_name in self.tools},
+            "properties": {
+                tool_name: {"type": "string", "description": f"Tool: {tool_name}"} for tool_name in self.tools
+            },
         }
 
     async def execute_tool(self, tool_name: str, **kwargs: Any) -> tuple[bool, Any]:
@@ -48,7 +51,7 @@ class ToolRegistry:
                 result = await result
             return True, result
         except Exception as e:
-            return False, {"error": str(e)[:500]}
+            return False, {"error": type(e).__name__}
 
 
 class AgentThought:
@@ -71,6 +74,8 @@ class ToolCallingAgent:
         role: str,
         tool_registry: ToolRegistry,
         ai_gateway_url: str,
+        tenant_id: str = "",
+        api_key: str | None = None,
         ai_model_provider: str = "auto",
         max_steps: int = 10,
     ):
@@ -78,6 +83,8 @@ class ToolCallingAgent:
         self.role = role
         self.tool_registry = tool_registry
         self.ai_gateway_url = ai_gateway_url
+        self.tenant_id = tenant_id.strip()
+        self.api_key = (api_key if api_key is not None else os.getenv("FASTAPI_API_KEY", "")).strip()
         self.ai_model_provider = ai_model_provider
         self.max_steps = max_steps
         self.thoughts: list[AgentThought] = []
@@ -90,7 +97,9 @@ class ToolCallingAgent:
             lines.append(f"Step {thought.step}: [THOUGHT] {thought.thought}")
             lines.append(f"Step {thought.step}: [ACTION] {thought.action}({json.dumps(thought.action_input)})")
             if thought.observation:
-                obs_text = json.dumps(thought.observation) if not isinstance(thought.observation, str) else thought.observation
+                obs_text = (
+                    json.dumps(thought.observation) if not isinstance(thought.observation, str) else thought.observation
+                )
                 lines.append(f"Step {thought.step}: [OBSERVATION] {obs_text[:500]}")
         return "\n".join(lines)
 
@@ -112,10 +121,11 @@ Respond with JSON:
 
 If you have the final answer, include final_answer field and omit action/action_input.
 """
-        headers = {
-            "Content-Type": "application/json",
-            "X-API-Key": "test-key",  # Replace with actual key from context
-        }
+        if not self.api_key:
+            return {"error": "AI gateway credentials are not configured"}
+        headers = {"Content-Type": "application/json", "X-API-Key": self.api_key}
+        if self.tenant_id:
+            headers["X-Tenant-Id"] = self.tenant_id
         request_body = {
             "provider": self.ai_model_provider,
             "prompt": prompt,
@@ -142,7 +152,7 @@ If you have the final answer, include final_answer field and omit action/action_
                     pass
             return raw if isinstance(raw, dict) else {"error": "Invalid AI response"}
         except Exception as e:
-            return {"error": str(e)[:500]}
+            return {"error": type(e).__name__}
 
     async def run(self, goal: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         """Execute the agent loop."""
@@ -197,32 +207,12 @@ If you have the final answer, include final_answer field and omit action/action_
 
 
 def create_tool_registry_for_mission(
-    tenant_id: str,
-    mission: dict[str, Any],
-    ai_gateway_url: str,
+    tool_adapters: Mapping[str, Callable[..., Any]] | None = None,
 ) -> ToolRegistry:
-    """Create a tool registry with mission-specific tools."""
-    registry = ToolRegistry()  # type: ignore[no-untyped-call]
-
-    # Tool: Generate content
-    async def generate_content(topic: str, format: str = "text") -> dict[str, Any]:
-        return {"topic": topic, "format": format, "generated": f"Content for {topic}"}
-
-    # Tool: Query data
-    async def query_data(source: str, query: str) -> dict[str, Any]:
-        return {"source": source, "query": query, "results": []}
-
-    # Tool: Post to provider
-    async def post_to_provider(provider: str, content: str, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
-        return {"provider": provider, "status": "queued", "content": content[:100]}
-
-    # Tool: Make decision
-    async def make_decision(options: list[str], criteria: str) -> dict[str, Any]:
-        return {"selected": options[0] if options else None, "reason": criteria}
-
-    registry.register("generate_content", generate_content, "Generate content for a topic")
-    registry.register("query_data", query_data, "Query data from sources")
-    registry.register("post_to_provider", post_to_provider, "Post content to a provider")
-    registry.register("make_decision", make_decision, "Make a decision between options")
-
+    """Build a mission registry only from explicitly wired executable adapters."""
+    registry = ToolRegistry()
+    for name, adapter in (tool_adapters or {}).items():
+        if not name.strip() or not callable(adapter):
+            raise ValueError("Tool adapters must have a non-empty name and be callable.")
+        registry.register(name, adapter)
     return registry

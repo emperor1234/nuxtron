@@ -1,5 +1,6 @@
 'use client';
 
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -44,7 +45,7 @@ function getModuleTone(groupName: string | undefined): ModuleTone {
   const name = (groupName ?? '').toLowerCase();
   if (name.includes('ads') || name.includes('retail')) {
     return {
-      accent: '#f59e0b',
+      accent: 'var(--warning)',
       heroGradient: 'var(--card)',
       glowA: 'radial-gradient(circle, rgba(251,191,36,0.35) 0%, rgba(251,191,36,0) 72%)',
       glowB: 'radial-gradient(circle, rgba(245,158,11,0.26) 0%, rgba(245,158,11,0) 72%)',
@@ -52,7 +53,7 @@ function getModuleTone(groupName: string | undefined): ModuleTone {
   }
   if (name.includes('experience')) {
     return {
-      accent: '#22c55e',
+      accent: 'var(--success)',
       heroGradient:
         'var(--card)',
       glowA: 'radial-gradient(circle, rgba(74,222,128,0.35) 0%, rgba(74,222,128,0) 72%)',
@@ -61,7 +62,7 @@ function getModuleTone(groupName: string | undefined): ModuleTone {
   }
   if (name.includes('performance') || name.includes('audit')) {
     return {
-      accent: '#6366f1',
+      accent: 'var(--info)',
       heroGradient:
         'var(--card)',
       glowA: 'radial-gradient(circle, rgba(129,140,248,0.35) 0%, rgba(129,140,248,0) 72%)',
@@ -70,7 +71,7 @@ function getModuleTone(groupName: string | undefined): ModuleTone {
   }
   if (name.includes('governance') || name.includes('enterprise')) {
     return {
-      accent: '#f43f5e',
+      accent: 'var(--danger)',
       heroGradient:
         'var(--card)',
       glowA: 'radial-gradient(circle, rgba(251,113,133,0.35) 0%, rgba(251,113,133,0) 72%)',
@@ -78,7 +79,7 @@ function getModuleTone(groupName: string | undefined): ModuleTone {
     };
   }
   return {
-    accent: '#38bdf8',
+    accent: 'var(--info)',
     heroGradient: 'var(--card)',
     glowA: 'radial-gradient(circle, rgba(56,189,248,0.35) 0%, rgba(56,189,248,0) 72%)',
     glowB: 'radial-gradient(circle, rgba(59,130,246,0.26) 0%, rgba(59,130,246,0) 72%)',
@@ -118,7 +119,7 @@ export default function SeoModuleDetailPage({ params }: Readonly<{ params: Promi
         };
         const redirectPath = legacyRouteOverrides[resolved.slug];
         if (redirectPath) {
-          router.replace(redirectPath);
+          router.replace(redirectPath as Route);
           return;
         }
 
@@ -266,7 +267,7 @@ export default function SeoModuleDetailPage({ params }: Readonly<{ params: Promi
             </div>
           )}
 
-          {error && <div style={{ color: '#dc2626', fontSize: 12 }}>{error}</div>}
+          {error && <div style={{ color: 'var(--danger)', fontSize: 12 }}>{error}</div>}
 
           {moduleDetail && (
             <div
@@ -300,8 +301,8 @@ export default function SeoModuleDetailPage({ params }: Readonly<{ params: Promi
             moduleDetail.integrations.length > 0 &&
             renderPills('Required Integrations', moduleDetail.integrations)}
 
-          {moduleDetail && renderPills('Supported Channels', moduleDetail.supported_channels, '#22c55e')}
-          {moduleDetail && renderPills('AI Models', moduleDetail.ai_models, '#8b5cf6')}
+          {moduleDetail && renderPills('Supported Channels', moduleDetail.supported_channels, 'var(--success)')}
+          {moduleDetail && renderPills('AI Models', moduleDetail.ai_models, 'var(--info)')}
 
           {moduleDetail && (
             <div

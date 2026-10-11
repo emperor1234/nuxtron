@@ -15,18 +15,43 @@ import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from types import ModuleType
+from typing import Protocol, cast
 
 from fastapi import FastAPI
 
 from ..database import close_db
 from ..production_middleware import StructuredLogger
-from ..rate_limiter import get_rate_buckets, get_rate_lock
+from ..rate_limiter import clear_rate_buckets
 
 AUTONOMOUS_WORKFORCE_WATCHDOG_ENABLED_VALUES = {'1', 'true', 'yes', 'on'}
 CLOSE_DATABASE_TIMEOUT_SECONDS = 5.0
 
 BackgroundWorker = tuple['asyncio.Event | None', 'asyncio.Task[None] | None']
+
+
+class LegacyStartupSteps(Protocol):
+    _security_alert_worker_stop: asyncio.Event | None
+    _security_alert_worker_task: asyncio.Task[None] | None
+    _ira_watchdog_stop: asyncio.Event | None
+    _ira_watchdog_task: asyncio.Task[None] | None
+    _autonomous_workforce_watchdog_stop: asyncio.Event | None
+    _autonomous_workforce_watchdog_task: asyncio.Task[None] | None
+
+    async def _initialize_vault(self, logger: StructuredLogger) -> None: ...
+    async def _initialize_transparent_encryption(self, logger: StructuredLogger) -> None: ...
+    async def _initialize_database_state(self, logger: StructuredLogger) -> None: ...
+    def _start_security_alert_worker(self) -> BackgroundWorker: ...
+    def _start_ira_watchdog(self) -> BackgroundWorker: ...
+    def _start_autonomous_workforce_watchdog(self) -> BackgroundWorker: ...
+    async def _stop_security_worker(
+        self, stop: asyncio.Event | None, task: asyncio.Task[None] | None, logger: StructuredLogger
+    ) -> None: ...
+    async def _stop_ira_watchdog(
+        self, stop: asyncio.Event | None, task: asyncio.Task[None] | None, logger: StructuredLogger
+    ) -> None: ...
+    async def _stop_autonomous_workforce_watchdog(
+        self, stop: asyncio.Event | None, task: asyncio.Task[None] | None, logger: StructuredLogger
+    ) -> None: ...
 
 
 @dataclass
@@ -38,11 +63,11 @@ class StartedWorkers:
     autonomous_workforce_watchdog: BackgroundWorker = field(default=(None, None))
 
 
-def _legacy_startup_steps() -> ModuleType:
+def _legacy_startup_steps() -> LegacyStartupSteps:
     """Resolve the module that still implements the individual startup steps."""
     from .. import legacy_main
 
-    return legacy_main
+    return cast(LegacyStartupSteps, legacy_main)
 
 
 def autonomous_workforce_watchdog_enabled() -> bool:
@@ -50,14 +75,14 @@ def autonomous_workforce_watchdog_enabled() -> bool:
     return raw in AUTONOMOUS_WORKFORCE_WATCHDOG_ENABLED_VALUES
 
 
-async def _initialize_runtime_state(steps: ModuleType, logger: StructuredLogger) -> None:
+async def _initialize_runtime_state(steps: LegacyStartupSteps, logger: StructuredLogger) -> None:
     """Run secret, encryption, validation, database and governance bootstrap."""
     await steps._initialize_vault(logger)
     await steps._initialize_transparent_encryption(logger)
     await steps._initialize_database_state(logger)
 
 
-def _start_background_workers(steps: ModuleType) -> StartedWorkers:
+def _start_background_workers(steps: LegacyStartupSteps) -> StartedWorkers:
     """Start the workers this application owns and publish their handles."""
     workers = StartedWorkers()
 
@@ -78,7 +103,7 @@ def _start_background_workers(steps: ModuleType) -> StartedWorkers:
 
 
 async def _stop_background_workers(
-    steps: ModuleType,
+    steps: LegacyStartupSteps,
     workers: StartedWorkers,
     logger: StructuredLogger,
 ) -> None:
@@ -89,8 +114,7 @@ async def _stop_background_workers(
 
 async def _release_runtime_state(logger: StructuredLogger) -> None:
     """Drop in-process limiter state and close pooled database connections."""
-    with get_rate_lock():
-        get_rate_buckets().clear()
+    clear_rate_buckets()
     try:
         await asyncio.wait_for(asyncio.to_thread(close_db), timeout=CLOSE_DATABASE_TIMEOUT_SECONDS)
     except Exception:

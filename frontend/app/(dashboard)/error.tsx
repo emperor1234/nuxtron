@@ -30,7 +30,7 @@ export default function DashboardError({ error, reset }: { error: Error & { dige
       }}
     >
       <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>This page couldn't load</h2>
-      <p style={{ color: 'var(--nx-muted, #666)', maxWidth: '32rem' }}>
+      <p style={{ color: 'var(--nx-muted)', maxWidth: '32rem' }}>
         Something went wrong loading this section. The rest of the dashboard is unaffected — try again, or pick
         another page from the sidebar.
       </p>
@@ -40,7 +40,7 @@ export default function DashboardError({ error, reset }: { error: Error & { dige
         style={{
           padding: '0.6rem 1.4rem',
           borderRadius: 8,
-          border: '1px solid var(--nx-border, #ccc)',
+          border: '1px solid var(--nx-border)',
           cursor: 'pointer',
         }}
       >

@@ -27,7 +27,7 @@ def client() -> TestClient:
 @pytest.fixture(autouse=True)
 def no_agent_db_calls():
     # Keep route tests from attempting real Postgres connections.
-    with patch("backend.fastapi.app.routers.platform_intelligence._try_agent_db_query", return_value=(False, [])):
+    with patch("backend.fastapi.app.domains.intelligence.platform.services.observability._try_agent_db_query", return_value=(False, [])):
         yield
 
 

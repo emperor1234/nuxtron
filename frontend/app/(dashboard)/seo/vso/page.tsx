@@ -85,7 +85,7 @@ export default function VSOPage() {
         <p style={{ color: 'var(--muted)' }}>
           Optimize content for Siri, Google Assistant, Alexa, and Cortana voice queries.
         </p>
-        {error && <div style={{ ...card, color: '#f87171' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
         <section style={card}>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Topic</label>
           <input
@@ -118,7 +118,7 @@ export default function VSOPage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
               opacity: loading ? 0.7 : 1,

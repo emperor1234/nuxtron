@@ -37,17 +37,21 @@ DELETE /client-portal/schedules/{id}             – Remove schedule
 from __future__ import annotations
 
 import hashlib
+import html
+import ipaddress
 import logging
 import os
+import re
 import secrets
 import threading
 import uuid
 from datetime import UTC, datetime
 from typing import Annotated, Any
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from ..deps import AuthContext, require_auth
 
@@ -68,19 +72,63 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def _escape_html(value: object) -> str:
+    return html.escape(str(value if value is not None else ""), quote=True)
+
+
+def _safe_report_brand_color(value: object) -> str:
+    candidate = str(value or "")
+    return candidate if re.fullmatch(r"#[0-9A-Fa-f]{6}", candidate) else "#4A90E2"
+
+
+def _safe_report_logo_src(value: object) -> str:
+    candidate = str(value or "").strip()
+    if not candidate:
+        return ""
+    try:
+        parsed = urlsplit(candidate)
+        hostname = parsed.hostname
+        if (
+            parsed.scheme.lower() != "https"
+            or not hostname
+            or parsed.username is not None
+            or parsed.password is not None
+        ):
+            return ""
+        normalized_hostname = hostname.lower().rstrip(".")
+        if normalized_hostname in {"localhost", "localhost.localdomain"}:
+            return ""
+        try:
+            if not ipaddress.ip_address(hostname).is_global:
+                return ""
+        except ValueError:
+            if "." not in normalized_hostname or normalized_hostname.endswith(
+                (".local", ".internal", ".lan", ".home", ".test")
+            ):
+                return ""
+    except ValueError:
+        return ""
+    return _escape_html(candidate)
+
+
 # ── Report HTML generator ─────────────────────────────────────────────────────
 
+
 def _generate_html_report(client: dict, report: dict, metrics: dict) -> str:
-    brand_color = client.get("brand_color", "#4A90E2")
-    logo = client.get("logo_url", "")
-    client_name = client.get("name", "Client")
-    agency_name = client.get("agency_name", "Your Agency")
-    period = report.get("period", "Monthly")
-    date = report.get("created_at", _now())[:10]
-    domains = ", ".join(report.get("domains", []))
+    brand_color = _safe_report_brand_color(client.get("brand_color", "#4A90E2"))
+    logo = _safe_report_logo_src(client.get("logo_url", ""))
+    client_name = _escape_html(client.get("name", "Client"))
+    agency_name = _escape_html(client.get("agency_name", "Your Agency"))
+    period = _escape_html(report.get("period", "Monthly"))
+    date = _escape_html(str(report.get("created_at", _now()))[:10])
+    domains = _escape_html(", ".join(str(domain) for domain in report.get("domains", [])))
     kpi_rows = ""
     for k, v in metrics.items():
-        kpi_rows += f"<tr><td style='padding:8px;border-bottom:1px solid #eee'>{k}</td><td style='padding:8px;border-bottom:1px solid #eee;font-weight:bold'>{v}</td></tr>"
+        kpi_rows += (
+            "<tr><td style='padding:8px;border-bottom:1px solid #eee'>"
+            f"{_escape_html(k)}</td><td style='padding:8px;border-bottom:1px solid #eee;font-weight:bold'>"
+            f"{_escape_html(v)}</td></tr>"
+        )
     logo_tag = f'<img src="{logo}" style="height:50px" alt="Logo" />' if logo else ""
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -134,8 +182,11 @@ def _generate_html_report(client: dict, report: dict, metrics: dict) -> str:
 def _build_metrics(domains: list[str], report_type: str) -> dict[str, Any]:
     """Generate deterministic metrics for a report."""
     import random
+
     domain_key = "|".join(sorted(domains))
-    random.seed(int(hashlib.md5(f"{domain_key}:{report_type}".encode(), usedforsecurity=False).hexdigest(), 16) % (2**32))
+    random.seed(
+        int(hashlib.md5(f"{domain_key}:{report_type}".encode(), usedforsecurity=False).hexdigest(), 16) % (2**32)
+    )
     return {
         "Organic Traffic": f"{random.randint(5000, 500_000):,}",
         "Organic Keywords": f"{random.randint(500, 50_000):,}",
@@ -152,6 +203,7 @@ def _build_metrics(domains: list[str], report_type: str) -> dict[str, Any]:
 
 # ── Models ────────────────────────────────────────────────────────────────────
 
+
 class ClientCreateRequest(BaseModel):
     name: str = Field(max_length=200)
     email: str = Field(default="", max_length=320)
@@ -161,6 +213,20 @@ class ClientCreateRequest(BaseModel):
     logo_url: str = Field(default="", max_length=2000)
     agency_name: str = Field(default="", max_length=200)
     notes: str = Field(default="", max_length=2000)
+
+    @field_validator("brand_color")
+    @classmethod
+    def validate_brand_color(cls, value: str) -> str:
+        if not re.fullmatch(r"#[0-9A-Fa-f]{6}", value):
+            raise ValueError("brand_color must use #RRGGBB format")
+        return value
+
+    @field_validator("logo_url")
+    @classmethod
+    def validate_logo_url(cls, value: str) -> str:
+        if value and not _safe_report_logo_src(value):
+            raise ValueError("logo_url must be an HTTPS URL on a public hostname")
+        return value.strip()
 
 
 class ClientUpdateRequest(BaseModel):
@@ -172,6 +238,20 @@ class ClientUpdateRequest(BaseModel):
     logo_url: str | None = Field(default=None, max_length=2000)
     agency_name: str | None = Field(default=None, max_length=200)
     notes: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("brand_color")
+    @classmethod
+    def validate_brand_color(cls, value: str | None) -> str | None:
+        if value is not None and not re.fullmatch(r"#[0-9A-Fa-f]{6}", value):
+            raise ValueError("brand_color must use #RRGGBB format")
+        return value
+
+    @field_validator("logo_url")
+    @classmethod
+    def validate_logo_url(cls, value: str | None) -> str | None:
+        if value is not None and value and not _safe_report_logo_src(value):
+            raise ValueError("logo_url must be an HTTPS URL on a public hostname")
+        return value.strip() if value is not None else None
 
 
 class ReportCreateRequest(BaseModel):
@@ -208,6 +288,7 @@ class ScheduleCreateRequest(BaseModel):
 
 # ── Routes ── Clients ─────────────────────────────────────────────────────────
 
+
 @router.post("/clients")
 def create_client(payload: ClientCreateRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
     client = {
@@ -239,7 +320,9 @@ def get_client(client_id: str, auth: AuthContext = Depends(require_auth)) -> dic
 
 
 @router.patch("/clients/{client_id}")
-def update_client(client_id: str, payload: ClientUpdateRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
+def update_client(
+    client_id: str, payload: ClientUpdateRequest, auth: AuthContext = Depends(require_auth)
+) -> dict[str, Any]:
     with _lock:
         client = next((c for c in _clients.get(auth.tenant_id, []) if c["id"] == client_id), None)
         if not client:
@@ -263,6 +346,7 @@ def delete_client(client_id: str, auth: AuthContext = Depends(require_auth)) -> 
 
 # ── Routes ── Reports ─────────────────────────────────────────────────────────
 
+
 @router.post("/reports")
 def generate_report(payload: ReportCreateRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
     with _lock:
@@ -270,7 +354,9 @@ def generate_report(payload: ReportCreateRequest, auth: AuthContext = Depends(re
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
     metrics = _build_metrics(payload.domains, payload.report_type)
-    html = _generate_html_report(client, {"period": payload.period, "created_at": _now(), "domains": payload.domains}, metrics)
+    html = _generate_html_report(
+        client, {"period": payload.period, "created_at": _now(), "domains": payload.domains}, metrics
+    )
     report = {
         "id": str(uuid.uuid4()),
         "tenant_id": auth.tenant_id,
@@ -339,6 +425,7 @@ def delete_report(report_id: str, auth: AuthContext = Depends(require_auth)) -> 
 
 # ── Routes ── Share Links ─────────────────────────────────────────────────────
 
+
 @router.post("/share-link")
 def create_share_link(payload: ShareLinkRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
     with _lock:
@@ -347,6 +434,7 @@ def create_share_link(payload: ShareLinkRequest, auth: AuthContext = Depends(req
         raise HTTPException(status_code=404, detail="Report not found")
     token = secrets.token_urlsafe(32)
     from datetime import timedelta
+
     expires_at = (datetime.now(UTC) + timedelta(days=payload.expires_days)).isoformat()
     link = {
         "token": token,
@@ -395,6 +483,7 @@ def access_shared_report(
 
 # ── Routes ── Templates ───────────────────────────────────────────────────────
 
+
 @router.post("/templates")
 def create_template(payload: TemplateCreateRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
     template = {
@@ -411,10 +500,30 @@ def create_template(payload: TemplateCreateRequest, auth: AuthContext = Depends(
 @router.get("/templates")
 def list_templates(auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
     default_templates = [
-        {"id": "default-seo", "name": "SEO Performance", "sections": ["traffic", "keywords", "backlinks", "health"], "default_period": "Monthly"},
-        {"id": "default-full", "name": "Full Digital Marketing", "sections": ["traffic", "keywords", "backlinks", "ppc", "social", "health"], "default_period": "Monthly"},
-        {"id": "default-backlinks", "name": "Link Building Report", "sections": ["backlinks", "authority", "link-gap"], "default_period": "Monthly"},
-        {"id": "default-ppc", "name": "PPC Performance", "sections": ["ads", "spend", "keywords", "quality-score"], "default_period": "Weekly"},
+        {
+            "id": "default-seo",
+            "name": "SEO Performance",
+            "sections": ["traffic", "keywords", "backlinks", "health"],
+            "default_period": "Monthly",
+        },
+        {
+            "id": "default-full",
+            "name": "Full Digital Marketing",
+            "sections": ["traffic", "keywords", "backlinks", "ppc", "social", "health"],
+            "default_period": "Monthly",
+        },
+        {
+            "id": "default-backlinks",
+            "name": "Link Building Report",
+            "sections": ["backlinks", "authority", "link-gap"],
+            "default_period": "Monthly",
+        },
+        {
+            "id": "default-ppc",
+            "name": "PPC Performance",
+            "sections": ["ads", "spend", "keywords", "quality-score"],
+            "default_period": "Weekly",
+        },
     ]
     with _lock:
         custom = list(_templates.get(auth.tenant_id, []))
@@ -422,6 +531,7 @@ def list_templates(auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
 
 
 # ── Routes ── Schedules ───────────────────────────────────────────────────────
+
 
 @router.post("/schedules")
 def create_schedule(payload: ScheduleCreateRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
@@ -459,4 +569,3 @@ def delete_schedule(schedule_id: str, auth: AuthContext = Depends(require_auth))
     if not removed:
         raise HTTPException(status_code=404, detail="Schedule not found")
     return {"deleted": schedule_id}
-

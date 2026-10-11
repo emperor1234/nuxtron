@@ -101,11 +101,11 @@ export default function TemplateSystemPage() {
       <div style={{ background: 'var(--card)', borderBottom: '1px solid var(--line)', padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link href="/studio" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: 14 }}>← Studio</Link>
-          <span style={{ color: '#e7e9ef' }}>|</span>
+          <span style={{ color: "var(--line)" }}>|</span>
           <span style={{ fontSize: 22, fontWeight: 700 }}>📐 Template System</span>
-          <span style={{ background: '#6366f122', color: 'var(--brand)', fontSize: 11, padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>CANVA · FIGMA · ADOBE</span>
+          <span style={{ background: 'color-mix(in oklab, var(--info) 13%, transparent)', color: 'var(--brand)', fontSize: 11, padding: '2px 8px', borderRadius: 12, fontWeight: 600 }}>CANVA · FIGMA · ADOBE</span>
         </div>
-        <button onClick={() => setActiveTab('import')} style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+        <button onClick={() => setActiveTab('import')} style={{ background: "var(--brand)", color: 'var(--on-brand)', border: 'none', padding: '8px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
           + Import Template
         </button>
       </div>
@@ -113,15 +113,15 @@ export default function TemplateSystemPage() {
       {/* Tabs */}
       <div style={{ padding: '0 32px', borderBottom: '1px solid var(--line)', background: 'var(--card)', display: 'flex' }}>
         {(['gallery', 'import'] as const).map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: 'none', border: 'none', color: activeTab === tab ? 'var(--brand)' : 'var(--muted)', padding: '14px 20px', cursor: 'pointer', fontSize: 14, fontWeight: activeTab === tab ? 600 : 400, borderBottom: activeTab === tab ? '2px solid #6366f1' : '2px solid transparent' }}>
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{ background: 'none', border: 'none', color: activeTab === tab ? 'var(--brand)' : 'var(--muted)', padding: '14px 20px', cursor: 'pointer', fontSize: 14, fontWeight: activeTab === tab ? 600 : 400, borderBottom: activeTab === tab ? "2px solid var(--brand)" : '2px solid transparent' }}>
             {{ gallery: '🖼 Template Gallery', import: '⬆ Import from Canva/Figma/Adobe' }[tab]}
           </button>
         ))}
       </div>
 
       <div style={{ padding: 32, maxWidth: 1400, margin: '0 auto' }}>
-        {error && <div style={{ background: '#fee2e233', border: '1px solid #EF4444', borderRadius: 8, padding: 12, marginBottom: 16, color: '#dc2626' }}>{error}</div>}
-        {successMsg && <div style={{ background: '#dcfce733', border: '1px solid #22c55e', borderRadius: 8, padding: 12, marginBottom: 16, color: '#15803d' }}>{successMsg}</div>}
+        {error && <div style={{ background: 'color-mix(in oklab, var(--danger-soft) 20%, transparent)', border: '1px solid var(--danger)', borderRadius: 8, padding: 12, marginBottom: 16, color: 'var(--danger)' }}>{error}</div>}
+        {successMsg && <div style={{ background: 'color-mix(in oklab, var(--success-soft) 20%, transparent)', border: '1px solid var(--success)', borderRadius: 8, padding: 12, marginBottom: 16, color: 'var(--success-ink)' }}>{successMsg}</div>}
 
         {activeTab === 'gallery' && (
           <div>
@@ -135,14 +135,14 @@ export default function TemplateSystemPage() {
               />
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {CATEGORIES.map((cat) => (
-                  <button key={cat} onClick={() => setCategoryFilter(cat)} style={{ background: categoryFilter === cat ? '#6366f133' : '#eef0f4', border: `1px solid ${categoryFilter === cat ? '#6366f1' : '#e7e9ef'}`, color: categoryFilter === cat ? 'var(--brand)' : 'var(--muted)', padding: '5px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12, textTransform: 'capitalize' }}>
+                  <button key={cat} onClick={() => setCategoryFilter(cat)} style={{ background: categoryFilter === cat ? 'color-mix(in oklab, var(--info) 20%, transparent)' : "var(--line-soft)", border: `1px solid ${categoryFilter === cat ? 'var(--info)' : 'var(--neutral-soft)'}`, color: categoryFilter === cat ? 'var(--brand)' : 'var(--muted)', padding: '5px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12, textTransform: 'capitalize' }}>
                     {cat}
                   </button>
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {PLATFORM_FILTERS.map((p) => (
-                  <button key={p} onClick={() => setPlatformFilter(p)} style={{ background: platformFilter === p ? '#F59E0B33' : '#eef0f4', border: `1px solid ${platformFilter === p ? '#F59E0B' : '#e7e9ef'}`, color: platformFilter === p ? '#F59E0B' : 'var(--muted)', padding: '5px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12, textTransform: 'capitalize' }}>
+                  <button key={p} onClick={() => setPlatformFilter(p)} style={{ background: platformFilter === p ? 'color-mix(in oklab, var(--warning) 20%, transparent)' : "var(--line-soft)", border: `1px solid ${platformFilter === p ? 'var(--warning)' : 'var(--neutral-soft)'}`, color: platformFilter === p ? 'var(--warning)' : 'var(--muted)', padding: '5px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12, textTransform: 'capitalize' }}>
                     {p}
                   </button>
                 ))}
@@ -155,7 +155,7 @@ export default function TemplateSystemPage() {
               <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)' }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>📐</div>
                 <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>No templates found</div>
-                <button onClick={() => setActiveTab('import')} style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>Import Template</button>
+                <button onClick={() => setActiveTab('import')} style={{ background: "var(--brand)", color: 'var(--on-brand)', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>Import Template</button>
               </div>
             ) : (
               <>
@@ -163,13 +163,13 @@ export default function TemplateSystemPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))', gap: 16 }}>
                   {filtered.map((t) => (
                     <div key={t.id} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.15s' }}>
-                      <div style={{ height: 160, background: `#e7e9ef url(${t.thumbnail}) center/cover no-repeat`, position: 'relative' }}>
+                      <div style={{ height: 160, background: `var(--neutral-soft) url(${t.thumbnail}) center/cover no-repeat`, position: 'relative' }}>
                         <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4 }}>
-                          <span style={{ background: '#000000aa', color: '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>{t.format}</span>
-                          {t.slides && <span style={{ background: '#6366f1aa', color: '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>{t.slides} slides</span>}
+                          <span style={{ background: 'var(--scrim-strong)', color: 'var(--on-brand)', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>{t.format}</span>
+                          {t.slides && <span style={{ background: 'color-mix(in oklab, var(--info) 67%, transparent)', color: '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>{t.slides} slides</span>}
                         </div>
                         <div style={{ position: 'absolute', top: 8, right: 8 }}>
-                          <span style={{ background: t.source === 'built-in' ? '#22C55E33' : '#818CF833', color: t.source === 'built-in' ? '#22c55e' : 'var(--brand)', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>
+                          <span style={{ background: t.source === 'built-in' ? 'color-mix(in oklab, var(--success) 20%, transparent)' : 'color-mix(in oklab, var(--info) 20%, transparent)', color: t.source === 'built-in' ? 'var(--success)' : 'var(--brand)', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>
                             {t.source === 'built-in' ? 'Built-in' : t.source}
                           </span>
                         </div>
@@ -180,11 +180,11 @@ export default function TemplateSystemPage() {
                           <span style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'capitalize' }}>{t.category}</span>
                           <div style={{ display: 'flex', gap: 4 }}>
                             {t.platforms.slice(0, 3).map((p) => (
-                              <span key={p} style={{ background: '#e7e9ef', color: 'var(--muted)', fontSize: 9, padding: '1px 5px', borderRadius: 3 }}>{p.slice(0, 2).toUpperCase()}</span>
+                              <span key={p} style={{ background: "var(--neutral-soft)", color: 'var(--ink-2)', fontSize: 9, padding: '1px 5px', borderRadius: 3 }}>{p.slice(0, 2).toUpperCase()}</span>
                             ))}
                           </div>
                         </div>
-                        <button style={{ marginTop: 8, width: '100%', background: '#6366f133', color: 'var(--brand)', border: '1px solid #6366f144', padding: '6px 0', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        <button style={{ marginTop: 8, width: '100%', background: 'color-mix(in oklab, var(--info) 20%, transparent)', color: 'var(--brand)', border: '1px solid color-mix(in oklab, var(--info) 27%, transparent)', padding: '6px 0', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                           Use Template →
                         </button>
                       </div>
@@ -208,7 +208,7 @@ export default function TemplateSystemPage() {
                   <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 10, fontWeight: 600 }}>SOURCE PLATFORM</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 10 }}>
                     {SOURCE_TYPES.map((s) => (
-                      <button key={s.id} type="button" onClick={() => setImportSource(s.id)} style={{ background: importSource === s.id ? '#6366f133' : '#eef0f4', border: `1px solid ${importSource === s.id ? '#6366f1' : '#e7e9ef'}`, borderRadius: 10, padding: 14, cursor: 'pointer', textAlign: 'center', color: importSource === s.id ? 'var(--brand)' : 'var(--muted)' }}>
+                      <button key={s.id} type="button" onClick={() => setImportSource(s.id)} style={{ background: importSource === s.id ? 'color-mix(in oklab, var(--info) 20%, transparent)' : "var(--line-soft)", border: `1px solid ${importSource === s.id ? 'var(--info)' : 'var(--neutral-soft)'}`, borderRadius: 10, padding: 14, cursor: 'pointer', textAlign: 'center', color: importSource === s.id ? 'var(--brand)' : 'var(--muted)' }}>
                         <div style={{ fontSize: 24, marginBottom: 6 }}>{s.icon}</div>
                         <div style={{ fontSize: 13, fontWeight: 600 }}>{s.label}</div>
                       </button>
@@ -241,7 +241,7 @@ export default function TemplateSystemPage() {
                     <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>PLATFORMS</label>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {PLATFORM_FILTERS.filter((p) => p !== 'all').map((p) => (
-                        <button key={p} type="button" onClick={() => setImportPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p])} style={{ background: importPlatforms.includes(p) ? '#6366f133' : '#eef0f4', border: `1px solid ${importPlatforms.includes(p) ? '#6366f1' : '#e7e9ef'}`, color: importPlatforms.includes(p) ? 'var(--brand)' : 'var(--muted)', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 11, textTransform: 'capitalize' }}>
+                        <button key={p} type="button" onClick={() => setImportPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p])} style={{ background: importPlatforms.includes(p) ? 'color-mix(in oklab, var(--info) 20%, transparent)' : "var(--line-soft)", border: `1px solid ${importPlatforms.includes(p) ? 'var(--info)' : 'var(--neutral-soft)'}`, color: importPlatforms.includes(p) ? 'var(--brand)' : 'var(--muted)', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: 11, textTransform: 'capitalize' }}>
                           {p}
                         </button>
                       ))}
@@ -249,7 +249,7 @@ export default function TemplateSystemPage() {
                   </div>
                 </div>
 
-                <button type="submit" disabled={importing} style={{ width: '100%', background: importing ? '#e7e9ef' : '#6366f1', color: '#fff', border: 'none', padding: '14px 24px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: importing ? 'not-allowed' : 'pointer' }}>
+                <button type="submit" disabled={importing} style={{ width: '100%', background: importing ? "var(--line)" : "var(--brand)", color: 'var(--on-brand)', border: 'none', padding: '14px 24px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: importing ? 'not-allowed' : 'pointer' }}>
                   {importing ? '⏳ Importing…' : '⬆ Import Template'}
                 </button>
               </form>
@@ -266,7 +266,7 @@ export default function TemplateSystemPage() {
               ].map((v) => (
                 <div key={v.name} style={{ marginBottom: 12, padding: 12, background: 'var(--card)', borderRadius: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{v.name}</div>
-                  <div style={{ fontSize: 11, color: '#6366f1', marginBottom: 2 }}>{v.env}</div>
+                  <div style={{ fontSize: 11, color: "var(--brand)", marginBottom: 2 }}>{v.env}</div>
                   <div style={{ fontSize: 11, color: 'var(--muted)' }}>{v.desc}</div>
                 </div>
               ))}

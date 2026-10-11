@@ -3546,9 +3546,9 @@ def test_workflow_connector_remediation_harmony_forecast_and_escalation_harmony_
 
 
 def test_workflow_connector_remediation_rhythm_forecast_and_escalation_rhythm_index(client: TestClient) -> None:
-    from backend.fastapi.app import legacy_main as app_main
+    from backend.fastapi.app.rate_limiter import reset_rate_limits_for_tests
 
-    app_main._rate_buckets.clear()
+    reset_rate_limits_for_tests()
 
     connector_response = client.post(
         '/workflow-connectors',
@@ -3618,9 +3618,9 @@ def test_workflow_connector_remediation_rhythm_forecast_and_escalation_rhythm_in
 
 
 def test_workflow_connector_remediation_tempo_forecast_and_escalation_tempo_index(client: TestClient) -> None:
-    from backend.fastapi.app import legacy_main as app_main
+    from backend.fastapi.app.rate_limiter import reset_rate_limits_for_tests
 
-    app_main._rate_buckets.clear()
+    reset_rate_limits_for_tests()
 
     connector_response = client.post(
         '/workflow-connectors',
@@ -3690,9 +3690,9 @@ def test_workflow_connector_remediation_tempo_forecast_and_escalation_tempo_inde
 
 
 def test_workflow_connector_remediation_cadence_forecast_and_escalation_cadence_index(client: TestClient) -> None:
-    from backend.fastapi.app import legacy_main as app_main
+    from backend.fastapi.app.rate_limiter import reset_rate_limits_for_tests
 
-    app_main._rate_buckets.clear()
+    reset_rate_limits_for_tests()
 
     connector_response = client.post(
         '/workflow-connectors',
@@ -3762,9 +3762,9 @@ def test_workflow_connector_remediation_cadence_forecast_and_escalation_cadence_
 
 
 def test_workflow_connector_remediation_stability_forecast_and_escalation_stability_index(client: TestClient) -> None:
-    from backend.fastapi.app import legacy_main as app_main
+    from backend.fastapi.app.rate_limiter import reset_rate_limits_for_tests
 
-    app_main._rate_buckets.clear()
+    reset_rate_limits_for_tests()
 
     connector_response = client.post(
         '/workflow-connectors',

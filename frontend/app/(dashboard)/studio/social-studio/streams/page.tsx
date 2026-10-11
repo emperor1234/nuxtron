@@ -33,12 +33,12 @@ type MonitoringStream = {
 
 function getStreamTypeColor(streamType: string): string {
   if (streamType === 'hashtag') {
-    return '#A855F7';
+    return 'var(--info)';
   }
   if (streamType === 'account') {
-    return '#6366f1';
+    return 'var(--info)';
   }
-  return '#22c55e';
+  return 'var(--success)';
 }
 
 function asString(value: unknown, fallback = ''): string {
@@ -84,10 +84,10 @@ const NETWORK_COLORS: Record<string, string> = {
   linkedin: '#0A66C2',
   tiktok: '#69C9D0',
   reddit: '#FF4500',
-  youtube: '#FF0000',
+  youtube: 'var(--danger)',
 };
 
-const SENTIMENT_COLOR: Record<string, string> = { positive: '#22c55e', negative: '#EF4444', neutral: 'var(--muted)' };
+const SENTIMENT_COLOR: Record<string, string> = { positive: 'var(--success)', negative: 'var(--danger)', neutral: 'var(--muted)' };
 
 export default function MonitoringStreamsPage() {
   const [streams, setStreams] = useState<MonitoringStream[]>([]);
@@ -273,7 +273,7 @@ export default function MonitoringStreamsPage() {
                     style={{
                       ...styles.netBtn,
                       ...(newNetworks.includes(net)
-                        ? { background: NETWORK_COLORS[net], color: '#fff', border: `1px solid ${NETWORK_COLORS[net]}` }
+                        ? { background: NETWORK_COLORS[net], color: 'var(--on-status)', border: `1px solid ${NETWORK_COLORS[net]}` }
                         : {}),
                     }}
                   >
@@ -360,7 +360,7 @@ export default function MonitoringStreamsPage() {
                 {stream.networks.map((net) => (
                   <span
                     key={net}
-                    style={{ ...styles.netDot, background: NETWORK_COLORS[net] ?? '#e7e9ef' }}
+                    style={{ ...styles.netDot, background: NETWORK_COLORS[net] ?? 'var(--neutral-soft)' }}
                     title={net}
                   />
                 ))}
@@ -372,7 +372,7 @@ export default function MonitoringStreamsPage() {
                     style={{ ...styles.feedCard, borderLeft: `3px solid ${SENTIMENT_COLOR[item.sentiment]}` }}
                   >
                     <div style={styles.feedMeta}>
-                      <span style={{ ...styles.networkBadge, background: NETWORK_COLORS[item.network] ?? '#e7e9ef' }}>
+                      <span style={{ ...styles.networkBadge, background: NETWORK_COLORS[item.network] ?? 'var(--neutral-soft)' }}>
                         {item.network}
                       </span>
                       <span style={styles.feedAuthor}>{item.author}</span>
@@ -412,9 +412,9 @@ const styles: Record<string, React.CSSProperties> = {
   title: { fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: '-0.5px' },
   subtitle: { color: 'var(--muted)', fontSize: 14, marginTop: 6, lineHeight: 1.5 },
   primaryBtn: {
-    background: '#6366f1',
+    background: "var(--brand)",
     border: 'none',
-    color: '#fff',
+    color: 'var(--on-brand)',
     padding: '9px 18px',
     borderRadius: 8,
     cursor: 'pointer',
@@ -422,8 +422,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
   },
   errorBanner: {
-    background: '#fee2e2',
-    border: '1px solid #EF4444',
+    background: 'var(--danger-soft)',
+    border: '1px solid var(--danger)',
     borderRadius: 8,
     padding: '10px 16px',
     marginBottom: 16,
@@ -493,7 +493,7 @@ const styles: Record<string, React.CSSProperties> = {
   columnActions: { display: 'flex', alignItems: 'center', gap: 6 },
   streamTypeDot: { width: 8, height: 8, borderRadius: '50%' },
   columnName: { fontWeight: 600, fontSize: 14 },
-  queryTag: { padding: '6px 14px', fontSize: 12, color: 'var(--brand)', fontFamily: 'monospace', background: '#0D111799' },
+  queryTag: { padding: '6px 14px', fontSize: 12, color: 'var(--brand)', fontFamily: 'monospace', background: 'var(--neutral-soft)' },
   networkRow: { display: 'flex', gap: 6, padding: '6px 14px', borderBottom: '1px solid var(--line)' },
   netDot: { width: 8, height: 8, borderRadius: '50%' },
   feedList: { display: 'flex', flexDirection: 'column', gap: 8, padding: 10, maxHeight: 420, overflowY: 'auto' },
@@ -504,7 +504,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 3,
     fontSize: 10,
     fontWeight: 600,
-    color: '#fff',
+    color: 'var(--on-status)',
     textTransform: 'capitalize',
   },
   feedAuthor: { fontSize: 12, fontWeight: 600, color: 'var(--text)' },

@@ -575,19 +575,21 @@ const MODULE_BLUEPRINTS: Array<Omit<CrmAutonomyModule, 'readiness_score' | 'stat
 const API_BASE = '/api/fastapi';
 const DEFAULT_TENANT = process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID ?? 'tenant-demo';
 
+// Pipeline stages are categories, so they use the categorical series. Only the
+// two closed outcomes carry a success/danger meaning.
 const STAGE_COLOR: Record<string, string> = {
-  prospect: '#1bc7ff',
-  qualified: '#26d78e',
-  proposal: '#a78bfa',
-  negotiation: '#f59e0b',
-  closed_won: '#22c55e',
-  closed_lost: '#ef4444',
+  prospect: 'var(--series-6)',
+  qualified: 'var(--series-2)',
+  proposal: 'var(--series-4)',
+  negotiation: 'var(--series-1)',
+  closed_won: 'var(--success)',
+  closed_lost: 'var(--danger)',
 };
 const PRIORITY_COLOR: Record<string, string> = {
-  low: '#6b7280',
-  medium: '#f59e0b',
-  high: '#ef4444',
-  critical: '#dc2626',
+  low: 'var(--neutral)',
+  medium: 'var(--warning)',
+  high: 'var(--danger)',
+  critical: 'var(--danger-ink)',
 };
 
 async function apiRequest(path: string, tenantId: string, init?: RequestInit) {
@@ -669,8 +671,8 @@ function getForecastWindow(range: AnalyticsRange): number {
 }
 
 function getStageColor(index: number): string {
-  const colors = ['#0ea5e9', '#22c55e', '#f59e0b', '#f43f5e'];
-  return colors[index] ?? '#f43f5e';
+  const colors = ['var(--info)', 'var(--success)', 'var(--warning)', 'var(--danger)'];
+  return colors[index] ?? 'var(--danger)';
 }
 
 function getReadinessState(score: number): CrmAutonomyModule['state'] {
@@ -680,22 +682,22 @@ function getReadinessState(score: number): CrmAutonomyModule['state'] {
 }
 
 function getTierColor(tier: CrmAutonomyModule['autonomy_tier']): string {
-  if (tier === 'autonomous') return '#22c55e';
-  if (tier === 'self_optimizing') return '#0ea5e9';
-  if (tier === 'predictive') return '#a78bfa';
-  return '#f59e0b';
+  if (tier === 'autonomous') return 'var(--success)';
+  if (tier === 'self_optimizing') return 'var(--info)';
+  if (tier === 'predictive') return 'var(--info)';
+  return 'var(--warning)';
 }
 
 function getModuleStateColor(state: CrmAutonomyModule['state']): string {
-  if (state === 'operational') return '#22c55e';
-  if (state === 'active') return '#0ea5e9';
-  return '#f59e0b';
+  if (state === 'operational') return 'var(--success)';
+  if (state === 'active') return 'var(--info)';
+  return 'var(--warning)';
 }
 
 function getReadinessColor(score: number): string {
-  if (score >= 90) return '#22c55e';
-  if (score >= 75) return '#0ea5e9';
-  return '#f59e0b';
+  if (score >= 90) return 'var(--success)';
+  if (score >= 75) return 'var(--info)';
+  return 'var(--warning)';
 }
 
 async function fetchCrmPageData(params: {
@@ -1310,10 +1312,19 @@ export default function CRMPage() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.fillStyle = '#0f172a';
+    // Canvas cannot resolve var(), so read the tokens once and draw with the
+    // resolved values. The exported image then matches the product palette.
+    const token = (name: string, fallback: string) =>
+      getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+    const surface = token('--card', '#ffffff');
+    const gridLine = token('--line', '#e3e8f0');
+    const seriesLine = token('--success', '#24734f');
+    const ink = token('--text', '#0b1220');
+
+    ctx.fillStyle = surface;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.strokeStyle = '#334155';
+    ctx.strokeStyle = gridLine;
     ctx.lineWidth = 1;
     for (let i = 0; i < 5; i += 1) {
       const y = paddingY + (i / 4) * innerHeight;
@@ -1323,7 +1334,7 @@ export default function CRMPage() {
       ctx.stroke();
     }
 
-    ctx.strokeStyle = '#22c55e';
+    ctx.strokeStyle = seriesLine;
     ctx.lineWidth = 3;
     ctx.beginPath();
     series.forEach((value, index) => {
@@ -1334,8 +1345,8 @@ export default function CRMPage() {
     });
     ctx.stroke();
 
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = '600 14px Segoe UI';
+    ctx.fillStyle = ink;
+    ctx.font = '600 14px system-ui, sans-serif';
     ctx.fillText(`Forecast Momentum (${analyticsRange})`, paddingX, 18);
 
     canvas.toBlob((blob) => {
@@ -1370,7 +1381,7 @@ export default function CRMPage() {
   const btn = {
     border: 'none',
     background: 'var(--brand)',
-    color: '#00101e',
+    color: 'var(--on-brand)',
     borderRadius: 8,
     fontWeight: 700,
     padding: '8px 12px',
@@ -1382,7 +1393,7 @@ export default function CRMPage() {
     color: 'var(--text)',
     border: '1px solid var(--line)',
   } as const;
-  const dangerBtn = { ...btn, background: '#ef4444', color: '#fff' } as const;
+  const dangerBtn = { ...btn, background: 'var(--danger)', color: 'var(--on-status)' } as const;
 
   const ALL_TABS: Tab[] = [
     'overview',
@@ -1468,28 +1479,28 @@ export default function CRMPage() {
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const taskStatusGraph = useMemo(
     () => [
-      { label: 'Open', value: tasks.filter((task) => task.status === 'open').length, color: '#0ea5e9' },
+      { label: 'Open', value: tasks.filter((task) => task.status === 'open').length, color: 'var(--info)' },
       {
         label: 'In Progress',
         value: tasks.filter((task) => task.status === 'in_progress').length,
-        color: '#a78bfa',
+        color: 'var(--info)',
       },
-      { label: 'Completed', value: tasks.filter((task) => task.status === 'completed').length, color: '#22c55e' },
-      { label: 'Cancelled', value: tasks.filter((task) => task.status === 'cancelled').length, color: '#f97316' },
+      { label: 'Completed', value: tasks.filter((task) => task.status === 'completed').length, color: 'var(--success)' },
+      { label: 'Cancelled', value: tasks.filter((task) => task.status === 'cancelled').length, color: 'var(--warning)' },
     ],
     [tasks]
   );
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const ticketStatusGraph = useMemo(
     () => [
-      { label: 'Open', value: tickets.filter((ticket) => ticket.status === 'open').length, color: '#ef4444' },
+      { label: 'Open', value: tickets.filter((ticket) => ticket.status === 'open').length, color: 'var(--danger)' },
       {
         label: 'In Progress',
         value: tickets.filter((ticket) => ticket.status === 'in_progress').length,
-        color: '#f59e0b',
+        color: 'var(--warning)',
       },
-      { label: 'Resolved', value: tickets.filter((ticket) => ticket.status === 'resolved').length, color: '#22c55e' },
-      { label: 'Closed', value: tickets.filter((ticket) => ticket.status === 'closed').length, color: '#94a3b8' },
+      { label: 'Resolved', value: tickets.filter((ticket) => ticket.status === 'resolved').length, color: 'var(--success)' },
+      { label: 'Closed', value: tickets.filter((ticket) => ticket.status === 'closed').length, color: 'var(--neutral)' },
     ],
     [tickets]
   );
@@ -1615,14 +1626,14 @@ export default function CRMPage() {
 
         {error ? (
           <div
-            style={{ border: '1px solid #ef4444', color: '#ef4444', borderRadius: 12, padding: 12, marginBottom: 14 }}
+            style={{ border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: 12, padding: 12, marginBottom: 14 }}
           >
             {error}
           </div>
         ) : null}
         {loadWarning ? (
           <div
-            style={{ border: '1px solid #f59e0b', color: '#f59e0b', borderRadius: 12, padding: 12, marginBottom: 14 }}
+            style={{ border: '1px solid var(--warning)', color: 'var(--warning)', borderRadius: 12, padding: 12, marginBottom: 14 }}
           >
             {loadWarning}
           </div>
@@ -1675,10 +1686,10 @@ export default function CRMPage() {
             stageRing.length
               ? stageRing
               : [
-                  { label: 'Prospect', value: 8, color: '#0ea5e9' },
-                  { label: 'Qualified', value: 6, color: '#22c55e' },
-                  { label: 'Proposal', value: 4, color: '#f59e0b' },
-                  { label: 'Closed Won', value: 2, color: '#f43f5e' },
+                  { label: 'Prospect', value: 8, color: 'var(--info)' },
+                  { label: 'Qualified', value: 6, color: 'var(--success)' },
+                  { label: 'Proposal', value: 4, color: 'var(--warning)' },
+                  { label: 'Closed Won', value: 2, color: 'var(--danger)' },
                 ]
           }
         />
@@ -1758,7 +1769,7 @@ export default function CRMPage() {
                               style={{
                                 width: `${width}%`,
                                 height: '100%',
-                                background: 'linear-gradient(90deg, #22c55e, #0ea5e9)',
+                                background: 'linear-gradient(90deg, var(--success), var(--info))',
                               }}
                             />
                           </div>
@@ -1855,7 +1866,7 @@ export default function CRMPage() {
                     >
                       <polyline
                         fill="none"
-                        stroke="#22c55e"
+                        stroke="var(--success)"
                         strokeWidth="3"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -1884,7 +1895,7 @@ export default function CRMPage() {
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: 'var(--muted)' }}>Average Readiness</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: autonomyAverageScore >= 85 ? '#22c55e' : '#f59e0b' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: autonomyAverageScore >= 85 ? 'var(--success)' : 'var(--warning)' }}>
                 {autonomyAverageScore}%
               </div>
             </div>
@@ -1944,8 +1955,8 @@ export default function CRMPage() {
             style={{
               ...card,
               marginBottom: 12,
-              borderColor: error ? '#ef444488' : '#26d78e88',
-              color: error ? '#f87171' : '#34d399',
+              borderColor: error ? 'color-mix(in oklab, var(--danger) 53%, transparent)' : 'color-mix(in oklab, var(--success) 53%, transparent)',
+              color: error ? 'var(--danger)' : 'var(--success)',
             }}
           >
             {error || success}
@@ -1960,7 +1971,7 @@ export default function CRMPage() {
               style={{
                 ...btn,
                 background: t === tab ? 'var(--brand)' : 'transparent',
-                color: t === tab ? '#00101e' : 'var(--text)',
+                color: t === tab ? 'var(--on-brand)' : 'var(--text)',
                 border: t === tab ? 'none' : '1px solid var(--line)',
                 fontSize: 12,
                 padding: '6px 10px',
@@ -2332,7 +2343,7 @@ export default function CRMPage() {
                           style={{
                             ...btn,
                             background: s === d.stage ? STAGE_COLOR[s] : 'transparent',
-                            color: s === d.stage ? '#fff' : 'var(--text)',
+                            color: s === d.stage ? 'var(--on-status)' : 'var(--text)',
                             border: s === d.stage ? 'none' : '1px solid var(--line)',
                             padding: '3px 7px',
                             fontSize: 11,
@@ -2715,7 +2726,7 @@ export default function CRMPage() {
                           )}
                           {col === 'in_progress' && (
                             <button
-                              style={{ ...btn, fontSize: 11, padding: '3px 6px', marginTop: 4, background: '#22c55e' }}
+                              style={{ ...btn, fontSize: 11, padding: '3px 6px', marginTop: 4, background: 'var(--success)' }}
                               onClick={() => void req(`/crm/tasks/${t.id}`, 'PATCH', { status: 'completed' })}
                             >
                               Done
@@ -2839,7 +2850,7 @@ export default function CRMPage() {
                         <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                           <span style={{ color: PRIORITY_COLOR[t.priority] ?? 'var(--muted)' }}>{t.priority}</span> -{' '}
                           {t.channel} - {t.status}
-                          {t.escalated && <span style={{ color: '#ef4444', marginLeft: 6 }}>ESCALATED</span>}
+                          {t.escalated && <span style={{ color: 'var(--danger)', marginLeft: 6 }}>ESCALATED</span>}
                         </div>
                         {t.first_response_deadline && (
                           <div style={{ fontSize: 11, color: 'var(--muted)' }}>
@@ -3353,13 +3364,13 @@ export default function CRMPage() {
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                         {fmt(inv.amount, inv.currency)} -{' '}
-                        <span style={{ color: inv.status === 'paid' ? '#22c55e' : '#f59e0b' }}>{inv.status}</span> - due{' '}
+                        <span style={{ color: inv.status === 'paid' ? 'var(--success)' : 'var(--warning)' }}>{inv.status}</span> - due{' '}
                         {inv.due_date ?? '-'}
                       </div>
                     </div>
                     {inv.status === 'pending' && (
                       <button
-                        style={{ ...btn, fontSize: 11, padding: '4px 8px', background: '#22c55e' }}
+                        style={{ ...btn, fontSize: 11, padding: '4px 8px', background: 'var(--success)' }}
                         onClick={() =>
                           void req(`/crm/invoices/${inv.id}`, 'PATCH', {
                             status: 'paid',
@@ -3564,7 +3575,7 @@ export default function CRMPage() {
                     <div>
                       <div style={{ fontWeight: 700 }}>
                         {r.name}{' '}
-                        <span style={{ fontSize: 11, color: r.enabled ? '#22c55e' : 'var(--muted)' }}>
+                        <span style={{ fontSize: 11, color: r.enabled ? 'var(--success)' : 'var(--muted)' }}>
                           {r.enabled ? 'ACTIVE' : 'PAUSED'}
                         </span>
                       </div>
@@ -3999,13 +4010,13 @@ export default function CRMPage() {
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: 'var(--muted)' }}>Outstanding Invoices</div>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: '#f59e0b' }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--warning)' }}>
                           {fmt(forecast.outstanding_invoices)}
                         </div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: 'var(--muted)' }}>Paid Invoices</div>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: '#22c55e' }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--success)' }}>
                           {fmt(forecast.paid_invoices)}
                         </div>
                       </div>
@@ -4147,7 +4158,7 @@ export default function CRMPage() {
                     return (
                       <div key={row.month} style={{ textAlign: 'center' }}>
                         <div style={{ height: 74, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                          <div style={{ width: 24, height: barHeight, borderRadius: 6, background: '#22c55e' }} />
+                          <div style={{ width: 24, height: barHeight, borderRadius: 6, background: 'var(--success)' }} />
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--muted)' }}>{row.month.slice(5)}</div>
                         <div style={{ fontSize: 11 }}>{fmt(row.value)}</div>
@@ -4269,14 +4280,14 @@ export default function CRMPage() {
                     key={`${item.type}-${item.detail}`}
                     style={{ fontSize: 12, borderBottom: '1px solid var(--line)', padding: '4px 0' }}
                   >
-                    <strong style={{ color: item.severity === 'high' ? '#ef4444' : '#f59e0b' }}>
+                    <strong style={{ color: item.severity === 'high' ? 'var(--danger)' : 'var(--warning)' }}>
                       {item.severity.toUpperCase()}
                     </strong>{' '}
                     {item.detail}
                   </div>
                 ))}
                 {!executiveAnalytics?.anomalies?.length && (
-                  <div style={{ fontSize: 12, color: '#22c55e' }}>No active anomalies detected.</div>
+                  <div style={{ fontSize: 12, color: 'var(--success)' }}>No active anomalies detected.</div>
                 )}
               </div>
             </div>

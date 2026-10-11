@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { socialApi, type SocialPost, type SocialNetwork } from '@/app/lib/social-api';
 
@@ -25,12 +25,7 @@ export default function PostsPage() {
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
 
-  useEffect(() => {
-    loadPosts();
-  }, []);
-
   async function loadPosts() {
-    setError(null);
     try {
       const result = await socialApi.listScheduledPosts();
       setPosts(result || []);
@@ -46,6 +41,16 @@ export default function PostsPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    let active = true;
+    globalThis.queueMicrotask(() => {
+      if (active) void loadPosts();
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleCreate() {
     if (!content.trim() || selectedPlatforms.length === 0) {
@@ -92,7 +97,7 @@ export default function PostsPage() {
           onClick={() => setShowForm(!showForm)}
           style={{
             ...styles.createBtn,
-            backgroundColor: showForm ? '#e7e9ef' : '#6366f1',
+            backgroundColor: showForm ? "var(--line)" : "var(--brand)",
           }}
         >
           {showForm ? 'Cancel' : '+ New Post'}
@@ -133,8 +138,8 @@ export default function PostsPage() {
                   }
                   style={{
                     ...styles.platformBtn,
-                    backgroundColor: selectedPlatforms.includes(network) ? '#6366f1' : '#eef0f4',
-                    borderColor: selectedPlatforms.includes(network) ? '#6366f1' : '#e7e9ef',
+                    backgroundColor: selectedPlatforms.includes(network) ? "var(--brand)" : "var(--line-soft)",
+                    borderColor: selectedPlatforms.includes(network) ? "var(--brand)" : "var(--line)",
                   }}
                 >
                   {network.charAt(0).toUpperCase() + network.slice(1)}
@@ -199,7 +204,7 @@ export default function PostsPage() {
                 <div key={post.id} style={styles.postCard}>
                   <div style={styles.postHeader}>
                     <div>
-                      <span style={styles.statusBadge(post.status)}>{post.status.toUpperCase()}</span>
+                      <span style={statusBadgeStyle(post.status)}>{post.status.toUpperCase()}</span>
                       {post.scheduledAt && (
                         <small style={styles.scheduledTime}>
                           Scheduled for {new Date(post.scheduledAt).toLocaleString()}
@@ -260,7 +265,29 @@ export default function PostsPage() {
   );
 }
 
-const styles: Record<string, any> = {
+function statusBadgeStyle(status: string): CSSProperties {
+  return {
+    display: 'inline-block',
+    padding: '4px 8px',
+    backgroundColor:
+      status === 'published'
+        ? 'color-mix(in oklab, var(--success) 15%, transparent)'
+        : status === 'scheduled'
+          ? 'color-mix(in oklab, var(--warning) 15%, transparent)'
+          : 'color-mix(in oklab, var(--neutral) 15%, transparent)',
+    color:
+      status === 'published'
+        ? 'var(--success)'
+        : status === 'scheduled'
+          ? 'var(--warning)'
+          : 'var(--muted)',
+    borderRadius: '4px',
+    fontSize: '11px',
+    fontWeight: 600,
+  };
+}
+
+const styles: Record<string, CSSProperties> = {
   container: {
     minHeight: '100vh',
     backgroundColor: 'var(--card)',
@@ -292,19 +319,19 @@ const styles: Record<string, any> = {
   },
   createBtn: {
     padding: '10px 20px',
-    backgroundColor: '#6366f1',
+    backgroundColor: "var(--brand)",
     color: 'var(--text)',
     border: 'none',
     borderRadius: '6px',
     fontSize: '14px',
     fontWeight: 600,
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'background-color 200ms ease',
   },
   errorBanner: {
     backgroundColor: 'rgba(245, 158, 11, 0.12)',
     border: '1px solid rgba(245, 158, 11, 0.4)',
-    color: '#b45309',
+    color: 'var(--warning-ink)',
     padding: '12px 14px',
     borderRadius: '10px',
     marginBottom: '16px',
@@ -363,7 +390,7 @@ const styles: Record<string, any> = {
     fontSize: '13px',
     fontWeight: 500,
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'background-color 200ms ease, border-color 200ms ease',
   },
   formRow: {
     display: 'grid',
@@ -406,7 +433,7 @@ const styles: Record<string, any> = {
   },
   publishBtn: {
     padding: '10px 20px',
-    backgroundColor: '#10B981',
+    backgroundColor: 'var(--success)',
     color: 'var(--text)',
     border: 'none',
     borderRadius: '6px',
@@ -430,15 +457,6 @@ const styles: Record<string, any> = {
     alignItems: 'flex-start',
     marginBottom: '12px',
   },
-  statusBadge: (status: string) => ({
-    display: 'inline-block',
-    padding: '4px 8px',
-    backgroundColor: status === 'published' ? '#10B98126' : status === 'scheduled' ? '#F5901426' : '#6B728026',
-    color: status === 'published' ? '#10B981' : status === 'scheduled' ? '#F59014' : 'var(--muted)',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 600,
-  }),
   scheduledTime: {
     display: 'block',
     marginTop: '6px',
@@ -453,7 +471,7 @@ const styles: Record<string, any> = {
   platformBadge: {
     display: 'inline-block',
     padding: '3px 8px',
-    backgroundColor: '#e7e9ef',
+    backgroundColor: "var(--line)",
     color: 'var(--text)',
     borderRadius: '3px',
     fontSize: '11px',
@@ -502,7 +520,7 @@ const styles: Record<string, any> = {
     padding: '60px 24px',
     backgroundColor: 'var(--card)',
     borderRadius: '12px',
-    border: '1px dashed #e7e9ef',
+    border: "1px dashed var(--line)",
   },
   emptyIcon: {
     fontSize: '48px',

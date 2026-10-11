@@ -7,12 +7,15 @@ import {
   apiPost,
   apiPut,
   clearAuthSession,
+  clearServerSession,
   PROXY_BASE_URL,
+  resolveSessionTenant,
   setAuthSession,
   setSuperAdminKeySession,
   STORAGE_SUPER_ADMIN_KEY,
   STORAGE_TENANT_KEY,
   STORAGE_TOKEN_KEY,
+  syncServerSession,
 } from './api-client';
 
 function makeFetchResponse(body: unknown, ok = true, status = 200, contentType = 'application/json') {
@@ -40,6 +43,15 @@ describe('api-client session helpers', () => {
     expect(localStorage.getItem(STORAGE_TENANT_KEY)).toBe('tenant-42');
   });
 
+  it('ignores blank session values and resolves the stored tenant', () => {
+    setAuthSession('   ', '   ');
+    expect(localStorage.getItem(STORAGE_TOKEN_KEY)).toBeNull();
+    expect(localStorage.getItem(STORAGE_TENANT_KEY)).toBeNull();
+
+    localStorage.setItem(STORAGE_TENANT_KEY, ' tenant-42 ');
+    expect(resolveSessionTenant()).toBe('tenant-42');
+  });
+
   it('clears auth session values', () => {
     localStorage.setItem(STORAGE_TOKEN_KEY, 'legacy-token');
     localStorage.setItem(STORAGE_TENANT_KEY, 'tenant-42');
@@ -56,6 +68,32 @@ describe('api-client session helpers', () => {
 
     setSuperAdminKeySession('super-secret');
     expect(sessionStorage.getItem(STORAGE_SUPER_ADMIN_KEY)).toBe('super-secret');
+  });
+
+  it('synchronizes and clears the server session cookie', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+
+    await expect(syncServerSession('jwt-token')).resolves.toBe(true);
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      '/api/auth/session',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ token: 'jwt-token' }),
+      })
+    );
+
+    await clearServerSession();
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/auth/session', { method: 'DELETE' });
+    vi.unstubAllGlobals();
+  });
+
+  it('treats server-session network failures as best effort', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+
+    await expect(syncServerSession('jwt-token')).resolves.toBe(false);
+    await expect(clearServerSession()).resolves.toBeUndefined();
+    vi.unstubAllGlobals();
   });
 });
 
@@ -99,6 +137,30 @@ describe('api-client network helpers', () => {
       expect.any(String),
       expect.objectContaining({
         headers: expect.objectContaining({ 'X-Custom': 'val' }),
+      })
+    );
+  });
+
+  it('trims auth and admin headers while ignoring blank extra headers', async () => {
+    localStorage.setItem(STORAGE_TOKEN_KEY, ' bearer-token ');
+    sessionStorage.setItem(STORAGE_SUPER_ADMIN_KEY, ' admin-key ');
+    vi.mocked(fetch).mockResolvedValue(makeFetchResponse({}));
+
+    await apiPost('/items', {}, 'tenant-3', {
+      'X-Included': 'value',
+      'X-Ignored': '   ',
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: {
+          Authorization: 'Bearer bearer-token',
+          'Content-Type': 'application/json',
+          'X-Included': 'value',
+          'X-Super-Admin-Key': 'admin-key',
+          'X-Tenant-Id': 'tenant-3',
+        },
       })
     );
   });
@@ -201,6 +263,11 @@ describe('api-client network helpers', () => {
     expect(result).toEqual({ detail: 'plain text' });
   });
 
+  it('parses an empty non-JSON response as an empty object', async () => {
+    vi.mocked(fetch).mockResolvedValue(makeFetchResponse('   ', true, 204, 'text/plain'));
+    await expect(apiGet('/empty-text', 'tenant-1')).resolves.toEqual({});
+  });
+
   it('uses session tenant when no explicit tenantId provided', async () => {
     localStorage.setItem(STORAGE_TENANT_KEY, 'session-tenant');
     vi.mocked(fetch).mockResolvedValue(makeFetchResponse({}));
@@ -223,6 +290,80 @@ describe('api-client network helpers', () => {
         headers: expect.objectContaining({ 'X-Super-Admin-Key': 'admin-key-123' }),
       })
     );
+  });
+
+  it('clears an expired token before sending the request', async () => {
+    const payload = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 60 }));
+    localStorage.setItem(STORAGE_TOKEN_KEY, `header.${payload}.signature`);
+    localStorage.setItem(STORAGE_TENANT_KEY, 'tenant-1');
+    vi.mocked(fetch).mockResolvedValue(makeFetchResponse({}));
+
+    await apiGet('/expired-token', '');
+
+    expect(localStorage.getItem(STORAGE_TOKEN_KEY)).toBeNull();
+    expect(fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.not.objectContaining({ Authorization: expect.anything() }),
+      })
+    );
+  });
+
+  it('keeps malformed and non-expiring tokens as opaque bearer credentials', async () => {
+    vi.mocked(fetch).mockResolvedValue(makeFetchResponse({}));
+
+    localStorage.setItem(STORAGE_TOKEN_KEY, 'opaque-token');
+    await apiGet('/opaque-token', 'tenant-1');
+
+    localStorage.setItem(STORAGE_TOKEN_KEY, `header.${btoa(JSON.stringify({ sub: 'user' }))}.signature`);
+    await apiGet('/token-without-expiry', 'tenant-1');
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      expect.any(String),
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer opaque-token' }) })
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      expect.any(String),
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: expect.stringContaining('Bearer ') }) })
+    );
+  });
+
+  it('deduplicates concurrent tenant-scoped GET requests', async () => {
+    let resolveFetch!: (response: Response) => void;
+    vi.mocked(fetch).mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = resolve;
+        })
+    );
+
+    const first = apiGet('/shared', 'tenant-1');
+    const second = apiGet('/shared', 'tenant-1');
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    resolveFetch(makeFetchResponse({ shared: true }));
+    await expect(Promise.all([first, second])).resolves.toEqual([{ shared: true }, { shared: true }]);
+
+    vi.mocked(fetch).mockResolvedValue(makeFetchResponse({ shared: false }));
+    await apiGet('/shared', 'tenant-1');
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears local and server sessions on an unauthorized response', async () => {
+    window.history.replaceState({}, '', '/login');
+    localStorage.setItem(STORAGE_TOKEN_KEY, 'token');
+    localStorage.setItem(STORAGE_TENANT_KEY, 'tenant-1');
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(makeFetchResponse({ detail: 'Unauthorized' }, false, 401))
+      .mockResolvedValueOnce(makeFetchResponse({}, true, 204));
+
+    await expect(apiGet('/unauthorized', 'tenant-1')).rejects.toThrow('Unauthorized');
+
+    expect(localStorage.getItem(STORAGE_TOKEN_KEY)).toBeNull();
+    expect(localStorage.getItem(STORAGE_TENANT_KEY)).toBeNull();
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/auth/session', { method: 'DELETE' });
   });
 
   it('retries GET on transient upstream errors and recovers automatically', async () => {

@@ -5,27 +5,25 @@ Extracted from legacy_main.py: Schedule, list, move, delete social posts.
 
 from __future__ import annotations
 
-import os
-from fastapi import Depends
 from datetime import UTC, datetime
-from typing import Annotated, TYPE_CHECKING, Literal
+from typing import Annotated, Literal
 
 import psycopg
+from fastapi import Depends
+from pydantic import BaseModel, Field, HttpUrl
 
-if TYPE_CHECKING:
-    from ..deps import AuthContext
+from .. import memory_stores
+from ..deps import AuthContext, require_auth
 
 JsonObject = dict[str, object]
-from ..deps import AuthContext, require_auth
+
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
 
 # ── Memory Store References (set by legacy_main.py) ──────────
-_scheduled_posts_memory = []
-_social_accounts_memory = []
-_rate_buckets = {}
-_rate_lock = None
-from ..rate_limiter import enforce_rate_limit as _enforce_rate_limit  # default; may be overwritten by set_memory_stores
+_scheduled_posts_memory = memory_stores.scheduled_posts
+_social_accounts_memory = memory_stores.social_accounts
+
 _db_ready = False
 _db_dsn_fn = None
 _te_encrypt = None
@@ -35,8 +33,6 @@ _te_decrypt = None
 def set_memory_stores(
     scheduled_posts_memory=None,
     social_accounts_memory=None,
-    rate_buckets=None,
-    rate_lock=None,
     enforce_rate_limit=None,
     db_ready=None,
     db_dsn_fn=None,
@@ -44,16 +40,12 @@ def set_memory_stores(
     te_decrypt=None,
 ) -> None:
     global _scheduled_posts_memory, _social_accounts_memory
-    global _rate_buckets, _rate_lock, _enforce_rate_limit
+    global _enforce_rate_limit
     global _db_ready, _db_dsn_fn, _te_encrypt, _te_decrypt
     if scheduled_posts_memory is not None:
         _scheduled_posts_memory = scheduled_posts_memory
     if social_accounts_memory is not None:
         _social_accounts_memory = social_accounts_memory
-    if rate_buckets is not None:
-        _rate_buckets = rate_buckets
-    if rate_lock is not None:
-        _rate_lock = rate_lock
     if enforce_rate_limit is not None:
         _enforce_rate_limit = enforce_rate_limit
     if db_ready is not None:
@@ -189,7 +181,6 @@ def delete_scheduled_post(post_id: int, auth: AuthDep) -> JsonObject:
 
 # ── Request Models ────────────────────────────────────────────
 
-from pydantic import BaseModel, Field, HttpUrl
 
 
 class SocialScheduleRequest(BaseModel):

@@ -371,11 +371,11 @@ export default function MediaUploader() {
   const { phase, progress, job, outputUrl, errorMessage, fileName } = state;
   const isActive = phase !== 'idle';
   const isTerminal = phase === 'complete' || phase === 'failed' || phase === 'cancelled';
-  let progressBarColor = '#3b82f6';
+  let progressBarColor = 'var(--info)';
   if (phase === 'failed') {
-    progressBarColor = '#ef4444';
+    progressBarColor = 'var(--danger)';
   } else if (phase === 'complete') {
-    progressBarColor = '#10b981';
+    progressBarColor = 'var(--success)';
   }
 
   const phaseLabel: Record<JobStatus, string> = {

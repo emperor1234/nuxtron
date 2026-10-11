@@ -6,40 +6,33 @@ Extracted from legacy_main.py: Drone CI build triggering.
 from __future__ import annotations
 
 import os
-from fastapi import Depends
 from datetime import UTC, datetime
-from typing import Annotated, TYPE_CHECKING
+from typing import Annotated
 
 import httpx
+from fastapi import Depends
+from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from ..deps import AuthContext
+from .. import memory_stores
+from ..deps import AuthContext, require_auth
+from ..rate_limiter import enforce_rate_limit as _enforce_rate_limit
 
 JsonObject = dict[str, object]
-from ..deps import AuthContext, require_auth
+
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
 
 # ── Memory Store References (set by legacy_main.py) ──────────
-_drone_builds_memory = []
-_rate_buckets = {}
-_rate_lock = None
-from ..rate_limiter import enforce_rate_limit as _enforce_rate_limit  # default; may be overwritten by set_memory_stores
+_drone_builds_memory = memory_stores.drone_builds
 
 
 def set_memory_stores(
     drone_builds_memory=None,
-    rate_buckets=None,
-    rate_lock=None,
     enforce_rate_limit=None,
 ) -> None:
-    global _drone_builds_memory, _rate_buckets, _rate_lock, _enforce_rate_limit
+    global _drone_builds_memory, _enforce_rate_limit
     if drone_builds_memory is not None:
         _drone_builds_memory = drone_builds_memory
-    if rate_buckets is not None:
-        _rate_buckets = rate_buckets
-    if rate_lock is not None:
-        _rate_lock = rate_lock
     if enforce_rate_limit is not None:
         _enforce_rate_limit = enforce_rate_limit
 
@@ -125,7 +118,6 @@ def drone_trigger_build(payload: DroneBuildTriggerRequest, auth: AuthDep) -> Jso
 
 # ── Request Models ────────────────────────────────────────────
 
-from pydantic import BaseModel, Field
 
 
 class DroneBuildTriggerRequest(BaseModel):

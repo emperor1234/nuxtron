@@ -281,7 +281,7 @@ export default function WorkflowsPage() {
         <p style={{ color: 'var(--muted)' }}>
           Create and execute multi-step automations with trigger-based enrollment.
         </p>
-        {error && <div style={{ ...card, color: '#f87171', marginBottom: 10 }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)', marginBottom: 10 }}>{error}</div>}
         {lastAction && (
           <div style={{ ...card, color: 'var(--muted)', marginBottom: 10 }}>Last action: {lastAction}</div>
         )}
@@ -321,7 +321,7 @@ export default function WorkflowsPage() {
                 border: 'none',
                 borderRadius: 8,
                 background: 'var(--brand)',
-                color: '#00101e',
+                color: 'var(--on-brand)',
                 fontWeight: 700,
               }}
             >
@@ -458,7 +458,7 @@ export default function WorkflowsPage() {
                         border: 'none',
                         borderRadius: 8,
                         background: 'var(--brand)',
-                        color: '#00101e',
+                        color: 'var(--on-brand)',
                         padding: '4px 8px',
                         fontWeight: 700,
                       }}

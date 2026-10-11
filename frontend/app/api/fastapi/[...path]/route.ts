@@ -1275,6 +1275,16 @@ function maybeBuildForcedFallbackResponse(
     return null;
   }
 
+  // Synthetic business success is never an acceptable production contract.
+  // A misconfigured feature flag must fail closed rather than fabricate a
+  // connector, campaign, analytics result, or generated asset.
+  if (isProductionRuntime()) {
+    return NextResponse.json(
+      { detail: 'Forced fallback is disabled in production.' },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } }
+    );
+  }
+
   const detail = 'Fallback mode forced by environment configuration.';
   return (
     buildOfflineFallbackResponse({
@@ -1299,8 +1309,7 @@ function maybeBuildForcedFallbackResponse(
  * the default.
  */
 function isAutoFallbackAllowed(): boolean {
-  if (!isProductionRuntime()) return true;
-  return isTruthyEnv(process.env.NUXTRON_AUTO_FALLBACK);
+  return !isProductionRuntime();
 }
 
 function buildUnavailableUpstreamResponse(
@@ -1374,6 +1383,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
 export const __test__ = {
   isFallbackForced,
   buildOfflineFallbackResponse,
+  maybeBuildForcedFallbackResponse,
   getUpstreamBaseUrls,
   isProductionRuntime,
 };

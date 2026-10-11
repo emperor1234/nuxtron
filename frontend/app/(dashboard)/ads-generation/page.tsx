@@ -48,7 +48,7 @@ export default function AdsGenerationPage() {
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <h1 style={{ marginTop: 0 }}>AI Ads Generation</h1>
         <p style={{ color: 'var(--muted)' }}>Generate ad creatives and copy variants for each acquisition channel.</p>
-        {error && <div style={{ ...card, color: '#f87171', marginBottom: 10 }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)', marginBottom: 10 }}>{error}</div>}
         <section style={card}>
           <input style={input} value={product} onChange={(e) => setProduct(e.target.value)} placeholder="product" />
           <input style={input} value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="audience" />
@@ -73,7 +73,7 @@ export default function AdsGenerationPage() {
               border: 'none',
               borderRadius: 8,
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
             }}
           >

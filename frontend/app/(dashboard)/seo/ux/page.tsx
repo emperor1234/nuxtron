@@ -104,10 +104,10 @@ export default function UxConversionPage() {
   return (
     <div className="mx-auto w-full max-w-7xl p-4 md:p-6 lg:p-8 space-y-6 text-[var(--text)]">
       <div>
-        <h1 className="text-[27px] font-semibold tracking-tight text-[var(--nx-ink,var(--text))]">
+        <h1 className="text-[27px] font-semibold tracking-tight text-[var(--nx-ink)]">
           UX & Conversion Optimizer
         </h1>
-        <p className="mt-2 max-w-3xl text-sm text-[var(--nx-muted,var(--muted))] leading-relaxed">
+        <p className="mt-2 max-w-3xl text-sm text-[var(--nx-muted)] leading-relaxed">
           Diagnose friction, evaluate conversion quality, and generate experiment-ready improvements for SEO traffic
           journeys.
         </p>
@@ -137,7 +137,7 @@ export default function UxConversionPage() {
               onChange={(e) => setUrl(e.target.value)}
               required
               placeholder="https://example.com/pricing"
-              className="w-full rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-all focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
+              className="w-full rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-colors focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
             />
           </div>
 
@@ -150,7 +150,7 @@ export default function UxConversionPage() {
                     key={t}
                     type="button"
                     onClick={() => setPageType(t)}
-                    className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold capitalize transition-all ${
+                    className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
                       pageType === t
                         ? 'border-[var(--line)] bg-[var(--brand)]/20 text-cyan-100 shadow-[0_0_0_1px_rgba(125,211,252,0.35)]'
                         : 'border-[var(--line)] bg-white/5 text-[var(--muted)] hover:border-[var(--line)] hover:text-cyan-100'
@@ -171,7 +171,7 @@ export default function UxConversionPage() {
                     key={s}
                     type="button"
                     onClick={() => setTrafficSource(s)}
-                    className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold capitalize transition-all ${
+                    className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
                       trafficSource === s
                         ? 'border-emerald-300/70 bg-emerald-400/20 text-emerald-100 shadow-[0_0_0_1px_rgba(110,231,183,0.35)]'
                         : 'border-[var(--line)] bg-white/5 text-[var(--muted)] hover:border-emerald-300/40 hover:text-emerald-100'
@@ -197,14 +197,14 @@ export default function UxConversionPage() {
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="Known issues, goals, current conversion rate..."
-              className="w-full rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-all focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
+              className="w-full rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--faint)] outline-none transition-colors focus:border-[var(--line)] focus:ring-2 focus:ring-[var(--brand)]/30"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading || !url}
-            className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--line)] bg-gradient-to-r from-cyan-500/80 to-teal-500/80 px-4 py-3 text-sm font-semibold text-[var(--text)] transition-all hover:from-cyan-400 hover:to-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--line)] bg-gradient-to-r from-cyan-500/80 to-teal-500/80 px-4 py-3 text-sm font-semibold text-[var(--text)] transition-colors hover:from-cyan-400 hover:to-teal-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? 'Auditing…' : 'Audit UX & Conversion'}
           </button>
@@ -220,7 +220,7 @@ export default function UxConversionPage() {
             {UX_AUDIT_PHASES.map((phase, index) => (
               <div
                 key={phase}
-                className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3 py-2.5"
+                className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-3 py-2.5"
               >
                 <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--brand)]/15 text-[11px] font-semibold text-cyan-200">
                   {index + 1}
@@ -230,7 +230,7 @@ export default function UxConversionPage() {
             ))}
           </div>
 
-          <div className="rounded-xl border border-[var(--line)] bg-[#f6f7fa] px-3.5 py-3">
+          <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] px-3.5 py-3">
             <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">Current Scope</div>
             <div className="mt-2 flex flex-wrap gap-2">
               <span className="rounded-full border border-[var(--line)] bg-[var(--brand)]/12 px-2.5 py-1 text-[11px] font-medium text-cyan-100 capitalize">
@@ -311,7 +311,7 @@ export default function UxConversionPage() {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold uppercase">{fp.impact}</span>
-                    <span className="rounded bg-[#f6f7fa] px-1.5 py-0.5 font-mono text-xs text-[var(--text)]">
+                    <span className="rounded bg-[var(--bg-soft)] px-1.5 py-0.5 font-mono text-xs text-[var(--text)]">
                       {fp.type}
                     </span>
                     <span className="text-xs opacity-80">{fp.location}</span>
@@ -367,11 +367,11 @@ export default function UxConversionPage() {
                 >
                   <div className="bg-[var(--brand)]/15 px-3 py-2 text-xs font-mono text-cyan-100">{ab.element}</div>
                   <div className="grid grid-cols-1 divide-y divide-white/10 md:grid-cols-2 md:divide-x md:divide-y-0">
-                    <div className="bg-[#f6f7fa] px-3 py-3">
+                    <div className="bg-[var(--bg-soft)] px-3 py-3">
                       <div className="mb-0.5 text-xs text-[var(--muted)]">Variant A</div>
                       <div className="text-sm text-[var(--text)]">{ab.variant_a}</div>
                     </div>
-                    <div className="bg-[#f6f7fa] px-3 py-3">
+                    <div className="bg-[var(--bg-soft)] px-3 py-3">
                       <div className="mb-0.5 text-xs text-[var(--muted)]">Variant B</div>
                       <div className="text-sm text-[var(--text)]">{ab.variant_b}</div>
                     </div>

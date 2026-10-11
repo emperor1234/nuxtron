@@ -178,8 +178,8 @@ test.describe('Yext command center', () => {
     await mockYextApis(page);
     await page.goto('/seo/yext-readiness');
 
-    await expect(page.getByRole('heading', { name: 'Yext End-to-End Readiness Hub' })).toBeVisible();
-    await expect(page.getByText('Current status:')).toContainText('PASSED');
+    await expect(page.getByRole('heading', { name: 'Yext Overview' })).toBeVisible();
+    await expect(page.getByText('12/12')).toBeVisible();
     await expect(page.locator('a[href="/seo/yext-automation"]')).toBeVisible();
     await expect(page.locator('a[href="/seo/yext-integrations"]')).toBeVisible();
   });
@@ -190,8 +190,9 @@ test.describe('Yext command center', () => {
     await mockYextApis(page);
     await page.goto('/seo/yext-automation');
 
-    await expect(page.getByRole('heading', { name: 'Yext Run And Product Control' })).toBeVisible();
-    const runButton = page.getByRole('button', { name: 'Run Full Automation Blueprint' });
+    await expect(page.getByRole('heading', { name: 'Yext Automation' })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Domain', exact: true }).fill('nuxtron.ai');
+    const runButton = page.getByRole('button', { name: 'Run full automation' });
     await expect(runButton).toBeEnabled({ timeout: 20000 });
     const automationResponse = page.waitForResponse(
       (response) =>
@@ -200,14 +201,9 @@ test.describe('Yext command center', () => {
     );
     await runButton.click();
     await automationResponse;
-    await expect(
-      page
-        .locator('section.card')
-        .filter({ hasText: /Automation Blueprint/ })
-        .first()
-    ).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText('Latest automation')).toBeVisible({ timeout: 20000 });
     await expect(page.getByText('Knowledge Graph is the source of truth.')).toBeVisible();
-    await expect(page.getByText('Vendors referenced: 2')).toBeVisible();
+    await expect(page.getByText('2 provider connections participated.')).toBeVisible();
   });
 
   test('integrations page can apply wiring', async ({ page }) => {
@@ -216,22 +212,19 @@ test.describe('Yext command center', () => {
     await mockYextApis(page);
     await page.goto('/seo/yext-integrations');
 
-    await expect(page.getByRole('heading', { name: 'Provider Wiring And Remediation' })).toBeVisible();
-    const applyButton = page.getByRole('button', { name: 'Apply All Missing Wiring' });
+    await expect(page.getByRole('heading', { name: 'Yext Connections' })).toBeVisible();
+    const applyButton = page.getByRole('button', { name: 'Apply available settings' });
     await expect(applyButton).toBeEnabled({ timeout: 20000 });
     await applyButton.click();
-    const actionCard = page.locator('section.card').first();
-    await expect(actionCard).toContainText('Wiring result:', { timeout: 30000 });
-    await expect(actionCard).toContainText('100% configured', { timeout: 30000 });
-    await expect(actionCard).toContainText('gate PASSED', { timeout: 30000 });
+    await expect(page.getByText('100% complete')).toBeVisible({ timeout: 30000 });
   });
 
   test('assist page returns operational guidance', async ({ page }) => {
     await mockYextApis(page);
     await page.goto('/seo/yext-assist');
 
-    const assistHeading = page.getByRole('heading', { name: 'Assist Prompt Console' });
-    const runAssistButton = page.getByRole('button', { name: 'Run Assist' });
+    const assistHeading = page.getByRole('heading', { name: 'Yext AI Assist' });
+    const runAssistButton = page.getByRole('button', { name: 'Get recommendations' });
     await expect(assistHeading).toBeVisible();
     await runAssistButton.click();
     if (new URL(page.url()).search) {
@@ -239,7 +232,7 @@ test.describe('Yext command center', () => {
       await expect(assistHeading).toBeVisible();
       await runAssistButton.click();
     }
-    await expect(page.getByRole('heading', { name: 'Assist Response' })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('heading', { name: 'Recommendations' })).toBeVisible({ timeout: 30000 });
     await expect(page.getByText('Yext rollout is healthy and production ready for this tenant.')).toBeVisible();
   });
 });

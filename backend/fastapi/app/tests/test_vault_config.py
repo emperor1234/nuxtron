@@ -23,7 +23,6 @@ _vault_stub = types.ModuleType("vault")
 _mock_manager = MagicMock()
 _mock_manager.health_check.return_value = {
     "hashicorp_vault": {"connected": False, "address": "http://vault:8200"},
-    "supabase_vault": {"ready": False, "url": "https://supabase.example.com"},
     "primary_backend": "local",
     "local_fallback_enabled": True,
 }
@@ -52,7 +51,6 @@ def _make_mock_manager(
     manager.get_secret.return_value = None
     manager.health_check.return_value = {
         "hashicorp_vault": {"connected": False, "address": "http://vault:8200"},
-        "supabase_vault": {"ready": False, "url": "https://supabase.example.com"},
         "primary_backend": "local",
         "local_fallback_enabled": True,
     }
@@ -76,7 +74,6 @@ class TestInitializeSecretsManager:
         mock_mgr = _make_mock_manager()
         mock_mgr.health_check.return_value = {
             "hashicorp_vault": {"connected": True, "address": "http://vault:8200"},
-            "supabase_vault": {"ready": True, "url": "https://example.supabase.co"},
             "primary_backend": "hashicorp",
             "local_fallback_enabled": False,
         }
@@ -167,12 +164,11 @@ class TestGetVaultHealth:
             assert "primary" in health
             assert "timestamp" in health
 
-    def test_vaults_has_hashicorp_and_supabase(self):
+    def test_vaults_has_hashicorp(self):
         mock_mgr = _make_mock_manager()
         with patch(PATCH_TARGET, return_value=mock_mgr):
             health = vault_config_mod.get_vault_health()
             assert "hashicorp" in health["vaults"]
-            assert "supabase" in health["vaults"]
 
     def test_primary_backend_is_string(self):
         mock_mgr = _make_mock_manager()

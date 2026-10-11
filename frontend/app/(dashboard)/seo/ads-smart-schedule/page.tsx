@@ -19,13 +19,13 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function scoreColor(score: number): string {
-  if (score === 0) return '#eef0f4';
-  if (score < 40) return '#dcfce7';
-  if (score < 60) return '#bbf7d0';
-  if (score < 75) return '#86efac';
-  if (score < 85) return '#4ade80';
-  if (score < 93) return '#22c55e';
-  return '#16a34a';
+  if (score === 0) return 'var(--neutral-soft)';
+  if (score < 40) return 'var(--success-soft)';
+  if (score < 60) return 'var(--success-line)';
+  if (score < 75) return 'var(--success)';
+  if (score < 85) return 'var(--success)';
+  if (score < 93) return 'var(--success)';
+  return 'var(--success-ink)';
 }
 
 function fmtHour(h: number): string {
@@ -42,14 +42,14 @@ function fmtReach(n: number): string {
 }
 
 function hourLabelColor(h: number, humanWindow: number[], avoidHours: number[]): string {
-  if (humanWindow.includes(h)) return '#60a5fa';
-  if (avoidHours.includes(h)) return '#ef4444';
-  return '#64748b';
+  if (humanWindow.includes(h)) return 'var(--info)';
+  if (avoidHours.includes(h)) return 'var(--danger)';
+  return 'var(--neutral)';
 }
 
 function cellBorder(isHuman: boolean, isAvoid: boolean): string {
-  if (isHuman) return '1px solid #6366f1';
-  if (isAvoid) return '1px solid #991b1b';
+  if (isHuman) return '1px solid var(--info)';
+  if (isAvoid) return '1px solid var(--danger-ink)';
   return '1px solid transparent';
 }
 
@@ -131,19 +131,19 @@ function HeatmapGrid({
         );
       })}
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 10, fontSize: 10, flexWrap: 'wrap' }}>
-        <span style={{ color: '#64748b' }}>Low</span>
+        <span style={{ color: "var(--muted)" }}>Low</span>
         {[0, 30, 55, 72, 85, 93].map((s) => (
           <div
             key={s}
-            style={{ width: 14, height: 14, borderRadius: 3, background: scoreColor(s), border: '1px solid #333' }}
+            style={{ width: 14, height: 14, borderRadius: 3, background: scoreColor(s), border: '1px solid var(--line)' }}
           />
         ))}
-        <span style={{ color: '#64748b' }}>High</span>
-        <span style={{ width: 1, background: '#334155', height: 14, display: 'inline-block', margin: '0 6px' }} />
-        <div style={{ width: 14, height: 14, borderRadius: 3, background: '#dbeafe', border: '1px solid #6366f1' }} />
-        <span style={{ color: '#60a5fa' }}>Human review window</span>
-        <div style={{ width: 14, height: 14, borderRadius: 3, background: '#fee2e2', border: '1px solid #991b1b' }} />
-        <span style={{ color: '#ef4444' }}>Avoid</span>
+        <span style={{ color: "var(--muted)" }}>High</span>
+        <span style={{ width: 1, background: 'var(--ink-2)', height: 14, display: 'inline-block', margin: '0 6px' }} />
+        <div style={{ width: 14, height: 14, borderRadius: 3, background: 'var(--info-soft)', border: "1px solid var(--brand)" }} />
+        <span style={{ color: 'var(--info)' }}>Human review window</span>
+        <div style={{ width: 14, height: 14, borderRadius: 3, background: 'var(--danger-soft)', border: '1px solid var(--danger-ink)' }} />
+        <span style={{ color: 'var(--danger)' }}>Avoid</span>
       </div>
     </div>
   );
@@ -152,9 +152,9 @@ function HeatmapGrid({
 function ApprovalBadge({ status }: Readonly<{ status: string | null | undefined }>) {
   if (!status) return null;
   const cfg: Record<string, { label: string; color: string }> = {
-    pending_approval: { label: 'Pending Review', color: '#f59e0b' },
-    approved: { label: 'Approved', color: '#22c55e' },
-    rejected: { label: 'Rejected', color: '#ef4444' },
+    pending_approval: { label: 'Pending Review', color: 'var(--warning)' },
+    approved: { label: 'Approved', color: 'var(--success)' },
+    rejected: { label: 'Rejected', color: 'var(--danger)' },
   };
   const c = cfg[status];
   if (!c) return null;
@@ -165,9 +165,9 @@ function ApprovalBadge({ status }: Readonly<{ status: string | null | undefined 
         padding: '2px 8px',
         fontSize: 10,
         fontWeight: 700,
-        background: `${c.color}22`,
+        background: `color-mix(in srgb, ${c.color} 13.33%, transparent)`,
         color: c.color,
-        border: `1px solid ${c.color}55`,
+        border: `1px solid color-mix(in srgb, ${c.color} 33.33%, transparent)`,
       }}
     >
       {c.label}
@@ -302,15 +302,15 @@ export default function SmartSchedulePage() {
   return (
     <main style={{ padding: '28px 32px', maxWidth: 1180, margin: '0 auto', fontFamily: 'inherit', color: 'var(--text)' }}>
       <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 4 }}>Smart Schedule &amp; Approval</h1>
-      <p style={{ color: '#64748b', marginBottom: 28, fontSize: 14 }}>
+      <p style={{ color: "var(--muted)", marginBottom: 28, fontSize: 14 }}>
         Best-time heatmap · Human touch windows · Approval workflow · A/B creative testing · Audience insights
       </p>
 
       {error && (
         <div
           style={{
-            background: '#fee2e2',
-            color: '#dc2626',
+            background: 'var(--danger-soft)',
+            color: 'var(--danger)',
             borderRadius: 10,
             padding: '10px 16px',
             marginBottom: 14,
@@ -323,8 +323,8 @@ export default function SmartSchedulePage() {
       {info && (
         <div
           style={{
-            background: '#dcfce7',
-            color: '#15803d',
+            background: 'var(--success-soft)',
+            color: 'var(--success-ink)',
             borderRadius: 10,
             padding: '10px 16px',
             marginBottom: 14,
@@ -339,7 +339,7 @@ export default function SmartSchedulePage() {
       <Section title="Best Time to Run Ads">
         <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
           <div>
-            <label htmlFor="bt-platform" style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 4 }}>
+            <label htmlFor="bt-platform" style={{ fontSize: 11, color: "var(--muted)", display: 'block', marginBottom: 4 }}>
               Platform
             </label>
             <select
@@ -347,8 +347,8 @@ export default function SmartSchedulePage() {
               value={platform}
               onChange={(e) => setPlatform(e.target.value as AdsPlatform)}
               style={{
-                background: '#f6f7fa',
-                border: '1px solid #334155',
+                background: "var(--bg)",
+                border: '1px solid var(--ink-2)',
                 borderRadius: 8,
                 color: 'var(--text)',
                 padding: '6px 10px',
@@ -363,7 +363,7 @@ export default function SmartSchedulePage() {
             </select>
           </div>
           <div>
-            <label htmlFor="bt-objective" style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 4 }}>
+            <label htmlFor="bt-objective" style={{ fontSize: 11, color: "var(--muted)", display: 'block', marginBottom: 4 }}>
               Objective
             </label>
             <select
@@ -371,8 +371,8 @@ export default function SmartSchedulePage() {
               value={objective}
               onChange={(e) => setObjective(e.target.value)}
               style={{
-                background: '#f6f7fa',
-                border: '1px solid #334155',
+                background: "var(--bg)",
+                border: '1px solid var(--ink-2)',
                 borderRadius: 8,
                 color: 'var(--text)',
                 padding: '6px 10px',
@@ -388,7 +388,7 @@ export default function SmartSchedulePage() {
           </div>
         </div>
 
-        {loadingBT && <div style={{ color: '#64748b', fontSize: 13 }}>Loading heatmap…</div>}
+        {loadingBT && <div style={{ color: "var(--muted)", fontSize: 13 }}>Loading heatmap…</div>}
         {bestTime && !loadingBT && (
           <>
             <HeatmapGrid
@@ -399,7 +399,7 @@ export default function SmartSchedulePage() {
             <div style={{ marginTop: 14, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <div
                 style={{
-                  background: '#ffffff',
+                  background: 'var(--card)fff',
                   border: '1px solid var(--line)',
                   borderRadius: 10,
                   padding: '10px 16px',
@@ -407,15 +407,15 @@ export default function SmartSchedulePage() {
                   minWidth: 200,
                 }}
               >
-                <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Peak Hour
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: '#22c55e' }}>{fmtHour(bestTime.peak_hour)}</div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>across {bestTime.best_days.join(', ')}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--success)' }}>{fmtHour(bestTime.peak_hour)}</div>
+                <div style={{ fontSize: 11, color: "var(--muted)" }}>across {bestTime.best_days.join(', ')}</div>
               </div>
               <div
                 style={{
-                  background: '#ffffff',
+                  background: 'var(--card)fff',
                   border: '1px solid var(--line)',
                   borderRadius: 10,
                   padding: '10px 16px',
@@ -423,17 +423,17 @@ export default function SmartSchedulePage() {
                   minWidth: 200,
                 }}
               >
-                <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Human Review Window
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: '#60a5fa' }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--info)' }}>
                   {bestTime.human_review_window.map(fmtHour).join(' – ')}
                 </div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>Schedule human check-in here</div>
+                <div style={{ fontSize: 11, color: "var(--muted)" }}>Schedule human check-in here</div>
               </div>
               <div
                 style={{
-                  background: '#ffffff',
+                  background: 'var(--card)fff',
                   border: '1px solid var(--line)',
                   borderRadius: 10,
                   padding: '10px 16px',
@@ -444,7 +444,7 @@ export default function SmartSchedulePage() {
                 <div
                   style={{
                     fontSize: 10,
-                    color: '#64748b',
+                    color: "var(--muted)",
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: 4,
@@ -459,16 +459,16 @@ export default function SmartSchedulePage() {
               style={{
                 marginTop: 12,
                 padding: '10px 14px',
-                background: '#ffffff',
+                background: 'var(--card)fff',
                 borderRadius: 10,
                 border: '1px solid var(--line)',
                 fontSize: 12,
               }}
             >
-              <span style={{ color: '#64748b', marginRight: 8 }}>Peak hour per platform:</span>
+              <span style={{ color: "var(--muted)", marginRight: 8 }}>Peak hour per platform:</span>
               {Object.entries(bestTime.all_platforms_peak).map(([p, h]) => (
                 <span key={p} style={{ marginRight: 12, color: 'var(--text)' }}>
-                  <span style={{ color: '#64748b' }}>{PLATFORM_LABELS[p as AdsPlatform] ?? p}: </span>
+                  <span style={{ color: "var(--muted)" }}>{PLATFORM_LABELS[p as AdsPlatform] ?? p}: </span>
                   <strong>{fmtHour(h)}</strong>
                 </span>
               ))}
@@ -480,14 +480,14 @@ export default function SmartSchedulePage() {
       {/* ── Human Approval Queue ─────────────────────────────────────────────── */}
       <Section title={pending.length > 0 ? `Approval Queue (${pending.length})` : 'Approval Queue'}>
         {pending.length === 0 && (
-          <div style={{ color: '#64748b', fontSize: 13, padding: '10px 0' }}>No campaigns pending review.</div>
+          <div style={{ color: "var(--muted)", fontSize: 13, padding: '10px 0' }}>No campaigns pending review.</div>
         )}
         {pending.map((c) => (
           <div
             key={c.id}
             style={{
-              background: '#ffffff',
-              border: '1px solid #334155',
+              background: 'var(--card)fff',
+              border: '1px solid var(--ink-2)',
               borderRadius: 12,
               padding: '14px 18px',
               marginBottom: 10,
@@ -504,7 +504,7 @@ export default function SmartSchedulePage() {
             >
               <div>
                 <span style={{ fontWeight: 800, fontSize: 15 }}>{c.campaign_name}</span>
-                <span style={{ fontSize: 12, color: '#64748b', marginLeft: 10 }}>{PLATFORM_LABELS[c.platform]}</span>
+                <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: 10 }}>{PLATFORM_LABELS[c.platform]}</span>
                 {c.reviewer_email && (
                   <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 10 }}>→ {c.reviewer_email}</span>
                 )}
@@ -518,9 +518,9 @@ export default function SmartSchedulePage() {
                   style={{
                     padding: '6px 14px',
                     borderRadius: 8,
-                    background: '#dbeafe',
-                    border: '1px solid #6366f1',
-                    color: '#93c5fd',
+                    background: 'var(--info-soft)',
+                    border: "1px solid var(--brand)",
+                    color: 'var(--info-line)',
                     fontSize: 12,
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -531,7 +531,7 @@ export default function SmartSchedulePage() {
               </div>
             </div>
             {c.approval_message && (
-              <div style={{ marginTop: 8, fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>
+              <div style={{ marginTop: 8, fontSize: 12, color: "var(--muted)", fontStyle: 'italic' }}>
                 {'“'}
                 {c.approval_message}
                 {'”'}
@@ -542,7 +542,7 @@ export default function SmartSchedulePage() {
                 style={{
                   marginTop: 12,
                   padding: '12px 14px',
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   borderRadius: 10,
                   border: '1px solid var(--line)',
                 }}
@@ -555,8 +555,8 @@ export default function SmartSchedulePage() {
                     style={{
                       flex: 1,
                       minWidth: 140,
-                      background: '#f6f7fa',
-                      border: '1px solid #334155',
+                      background: "var(--bg)",
+                      border: '1px solid var(--ink-2)',
                       borderRadius: 8,
                       color: 'var(--text)',
                       padding: '6px 10px',
@@ -570,8 +570,8 @@ export default function SmartSchedulePage() {
                     style={{
                       flex: 2,
                       minWidth: 200,
-                      background: '#f6f7fa',
-                      border: '1px solid #334155',
+                      background: "var(--bg)",
+                      border: '1px solid var(--ink-2)',
                       borderRadius: 8,
                       color: 'var(--text)',
                       padding: '6px 10px',
@@ -587,9 +587,9 @@ export default function SmartSchedulePage() {
                     style={{
                       padding: '6px 16px',
                       borderRadius: 8,
-                      background: '#dcfce7',
-                      border: '1px solid #22c55e',
-                      color: '#15803d',
+                      background: 'var(--success-soft)',
+                      border: '1px solid var(--success)',
+                      color: 'var(--success-ink)',
                       fontSize: 12,
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -604,9 +604,9 @@ export default function SmartSchedulePage() {
                     style={{
                       padding: '6px 16px',
                       borderRadius: 8,
-                      background: '#fee2e2',
-                      border: '1px solid #ef4444',
-                      color: '#dc2626',
+                      background: 'var(--danger-soft)',
+                      border: '1px solid var(--danger)',
+                      color: 'var(--danger)',
                       fontSize: 12,
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -621,8 +621,8 @@ export default function SmartSchedulePage() {
                       padding: '6px 12px',
                       borderRadius: 8,
                       background: 'transparent',
-                      border: '1px solid #334155',
-                      color: '#64748b',
+                      border: '1px solid var(--ink-2)',
+                      color: "var(--muted)",
                       fontSize: 12,
                       cursor: 'pointer',
                     }}
@@ -637,14 +637,14 @@ export default function SmartSchedulePage() {
 
         {/* Request approval for any campaign */}
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>Send a campaign for human review:</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>Send a campaign for human review:</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <select
               value={approvalTarget ?? ''}
               onChange={(e) => setApprovalTarget(e.target.value || null)}
               style={{
-                background: '#f6f7fa',
-                border: '1px solid #334155',
+                background: "var(--bg)",
+                border: '1px solid var(--ink-2)',
                 borderRadius: 8,
                 color: 'var(--text)',
                 padding: '6px 10px',
@@ -671,8 +671,8 @@ export default function SmartSchedulePage() {
                   style={{
                     flex: 1,
                     minWidth: 180,
-                    background: '#f6f7fa',
-                    border: '1px solid #334155',
+                    background: "var(--bg)",
+                    border: '1px solid var(--ink-2)',
                     borderRadius: 8,
                     color: 'var(--text)',
                     padding: '6px 10px',
@@ -686,8 +686,8 @@ export default function SmartSchedulePage() {
                   style={{
                     flex: 2,
                     minWidth: 180,
-                    background: '#f6f7fa',
-                    border: '1px solid #334155',
+                    background: "var(--bg)",
+                    border: '1px solid var(--ink-2)',
                     borderRadius: 8,
                     color: 'var(--text)',
                     padding: '6px 10px',
@@ -714,9 +714,9 @@ export default function SmartSchedulePage() {
                   style={{
                     padding: '6px 14px',
                     borderRadius: 8,
-                    background: '#dbeafe',
-                    border: '1px solid #6366f1',
-                    color: '#93c5fd',
+                    background: 'var(--info-soft)',
+                    border: "1px solid var(--brand)",
+                    color: 'var(--info-line)',
                     fontSize: 12,
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -734,7 +734,7 @@ export default function SmartSchedulePage() {
       <Section title="A/B Creative Suggestions">
         <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
-            <label htmlFor="ab-campaign" style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 4 }}>
+            <label htmlFor="ab-campaign" style={{ fontSize: 11, color: "var(--muted)", display: 'block', marginBottom: 4 }}>
               Campaign
             </label>
             <select
@@ -742,8 +742,8 @@ export default function SmartSchedulePage() {
               value={selectedCampaign}
               onChange={(e) => setSelectedCampaign(e.target.value)}
               style={{
-                background: '#f6f7fa',
-                border: '1px solid #334155',
+                background: "var(--bg)",
+                border: '1px solid var(--ink-2)',
                 borderRadius: 8,
                 color: 'var(--text)',
                 padding: '6px 10px',
@@ -766,8 +766,8 @@ export default function SmartSchedulePage() {
             style={{
               padding: '7px 16px',
               borderRadius: 8,
-              background: '#f6f7fa',
-              border: '1px solid #334155',
+              background: "var(--bg)",
+              border: '1px solid var(--ink-2)',
               color: 'var(--text)',
               fontSize: 12,
               fontWeight: 700,
@@ -784,29 +784,29 @@ export default function SmartSchedulePage() {
               style={{
                 marginBottom: 10,
                 padding: '10px 14px',
-                background: '#ffffff',
+                background: 'var(--card)fff',
                 borderRadius: 10,
                 border: '1px solid var(--line)',
                 fontSize: 12,
               }}
             >
-              <span style={{ color: '#64748b' }}>Original: </span>
+              <span style={{ color: "var(--muted)" }}>Original: </span>
               <strong>{abData.original.title}</strong>
-              <span style={{ color: '#64748b', marginLeft: 10 }}>CTA: </span>
+              <span style={{ color: "var(--muted)", marginLeft: 10 }}>CTA: </span>
               {abData.original.cta}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: 10 }}>
               {abData.suggestions.map((v) => (
                 <div
                   key={v.variant}
-                  style={{ background: '#ffffff', border: '1px solid var(--line)', borderRadius: 12, padding: '12px 14px' }}
+                  style={{ background: 'var(--card)fff', border: '1px solid var(--line)', borderRadius: 12, padding: '12px 14px' }}
                 >
                   <div
                     style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}
                   >
-                    <span style={{ fontWeight: 800, fontSize: 13, color: '#60a5fa' }}>Variant {v.variant}</span>
+                    <span style={{ fontWeight: 800, fontSize: 13, color: 'var(--info)' }}>Variant {v.variant}</span>
                     <span style={{ fontSize: 10, color: 'var(--muted)' }}>{v.label}</span>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: '#22c55e' }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--success)' }}>
                       +{v.predicted_ctr_lift_pct}% CTR
                     </span>
                   </div>
@@ -814,8 +814,8 @@ export default function SmartSchedulePage() {
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, lineHeight: 1.4 }}>
                     {v.description}
                   </div>
-                  <div style={{ fontSize: 11, color: '#60a5fa' }}>CTA: {v.cta}</div>
-                  <div style={{ fontSize: 10, color: '#475569', marginTop: 6, lineHeight: 1.4 }}>{v.rationale}</div>
+                  <div style={{ fontSize: 11, color: 'var(--info)' }}>CTA: {v.cta}</div>
+                  <div style={{ fontSize: 10, color: 'var(--ink-2)', marginTop: 6, lineHeight: 1.4 }}>{v.rationale}</div>
                 </div>
               ))}
             </div>
@@ -825,7 +825,7 @@ export default function SmartSchedulePage() {
 
       {/* ── Audience Insights ────────────────────────────────────────────────── */}
       <Section title="Audience Insights">
-        {!insights && <div style={{ color: '#64748b', fontSize: 13 }}>Loading insights…</div>}
+        {!insights && <div style={{ color: "var(--muted)", fontSize: 13 }}>Loading insights…</div>}
         {insights && (
           <div>
             <div
@@ -837,16 +837,16 @@ export default function SmartSchedulePage() {
               }}
             >
               {[
-                { label: 'Est. Total Reach', value: fmtReach(insights.estimated_reach), color: '#22c55e' },
+                { label: 'Est. Total Reach', value: fmtReach(insights.estimated_reach), color: 'var(--success)' },
                 {
                   label: 'Audience Overlap',
                   value: `${insights.audience_overlap_pct}%`,
-                  color: insights.audience_overlap_pct > 60 ? '#f59e0b' : '#22c55e',
+                  color: insights.audience_overlap_pct > 60 ? 'var(--warning)' : 'var(--success)',
                 },
                 {
                   label: 'Keyword Saturation',
                   value: `${insights.keyword_saturation_score}/100`,
-                  color: insights.keyword_saturation_score > 70 ? '#ef4444' : '#22c55e',
+                  color: insights.keyword_saturation_score > 70 ? 'var(--danger)' : 'var(--success)',
                 },
                 { label: 'Keywords Indexed', value: String(insights.keywords_indexed), color: 'var(--text)' },
                 { label: 'Freq Cap Suggestion', value: `${insights.frequency_cap_suggestion}×/day`, color: 'var(--text)' },
@@ -855,14 +855,14 @@ export default function SmartSchedulePage() {
                 <div
                   key={kpi.label}
                   style={{
-                    background: '#ffffff',
+                    background: 'var(--card)fff',
                     border: '1px solid var(--line)',
                     borderRadius: 10,
                     padding: '10px 14px',
                     textAlign: 'center',
                   }}
                 >
-                  <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     {kpi.label}
                   </div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: kpi.color, marginTop: 4 }}>{kpi.value}</div>
@@ -871,7 +871,7 @@ export default function SmartSchedulePage() {
             </div>
             {insights.top_keywords.length > 0 && (
               <div style={{ marginBottom: 12 }}>
-                <span style={{ fontSize: 11, color: '#64748b', marginRight: 8 }}>Top keywords:</span>
+                <span style={{ fontSize: 11, color: "var(--muted)", marginRight: 8 }}>Top keywords:</span>
                 {insights.top_keywords.map((kw) => (
                   <span
                     key={kw}
@@ -880,8 +880,8 @@ export default function SmartSchedulePage() {
                       margin: '2px 4px',
                       padding: '2px 8px',
                       borderRadius: 999,
-                      background: '#f6f7fa',
-                      border: '1px solid #334155',
+                      background: "var(--bg)",
+                      border: '1px solid var(--ink-2)',
                       fontSize: 11,
                       color: 'var(--muted)',
                     }}
@@ -900,13 +900,13 @@ export default function SmartSchedulePage() {
                     gap: 10,
                     alignItems: 'flex-start',
                     padding: '8px 12px',
-                    background: '#ffffff',
+                    background: 'var(--card)fff',
                     borderRadius: 8,
                     border: '1px solid var(--line)',
                     fontSize: 12,
                   }}
                 >
-                  <span style={{ color: '#f59e0b', fontWeight: 800, flexShrink: 0 }}>⚡</span>
+                  <span style={{ color: 'var(--warning)', fontWeight: 800, flexShrink: 0 }}>⚡</span>
                   <span style={{ color: 'var(--muted)' }}>{rec}</span>
                 </div>
               ))}
@@ -918,7 +918,7 @@ export default function SmartSchedulePage() {
       {/* ── Campaign Approval Status Overview ────────────────────────────────── */}
       <Section title="Campaign Approval Status">
         {campaigns.filter((c) => c.approval_status).length === 0 && (
-          <div style={{ color: '#64748b', fontSize: 13 }}>No campaigns have been submitted for approval yet.</div>
+          <div style={{ color: "var(--muted)", fontSize: 13 }}>No campaigns have been submitted for approval yet.</div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {campaigns
@@ -931,7 +931,7 @@ export default function SmartSchedulePage() {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '10px 14px',
-                  background: '#ffffff',
+                  background: 'var(--card)fff',
                   borderRadius: 10,
                   border: '1px solid var(--line)',
                   flexWrap: 'wrap',
@@ -940,13 +940,13 @@ export default function SmartSchedulePage() {
               >
                 <div>
                   <span style={{ fontWeight: 700, fontSize: 14 }}>{c.campaign_name}</span>
-                  <span style={{ fontSize: 11, color: '#64748b', marginLeft: 10 }}>{PLATFORM_LABELS[c.platform]}</span>
+                  <span style={{ fontSize: 11, color: "var(--muted)", marginLeft: 10 }}>{PLATFORM_LABELS[c.platform]}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <ApprovalBadge status={c.approval_status} />
-                  {c.approver_name && <span style={{ fontSize: 11, color: '#64748b' }}>by {c.approver_name}</span>}
+                  {c.approver_name && <span style={{ fontSize: 11, color: "var(--muted)" }}>by {c.approver_name}</span>}
                   {c.approval_reason && (
-                    <span style={{ fontSize: 11, color: '#64748b', fontStyle: 'italic' }}>
+                    <span style={{ fontSize: 11, color: "var(--muted)", fontStyle: 'italic' }}>
                       {'“'}
                       {c.approval_reason}
                       {'”'}

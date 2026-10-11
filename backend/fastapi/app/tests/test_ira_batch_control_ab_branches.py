@@ -93,7 +93,13 @@ def test_actions_batch_executes_high_impact_and_sends_notifications(client: Test
             'SLACK_OPS_WEBHOOK_URL': 'https://slack.example/hook',
         },
         clear=False,
-    ), patch('backend.fastapi.app.routers.ira.httpx.post') as http_post:
+    ), patch('backend.fastapi.app.domains.assistant.operations.ira_response.httpx.post') as http_post, patch(
+        'backend.fastapi.app.domains.assistant.operations.ira_response.resolve_outbound_target',
+        return_value=object(),
+    ) as resolve_outbound_target, patch(
+        'backend.fastapi.app.domains.assistant.operations.ira_response.outbound_request'
+    ) as outbound_request:
+        outbound_request.return_value.is_success = True
         r = client.post(
             '/ira/actions/batch',
             headers=_headers(),
@@ -116,7 +122,9 @@ def test_actions_batch_executes_high_impact_and_sends_notifications(client: Test
     assert payload['total_cost_pence'] == 4.0
 
     # Email + slack notification paths should both attempt delivery.
-    assert http_post.call_count >= 2
+    assert http_post.call_count >= 1
+    assert resolve_outbound_target.call_count >= 1
+    assert outbound_request.call_count >= 1
     assert any(m.get('status') == 'sent' for m in memory_stores.resend_messages)
     assert any(m.get('status') == 'sent' for m in memory_stores.slack_messages)
     assert len(memory_stores.ira_action_snapshots) == 2

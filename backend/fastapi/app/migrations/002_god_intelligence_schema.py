@@ -1,7 +1,4 @@
-"""
-God Intelligence — Complete Production Schema Migration
-Supabase PostgreSQL tables with proper indexing, RLS, and constraints
-"""
+"""God Intelligence PostgreSQL schema migration."""
 
 MIGRATION_SQL = """
 -- Enable required extensions
@@ -344,18 +341,23 @@ CREATE UNIQUE INDEX idx_dashboard_cache_org ON intel_dashboard_cache(org_id);
 
 def upgrade():
     """Apply migration"""
-    from backend.fastapi.app.core.supabase_client import get_supabase
-    from sqlalchemy import text
-    
-    sb = get_supabase()
-    sb.query(text(MIGRATION_SQL)).execute()
+    import psycopg
+
+    from backend.fastapi.app.database import _get_database_url
+
+    database_url = _get_database_url()
+    if not database_url:
+        raise RuntimeError("PostgreSQL is not configured")
+    with psycopg.connect(database_url) as connection:
+        connection.execute(MIGRATION_SQL)
     print("✓ God Intelligence schema created successfully")
 
 def downgrade():
     """Rollback migration"""
-    from backend.fastapi.app.core.supabase_client import get_supabase
-    from sqlalchemy import text
-    
+    import psycopg
+
+    from backend.fastapi.app.database import _get_database_url
+
     archival_sql = """
     DO $$
     BEGIN
@@ -423,6 +425,9 @@ def downgrade():
         END IF;
     END $$;
     """
-    sb = get_supabase()
-    sb.query(text(archival_sql)).execute()
+    database_url = _get_database_url()
+    if not database_url:
+        raise RuntimeError("PostgreSQL is not configured")
+    with psycopg.connect(database_url) as connection:
+        connection.execute(archival_sql)
     print("✓ God Intelligence schema archived without destructive deletes")

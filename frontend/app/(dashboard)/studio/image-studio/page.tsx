@@ -186,7 +186,7 @@ export default function ImageStudioPage() {
           {running ? 'Running...' : 'Run image operation'}
         </button>
 
-        {error ? <p style={{ margin: 0, color: '#ef4444' }}>{error}</p> : null}
+        {error ? <p style={{ margin: 0, color: 'var(--danger)' }}>{error}</p> : null}
       </section>
 
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 16 }}>

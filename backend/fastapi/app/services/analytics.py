@@ -6,50 +6,43 @@ Extracted from legacy_main.py: PostHog, Matomo, Plausible event tracking.
 from __future__ import annotations
 
 import os
-from fastapi import Depends
 from datetime import UTC, datetime
-from typing import Annotated, TYPE_CHECKING
+from typing import Annotated
 
 import httpx
+from fastapi import Depends
+from pydantic import BaseModel, Field, HttpUrl
 
-if TYPE_CHECKING:
-    from ..deps import AuthContext
+from .. import memory_stores
+from ..deps import AuthContext, require_auth
+from ..rate_limiter import enforce_rate_limit as _enforce_rate_limit
 
 JsonObject = dict[str, object]
-from ..deps import AuthContext, require_auth
+
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
 
 # ── Memory Store References (set by legacy_main.py) ──────────
-_posthog_events_memory = []
-_matomo_events_memory = []
-_plausible_events_memory = []
-_rate_buckets = {}
-_rate_lock = None
-from ..rate_limiter import enforce_rate_limit as _enforce_rate_limit  # default; may be overwritten by set_memory_stores
+_posthog_events_memory = memory_stores.posthog_events
+_matomo_events_memory = memory_stores.matomo_events
+_plausible_events_memory = memory_stores.plausible_events
 
 
 def set_memory_stores(
     posthog_events_memory=None,
     matomo_events_memory=None,
     plausible_events_memory=None,
-    rate_buckets=None,
-    rate_lock=None,
     enforce_rate_limit=None,
 ) -> None:
     """Inject memory store references from legacy_main.py."""
     global _posthog_events_memory, _matomo_events_memory, _plausible_events_memory
-    global _rate_buckets, _rate_lock, _enforce_rate_limit
+    global _enforce_rate_limit
     if posthog_events_memory is not None:
         _posthog_events_memory = posthog_events_memory
     if matomo_events_memory is not None:
         _matomo_events_memory = matomo_events_memory
     if plausible_events_memory is not None:
         _plausible_events_memory = plausible_events_memory
-    if rate_buckets is not None:
-        _rate_buckets = rate_buckets
-    if rate_lock is not None:
-        _rate_lock = rate_lock
     if enforce_rate_limit is not None:
         _enforce_rate_limit = enforce_rate_limit
 
@@ -225,7 +218,6 @@ def track_plausible_event(payload: PlausibleTrackRequest, auth: AuthDep) -> Json
 
 # ── Request Models (copied from legacy_main.py) ───────────────
 
-from pydantic import BaseModel, Field, HttpUrl
 
 
 class PosthogCaptureRequest(BaseModel):

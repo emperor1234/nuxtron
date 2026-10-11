@@ -36,7 +36,6 @@ exclude = "(?x)(^app/selftest\\.py$|^app/.*_smoke\\.py$|^app/tests/)"
 [[tool.mypy.overrides]]
 module = [
   "hvac.*",
-  "supabase.*",
   "saml2.*",
   "google.auth.transport.requests",
   "google.oauth2",
@@ -49,31 +48,30 @@ module = [
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "-q --strict-markers --cov=app --cov-report=term-missing --cov-report=xml:coverage-python.xml"
+addopts = "-q --strict-markers --cov --cov-config=backend/fastapi/pyproject.toml --cov-report=term-missing --cov-report=xml:coverage-python.xml"
 testpaths = ["app/tests"]
 markers = [
   "no_legacy: skip autouse legacy_main reset (isolated unit tests)",
 ]
 
 [tool.coverage.run]
+source = ["backend/fastapi/app"]
 omit = [
-  "app/selftest.py",
-  "app/chaos_smoke.py",
-  "app/load_smoke.py",
-  "app/fallback_pressure_guard.py",
-  "app/fallback_pressure_refresh_baseline.py",
-  "app/fallback_pressure_trend_check.py",
-  "app/vse_selftest.py",
-  "app/tests/*",
-  "app/legacy_main.py",
+  "*/app/selftest.py",
+  "*/app/chaos_smoke.py",
+  "*/app/load_smoke.py",
+  "*/app/fallback_pressure_guard.py",
+  "*/app/fallback_pressure_refresh_baseline.py",
+  "*/app/fallback_pressure_trend_check.py",
+  "*/app/vse_selftest.py",
+  "*/app/tests/*",
+  "*/app/legacy_main.py",
 ]
 
 [tool.coverage.report]
-# Measured 2026-08-06: 41% (with app/legacy_main.py excluded above, per the
-# `omit` list — that file is ~10k lines and not currently measured at all).
-# Floor set a couple points below measured so incidental fluctuation doesn't
-# flap CI; raise this number as coverage genuinely improves, never lower it
-# to make a failing build pass.
+# Run from repository root. Filesystem measurement covers both supported import
+# namespaces; tests are excluded independent of the working directory. Retain
+# the existing floor; do not lower it to hide a failing source-only measurement.
 fail_under = 39
 exclude_lines = [
   "pragma: no cover",

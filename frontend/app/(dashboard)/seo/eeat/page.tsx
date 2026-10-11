@@ -10,9 +10,9 @@ const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
   : process.env.NODE_ENV === 'production';
 
 function getEeatScoreColor(score: number): string {
-  if (score >= 80) return '#22c55e';
-  if (score >= 60) return '#f59e0b';
-  return '#ef4444';
+  if (score >= 80) return 'var(--success)';
+  if (score >= 60) return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 type EeatGap =
@@ -135,7 +135,7 @@ export default function EEATPage() {
           Score your content on Experience, Expertise, Authoritativeness, and Trustworthiness — Google&apos;s quality
           framework.
         </p>
-        {error && <div style={{ ...card, color: '#f87171' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
         <section style={card}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 12 }}>
             <div>
@@ -191,7 +191,7 @@ export default function EEATPage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
               opacity: loading ? 0.7 : 1,
@@ -256,7 +256,7 @@ export default function EEATPage() {
                       style={{
                         width: `${dimScore(result, d.key) ?? 0}%`,
                         height: '100%',
-                        background: '#a78bfa',
+                        background: 'var(--info)',
                         borderRadius: 4,
                       }}
                     />
@@ -266,7 +266,7 @@ export default function EEATPage() {
             </section>
             {(result.critical_gaps ?? []).length > 0 ? (
               <section style={card}>
-                <p style={{ fontSize: 14, fontWeight: 700, marginTop: 0, marginBottom: 12, color: '#ef4444' }}>
+                <p style={{ fontSize: 14, fontWeight: 700, marginTop: 0, marginBottom: 12, color: 'var(--danger)' }}>
                   🚨 Critical Gaps
                 </p>
                 <ul style={{ margin: 0, paddingLeft: 20 }}>
@@ -319,7 +319,7 @@ export default function EEATPage() {
                         background: 'rgba(239,68,68,0.1)',
                         border: '1px solid rgba(239,68,68,0.3)',
                         borderRadius: 99,
-                        color: '#ef4444',
+                        color: 'var(--danger)',
                       }}
                     >
                       {s}

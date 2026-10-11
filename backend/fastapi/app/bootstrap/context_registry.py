@@ -1,11 +1,4 @@
-"""Registers every HTTP surface onto a freshly created application.
-
-Registration order is part of the contract: a handful of paths are served by
-two routers and the first registration wins, so the order below must match the
-historical composition order exactly. Bulk router registration still lives in
-``router_registration`` and is reached through a named adapter while that
-module is being decomposed.
-"""
+"""Registers every HTTP surface onto a freshly created application."""
 
 from __future__ import annotations
 
@@ -13,14 +6,14 @@ from fastapi import FastAPI
 
 from .. import legacy_main as lg
 from .. import memory_stores
-from ..rate_limiter import get_rate_buckets, get_rate_lock
+from ..contexts.brand_management.wiring import router as brand_management_router
+from ..rate_limiter import rate_limit_metrics_snapshot
 from ..routers.content_generation_legacy import create_content_generation_router
 from ..routers.finance_legacy import create_finance_router
 from ..routers.frontend_compat import create_frontend_compat_router
 from ..routers.health import create_health_router
-from ..services import content_generation as cg
-from ..services.content_generation_service import ContentRequest
-from ..services.platform import _platform_status_payload
+from ..domains.content import generation as cg
+from .route_compatibility import merge_frozen_http_route_overlaps
 
 
 def register_shared_application_state(app: FastAPI) -> None:
@@ -37,8 +30,7 @@ def register_health_router(app: FastAPI) -> None:
             auth_security_memory=memory_stores.auth_security,
             notifications_memory=memory_stores.notifications,
             all_stores_fn=memory_stores.get_all_stores,
-            rate_buckets=get_rate_buckets(),
-            rate_lock=get_rate_lock(),
+            rate_metrics_snapshot=rate_limit_metrics_snapshot,
         )
     )
 
@@ -63,25 +55,29 @@ def register_content_generation_router(app: FastAPI) -> None:
             content_generation_jobs_lock=service.jobs_lock,
             content_generation_telemetry_lock=service.telemetry_lock,
             content_generation_telemetry=service.telemetry,
-            persist_content_generation_job=cg._persist_content_generation_job,
-            find_content_generation_job=cg._find_content_generation_job,
-            content_generation_inflight_count=cg._content_generation_inflight_count,
-            content_generation_max_inflight=cg._content_generation_max_inflight,
-            content_generation_strict_production_mode=cg._content_generation_strict_production_mode,
-            content_generation_required_provider_state=cg._content_generation_required_provider_state,
-            content_generation_production_verification_payload=service.production_verification_payload,
-            content_generation_job_retention_seconds=cg._content_generation_job_retention_seconds,
-            content_generation_job_terminal=cg._content_generation_job_terminal,
-            content_generation_job_expires_at=cg._content_generation_job_expires_at,
-            content_generation_prune_expired_terminal_jobs=cg._content_generation_prune_expired_terminal_jobs,
-            run_content_generation_job_if_needed=lg._run_content_generation_job_if_needed,
-            strict_no_mock_module_store_counts=lg._strict_no_mock_module_store_counts,
-            platform_status_payload=_platform_status_payload,
+            content_generation_note_telemetry=service.note_telemetry,
+            persist_content_generation_job=lambda job: lg._persist_content_generation_job(job),
+            find_content_generation_job=lambda job_id, tenant_id: lg._find_content_generation_job(job_id, tenant_id),
+            content_generation_inflight_count=lambda tenant_id: lg._content_generation_inflight_count(tenant_id),
+            content_generation_max_inflight=lambda: lg._content_generation_max_inflight(),
+            content_generation_strict_production_mode=lambda: lg._content_generation_strict_production_mode(),
+            content_generation_required_provider_state=lambda: lg._content_generation_required_provider_state(),
+            content_generation_production_verification_payload=(
+                lambda tenant_id: lg._content_generation_production_verification_payload(tenant_id)
+            ),
+            content_generation_job_retention_seconds=lambda: lg._content_generation_job_retention_seconds(),
+            content_generation_job_terminal=lambda status: lg._content_generation_job_terminal(status),
+            content_generation_job_expires_at=lambda job: lg._content_generation_job_expires_at(job),
+            content_generation_prune_expired_terminal_jobs=(
+                lambda: lg._content_generation_prune_expired_terminal_jobs()
+            ),
+            run_content_generation_job_if_needed=lambda job, auth: lg._run_content_generation_job_if_needed(job, auth),
+            strict_no_mock_module_store_counts=lambda tenant_id: lg._strict_no_mock_module_store_counts(tenant_id),
+            platform_status_payload=lambda auth: lg._platform_status_payload(auth),
             json_object=lg._json_object,
             env_bool=cg._env_bool,
             safe_int=cg._safe_int,
             is_production=lg._is_production,
-            content_request_model=ContentRequest,
         )
     )
 
@@ -91,6 +87,11 @@ def register_legacy_router_catalog(app: FastAPI) -> None:
     from ..router_registration import register_all_routers
 
     register_all_routers(app)
+
+
+def register_brand_management_context(app: FastAPI) -> None:
+    """Register the first domain-package pilot through the composition root."""
+    app.include_router(brand_management_router)
 
 
 def register_frontend_compatibility_router(app: FastAPI) -> None:
@@ -103,4 +104,6 @@ def register_all_contexts(app: FastAPI) -> None:
     register_finance_router(app)
     register_content_generation_router(app)
     register_legacy_router_catalog(app)
+    register_brand_management_context(app)
     register_frontend_compatibility_router(app)
+    merge_frozen_http_route_overlaps(app)

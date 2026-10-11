@@ -31,7 +31,7 @@ interface ShareLinkResponse {
   expires_at?: string;
 }
 
-const defaultColor = '#f97316';
+const defaultColor = 'var(--warning)';
 
 export default function ClientPortalPage() {
   const [activeTab, setActiveTab] = useState<'clients' | 'reports'>('clients');

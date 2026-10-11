@@ -225,6 +225,8 @@ def _http_json_request(method: str, url: str, headers: dict[str, str], json_payl
         raise HTTPException(status_code=504, detail="AI provider timeout") from exc
     except httpx.HTTPStatusError as exc:
         raise HTTPException(status_code=exc.response.status_code, detail=f"AI provider error: {exc}") from exc
+    except httpx.RequestError as exc:
+        raise HTTPException(status_code=502, detail=f"AI provider unavailable: {exc}") from exc
 
 
 def _http_bytes_request(method: str, url: str, headers: dict[str, str], json_payload: dict[str, Any]) -> httpx.Response:

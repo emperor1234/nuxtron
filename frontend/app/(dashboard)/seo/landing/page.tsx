@@ -108,7 +108,7 @@ export default function LandingPageBuilderPage() {
         <section style={{ ...card, marginBottom: 14, display: 'grid', gap: 10 }}>
           <div>
             <label htmlFor="lp-product" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              Product / Brand Name <span style={{ color: '#ef4444' }}>*</span>
+              Product / Brand Name <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
             <input
               id="lp-product"
@@ -120,7 +120,7 @@ export default function LandingPageBuilderPage() {
           </div>
           <div>
             <label htmlFor="lp-keyword" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              Target Keyword <span style={{ color: '#ef4444' }}>*</span>
+              Target Keyword <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
             <input
               id="lp-keyword"
@@ -161,7 +161,7 @@ export default function LandingPageBuilderPage() {
               padding: '10px 20px',
               borderRadius: 8,
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
@@ -170,7 +170,7 @@ export default function LandingPageBuilderPage() {
           >
             {loading ? 'Generating…' : 'Generate Landing Page Brief'}
           </button>
-          {error && <div style={{ color: '#fca5a5', fontSize: 13 }}>{error}</div>}
+          {error && <div style={{ color: 'var(--danger-line)', fontSize: 13 }}>{error}</div>}
         </section>
 
         {result && (
@@ -178,12 +178,12 @@ export default function LandingPageBuilderPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>Cached result</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
                 )}
               </div>
             )}
@@ -196,7 +196,7 @@ export default function LandingPageBuilderPage() {
                   padding: '8px 20px',
                   borderRadius: 8,
                   background: 'var(--brand)',
-                  color: '#00101e',
+                  color: 'var(--on-brand)',
                   fontWeight: 700,
                   fontSize: 14,
                 }}

@@ -190,7 +190,7 @@ export default function IRAMonitor() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-[#f1f5f9] p-6">
+    <div className="min-h-screen bg-gradient-to-br from-white to-[var(--bg-soft)] p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -264,7 +264,7 @@ export default function IRAMonitor() {
         {/* Tabs */}
         {monitor && !loading && (
           <>
-            <div className="flex gap-1 mb-5 bg-[#f1f5f9] rounded-lg p-1 w-fit">
+            <div className="flex gap-1 mb-5 bg-[var(--bg-soft)] rounded-lg p-1 w-fit">
               {tabs.map((t) => (
                 <button
                   key={t.id}
@@ -303,7 +303,7 @@ export default function IRAMonitor() {
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
-                        <thead className="bg-[#f1f5f9] text-[var(--muted)] text-xs uppercase">
+                        <thead className="bg-[var(--bg-soft)] text-[var(--muted)] text-xs uppercase">
                           <tr>
                             <th className="px-5 py-3 text-left">Target</th>
                             <th className="px-5 py-3 text-left">Command</th>
@@ -355,7 +355,7 @@ export default function IRAMonitor() {
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
-                        <thead className="bg-[#f1f5f9] text-[var(--muted)] text-xs uppercase">
+                        <thead className="bg-[var(--bg-soft)] text-[var(--muted)] text-xs uppercase">
                           <tr>
                             <th className="px-5 py-3 text-left">Role</th>
                             <th className="px-5 py-3 text-left">Channel</th>
@@ -419,7 +419,7 @@ export default function IRAMonitor() {
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
-                        <thead className="bg-[#f1f5f9] text-[var(--muted)] text-xs uppercase">
+                        <thead className="bg-[var(--bg-soft)] text-[var(--muted)] text-xs uppercase">
                           <tr>
                             <th className="px-5 py-3 text-left">Action Type</th>
                             <th className="px-5 py-3 text-center">Count</th>
@@ -477,7 +477,7 @@ export default function IRAMonitor() {
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
-                        <thead className="bg-[#f1f5f9] text-[var(--muted)] text-xs uppercase">
+                        <thead className="bg-[var(--bg-soft)] text-[var(--muted)] text-xs uppercase">
                           <tr>
                             <th className="px-5 py-3 text-left">Action Type</th>
                             <th className="px-5 py-3 text-center">Outcome</th>
@@ -556,7 +556,7 @@ export default function IRAMonitor() {
                           <div className="text-right">
                             <p className="text-[var(--muted)] text-xs mb-1">Current Leader</p>
                             <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-lg text-sm font-bold">
-                              &#127942; {test.analysis.winner}
+                              &var(--success-ink); {test.analysis.winner}
                             </span>
                             <p className="text-[var(--text)]0 text-xs mt-1">Confidence: {pct(test.analysis.confidence)}</p>
                           </div>
@@ -568,11 +568,11 @@ export default function IRAMonitor() {
                           return (
                             <div
                               key={variant}
-                              className={`rounded-lg p-4 border ${isWinner ? 'border-yellow-500/40 bg-yellow-500/5' : 'border-[var(--line)] bg-[#f1f5f9]'}`}
+                              className={`rounded-lg p-4 border ${isWinner ? 'border-yellow-500/40 bg-yellow-500/5' : 'border-[var(--line)] bg-[var(--bg-soft)]'}`}
                             >
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                  {isWinner && <span className="text-yellow-400">&#127942;</span>}
+                                  {isWinner && <span className="text-yellow-400">&var(--success-ink);</span>}
                                   <span className="text-[var(--text)] font-medium text-sm">{variant}</span>
                                 </div>
                                 <div className="flex gap-4 text-xs text-[var(--muted)]">
@@ -583,7 +583,7 @@ export default function IRAMonitor() {
                               </div>
                               <div className="w-full h-2 bg-[var(--brand)] rounded-full overflow-hidden">
                                 <div
-                                  className={`h-full rounded-full transition-all ${isWinner ? 'bg-yellow-400' : 'bg-[var(--brand)]'}`}
+                                  className={`h-full rounded-full transition-colors ${isWinner ? 'bg-yellow-400' : 'bg-[var(--brand)]'}`}
                                   style={{ width: `${Math.min(stats.success_rate * 100, 100)}%` }}
                                 />
                               </div>
@@ -608,7 +608,7 @@ export default function IRAMonitor() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-[#f1f5f9] text-[var(--muted)] text-xs uppercase">
+                      <thead className="bg-[var(--bg-soft)] text-[var(--muted)] text-xs uppercase">
                         <tr>
                           <th className="px-5 py-3 text-left">Type</th>
                           <th className="px-5 py-3 text-left">Payload</th>

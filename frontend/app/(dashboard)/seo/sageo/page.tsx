@@ -127,7 +127,7 @@ export default function SageoPage() {
   }
 
   const card = {
-    background: '#ffffff',
+    background: 'var(--card)fff',
     border: '1px solid rgba(148, 163, 184, 0.16)',
     borderRadius: 16,
     padding: 16,
@@ -140,7 +140,7 @@ export default function SageoPage() {
     padding: '10px 12px',
     borderRadius: 12,
     border: '1px solid rgba(148, 163, 184, 0.22)',
-    background: '#ffffff',
+    background: 'var(--card)fff',
     color: 'var(--text)',
     marginBottom: 10,
     boxSizing: 'border-box' as const,
@@ -209,7 +209,7 @@ export default function SageoPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 8 }}>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -226,7 +226,7 @@ export default function SageoPage() {
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -244,7 +244,7 @@ export default function SageoPage() {
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -259,7 +259,7 @@ export default function SageoPage() {
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -274,7 +274,7 @@ export default function SageoPage() {
           </div>
         </section>
 
-        {error && <div style={{ ...card, color: '#b91c1c' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
 
         <div
           style={{
@@ -365,7 +365,7 @@ export default function SageoPage() {
                 borderRadius: 10,
                 border: '1px solid rgba(125,211,252,0.4)',
                 background: 'linear-gradient(90deg, rgba(6,182,212,0.9) 0%, rgba(14,165,233,0.86) 100%)',
-                color: '#ecfeff',
+                color: 'var(--info-soft)',
                 fontWeight: 700,
                 cursor: 'pointer',
                 opacity: loading ? 0.7 : 1,
@@ -393,7 +393,7 @@ export default function SageoPage() {
                     border: '1px solid rgba(148,163,184,0.16)',
                     borderRadius: 10,
                     padding: '8px 10px',
-                    background: '#f4f5f8',
+                    background: 'var(--bg-soft)',
                   }}
                 >
                   <div
@@ -423,7 +423,7 @@ export default function SageoPage() {
                 border: '1px solid rgba(148,163,184,0.16)',
                 borderRadius: 10,
                 padding: '10px 12px',
-                background: '#f4f5f8',
+                background: 'var(--bg-soft)',
               }}
             >
               <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>

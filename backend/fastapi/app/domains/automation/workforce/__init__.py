@@ -1,0 +1,1 @@
+"""Automation/Workforce bounded context."""

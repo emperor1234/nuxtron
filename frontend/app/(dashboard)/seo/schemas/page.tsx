@@ -108,7 +108,7 @@ export default function SchemasPage() {
     boxSizing: 'border-box',
     fontSize: 14,
   };
-  const SEVERITY_COLORS = { error: '#f87171', warning: '#ffb867', info: '#1bc7ff' };
+  const SEVERITY_COLORS = { error: 'var(--danger)', warning: 'var(--warning)', info: 'var(--info)' };
 
   const tabs = [
     { key: 'code' as const, label: 'JSON-LD Code' },
@@ -133,7 +133,7 @@ export default function SchemasPage() {
         </p>
 
         {error && (
-          <div style={{ ...card, color: '#f87171', borderColor: '#f8717144', background: '#f8717111' }}>{error}</div>
+          <div style={{ ...card, color: 'var(--danger)', borderColor: 'color-mix(in oklab, var(--danger) 27%, transparent)', background: 'color-mix(in oklab, var(--danger) 7%, transparent)' }}>{error}</div>
         )}
 
         <section style={card}>
@@ -228,7 +228,7 @@ export default function SchemasPage() {
               border: 'none',
               borderRadius: 8,
               background: loading ? 'var(--muted)' : 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 800,
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: 14,
@@ -253,12 +253,12 @@ export default function SchemasPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>Cached result</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
                 )}
               </div>
             )}
@@ -287,7 +287,7 @@ export default function SchemasPage() {
                     fontSize: 32,
                     fontWeight: 800,
                     color:
-                      result.validation_score >= 80 ? '#26d78e' : result.validation_score >= 60 ? '#ffb867' : '#f87171',
+                      result.validation_score >= 80 ? 'var(--success)' : result.validation_score >= 60 ? 'var(--warning)' : 'var(--danger)',
                   }}
                 >
                   {result.validation_score}
@@ -307,11 +307,11 @@ export default function SchemasPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   {result.is_valid ? (
-                    <CheckCircle size={20} color="#26d78e" />
+                    <CheckCircle size={20} color="var(--success)" />
                   ) : (
-                    <AlertTriangle size={20} color="#f87171" />
+                    <AlertTriangle size={20} color="var(--danger)" />
                   )}
-                  <span style={{ fontSize: 14, fontWeight: 700, color: result.is_valid ? '#26d78e' : '#f87171' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: result.is_valid ? 'var(--success)' : 'var(--danger)' }}>
                     {result.is_valid ? 'Valid' : 'Has Issues'}
                   </span>
                 </div>
@@ -336,7 +336,7 @@ export default function SchemasPage() {
                 <div
                   style={{
                     fontSize: 10,
-                    color: '#ffb867',
+                    color: 'var(--warning)',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     marginBottom: 6,
@@ -344,7 +344,7 @@ export default function SchemasPage() {
                 >
                   Missing Recommended
                 </div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#ffb867' }}>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--warning)' }}>
                   {result.missing_recommended?.length ?? 0}
                 </div>
               </div>
@@ -388,7 +388,7 @@ export default function SchemasPage() {
                       border: '1px solid var(--line)',
                       borderRadius: 7,
                       background: copied ? 'rgba(38,215,142,0.1)' : 'transparent',
-                      color: copied ? '#26d78e' : 'var(--muted)',
+                      color: copied ? 'var(--success)' : 'var(--muted)',
                       cursor: 'pointer',
                       fontSize: 12,
                       fontWeight: 700,
@@ -402,7 +402,7 @@ export default function SchemasPage() {
                   style={{
                     margin: 0,
                     padding: '16px 20px',
-                    background: '#f6f7fa',
+                    background: "var(--bg)",
                     borderRadius: 10,
                     border: '1px solid var(--line)',
                     color: 'var(--text)',
@@ -429,7 +429,7 @@ export default function SchemasPage() {
                         fontWeight: 700,
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        color: '#ffb867',
+                        color: 'var(--warning)',
                         marginBottom: 10,
                       }}
                     >
@@ -443,7 +443,7 @@ export default function SchemasPage() {
                             padding: '4px 12px',
                             borderRadius: 999,
                             background: 'rgba(255,184,103,0.1)',
-                            color: '#ffb867',
+                            color: 'var(--warning)',
                             fontSize: 12,
                             fontWeight: 700,
                             border: '1px solid rgba(255,184,103,0.3)',
@@ -469,7 +469,7 @@ export default function SchemasPage() {
                     Validation Issues
                   </div>
                   {result.validation_issues?.length === 0 ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#26d78e', fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--success)', fontSize: 13 }}>
                       <CheckCircle size={16} />
                       No validation issues — schema is clean!
                     </div>
@@ -482,7 +482,7 @@ export default function SchemasPage() {
                             background: 'var(--bg)',
                             borderRadius: 8,
                             padding: '10px 14px',
-                            border: `1px solid ${SEVERITY_COLORS[issue.severity]}44`,
+                            border: `1px solid color-mix(in srgb, ${SEVERITY_COLORS[issue.severity]} 26.67%, transparent)`,
                             display: 'flex',
                             alignItems: 'flex-start',
                             gap: 10,
@@ -548,8 +548,8 @@ export default function SchemasPage() {
                         gap: 8,
                       }}
                     >
-                      <CheckCircle size={14} color="#26d78e" />
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#26d78e' }}>{r}</span>
+                      <CheckCircle size={14} color="var(--success)" />
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--success)' }}>{r}</span>
                     </div>
                   ))}
                 </div>

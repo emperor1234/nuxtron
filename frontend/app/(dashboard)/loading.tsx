@@ -25,7 +25,7 @@ export default function DashboardLoading() {
             width,
             maxWidth: '100%',
             borderRadius: 6,
-            background: 'var(--nx-border, #e5e7eb)',
+            background: 'var(--nx-border)',
             opacity: 0.6,
             animation: 'nx-skeleton-pulse 1.4s ease-in-out infinite',
           }}

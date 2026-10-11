@@ -98,7 +98,7 @@ export default function EcommerceSEOPage() {
         <p style={{ color: 'var(--muted)' }}>
           Optimize product titles, bullet points, descriptions, and Product Schema for maximum visibility.
         </p>
-        {error && <div style={{ ...card, color: '#dc2626' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
         <section style={card}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 12 }}>
             <div>
@@ -146,7 +146,7 @@ export default function EcommerceSEOPage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
               opacity: loading ? 0.7 : 1,
@@ -183,7 +183,7 @@ export default function EcommerceSEOPage() {
                       borderRadius: 999,
                       background:
                         result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
-                      color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)',
+                      color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)',
                     }}
                   >
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
@@ -197,7 +197,7 @@ export default function EcommerceSEOPage() {
                       padding: '4px 10px',
                       borderRadius: 999,
                       background: 'rgba(56,189,248,0.12)',
-                      color: '#38bdf8',
+                      color: 'var(--info)',
                     }}
                   >
                     Cached result
@@ -217,7 +217,7 @@ export default function EcommerceSEOPage() {
                 }}
               >
                 <div style={{ fontSize: 11, color: 'var(--muted)' }}>SEO Score</div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: '#22c55e' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--success)' }}>
                   {result.seo_score ?? result.ecommerce_score ?? '—'}
                 </div>
               </div>
@@ -235,7 +235,7 @@ export default function EcommerceSEOPage() {
                   style={{
                     fontSize: 24,
                     fontWeight: 800,
-                    color: result.review_schema_eligible ? '#22c55e' : '#94a3b8',
+                    color: result.review_schema_eligible ? 'var(--success)' : 'var(--neutral)',
                   }}
                 >
                   {result.review_schema_eligible ? '✓ Yes' : '— No'}
@@ -291,7 +291,7 @@ export default function EcommerceSEOPage() {
                         background: 'rgba(167,139,250,0.1)',
                         border: '1px solid rgba(167,139,250,0.3)',
                         borderRadius: 99,
-                        color: '#a78bfa',
+                        color: 'var(--info)',
                       }}
                     >
                       {k}

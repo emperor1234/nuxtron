@@ -6,11 +6,23 @@ import sys
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 # Mock hvac at import time since it may not be installed
 mock_hvac = MagicMock()
 sys.modules.setdefault("hvac", mock_hvac)
 
+from backend.fastapi.app.vault import hashicorp_vault as hashicorp_vault_module  # noqa: E402
 from backend.fastapi.app.vault.hashicorp_vault import HashiCorpVaultClient  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _isolate_optional_hvac_mock():
+    """Keep this module's optional-dependency mock out of later tests."""
+    hashicorp_vault_module.hvac = mock_hvac
+    yield
+    hashicorp_vault_module.hvac = None
+    sys.modules.pop("hvac", None)
 
 
 def _make_client(**kwargs):

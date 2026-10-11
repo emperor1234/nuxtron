@@ -866,64 +866,52 @@ class TestIraMemorySystemDirect:
             status = ms.provider_status()  # type: ignore[union-attr]
         assert status["long_term"]["pinecone_ready"] is True
 
-    def test_load_vault_secrets_no_postgres(self) -> None:
-        """Lines 57-58: no postgres → return empty dict."""
-        import backend.fastapi.app.ira_memory as ira_mem_module
-        from backend.fastapi.app.ira_memory import _load_vault_secrets
+    def test_vault_get_uses_fallback_when_manager_has_no_secret(self) -> None:
+        """HashiCorp replacement returns the caller's safe fallback."""
+        from backend.fastapi.app.ira_memory import _vault_get
 
-        # Reset cache
-        original_attempted = ira_mem_module._vault_cache_attempted
-        original_cache = ira_mem_module._vault_cache
-        ira_mem_module._vault_cache_attempted = False
+        manager = MagicMock()
+        manager.get_secret.return_value = None
+        with patch(
+            "backend.fastapi.app.vault.secrets_manager.get_secrets_manager",
+            return_value=manager,
+        ):
+            result = _vault_get("DIRECT_ENV_KEY", "IRA_VAULT_SECRET_MY_KEY", "fallback")
 
-        try:
-            with patch.dict(os.environ, {}, clear=False):
-                # Remove SUPABASE_DB_URL and POSTGRES_HOST to ensure no postgres
-                env_backup = {}
-                for key in ["SUPABASE_DB_URL", "POSTGRES_HOST"]:
-                    if key in os.environ:
-                        env_backup[key] = os.environ.pop(key)
-                try:
-                    result = _load_vault_secrets()
-                    assert isinstance(result, dict)
-                finally:
-                    os.environ.update(env_backup)
-        finally:
-            ira_mem_module._vault_cache_attempted = original_attempted
-            ira_mem_module._vault_cache = original_cache
+        assert result == "fallback"
+        manager.get_secret.assert_called_once_with("DIRECT_ENV_KEY")
 
-    def test_load_vault_secrets_with_postgres_mock(self) -> None:
-        """Lines 59-65: postgres available → query vault."""
-        import backend.fastapi.app.ira_memory as ira_mem_module
-        from backend.fastapi.app.ira_memory import _load_vault_secrets
+    def test_vault_get_uses_named_hashicorp_secret(self) -> None:
+        """Configured IRA aliases are resolved through the canonical manager."""
+        from backend.fastapi.app.ira_memory import _vault_get
 
-        ira_mem_module._vault_cache_attempted = False
-        ira_mem_module._vault_cache = {}
+        manager = MagicMock()
+        manager.get_secret.return_value = "vault-value"
+        with (
+            patch.dict(os.environ, {"IRA_VAULT_SECRET_MY_KEY": "MY_SECRET"}),
+            patch(
+                "backend.fastapi.app.vault.secrets_manager.get_secrets_manager",
+                return_value=manager,
+            ),
+        ):
+            result = _vault_get("DIRECT_ENV_KEY", "IRA_VAULT_SECRET_MY_KEY", "fallback")
 
-        mock_cur = MagicMock()
-        mock_cur.fetchall.return_value = [("OPENAI_KEY", "sk-fake"), ("REDIS_PASSWORD", "secret")]
-        mock_conn = MagicMock()
-        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn.__exit__ = MagicMock(return_value=False)
-        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cur)
-        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
-
-        with patch.dict(os.environ, {"POSTGRES_HOST": "localhost"}):
-            with patch("psycopg.connect", return_value=mock_conn):
-                result = _load_vault_secrets()
-        assert isinstance(result, dict)
-
-        ira_mem_module._vault_cache_attempted = False
+        assert result == "vault-value"
+        manager.get_secret.assert_called_once_with("MY_SECRET")
 
     def test_vault_get_with_vault_secret(self) -> None:
         """Lines 77-80: vault_get finds value in vault."""
-        import backend.fastapi.app.ira_memory as ira_mem_module
         from backend.fastapi.app.ira_memory import _vault_get
 
-        ira_mem_module._vault_cache = {"MY_SECRET": "vault-value"}
-        ira_mem_module._vault_cache_attempted = True
-
-        with patch.dict(os.environ, {"IRA_VAULT_SECRET_MY_KEY": "MY_SECRET"}):
+        manager = MagicMock()
+        manager.get_secret.return_value = "vault-value"
+        with (
+            patch.dict(os.environ, {"IRA_VAULT_SECRET_MY_KEY": "MY_SECRET"}),
+            patch(
+                "backend.fastapi.app.vault.secrets_manager.get_secrets_manager",
+                return_value=manager,
+            ),
+        ):
             result = _vault_get("DIRECT_ENV_KEY", "IRA_VAULT_SECRET_MY_KEY", "fallback")
 
         assert result == "vault-value"

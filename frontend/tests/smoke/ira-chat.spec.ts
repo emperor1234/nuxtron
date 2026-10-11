@@ -108,6 +108,7 @@ test.describe('IRA Chat Widget', () => {
     });
 
     await page.locator('.ira-trigger').click();
+    await page.locator('summary').filter({ hasText: 'Route and playbook' }).click();
     await page.getByLabel('IRA provider route').selectOption('openai');
     const input = page.getByLabel('Message IRA');
     await input.fill('Plan an ads sprint');

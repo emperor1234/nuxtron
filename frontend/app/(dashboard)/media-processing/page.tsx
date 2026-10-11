@@ -93,11 +93,11 @@ const PROVIDER_ICONS: Record<string, string> = {
 };
 
 const PROVIDER_COLORS: Record<string, string> = {
-  cloudinary: '#3448c5',
-  mux: '#fb2491',
-  bunny: '#fc7a1e',
-  assemblyai: '#1f2aa4',
-  deepgram: '#201cff',
+  cloudinary: 'var(--series-1)',
+  mux: 'var(--series-2)',
+  bunny: 'var(--series-3)',
+  assemblyai: 'var(--series-4)',
+  deepgram: 'var(--series-5)',
   adobe_pdf: '#fa0f00',
 };
 
@@ -125,8 +125,8 @@ function SecurityRuleBadge({ enforced }: Readonly<{ enforced: boolean }>) {
         borderRadius: '999px',
         fontSize: '11px',
         fontWeight: 600,
-        background: enforced ? '#d1fae5' : '#fee2e2',
-        color: enforced ? '#065f46' : '#991b1b',
+        background: enforced ? 'var(--success-line)' : 'var(--danger-soft)',
+        color: enforced ? 'var(--success-ink)' : 'var(--danger-ink)',
       }}
     >
       {enforced ? '✓ enforced' : '✗ not enforced'}
@@ -143,16 +143,16 @@ function ProviderCard({
   selected: boolean;
   onSelect: (id: string) => void;
 }>) {
-  const color = PROVIDER_COLORS[provider.id] ?? '#6366f1';
+  const color = PROVIDER_COLORS[provider.id] ?? 'var(--info)';
   return (
     <button
       type="button"
       onClick={() => onSelect(provider.id)}
       style={{
-        border: selected ? `2px solid ${color}` : '1px solid #e2e8f0',
+        border: selected ? `2px solid ${color}` : '1px solid var(--neutral-soft)',
         borderRadius: '12px',
         padding: '16px',
-        background: selected ? `${color}10` : '#fff',
+        background: selected ? `color-mix(in srgb, ${color} 6.27%, transparent)` : 'var(--card)',
         cursor: 'pointer',
         textAlign: 'left',
         transition: 'border-color 120ms',
@@ -167,8 +167,8 @@ function ProviderCard({
             style={{
               marginLeft: 'auto',
               fontSize: '11px',
-              background: '#fef3c7',
-              color: '#92400e',
+              background: 'var(--warning-line)',
+              color: 'var(--warning-ink)',
               padding: '2px 6px',
               borderRadius: '4px',
             }}
@@ -181,8 +181,8 @@ function ProviderCard({
             style={{
               marginLeft: 'auto',
               fontSize: '11px',
-              background: '#d1fae5',
-              color: '#065f46',
+              background: 'var(--success-line)',
+              color: 'var(--success-ink)',
               padding: '2px 6px',
               borderRadius: '4px',
             }}
@@ -191,13 +191,13 @@ function ProviderCard({
           </span>
         )}
       </div>
-      <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+      <div style={{ fontSize: '12px', color: "var(--muted)", marginBottom: '4px' }}>
         <strong>Media:</strong> {provider.media_types.join(', ')}
       </div>
-      <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+      <div style={{ fontSize: '12px', color: "var(--muted)", marginBottom: '4px' }}>
         <strong>Best for:</strong> {provider.best_for}
       </div>
-      <div style={{ fontSize: '11px', color: '#94a3b8' }}>Replaces: {provider.what_it_replaces}</div>
+      <div style={{ fontSize: '11px', color: 'var(--neutral)' }}>Replaces: {provider.what_it_replaces}</div>
     </button>
   );
 }
@@ -213,28 +213,28 @@ function StatsBar({ stats }: Readonly<{ stats: Stats }>) {
       }}
     >
       {[
-        { label: 'Total Jobs', value: stats.total_jobs, color: '#6366f1' },
-        { label: 'Active', value: stats.active_jobs, color: '#f59e0b' },
-        { label: 'Completed', value: stats.completed_jobs, color: '#10b981' },
-        { label: 'Failed', value: stats.failed_jobs, color: '#ef4444' },
-        { label: 'DLQ Depth', value: stats.dlq_depth, color: '#f97316' },
+        { label: 'Total Jobs', value: stats.total_jobs, color: "var(--brand)" },
+        { label: 'Active', value: stats.active_jobs, color: 'var(--warning)' },
+        { label: 'Completed', value: stats.completed_jobs, color: 'var(--success)' },
+        { label: 'Failed', value: stats.failed_jobs, color: 'var(--danger)' },
+        { label: 'DLQ Depth', value: stats.dlq_depth, color: 'var(--warning)' },
         {
           label: `Concurrency ${stats.active_jobs}/${stats.concurrent_limit}`,
           value: `${stats.utilization_pct}%`,
-          color: stats.utilization_pct > 80 ? '#ef4444' : '#10b981',
+          color: stats.utilization_pct > 80 ? 'var(--danger)' : 'var(--success)',
         },
       ].map((item) => (
         <div
           key={item.label}
           style={{
-            background: '#f8fafc',
+            background: 'var(--bg-soft)',
             borderRadius: '10px',
             padding: '14px',
             borderLeft: `4px solid ${item.color}`,
           }}
         >
           <div style={{ fontSize: '22px', fontWeight: 700, color: item.color }}>{item.value}</div>
-          <div style={{ fontSize: '12px', color: '#64748b' }}>{item.label}</div>
+          <div style={{ fontSize: '12px', color: "var(--muted)" }}>{item.label}</div>
         </div>
       ))}
     </div>
@@ -243,24 +243,24 @@ function StatsBar({ stats }: Readonly<{ stats: Stats }>) {
 
 function JobsTable({ jobs }: Readonly<{ jobs: JobRecord[] }>) {
   if (jobs.length === 0) {
-    return <p style={{ color: '#94a3b8', textAlign: 'center', padding: '24px' }}>No jobs yet. Upload a file to get started.</p>;
+    return <p style={{ color: 'var(--neutral)', textAlign: 'center', padding: '24px' }}>No jobs yet. Upload a file to get started.</p>;
   }
 
   const statusColors: Record<string, string> = {
-    complete: '#10b981',
-    processing: '#6366f1',
-    queued: '#f59e0b',
-    failed: '#ef4444',
-    cancelled: '#94a3b8',
+    complete: 'var(--success)',
+    processing: 'var(--info)',
+    queued: 'var(--warning)',
+    failed: 'var(--danger)',
+    cancelled: 'var(--neutral)',
   };
 
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+          <tr style={{ borderBottom: '2px solid var(--neutral-soft)', textAlign: 'left' }}>
             {['ID', 'Type', 'Provider', 'Status', 'Progress', 'Created', 'Error'].map((h) => (
-              <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600 }}>
+              <th key={h} style={{ padding: '8px 12px', color: "var(--muted)", fontWeight: 600 }}>
                 {h}
               </th>
             ))}
@@ -268,8 +268,8 @@ function JobsTable({ jobs }: Readonly<{ jobs: JobRecord[] }>) {
         </thead>
         <tbody>
           {jobs.map((job) => (
-            <tr key={job.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-              <td style={{ padding: '8px 12px', color: '#475569', fontFamily: 'monospace' }}>#{job.id}</td>
+            <tr key={job.id} style={{ borderBottom: '1px solid var(--bg-soft)' }}>
+              <td style={{ padding: '8px 12px', color: 'var(--ink-2)', fontFamily: 'monospace' }}>#{job.id}</td>
               <td style={{ padding: '8px 12px' }}>{job.media_type}</td>
               <td style={{ padding: '8px 12px' }}>
                 {PROVIDER_ICONS[job.provider] ?? ''} {job.provider}
@@ -281,8 +281,8 @@ function JobsTable({ jobs }: Readonly<{ jobs: JobRecord[] }>) {
                     borderRadius: '999px',
                     fontSize: '11px',
                     fontWeight: 600,
-                    background: `${statusColors[job.status] ?? '#94a3b8'}20`,
-                    color: statusColors[job.status] ?? '#64748b',
+                    background: `color-mix(in srgb, ${statusColors[job.status] ?? 'var(--neutral)'} 12.55%, transparent)`,
+                    color: statusColors[job.status] ?? 'var(--neutral)',
                   }}
                 >
                   {job.status}
@@ -293,7 +293,7 @@ function JobsTable({ jobs }: Readonly<{ jobs: JobRecord[] }>) {
                   style={{
                     height: '6px',
                     width: '80px',
-                    background: '#e2e8f0',
+                    background: 'var(--neutral-soft)',
                     borderRadius: '999px',
                     overflow: 'hidden',
                   }}
@@ -302,18 +302,18 @@ function JobsTable({ jobs }: Readonly<{ jobs: JobRecord[] }>) {
                     style={{
                       height: '100%',
                       width: `${job.progress_pct}%`,
-                      background: statusColors[job.status] ?? '#6366f1',
+                      background: statusColors[job.status] ?? 'var(--info)',
                     }}
                   />
                 </div>
               </td>
-              <td style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '11px' }}>
+              <td style={{ padding: '8px 12px', color: 'var(--neutral)', fontSize: '11px' }}>
                 {new Date(job.created_at).toLocaleTimeString()}
               </td>
               <td
                 style={{
                   padding: '8px 12px',
-                  color: '#ef4444',
+                  color: 'var(--danger)',
                   fontSize: '11px',
                   maxWidth: '180px',
                   overflow: 'hidden',
@@ -406,13 +406,13 @@ export default function MediaProcessingPage() {
   const tabStyle = (tab: string) => ({
     padding: '8px 20px',
     border: 'none',
-    borderBottom: activeTab === tab ? '2px solid #6366f1' : '2px solid transparent',
+    borderBottom: activeTab === tab ? "2px solid var(--brand)" : '2px solid transparent',
     background: 'none',
     cursor: 'pointer',
     fontWeight: activeTab === tab ? 700 : 400,
-    color: activeTab === tab ? '#6366f1' : '#64748b',
+    color: activeTab === tab ? "var(--brand)" : "var(--muted)",
     fontSize: '14px',
-    transition: 'all 120ms',
+    transition: 'border-bottom-color 120ms ease, color 120ms ease',
   });
 
   return (
@@ -423,7 +423,7 @@ export default function MediaProcessingPage() {
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text)', marginBottom: '8px' }}>
           Sandboxed Media Processing
         </h1>
-        <p style={{ color: '#64748b', maxWidth: '680px' }}>
+        <p style={{ color: "var(--muted)", maxWidth: '680px' }}>
           Production-grade media pipeline: files travel directly from your browser to storage via
           presigned URLs — this server never reads file bytes. Every job runs in an isolated,
           ephemeral sandbox (Firecracker / gVisor / Lambda) and is destroyed on completion.
@@ -433,14 +433,14 @@ export default function MediaProcessingPage() {
       {/* Architecture flow */}
       <div
         style={{
-          background: '#f8fafc',
-          border: '1px solid #e2e8f0',
+          background: 'var(--bg-soft)',
+          border: '1px solid var(--neutral-soft)',
           borderRadius: '12px',
           padding: '20px',
           marginBottom: '28px',
           fontFamily: 'monospace',
           fontSize: '12px',
-          color: '#475569',
+          color: 'var(--ink-2)',
           overflowX: 'auto',
         }}
       >
@@ -460,7 +460,7 @@ export default function MediaProcessingPage() {
       {stats && <StatsBar stats={stats} />}
 
       {/* Tabs */}
-      <div style={{ borderBottom: '1px solid #e2e8f0', marginBottom: '24px', display: 'flex', gap: '4px' }}>
+      <div style={{ borderBottom: '1px solid var(--neutral-soft)', marginBottom: '24px', display: 'flex', gap: '4px' }}>
         {(
           [
             { id: 'upload', label: '⬆ Upload & Process' },
@@ -483,11 +483,11 @@ export default function MediaProcessingPage() {
             style={{
               marginTop: '24px',
               padding: '16px',
-              background: '#f0fdf4',
+              background: 'var(--bg-soft)',
               borderRadius: '10px',
-              border: '1px solid #bbf7d0',
+              border: '1px solid var(--success-line)',
               fontSize: '13px',
-              color: '#166534',
+              color: 'var(--success-ink)',
             }}
           >
             <strong>Security rules active:</strong> Rule 1 (zero-trust ingress) · Rule 2 (magic-byte
@@ -502,7 +502,7 @@ export default function MediaProcessingPage() {
           <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text)' }}>
             Managed Provider Catalog
           </h2>
-          <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px' }}>
+          <p style={{ color: "var(--muted)", fontSize: '13px', marginBottom: '20px' }}>
             Select a provider to dispatch a file directly to their managed sandbox (replaces the
             internal executor layer — same API contract, different executor).
           </p>
@@ -528,9 +528,9 @@ export default function MediaProcessingPage() {
           {selectedProvider && (
             <div
               style={{
-                background: '#f8fafc',
+                background: 'var(--bg-soft)',
                 borderRadius: '12px',
-                border: '1px solid #e2e8f0',
+                border: '1px solid var(--neutral-soft)',
                 padding: '20px',
               }}
             >
@@ -539,7 +539,7 @@ export default function MediaProcessingPage() {
               </h3>
               <div style={{ display: 'grid', gap: '12px' }}>
                 <label style={{ display: 'grid', gap: '4px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Storage Key</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>Storage Key</span>
                   <input
                     type="text"
                     placeholder="raw-input/tenant/filename.mp4"
@@ -547,14 +547,14 @@ export default function MediaProcessingPage() {
                     onChange={(e) => setDispatchForm((f) => ({ ...f, storage_key: e.target.value }))}
                     style={{
                       padding: '8px 12px',
-                      border: '1px solid #e2e8f0',
+                      border: '1px solid var(--neutral-soft)',
                       borderRadius: '8px',
                       fontSize: '13px',
                     }}
                   />
                 </label>
                 <label style={{ display: 'grid', gap: '4px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Source URL (optional)</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>Source URL (optional)</span>
                   <input
                     type="url"
                     placeholder="https://example.com/file.mp4"
@@ -562,20 +562,20 @@ export default function MediaProcessingPage() {
                     onChange={(e) => setDispatchForm((f) => ({ ...f, source_url: e.target.value }))}
                     style={{
                       padding: '8px 12px',
-                      border: '1px solid #e2e8f0',
+                      border: '1px solid var(--neutral-soft)',
                       borderRadius: '8px',
                       fontSize: '13px',
                     }}
                   />
                 </label>
                 <label style={{ display: 'grid', gap: '4px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Operation</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>Operation</span>
                   <select
                     value={dispatchForm.operation}
                     onChange={(e) => setDispatchForm((f) => ({ ...f, operation: e.target.value }))}
                     style={{
                       padding: '8px 12px',
-                      border: '1px solid #e2e8f0',
+                      border: '1px solid var(--neutral-soft)',
                       borderRadius: '8px',
                       fontSize: '13px',
                     }}
@@ -591,8 +591,8 @@ export default function MediaProcessingPage() {
                   disabled={dispatchState.loading || !dispatchForm.storage_key}
                   style={{
                     padding: '10px 20px',
-                    background: dispatchState.loading ? '#94a3b8' : '#6366f1',
-                    color: '#fff',
+                    background: dispatchState.loading ? 'var(--neutral)' : "var(--brand)",
+                    color: 'var(--on-brand)',
                     border: 'none',
                     borderRadius: '8px',
                     fontWeight: 600,
@@ -604,12 +604,12 @@ export default function MediaProcessingPage() {
                 </button>
 
                 {dispatchState.error && (
-                  <p style={{ color: '#ef4444', fontSize: '13px' }}>{dispatchState.error}</p>
+                  <p style={{ color: 'var(--danger)', fontSize: '13px' }}>{dispatchState.error}</p>
                 )}
                 {dispatchState.result !== null && dispatchState.result !== undefined && (
                   <pre
                     style={{
-                      background: '#f6f7fa',
+                      background: "var(--bg)",
                       color: 'var(--text)',
                       border: '1px solid var(--line)',
                       padding: '12px',
@@ -638,12 +638,12 @@ export default function MediaProcessingPage() {
               onClick={loadJobsAndStats}
               style={{
                 padding: '6px 14px',
-                border: '1px solid #e2e8f0',
+                border: '1px solid var(--neutral-soft)',
                 borderRadius: '8px',
-                background: '#fff',
+                background: 'var(--card)',
                 cursor: 'pointer',
                 fontSize: '13px',
-                color: '#475569',
+                color: 'var(--ink-2)',
               }}
             >
               ↻ Refresh
@@ -660,8 +660,8 @@ export default function MediaProcessingPage() {
             <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
               Sandbox Execution Config
             </h2>
-            <p style={{ fontSize: '13px', color: '#64748b' }}>
-              Mode: <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>{sandboxConfig.execution_mode}</code>
+            <p style={{ fontSize: '13px', color: "var(--muted)" }}>
+              Mode: <code style={{ background: 'var(--bg-soft)', padding: '2px 6px', borderRadius: '4px' }}>{sandboxConfig.execution_mode}</code>
               {' | '}Max concurrent jobs/tenant: <strong>{sandboxConfig.max_concurrent_jobs_per_tenant}</strong>
               {' | '}Raw-input TTL: <strong>{sandboxConfig.raw_input_ttl_hours}h</strong>
             </p>
@@ -678,9 +678,9 @@ export default function MediaProcessingPage() {
                   key={key}
                   style={{
                     padding: '16px',
-                    border: `1px solid ${layer.active ? '#bbf7d0' : '#e2e8f0'}`,
+                    border: `1px solid ${layer.active ? 'var(--success-line)' : 'var(--neutral-soft)'}`,
                     borderRadius: '10px',
-                    background: layer.active ? '#f0fdf4' : '#f8fafc',
+                    background: layer.active ? 'var(--bg-soft)' : 'var(--bg-soft)',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -690,18 +690,18 @@ export default function MediaProcessingPage() {
                         fontSize: '11px',
                         padding: '2px 8px',
                         borderRadius: '999px',
-                        background: layer.active ? '#d1fae5' : '#f3f4f6',
-                        color: layer.active ? '#065f46' : '#6b7280',
+                        background: layer.active ? 'var(--success-line)' : 'var(--neutral-soft)',
+                        color: layer.active ? 'var(--success-ink)' : 'var(--neutral)',
                         fontWeight: 600,
                       }}
                     >
                       {layer.active ? '● active' : '○ inactive'}
                     </span>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#6366f1', marginBottom: '6px', fontWeight: 500 }}>
+                  <div style={{ fontSize: '12px', color: "var(--brand)", marginBottom: '6px', fontWeight: 500 }}>
                     {layer.technology}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>{layer.description}</div>
+                  <div style={{ fontSize: '12px', color: "var(--muted)" }}>{layer.description}</div>
                 </div>
               ))}
             </div>
@@ -718,12 +718,12 @@ export default function MediaProcessingPage() {
                   key={key}
                   style={{
                     padding: '14px 16px',
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid var(--neutral-soft)',
                     borderRadius: '10px',
                     display: 'flex',
                     gap: '12px',
                     alignItems: 'flex-start',
-                    background: '#fff',
+                    background: 'var(--card)',
                   }}
                 >
                   <SecurityRuleBadge enforced={rule.enforced} />
@@ -731,7 +731,7 @@ export default function MediaProcessingPage() {
                     <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
                       {rule.name}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>{rule.description}</div>
+                    <div style={{ fontSize: '12px', color: "var(--muted)" }}>{rule.description}</div>
                   </div>
                 </div>
               ))}
@@ -752,9 +752,9 @@ export default function MediaProcessingPage() {
                     borderRadius: '999px',
                     fontSize: '12px',
                     fontWeight: 600,
-                    background: available ? '#d1fae5' : '#f3f4f6',
-                    color: available ? '#065f46' : '#9ca3af',
-                    border: `1px solid ${available ? '#a7f3d0' : '#e5e7eb'}`,
+                    background: available ? 'var(--success-line)' : 'var(--neutral-soft)',
+                    color: available ? 'var(--success-ink)' : 'var(--neutral)',
+                    border: `1px solid ${available ? 'var(--success-line)' : 'var(--neutral-soft)'}`,
                   }}
                 >
                   {available ? '✓' : '○'} {exec.replaceAll('_', ' ')}

@@ -62,9 +62,9 @@ function ScoreBar({ value, max = 100, label, color }: { value: number; max?: num
 
 function RiskBadge({ risk }: { risk: string }) {
   const cfg = {
-    low: { bg: 'rgba(38,215,142,0.1)', color: '#26d78e', border: 'rgba(38,215,142,0.3)', label: 'Low Risk' },
-    medium: { bg: 'rgba(255,184,103,0.1)', color: '#ffb867', border: 'rgba(255,184,103,0.3)', label: 'Medium Risk' },
-    high: { bg: 'rgba(248,113,113,0.1)', color: '#dc2626', border: 'rgba(248,113,113,0.3)', label: 'High Risk' },
+    low: { bg: 'rgba(38,215,142,0.1)', color: 'var(--success)', border: 'rgba(38,215,142,0.3)', label: 'Low Risk' },
+    medium: { bg: 'rgba(255,184,103,0.1)', color: 'var(--warning)', border: 'rgba(255,184,103,0.3)', label: 'Medium Risk' },
+    high: { bg: 'rgba(248,113,113,0.1)', color: 'var(--danger)', border: 'rgba(248,113,113,0.3)', label: 'High Risk' },
   };
   const c = cfg[risk as keyof typeof cfg] ?? cfg.low;
   return (
@@ -124,7 +124,7 @@ export default function ContentAuditorPage() {
   }
 
   const card: React.CSSProperties = {
-    background: '#ffffff',
+    background: 'var(--card)fff',
     border: '1px solid rgba(148, 163, 184, 0.16)',
     borderRadius: 16,
     padding: '20px 24px',
@@ -137,13 +137,13 @@ export default function ContentAuditorPage() {
     padding: '11px 14px',
     borderRadius: 12,
     border: '1px solid rgba(148, 163, 184, 0.2)',
-    background: '#ffffff',
+    background: 'var(--card)fff',
     color: 'var(--text)',
     marginBottom: 10,
     boxSizing: 'border-box',
     fontSize: 14,
   };
-  const PRIORITY_COLORS = { critical: '#dc2626', high: '#ff8800', medium: '#ffb867', low: 'var(--muted)' };
+  const PRIORITY_COLORS = { critical: 'var(--danger)', high: 'var(--warning)', medium: 'var(--warning)', low: 'var(--muted)' };
   const tabs = [
     { key: 'overview' as const, label: 'Overview' },
     { key: 'factcheck' as const, label: `Fact Checks (${result?.fact_checks?.length ?? 0})` },
@@ -208,7 +208,7 @@ export default function ContentAuditorPage() {
               color: 'var(--text)',
             }}
           >
-            <FileSearch size={26} color="#22d3ee" />
+            <FileSearch size={26} color="var(--info)" />
             Content Auditor
           </h1>
           <p style={{ margin: '0', color: 'var(--muted)', fontSize: 15 }}>
@@ -217,7 +217,7 @@ export default function ContentAuditorPage() {
         </section>
 
         {error && (
-          <div style={{ ...card, color: '#dc2626', borderColor: '#dc262644', background: '#dc262611' }}>{error}</div>
+          <div style={{ ...card, color: 'var(--danger)', borderColor: 'color-mix(in oklab, var(--danger) 27%, transparent)', background: 'color-mix(in oklab, var(--danger) 7%, transparent)' }}>{error}</div>
         )}
 
         <section style={card}>
@@ -297,7 +297,7 @@ export default function ContentAuditorPage() {
               background: loading
                 ? 'rgba(100,116,139,0.35)'
                 : 'linear-gradient(90deg, rgba(6,182,212,0.9) 0%, rgba(20,184,166,0.9) 100%)',
-              color: '#ecfeff',
+              color: 'var(--info-soft)',
               fontWeight: 800,
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: 14,
@@ -322,12 +322,12 @@ export default function ContentAuditorPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>Cached result</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
                 )}
               </div>
             )}
@@ -355,7 +355,7 @@ export default function ContentAuditorPage() {
                   style={{
                     fontSize: 32,
                     fontWeight: 800,
-                    color: result.quality_score >= 70 ? '#26d78e' : result.quality_score >= 50 ? '#ffb867' : '#dc2626',
+                    color: result.quality_score >= 70 ? 'var(--success)' : result.quality_score >= 50 ? 'var(--warning)' : 'var(--danger)',
                   }}
                 >
                   {result.quality_score}
@@ -391,7 +391,7 @@ export default function ContentAuditorPage() {
                   style={{
                     fontSize: 32,
                     fontWeight: 800,
-                    color: result.citation_coverage_pct >= 60 ? '#26d78e' : '#ffb867',
+                    color: result.citation_coverage_pct >= 60 ? 'var(--success)' : 'var(--warning)',
                   }}
                 >
                   {result.citation_coverage_pct}%
@@ -413,7 +413,7 @@ export default function ContentAuditorPage() {
                   style={{
                     fontSize: 32,
                     fontWeight: 800,
-                    color: (result.risky_sections?.length ?? 0) > 0 ? '#dc2626' : '#26d78e',
+                    color: (result.risky_sections?.length ?? 0) > 0 ? 'var(--danger)' : 'var(--success)',
                   }}
                 >
                   {result.risky_sections?.length ?? 0}
@@ -451,7 +451,7 @@ export default function ContentAuditorPage() {
                       style={{
                         fontSize: 12,
                         fontWeight: 700,
-                        color: '#dc2626',
+                        color: 'var(--danger)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.06em',
                         marginBottom: 10,
@@ -461,7 +461,7 @@ export default function ContentAuditorPage() {
                     </div>
                     {result.risky_sections.map((s, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-                        <AlertTriangle size={13} color="#dc2626" style={{ marginTop: 1, flexShrink: 0 }} />
+                        <AlertTriangle size={13} color="var(--danger)" style={{ marginTop: 1, flexShrink: 0 }} />
                         <span style={{ fontSize: 13 }}>{s}</span>
                       </div>
                     ))}
@@ -472,7 +472,7 @@ export default function ContentAuditorPage() {
                     style={{
                       fontSize: 12,
                       fontWeight: 700,
-                      color: '#26d78e',
+                      color: 'var(--success)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
                       marginBottom: 10,
@@ -482,7 +482,7 @@ export default function ContentAuditorPage() {
                   </div>
                   {result.quick_wins?.map((w, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-                      <Zap size={12} color="#26d78e" style={{ marginTop: 2, flexShrink: 0 }} />
+                      <Zap size={12} color="var(--success)" style={{ marginTop: 2, flexShrink: 0 }} />
                       <span style={{ fontSize: 13 }}>{w}</span>
                     </div>
                   ))}
@@ -495,7 +495,7 @@ export default function ContentAuditorPage() {
                 <div style={{ display: 'grid', gap: 10 }}>
                   {result.fact_checks?.map((fc, i) => {
                     const color =
-                      fc.verdict === 'verified' ? '#26d78e' : fc.verdict === 'risky' ? '#dc2626' : '#ffb867';
+                      fc.verdict === 'verified' ? 'var(--success)' : fc.verdict === 'risky' ? 'var(--danger)' : 'var(--warning)';
                     return (
                       <div
                         key={i}
@@ -516,7 +516,7 @@ export default function ContentAuditorPage() {
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             {fc.verdict === 'verified' ? (
-                              <CheckCircle size={14} color="#26d78e" />
+                              <CheckCircle size={14} color="var(--success)" />
                             ) : (
                               <AlertTriangle size={14} color={color} />
                             )}
@@ -577,10 +577,10 @@ export default function ContentAuditorPage() {
                           {r.priority}
                         </span>
                       </div>
-                      <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 600, color: '#dc2626' }}>
+                      <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 600, color: 'var(--danger)' }}>
                         Issue: {r.issue}
                       </p>
-                      <p style={{ margin: 0, fontSize: 13, color: '#26d78e', lineHeight: 1.5 }}>Fix: {r.fix}</p>
+                      <p style={{ margin: 0, fontSize: 13, color: 'var(--success)', lineHeight: 1.5 }}>Fix: {r.fix}</p>
                     </div>
                   ))}
                 </div>
@@ -590,10 +590,10 @@ export default function ContentAuditorPage() {
             {activeTab === 'eeat' && result.eeat_signals && (
               <div style={card}>
                 <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700 }}>E-E-A-T Signals</h3>
-                <ScoreBar value={result.eeat_signals.expertise} label="Expertise" color="#1bc7ff" />
-                <ScoreBar value={result.eeat_signals.experience} label="Experience" color="#26d78e" />
-                <ScoreBar value={result.eeat_signals.authority} label="Authoritativeness" color="#ffb867" />
-                <ScoreBar value={result.eeat_signals.trust} label="Trustworthiness" color="#a78bfa" />
+                <ScoreBar value={result.eeat_signals.expertise} label="Expertise" color="var(--info)" />
+                <ScoreBar value={result.eeat_signals.experience} label="Experience" color="var(--success)" />
+                <ScoreBar value={result.eeat_signals.authority} label="Authoritativeness" color="var(--warning)" />
+                <ScoreBar value={result.eeat_signals.trust} label="Trustworthiness" color="var(--info)" />
                 <div
                   style={{
                     marginTop: 16,

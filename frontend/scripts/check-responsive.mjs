@@ -8,9 +8,9 @@ const DEFAULT_PATHS = [
   '/seo/backlink-intelligence', '/seo/keywords', '/seo/competitor', '/seo/local-heatmap', '/seo/technical',
   '/seo/on-page', '/seo/sxo', '/seo/gxo', '/seo/ux', '/seo/client-portal', '/seo/semrush-command-center',
   '/studio/social-studio', '/studio/rank-tracker', '/studio/editor', '/studio/social-studio/calendar',
-  '/studio/social-studio/analytics', '/studio/brand-kit', '/studio/lately', '/media-processing',
-  '/benchmarks', '/hubspot-e2e', '/billing', '/buffer-create', '/buffer-analyze', '/vendor-inventory-report',
-  '/outcome-graph', '/social-media-roi', '/siem', '/vse', '/workflows', '/reviews', '/disputes',
+  '/studio/social-studio/analytics', '/studio/brand-kit', '/studio/content-hub', '/media-processing',
+  '/benchmarks', '/hubspot-e2e', '/billing', '/vendor-inventory-report',
+  '/outcome-graph', '/social-media-roi', '/siem', '/vse', '/workflows', '/disputes',
   '/api-governance', '/ira-monitor', '/smart-inbox', '/social-listening', '/playbooks', '/platform-ops',
 ];
 const MOBILE_ONLY = process.argv.includes('--mobile');

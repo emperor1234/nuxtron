@@ -52,7 +52,7 @@ export default function BillingSuccessPage() {
       )}
       {status === 'success' && (
         <>
-          <h1 style={{ color: '#26d78e' }}>You&apos;re all set! 🎉</h1>
+          <h1 style={{ color: 'var(--success)' }}>You&apos;re all set! 🎉</h1>
           <p>{message || 'Your subscription is now active. Welcome aboard!'}</p>
           <a
             href="/dashboard"
@@ -60,9 +60,9 @@ export default function BillingSuccessPage() {
               display: 'inline-block',
               marginTop: 24,
               padding: '12px 32px',
-              background: '#1bc7ff',
+              background: 'var(--info)',
               borderRadius: 8,
-              color: '#000',
+              color: 'var(--on-status)',
               fontWeight: 700,
               textDecoration: 'none',
             }}
@@ -73,7 +73,7 @@ export default function BillingSuccessPage() {
       )}
       {status === 'error' && (
         <>
-          <h1 style={{ color: '#f87171' }}>Something went wrong</h1>
+          <h1 style={{ color: 'var(--danger)' }}>Something went wrong</h1>
           <p>{message}</p>
           <a
             href="/pricing"
@@ -81,9 +81,9 @@ export default function BillingSuccessPage() {
               display: 'inline-block',
               marginTop: 24,
               padding: '12px 32px',
-              background: '#374151',
+              background: 'var(--ink-2)',
               borderRadius: 8,
-              color: '#fff',
+              color: 'var(--on-status)',
               textDecoration: 'none',
             }}
           >

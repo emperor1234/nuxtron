@@ -36,10 +36,10 @@ type SecuritySeoAuditResponse = {
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  critical: '#ef4444',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#22c55e',
+  critical: 'var(--danger)',
+  high: 'var(--warning)',
+  medium: 'var(--warning)',
+  low: 'var(--success)',
 };
 
 function StatusDot({ ok }: { ok: boolean }) {
@@ -50,7 +50,7 @@ function StatusDot({ ok }: { ok: boolean }) {
         width: 8,
         height: 8,
         borderRadius: '50%',
-        background: ok ? '#22c55e' : '#ef4444',
+        background: ok ? 'var(--success)' : 'var(--danger)',
         marginRight: 5,
       }}
     />
@@ -156,7 +156,7 @@ export default function SecuritySeoPage() {
               padding: '10px 20px',
               borderRadius: 8,
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
@@ -165,7 +165,7 @@ export default function SecuritySeoPage() {
           >
             {loading ? 'Running Audit…' : 'Run Security & SEO Audit'}
           </button>
-          {error && <div style={{ color: '#fca5a5', fontSize: 13 }}>{error}</div>}
+          {error && <div style={{ color: 'var(--danger-line)', fontSize: 13 }}>{error}</div>}
         </section>
 
         {result && (
@@ -173,12 +173,12 @@ export default function SecuritySeoPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>Cached result</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
                 )}
               </div>
             )}
@@ -256,7 +256,7 @@ export default function SecuritySeoPage() {
                   Redirect Chains ({result.redirect_health.chains_detected})
                 </h2>
                 {result.redirect_health.chain_details.map((chain, i) => (
-                  <div key={`item-${i}`} style={{ fontSize: 13, marginBottom: 4, color: '#fca5a5' }}>
+                  <div key={`item-${i}`} style={{ fontSize: 13, marginBottom: 4, color: 'var(--danger-line)' }}>
                     {chain}
                   </div>
                 ))}
@@ -270,18 +270,18 @@ export default function SecuritySeoPage() {
                   {result.issues.map((issue, i) => (
                     <div
                       key={`item-${i}`}
-                      style={{ ...card, borderLeft: `4px solid ${SEVERITY_COLORS[issue.severity] ?? '#6366f1'}` }}
+                      style={{ ...card, borderLeft: `4px solid ${SEVERITY_COLORS[issue.severity] ?? 'var(--info)'}` }}
                     >
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
                         <span
-                          style={{ fontSize: 10, fontWeight: 700, color: SEVERITY_COLORS[issue.severity] ?? '#6366f1' }}
+                          style={{ fontSize: 10, fontWeight: 700, color: SEVERITY_COLORS[issue.severity] ?? 'var(--info)' }}
                         >
                           {issue.severity.toUpperCase()}
                         </span>
                         <span
                           style={{
                             fontSize: 10,
-                            background: '#eef0f4',
+                            background: "var(--line-soft)",
                             color: 'var(--muted)',
                             borderRadius: 4,
                             padding: '1px 5px',
@@ -291,7 +291,7 @@ export default function SecuritySeoPage() {
                         </span>
                       </div>
                       <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{issue.description}</div>
-                      <div style={{ fontSize: 12, color: '#86efac' }}>Fix: {issue.fix}</div>
+                      <div style={{ fontSize: 12, color: 'var(--success)' }}>Fix: {issue.fix}</div>
                     </div>
                   ))}
                 </div>

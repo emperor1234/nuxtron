@@ -138,3 +138,10 @@ class TestJwtIssueAdditionalClaims:
             "additional_claims is merged over the reserved claims again"
         )
         assert "**extra_claims," in source
+
+
+def test_production_rejects_test_bearer_even_with_pytest_marker(probe_client, monkeypatch):
+    monkeypatch.setenv('ENVIRONMENT', 'production')
+    monkeypatch.setenv('PYTEST_CURRENT_TEST', 'leaked-marker')
+    response = probe_client.get('/probe', headers={'Authorization': 'Bearer test_token'})
+    assert response.status_code != 200

@@ -14,13 +14,13 @@ function parseKeywords(raw: string): AdsKeyword[] {
 const PLATFORMS: AdsPlatform[] = ['google_ads', 'microsoft_ads', 'amazon_ads', 'apple_search_ads', 'youtube_ads'];
 
 const STATUS_COLORS: Record<string, string> = {
-  active: '#22c55e',
-  draft: '#f59e0b',
-  paused: '#6b7280',
+  active: 'var(--success)',
+  draft: 'var(--warning)',
+  paused: 'var(--neutral)',
 };
 
 function Badge({ status }: Readonly<{ status: string }>) {
-  const color = STATUS_COLORS[status] ?? '#6b7280';
+  const color = STATUS_COLORS[status] ?? 'var(--neutral)';
   return (
     <span
       style={{
@@ -28,9 +28,9 @@ function Badge({ status }: Readonly<{ status: string }>) {
         padding: '3px 9px',
         fontSize: 11,
         fontWeight: 800,
-        background: `${color}22`,
+        background: `color-mix(in srgb, ${color} 13.33%, transparent)`,
         color,
-        border: `1px solid ${color}55`,
+        border: `1px solid color-mix(in srgb, ${color} 33.33%, transparent)`,
       }}
     >
       {status}
@@ -41,7 +41,7 @@ function Badge({ status }: Readonly<{ status: string }>) {
 function MetricCell({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+      <div style={{ fontSize: 10, color: "var(--muted)", textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
       <div style={{ fontWeight: 800, fontSize: 14, marginTop: 2 }}>{value}</div>
     </div>
   );
@@ -245,10 +245,10 @@ export default function CampaignsPage() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: 'var(--bg, #0a0a0a)',
-    border: '1px solid var(--line, #333)',
+    background: 'var(--bg)',
+    border: '1px solid var(--line)',
     borderRadius: 8,
-    color: 'var(--text, #f1f5f9)',
+    color: 'var(--text)',
     padding: '8px 10px',
     fontSize: 13,
     boxSizing: 'border-box',
@@ -256,13 +256,13 @@ export default function CampaignsPage() {
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    color: '#64748b',
+    color: "var(--muted)",
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
   };
 
   return (
-    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg, #0a0a0a)', color: 'var(--text, #f1f5f9)' }}>
+    <main style={{ padding: 24, minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1 style={{ margin: 0, fontSize: 26 }}>Campaign Manager</h1>
@@ -271,9 +271,9 @@ export default function CampaignsPage() {
             style={{
               padding: '8px 18px',
               borderRadius: 9,
-              border: '1px solid #6366f1',
-              color: '#93c5fd',
-              background: '#6366f122',
+              border: "1px solid var(--brand)",
+              color: 'var(--info-line)',
+              background: 'color-mix(in oklab, var(--info) 13%, transparent)',
               cursor: 'pointer',
               fontWeight: 700,
               fontSize: 13,
@@ -289,9 +289,9 @@ export default function CampaignsPage() {
               marginTop: 14,
               padding: 12,
               borderRadius: 10,
-              border: '1px solid #ef4444',
-              color: '#dc2626',
-              background: '#7f1d1d22',
+              border: '1px solid var(--danger)',
+              color: 'var(--danger)',
+              background: 'var(--danger-soft)',
               fontSize: 13,
             }}
           >
@@ -304,9 +304,9 @@ export default function CampaignsPage() {
               marginTop: 14,
               padding: 12,
               borderRadius: 10,
-              border: '1px solid #22c55e',
-              color: '#86efac',
-              background: '#14532d22',
+              border: '1px solid var(--success)',
+              color: 'var(--success)',
+              background: 'var(--success-soft)',
               fontSize: 13,
             }}
           >
@@ -319,8 +319,8 @@ export default function CampaignsPage() {
             onSubmit={(e) => void handleCreate(e)}
             style={{
               marginTop: 18,
-              background: 'var(--bg-soft, #111)',
-              border: '1px solid var(--line, #333)',
+              background: 'var(--bg-soft)',
+              border: '1px solid var(--line)',
               borderRadius: 16,
               padding: 20,
             }}
@@ -470,9 +470,9 @@ export default function CampaignsPage() {
                 style={{
                   padding: '8px 22px',
                   borderRadius: 9,
-                  border: '1px solid #22c55e',
-                  color: '#86efac',
-                  background: '#14532d33',
+                  border: '1px solid var(--success)',
+                  color: 'var(--success)',
+                  background: 'var(--success-soft)',
                   cursor: saving ? 'not-allowed' : 'pointer',
                   fontWeight: 800,
                   fontSize: 13,
@@ -485,9 +485,9 @@ export default function CampaignsPage() {
         )}
 
         <div style={{ marginTop: 20 }}>
-          {loading && <div style={{ textAlign: 'center', color: '#64748b', marginTop: 40 }}>Loading campaigns…</div>}
+          {loading && <div style={{ textAlign: 'center', color: "var(--muted)", marginTop: 40 }}>Loading campaigns…</div>}
           {!loading && campaigns.length === 0 && (
-            <div style={{ textAlign: 'center', color: '#64748b', marginTop: 40 }}>
+            <div style={{ textAlign: 'center', color: "var(--muted)", marginTop: 40 }}>
               No campaigns yet. Create one above.
             </div>
           )}
@@ -497,8 +497,8 @@ export default function CampaignsPage() {
                 <div
                   key={c.id}
                   style={{
-                    background: 'var(--bg-soft, #111)',
-                    border: '1px solid var(--line, #333)',
+                    background: 'var(--bg-soft)',
+                    border: '1px solid var(--line)',
                     borderRadius: 16,
                     padding: '14px 18px',
                   }}
@@ -517,9 +517,9 @@ export default function CampaignsPage() {
                         <span style={{ fontWeight: 800, fontSize: 16 }}>{c.campaign_name}</span>
                         <Badge status={c.status} />
                         <ApprovalBadge status={c.approval_status} />
-                        <span style={{ fontSize: 12, color: '#64748b' }}>{PLATFORM_LABELS[c.platform]}</span>
+                        <span style={{ fontSize: 12, color: "var(--muted)" }}>{PLATFORM_LABELS[c.platform]}</span>
                       </div>
-                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
                         Objective: {c.objective} · Budget:{' '}
                         <button
                           type="button"
@@ -533,7 +533,7 @@ export default function CampaignsPage() {
                             border: 'none',
                             padding: 0,
                             cursor: 'pointer',
-                            color: '#38bdf8',
+                            color: 'var(--info)',
                             fontWeight: 700,
                             fontSize: 12,
                             textDecoration: 'underline dotted',
@@ -553,9 +553,9 @@ export default function CampaignsPage() {
                           style={{
                             padding: '6px 14px',
                             borderRadius: 8,
-                            border: '1px solid #22c55e',
-                            color: '#86efac',
-                            background: '#14532d22',
+                            border: '1px solid var(--success)',
+                            color: 'var(--success)',
+                            background: 'var(--success-soft)',
                             cursor: publishing === c.id ? 'not-allowed' : 'pointer',
                             fontSize: 12,
                             fontWeight: 700,
@@ -574,9 +574,9 @@ export default function CampaignsPage() {
                           style={{
                             padding: '6px 12px',
                             borderRadius: 8,
-                            border: '1px solid #f59e0b',
-                            color: '#fbbf24',
-                            background: '#92400e22',
+                            border: '1px solid var(--warning)',
+                            color: 'var(--warning)',
+                            background: 'var(--warning-soft)',
                             cursor: 'pointer',
                             fontSize: 12,
                             fontWeight: 700,
@@ -591,7 +591,7 @@ export default function CampaignsPage() {
                         style={{
                           padding: '6px 12px',
                           borderRadius: 8,
-                          border: '1px solid #334155',
+                          border: '1px solid var(--ink-2)',
                           color: 'var(--muted)',
                           background: 'transparent',
                           cursor: 'pointer',
@@ -608,8 +608,8 @@ export default function CampaignsPage() {
                         style={{
                           padding: '6px 12px',
                           borderRadius: 8,
-                          border: '1px solid #ef4444',
-                          color: '#dc2626',
+                          border: '1px solid var(--danger)',
+                          color: 'var(--danger)',
                           background: 'transparent',
                           cursor: deleting === c.id ? 'not-allowed' : 'pointer',
                           fontSize: 12,
@@ -630,13 +630,13 @@ export default function CampaignsPage() {
                         gap: 8,
                         alignItems: 'center',
                         padding: '10px 12px',
-                        background: 'var(--bg, #0a0a0a)',
+                        background: 'var(--bg)',
                         borderRadius: 10,
-                        border: '1px solid #0ea5e9',
+                        border: '1px solid var(--info)',
                         flexWrap: 'wrap',
                       }}
                     >
-                      <span style={{ fontSize: 12, color: '#7dd3fc', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 12, color: 'var(--info)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                         Daily Budget ($)
                       </span>
                       <input
@@ -648,8 +648,8 @@ export default function CampaignsPage() {
                         onKeyDown={(e) => handleBudgetKeyDown(e, c.id)}
                         style={{
                           width: 110,
-                          background: '#f6f7fa',
-                          border: '1px solid #0ea5e9',
+                          background: "var(--bg)",
+                          border: '1px solid var(--info)',
                           borderRadius: 8,
                           color: 'var(--text)',
                           padding: '6px 10px',
@@ -665,9 +665,9 @@ export default function CampaignsPage() {
                         style={{
                           padding: '6px 14px',
                           borderRadius: 8,
-                          border: '1px solid #0ea5e9',
-                          color: '#7dd3fc',
-                          background: '#0c4a6e22',
+                          border: '1px solid var(--info)',
+                          color: 'var(--info)',
+                          background: 'var(--info-soft)',
                           cursor: budgetSaving ? 'not-allowed' : 'pointer',
                           fontSize: 12,
                           fontWeight: 700,
@@ -681,8 +681,8 @@ export default function CampaignsPage() {
                         style={{
                           padding: '6px 10px',
                           borderRadius: 8,
-                          border: '1px solid #334155',
-                          color: '#64748b',
+                          border: '1px solid var(--ink-2)',
+                          color: "var(--muted)",
                           background: 'transparent',
                           cursor: 'pointer',
                           fontSize: 12,
@@ -702,9 +702,9 @@ export default function CampaignsPage() {
                         gap: 8,
                         alignItems: 'center',
                         padding: '10px 12px',
-                        background: 'var(--bg, #0a0a0a)',
+                        background: 'var(--bg)',
                         borderRadius: 10,
-                        border: '1px solid #92400e',
+                        border: '1px solid var(--warning-ink)',
                         flexWrap: 'wrap',
                       }}
                     >
@@ -715,8 +715,8 @@ export default function CampaignsPage() {
                         style={{
                           flex: 1,
                           minWidth: 180,
-                          background: '#f6f7fa',
-                          border: '1px solid #334155',
+                          background: "var(--bg)",
+                          border: '1px solid var(--ink-2)',
                           borderRadius: 8,
                           color: 'var(--text)',
                           padding: '6px 10px',
@@ -729,9 +729,9 @@ export default function CampaignsPage() {
                         style={{
                           padding: '6px 14px',
                           borderRadius: 8,
-                          border: '1px solid #f59e0b',
-                          color: '#fbbf24',
-                          background: '#92400e22',
+                          border: '1px solid var(--warning)',
+                          color: 'var(--warning)',
+                          background: 'var(--warning-soft)',
                           cursor: 'pointer',
                           fontSize: 12,
                           fontWeight: 700,
@@ -745,8 +745,8 @@ export default function CampaignsPage() {
                         style={{
                           padding: '6px 10px',
                           borderRadius: 8,
-                          border: '1px solid #334155',
-                          color: '#64748b',
+                          border: '1px solid var(--ink-2)',
+                          color: "var(--muted)",
                           background: 'transparent',
                           cursor: 'pointer',
                           fontSize: 12,
@@ -764,7 +764,7 @@ export default function CampaignsPage() {
                       gap: 20,
                       marginTop: 12,
                       padding: '10px 14px',
-                      background: 'var(--bg, #0a0a0a)',
+                      background: 'var(--bg)',
                       borderRadius: 10,
                       flexWrap: 'wrap',
                     }}
@@ -791,9 +791,9 @@ export default function CampaignsPage() {
 }
 
 const APPROVAL_STYLES: Record<string, { bg: string; color: string; border: string; label: string }> = {
-  pending_approval: { bg: '#92400e22', color: '#fbbf24', border: '#92400e', label: '⏳ Pending Review' },
-  approved: { bg: '#14532d22', color: '#86efac', border: '#14532d', label: '✓ Approved' },
-  rejected: { bg: '#7f1d1d22', color: '#dc2626', border: '#7f1d1d', label: '✗ Rejected' },
+  pending_approval: { bg: 'var(--warning-soft)', color: 'var(--warning)', border: 'var(--warning-ink)', label: '⏳ Pending Review' },
+  approved: { bg: 'var(--success-soft)', color: 'var(--success)', border: '#14532d', label: '✓ Approved' },
+  rejected: { bg: 'var(--danger-soft)', color: 'var(--danger)', border: 'var(--danger-ink)', label: '✗ Rejected' },
 };
 
 function ApprovalBadge({ status }: Readonly<{ status: string | null | undefined }>) {

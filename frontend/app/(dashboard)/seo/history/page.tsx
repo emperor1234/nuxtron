@@ -107,7 +107,7 @@ export default function SEOHistoryPage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
               opacity: loading ? 0.7 : 1,
@@ -119,7 +119,7 @@ export default function SEOHistoryPage() {
         </section>
 
         {error && (
-          <section style={{ ...card, borderColor: '#ef4444', color: '#fca5a5', marginBottom: 12 }}>{error}</section>
+          <section style={{ ...card, borderColor: 'var(--danger)', color: 'var(--danger-line)', marginBottom: 12 }}>{error}</section>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 12 }}>

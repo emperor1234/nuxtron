@@ -54,11 +54,11 @@ function ScoreRing({ score, label }: ScoreRingProps) {
   const r = 36,
     s = 7,
     c = 2 * Math.PI * r;
-  let color = '#dc2626';
+  let color = 'var(--danger)';
   if (score >= 75) {
-    color = '#26d78e';
+    color = 'var(--success)';
   } else if (score >= 50) {
-    color = '#ffb867';
+    color = 'var(--warning)';
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
@@ -98,18 +98,18 @@ function ScoreRing({ score, label }: ScoreRingProps) {
 
 function SignalRow({ s }: SignalRowProps) {
   const Icon = s.status === 'pass' ? CheckCircle : AlertTriangle;
-  let color = '#ffb867';
+  let color = 'var(--warning)';
   if (s.status === 'pass') {
-    color = '#26d78e';
+    color = 'var(--success)';
   } else if (s.status === 'fail') {
-    color = '#dc2626';
+    color = 'var(--danger)';
   }
 
   let prColor = 'var(--muted)';
   if (s.priority === 'high') {
-    prColor = '#dc2626';
+    prColor = 'var(--danger)';
   } else if (s.priority === 'medium') {
-    prColor = '#ffb867';
+    prColor = 'var(--warning)';
   }
   return (
     <tr>
@@ -189,7 +189,7 @@ export default function OnPagePage() {
   }
 
   const card: React.CSSProperties = {
-    background: '#ffffff',
+    background: 'var(--card)fff',
     border: '1px solid rgba(148, 163, 184, 0.16)',
     borderRadius: 16,
     padding: '20px 24px',
@@ -202,7 +202,7 @@ export default function OnPagePage() {
     padding: '11px 14px',
     borderRadius: 12,
     border: '1px solid rgba(148, 163, 184, 0.2)',
-    background: '#ffffff',
+    background: 'var(--card)fff',
     color: 'var(--text)',
     marginBottom: 10,
     boxSizing: 'border-box',
@@ -221,16 +221,16 @@ export default function OnPagePage() {
     <main className="seo-advanced-page" style={{ minHeight: '100vh', color: 'var(--text)', padding: 24 }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <section style={{ marginBottom: 20 }}>
-          <h1 style={{ margin: '0 0 6px', fontSize: 27, fontWeight: 700, letterSpacing: '-0.6px', color: 'var(--nx-ink, var(--text))' }}>
+          <h1 style={{ margin: '0 0 6px', fontSize: 27, fontWeight: 700, letterSpacing: '-0.6px', color: 'var(--nx-ink)' }}>
             On-Page Optimizer
           </h1>
-          <p style={{ margin: 0, color: 'var(--nx-muted, var(--muted))', fontSize: 14 }}>
+          <p style={{ margin: 0, color: 'var(--nx-muted)', fontSize: 14 }}>
             SEO signals, meta tags, heading structure, keyword density, and practical content recommendations.
           </p>
         </section>
 
         {error && (
-          <div style={{ ...card, color: '#dc2626', borderColor: '#dc262644', background: '#dc262611' }}>{error}</div>
+          <div style={{ ...card, color: 'var(--danger)', borderColor: 'color-mix(in oklab, var(--danger) 27%, transparent)', background: 'color-mix(in oklab, var(--danger) 7%, transparent)' }}>{error}</div>
         )}
 
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))' }}>
@@ -320,7 +320,7 @@ export default function OnPagePage() {
                 padding: '10px 28px',
                 borderRadius: 8,
                 background: loading ? 'var(--muted)' : 'var(--brand)',
-                color: '#ecfeff',
+                color: 'var(--info-soft)',
                 fontWeight: 800,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 fontSize: 14,
@@ -360,7 +360,7 @@ export default function OnPagePage() {
                     border: '1px solid rgba(148,163,184,0.16)',
                     borderRadius: 10,
                     padding: '8px 10px',
-                    background: '#f4f5f8',
+                    background: 'var(--bg-soft)',
                   }}
                 >
                   <div
@@ -370,7 +370,7 @@ export default function OnPagePage() {
                       borderRadius: 999,
                       border: '1px solid rgba(94,234,212,0.4)',
                       background: 'rgba(45,212,191,0.16)',
-                      color: '#99f6e4',
+                      color: 'var(--info-line)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -390,7 +390,7 @@ export default function OnPagePage() {
                 border: '1px solid rgba(148,163,184,0.16)',
                 borderRadius: 10,
                 padding: '10px 12px',
-                background: '#f4f5f8',
+                background: 'var(--bg-soft)',
               }}
             >
               <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -401,7 +401,7 @@ export default function OnPagePage() {
                   style={{
                     border: '1px solid rgba(94,234,212,0.35)',
                     background: 'rgba(45,212,191,0.14)',
-                    color: '#99f6e4',
+                    color: 'var(--info-line)',
                     borderRadius: 999,
                     padding: '3px 8px',
                     fontSize: 11,
@@ -440,7 +440,7 @@ export default function OnPagePage() {
                       padding: '4px 10px',
                       borderRadius: 999,
                       background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
-                      color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)',
+                      color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)',
                     }}
                   >
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
@@ -454,7 +454,7 @@ export default function OnPagePage() {
                       padding: '4px 10px',
                       borderRadius: 999,
                       background: 'rgba(56,189,248,0.15)',
-                      color: '#38bdf8',
+                      color: 'var(--info)',
                     }}
                   >
                     Cached result
@@ -505,7 +505,7 @@ export default function OnPagePage() {
                   KW Density
                 </span>
                 <span
-                  style={{ fontSize: 24, fontWeight: 800, color: result.keyword_density > 3 ? '#dc2626' : '#26d78e' }}
+                  style={{ fontSize: 24, fontWeight: 800, color: result.keyword_density > 3 ? 'var(--danger)' : 'var(--success)' }}
                 >
                   {result.keyword_density?.toFixed(1)}%
                 </span>
@@ -520,10 +520,10 @@ export default function OnPagePage() {
                   justifyContent: 'center',
                 }}
               >
-                <span style={{ fontSize: 10, color: '#26d78e', fontWeight: 700, textTransform: 'uppercase' }}>
+                <span style={{ fontSize: 10, color: 'var(--success)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Passing
                 </span>
-                <span style={{ fontSize: 24, fontWeight: 800, color: '#26d78e' }}>{passes}</span>
+                <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--success)' }}>{passes}</span>
               </div>
               <div
                 style={{
@@ -535,10 +535,10 @@ export default function OnPagePage() {
                   justifyContent: 'center',
                 }}
               >
-                <span style={{ fontSize: 10, color: '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>
+                <span style={{ fontSize: 10, color: 'var(--danger)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Failing
                 </span>
-                <span style={{ fontSize: 24, fontWeight: 800, color: '#dc2626' }}>{fails}</span>
+                <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--danger)' }}>{fails}</span>
               </div>
             </div>
 
@@ -649,7 +649,7 @@ export default function OnPagePage() {
                         >
                           {s.section}
                         </span>
-                        <span style={{ fontSize: 11, color: '#26d78e' }}>Impact: {s.impact}</span>
+                        <span style={{ fontSize: 11, color: 'var(--success)' }}>Impact: {s.impact}</span>
                       </div>
                       <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>{s.suggestion}</p>
                     </div>
@@ -663,7 +663,7 @@ export default function OnPagePage() {
                         key={`win-${w}`}
                         style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}
                       >
-                        <Zap size={12} color="#26d78e" style={{ marginTop: 2, flexShrink: 0 }} />
+                        <Zap size={12} color="var(--success)" style={{ marginTop: 2, flexShrink: 0 }} />
                         <span style={{ fontSize: 13 }}>{w}</span>
                       </div>
                     ))}
@@ -732,7 +732,7 @@ export default function OnPagePage() {
                             marginBottom: 4,
                           }}
                         >
-                          <span style={{ fontSize: 10, color: '#26d78e', fontWeight: 700, textTransform: 'uppercase' }}>
+                          <span style={{ fontSize: 10, color: 'var(--success)', fontWeight: 700, textTransform: 'uppercase' }}>
                             Recommended
                           </span>
                           <button
@@ -743,7 +743,7 @@ export default function OnPagePage() {
                               gap: 4,
                               background: 'none',
                               border: 'none',
-                              color: copied === m.label ? '#26d78e' : 'var(--muted)',
+                              color: copied === m.label ? 'var(--success)' : 'var(--muted)',
                               cursor: 'pointer',
                               fontSize: 11,
                             }}
@@ -752,7 +752,7 @@ export default function OnPagePage() {
                             {copied === m.label ? 'Copied!' : 'Copy'}
                           </button>
                         </div>
-                        <div style={{ fontSize: 13, color: '#26d78e' }}>{m.recommended}</div>
+                        <div style={{ fontSize: 13, color: 'var(--success)' }}>{m.recommended}</div>
                       </div>
                     )}
                     {m.issues?.map((issue) => (
@@ -760,7 +760,7 @@ export default function OnPagePage() {
                         key={`${m.label}-${issue}`}
                         style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}
                       >
-                        <AlertTriangle size={12} color="#ffb867" />
+                        <AlertTriangle size={12} color="var(--warning)" />
                         <span style={{ fontSize: 12, color: 'var(--muted)' }}>{issue}</span>
                       </div>
                     ))}

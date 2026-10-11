@@ -684,33 +684,44 @@ function providerHint(network: string) {
   return 'Business accounts';
 }
 
+/*
+ * The creative preview is encoded as a standalone data-URI SVG document, where
+ * `var()` does not resolve and CSS custom properties are unavailable. These
+ * literals therefore mirror the design tokens by hand; keep them in step with
+ * the `--series-*`, `--text` and `--brand` values in globals.css.
+ */
+const PREVIEW_COLORS = {
+  canvas: '#f3f6fb', // --surface-glass
+  glowWarm: '#2563eb', // --series-1
+  glowPlum: '#0e7490', // --series-5
+  ink: '#0b1220', // --text
+  cta: '#2563eb', // --brand
+  ctaInk: '#ffffff', // --on-brand
+} as const;
+
 function makeCreativePreview(title: string, subtitle: string, cta: string) {
   const safeTitle = title.slice(0, 44) || 'Campaign Creative';
   const safeSubtitle = subtitle.slice(0, 48) || 'Limited Time Offer';
   const safeCta = cta.slice(0, 18) || 'Shop Now';
+  const c = PREVIEW_COLORS;
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1080 1080'>
     <defs>
-      <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
-        <stop offset='0%' stop-color='#eef0f4' />
-        <stop offset='55%' stop-color='#eef0f4' />
-        <stop offset='100%' stop-color='#eef0f4' />
-      </linearGradient>
       <radialGradient id='glowA' cx='0.2' cy='0.2' r='0.45'>
-        <stop offset='0%' stop-color='#f59e0b' stop-opacity='0.75' />
-        <stop offset='100%' stop-color='#f59e0b' stop-opacity='0' />
+        <stop offset='0%' stop-color='${c.glowWarm}' stop-opacity='0.28' />
+        <stop offset='100%' stop-color='${c.glowWarm}' stop-opacity='0' />
       </radialGradient>
       <radialGradient id='glowB' cx='0.82' cy='0.78' r='0.45'>
-        <stop offset='0%' stop-color='#ec4899' stop-opacity='0.72' />
-        <stop offset='100%' stop-color='#ec4899' stop-opacity='0' />
+        <stop offset='0%' stop-color='${c.glowPlum}' stop-opacity='0.26' />
+        <stop offset='100%' stop-color='${c.glowPlum}' stop-opacity='0' />
       </radialGradient>
     </defs>
-    <rect width='1080' height='1080' fill='url(#bg)' />
+    <rect width='1080' height='1080' fill='${c.canvas}' />
     <rect width='1080' height='1080' fill='url(#glowA)' />
     <rect width='1080' height='1080' fill='url(#glowB)' />
-    <text x='84' y='178' fill='var(--text)' font-size='106' font-family='Arial, Helvetica, sans-serif' font-weight='800'>${safeTitle}</text>
-    <text x='84' y='250' fill='var(--text)' font-size='56' font-family='Arial, Helvetica, sans-serif'>${safeSubtitle}</text>
-    <rect x='740' y='938' width='250' height='82' rx='40' fill='#e11d48' />
-    <text x='820' y='994' text-anchor='middle' fill='#ffffff' font-size='42' font-family='Arial, Helvetica, sans-serif' font-weight='700'>${safeCta}</text>
+    <text x='84' y='178' fill='${c.ink}' font-size='106' font-family='Arial, Helvetica, sans-serif' font-weight='800'>${safeTitle}</text>
+    <text x='84' y='250' fill='${c.ink}' font-size='56' font-family='Arial, Helvetica, sans-serif'>${safeSubtitle}</text>
+    <rect x='740' y='938' width='250' height='82' rx='40' fill='${c.cta}' />
+    <text x='820' y='994' text-anchor='middle' fill='${c.ctaInk}' font-size='42' font-family='Arial, Helvetica, sans-serif' font-weight='700'>${safeCta}</text>
   </svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
@@ -787,7 +798,7 @@ export default function StudioWorkspacePage() {
     voiceover: '',
     avatar_profile: defaultAvatarProfile(),
     voiceover_engine: defaultVoiceoverEngine(),
-    brand_colors: ['var(--text)', '#84cc16', 'var(--brand)'],
+    brand_colors: ['var(--text)', 'var(--series-3)', 'var(--brand)'],
     title_font_family: 'Hanken Grotesk',
     subtitle_font_family: 'Hanken Grotesk',
     title_font_weight: 'Regular',
@@ -910,7 +921,7 @@ export default function StudioWorkspacePage() {
   function addBrandPaletteColor() {
     setBrandProfile((current) => ({
       ...current,
-      brand_colors: current.brand_colors.length >= 12 ? current.brand_colors : [...current.brand_colors, '#6366f1'],
+      brand_colors: current.brand_colors.length >= 12 ? current.brand_colors : [...current.brand_colors, 'var(--brand)'],
     }));
   }
 
@@ -1100,7 +1111,7 @@ export default function StudioWorkspacePage() {
       brand_colors:
         Array.isArray(nextBrand.brand_colors) && nextBrand.brand_colors.length
           ? nextBrand.brand_colors.slice(0, 12)
-          : ['var(--text)', '#84cc16', 'var(--brand)'],
+          : ['var(--text)', 'var(--series-3)', 'var(--brand)'],
       title_font_family: nextBrand.title_font_family ?? 'Hanken Grotesk',
       subtitle_font_family: nextBrand.subtitle_font_family ?? 'Hanken Grotesk',
       title_font_weight: nextBrand.title_font_weight ?? 'Regular',
@@ -1608,7 +1619,7 @@ export default function StudioWorkspacePage() {
   ];
 
   const workspaceStyle = {
-    '--brand-accent': brandProfile.brand_colors[1] || '#6366f1',
+    '--brand-accent': brandProfile.brand_colors[1] || 'var(--brand)',
     '--brand-secondary': brandProfile.brand_colors[2] || 'var(--brand)',
     '--brand-font-title': brandProfile.title_font_family || 'inherit',
     '--brand-font-subtitle': brandProfile.subtitle_font_family || 'inherit',
@@ -3644,7 +3655,7 @@ export default function StudioWorkspacePage() {
           border: 1px solid var(--line);
           border-radius: 18px;
           background: color-mix(in oklab, var(--bg-soft) 97%, white 3%);
-          box-shadow: 0 16px 42px rgba(0, 0, 0, 0.14);
+          box-shadow: var(--shadow-md);
         }
 
         .workspace-hero {
@@ -3653,9 +3664,9 @@ export default function StudioWorkspacePage() {
           grid-template-columns: 1.5fr auto;
           gap: 16px;
           background:
-            radial-gradient(circle at top right, rgba(56, 189, 248, 0.18), transparent 34%),
-            linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.98));
-          color: #eef0f4;
+
+            var(--bg-soft);
+          color: var(--text);
         }
 
         .eyebrow,
@@ -3665,7 +3676,7 @@ export default function StudioWorkspacePage() {
           font-weight: 800;
           letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: #6366f1;
+          color: var(--brand);
         }
 
         .workspace-hero h1,
@@ -3677,7 +3688,7 @@ export default function StudioWorkspacePage() {
         .hero-copy {
           margin: 12px 0 0;
           max-width: 760px;
-          color: #e7e9ef;
+          color: var(--ink-2);
           line-height: 1.6;
           font-family: var(--brand-font-subtitle, inherit);
         }
@@ -3704,7 +3715,7 @@ export default function StudioWorkspacePage() {
           width: 100%;
           border: 1px solid var(--line);
           border-radius: 12px;
-          background: rgba(0, 0, 0, 0.08);
+          background: var(--line-soft);
           color: var(--fg);
           padding: 10px 12px;
           font: inherit;
@@ -3716,7 +3727,7 @@ export default function StudioWorkspacePage() {
           padding: 0;
           border-radius: 6px;
           justify-self: start;
-          accent-color: #6366f1;
+          accent-color: var(--brand);
         }
 
         textarea {
@@ -3739,21 +3750,21 @@ export default function StudioWorkspacePage() {
         }
 
         .ghost-btn.connected {
-          background: rgba(16, 185, 129, 0.12);
-          color: #059669;
+          background: var(--success-soft);
+          color: var(--success-ink);
         }
 
         .ghost-btn.danger {
-          color: #ef4444;
-          border-color: rgba(239, 68, 68, 0.45);
+          color: var(--danger);
+          border-color: var(--danger-line);
         }
 
         .error-banner {
           margin: 0;
           padding: 12px 14px;
           border-radius: 12px;
-          background: rgba(239, 68, 68, 0.12);
-          color: #ef4444;
+          background: var(--danger-soft);
+          color: var(--danger);
           font-weight: 700;
         }
 
@@ -3761,8 +3772,8 @@ export default function StudioWorkspacePage() {
           margin: 0;
           padding: 12px 14px;
           border-radius: 12px;
-          background: rgba(16, 185, 129, 0.16);
-          color: #047857;
+          background: var(--success-soft);
+          color: var(--success-ink);
           font-weight: 700;
         }
 
@@ -3773,9 +3784,9 @@ export default function StudioWorkspacePage() {
 
         .brand-warning-banner,
         .brand-sub-warning {
-          border: 1px solid rgba(245, 158, 11, 0.55);
-          background: rgba(245, 158, 11, 0.15);
-          color: #fef3c7;
+          border: 1px solid var(--warning-line);
+          background: var(--warning-soft);
+          color: var(--warning-ink);
           border-radius: 12px;
           padding: 10px 12px;
           font-weight: 700;
@@ -3840,7 +3851,7 @@ export default function StudioWorkspacePage() {
           border: 1px solid var(--line);
           border-radius: 12px;
           padding: 14px;
-          background: rgba(255, 255, 255, 0.04);
+          background: var(--bg);
           width: min(260px, 100%);
           min-height: 120px;
           display: grid;
@@ -3848,7 +3859,7 @@ export default function StudioWorkspacePage() {
         }
 
         .logo-preview-card.dark {
-          background: #eef0f4;
+          background: var(--text);
         }
 
         .logo-preview-card img {
@@ -3869,7 +3880,7 @@ export default function StudioWorkspacePage() {
         .fetch-modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(148,163,184,0.10);
+          background: var(--line-soft);
           z-index: 90;
           display: grid;
           place-items: center;
@@ -3881,7 +3892,7 @@ export default function StudioWorkspacePage() {
           border-radius: 16px;
           border: 1px solid var(--line);
           background: color-mix(in oklab, var(--bg-soft) 99%, white 1%);
-          box-shadow: 0 24px 48px rgba(148,163,184,0.10);
+          box-shadow: var(--shadow-lg);
           padding: 18px;
           display: grid;
           gap: 12px;
@@ -3939,7 +3950,7 @@ export default function StudioWorkspacePage() {
           grid-template-columns: auto 1fr auto;
           align-items: center;
           gap: 10px;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--bg);
         }
 
         .voiceover-row p {
@@ -3975,9 +3986,9 @@ export default function StudioWorkspacePage() {
 
         .manager-focus-card {
           background:
-            radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 38%),
-            linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(236, 253, 245, 0.98));
-          color: #eef0f4;
+
+            var(--bg-soft);
+          color: var(--text);
         }
 
         .manager-highlight-grid {
@@ -4008,7 +4019,7 @@ export default function StudioWorkspacePage() {
           border: 1px solid var(--line);
           border-radius: 12px;
           padding: 10px 12px;
-          background: rgba(255, 255, 255, 0.04);
+          background: var(--bg);
         }
 
         .insight-row p {
@@ -4029,10 +4040,10 @@ export default function StudioWorkspacePage() {
         }
 
         .calendar-column {
-          border: 1px dashed rgba(148, 163, 184, 0.55);
+          border: 1px dashed var(--line);
           border-radius: 14px;
           padding: 10px;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--bg);
           min-height: 220px;
           display: grid;
           gap: 10px;
@@ -4047,10 +4058,10 @@ export default function StudioWorkspacePage() {
         }
 
         .calendar-drop-target {
-          border: 1px dashed rgba(37, 99, 235, 0.45);
+          border: 1px dashed var(--brand-line);
           border-radius: 10px;
-          background: rgba(37, 99, 235, 0.08);
-          color: #6366f1;
+          background: var(--brand-soft);
+          color: var(--brand);
           padding: 8px 10px;
           font-size: 12px;
           font-weight: 700;
@@ -4068,7 +4079,7 @@ export default function StudioWorkspacePage() {
           border: 1px solid var(--line);
           border-radius: 12px;
           padding: 10px;
-          background: rgba(148,163,184,0.10);
+          background: var(--line-soft);
           display: grid;
           gap: 8px;
           cursor: grab;
@@ -4115,9 +4126,9 @@ export default function StudioWorkspacePage() {
         .creative-flow-card {
           gap: 14px;
           background:
-            radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 40%),
-            linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.98));
-          color: #eef0f4;
+
+            var(--bg-soft);
+          color: var(--text);
         }
 
         .creative-stepper {
@@ -4128,10 +4139,10 @@ export default function StudioWorkspacePage() {
 
         .step-btn {
           border: 1px solid var(--line);
-          background: rgba(255, 255, 255, 0.8);
+          background: var(--card);
           border-radius: 12px;
           padding: 10px;
-          color: #e7e9ef;
+          color: var(--ink-2);
           display: inline-flex;
           align-items: center;
           gap: 8px;
@@ -4140,9 +4151,9 @@ export default function StudioWorkspacePage() {
         }
 
         .step-btn.active {
-          border-color: #6366f1;
-          color: #eef0f4;
-          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+          border-color: var(--brand);
+          color: var(--text);
+          box-shadow: 0 0 0 2px color-mix(in oklab, var(--brand) 18%, transparent);
         }
 
         .step-index {
@@ -4151,8 +4162,8 @@ export default function StudioWorkspacePage() {
           border-radius: 999px;
           display: inline-grid;
           place-items: center;
-          background: rgba(37, 99, 235, 0.18);
-          color: #6366f1;
+          background: color-mix(in oklab, var(--brand) 18%, transparent);
+          color: var(--brand);
           font-size: 11px;
           font-weight: 800;
         }
@@ -4165,7 +4176,7 @@ export default function StudioWorkspacePage() {
         .creative-stage h2 {
           margin: 0;
           font-size: 34px;
-          color: #6366f1;
+          color: var(--brand);
         }
 
         .reference-row {
@@ -4176,16 +4187,16 @@ export default function StudioWorkspacePage() {
         }
 
         .reference-upload {
-          border: 1px dashed rgba(148, 163, 184, 0.8);
+          border: 1px dashed var(--line);
           border-radius: 12px;
-          background: rgba(255, 255, 255, 0.78);
+          background: var(--card);
           padding: 12px;
           min-width: 220px;
           position: relative;
           overflow: hidden;
           display: grid !important;
           gap: 4px;
-          color: #e7e9ef !important;
+          color: var(--ink-2) !important;
         }
 
         .reference-upload input {
@@ -4223,16 +4234,16 @@ export default function StudioWorkspacePage() {
         .post-type-btn {
           border: 1px solid var(--line);
           border-radius: 12px;
-          background: rgba(255, 255, 255, 0.86);
-          color: #e7e9ef;
+          background: var(--card);
+          color: var(--ink-2);
           padding: 12px;
           font-weight: 700;
           cursor: pointer;
         }
 
         .post-type-btn.active {
-          border-color: #6366f1;
-          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.16);
+          border-color: var(--brand);
+          box-shadow: 0 0 0 2px color-mix(in oklab, var(--brand) 16%, transparent);
         }
 
         .aspect-ratio-row {
@@ -4244,8 +4255,8 @@ export default function StudioWorkspacePage() {
         .ratio-pill {
           border: 1px solid var(--line);
           border-radius: 999px;
-          background: rgba(255, 255, 255, 0.85);
-          color: #e7e9ef;
+          background: var(--card);
+          color: var(--ink-2);
           padding: 6px 12px;
           font-weight: 700;
           font-size: 12px;
@@ -4253,15 +4264,15 @@ export default function StudioWorkspacePage() {
         }
 
         .ratio-pill.active {
-          border-color: #6366f1;
-          color: #1e3a8a;
-          background: rgba(191, 219, 254, 0.5);
+          border-color: var(--brand);
+          color: var(--brand-hover);
+          background: var(--brand-soft);
         }
 
         .review-box {
           border: 1px solid var(--line);
           border-radius: 14px;
-          background: rgba(255, 255, 255, 0.78);
+          background: var(--card);
           padding: 14px;
           display: grid;
           gap: 8px;
@@ -4270,7 +4281,7 @@ export default function StudioWorkspacePage() {
         .review-box p,
         .summary-row {
           margin: 0;
-          color: #e7e9ef;
+          color: var(--ink-2);
         }
 
         .summary-row {
@@ -4279,7 +4290,7 @@ export default function StudioWorkspacePage() {
           gap: 10px;
           font-size: 12px;
           font-weight: 700;
-          color: #e7e9ef;
+          color: var(--ink-2);
         }
 
         .library-grid {
@@ -4291,7 +4302,7 @@ export default function StudioWorkspacePage() {
         .library-card {
           border: 1px solid var(--line);
           border-radius: 14px;
-          background: rgba(255, 255, 255, 0.04);
+          background: var(--bg);
           padding: 10px;
           display: grid;
           gap: 8px;
@@ -4327,7 +4338,7 @@ export default function StudioWorkspacePage() {
           left: 8px;
           top: 8px;
           border-radius: 999px;
-          background: rgba(148,163,184,0.10);
+          background: var(--line-soft);
           color: var(--text);
           padding: 4px 8px;
           font-size: 11px;
@@ -4341,7 +4352,7 @@ export default function StudioWorkspacePage() {
         }
 
         .library-generating-state {
-          border: 1px dashed rgba(148, 163, 184, 0.65);
+          border: 1px dashed var(--line);
           border-radius: 12px;
           padding: 10px;
           display: grid;
@@ -4360,7 +4371,7 @@ export default function StudioWorkspacePage() {
           height: 28px;
           border-radius: 999px;
           border: 3px solid var(--line);
-          border-top-color: #6366f1;
+          border-top-color: var(--brand);
           animation: spin 1s linear infinite;
         }
 
@@ -4369,14 +4380,14 @@ export default function StudioWorkspacePage() {
           border-radius: 18px;
           border: 1px solid var(--line);
           background: color-mix(in oklab, var(--bg-soft) 99%, white 1%);
-          box-shadow: 0 24px 48px rgba(148,163,184,0.10);
+          box-shadow: var(--shadow-lg);
           overflow: hidden;
           display: grid;
           grid-template-columns: 1.1fr 0.9fr;
         }
 
         .creative-preview-media {
-          background: rgba(148,163,184,0.10);
+          background: var(--line-soft);
           padding: 12px;
         }
 
@@ -4503,7 +4514,7 @@ export default function StudioWorkspacePage() {
         }
 
         .capability-pill.subtle {
-          background: rgba(255, 255, 255, 0.05);
+          background: var(--bg);
           color: var(--muted);
         }
 
@@ -4526,7 +4537,7 @@ export default function StudioWorkspacePage() {
           border: 1px solid var(--line);
           border-radius: 16px;
           padding: 14px;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--bg);
         }
 
         .provider-row,
@@ -4570,7 +4581,7 @@ export default function StudioWorkspacePage() {
           background: linear-gradient(
             135deg,
             color-mix(in oklab, var(--brand-secondary) 24%, transparent),
-            rgba(255, 255, 255, 0.02)
+            var(--bg)
           );
         }
 
@@ -4606,7 +4617,7 @@ export default function StudioWorkspacePage() {
           padding: 14px;
           display: grid;
           gap: 12px;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--bg);
         }
 
         .provider-section-head {
@@ -4648,7 +4659,7 @@ export default function StudioWorkspacePage() {
           display: grid;
           justify-items: center;
           gap: 6px;
-          background: rgba(255, 255, 255, 0.03);
+          background: var(--bg);
           text-align: center;
         }
 
@@ -4669,14 +4680,14 @@ export default function StudioWorkspacePage() {
           display: grid;
           place-items: center;
           font-weight: 800;
-          color: #eef0f4;
-          background: linear-gradient(135deg, #b45309, #dc2626);
+          color: var(--text);
+          background: var(--brand);
         }
 
         .unlink-btn {
           background: transparent;
           border: none;
-          color: #ef4444;
+          color: var(--danger);
           cursor: pointer;
           font-weight: 700;
           padding: 0;
@@ -4720,7 +4731,7 @@ export default function StudioWorkspacePage() {
           margin: 0;
           padding: 12px;
           border-radius: 14px;
-          background: rgba(0, 0, 0, 0.12);
+          background: var(--line-soft);
           color: var(--muted);
           font-size: 12px;
           white-space: pre-wrap;

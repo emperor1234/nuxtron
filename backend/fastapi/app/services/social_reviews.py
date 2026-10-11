@@ -6,27 +6,27 @@ alert rules, clusters, and reviews ingestion, listing, responding, summary.
 
 from __future__ import annotations
 
-import os
-from fastapi import Depends
 from datetime import UTC, datetime
-from typing import Annotated, TYPE_CHECKING, Literal
+from typing import Annotated, Literal
 
-if TYPE_CHECKING:
-    from ..deps import AuthContext
+from fastapi import Depends
+from pydantic import BaseModel, Field
+
+from .. import memory_stores
+from ..deps import AuthContext, require_auth
+from ..rate_limiter import enforce_rate_limit as _enforce_rate_limit
 
 JsonObject = dict[str, object]
-from ..deps import AuthContext, require_auth
+
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
 
 # ── Memory Store References (set by legacy_main.py) ──────────
-_social_listening_memory = []
-_social_listening_alert_rules_memory = []
-_social_listening_alerts_memory = []
-_reviews_memory = []
-_rate_buckets = {}
-_rate_lock = None
-from ..rate_limiter import enforce_rate_limit as _enforce_rate_limit  # default; may be overwritten by set_memory_stores
+_social_listening_memory = memory_stores.social_listening
+_social_listening_alert_rules_memory = memory_stores.social_listening_alert_rules
+_social_listening_alerts_memory = memory_stores.social_listening_alerts
+_reviews_memory = memory_stores.reviews
+
 _coerce_int = int
 
 
@@ -35,15 +35,13 @@ def set_memory_stores(
     social_listening_alert_rules_memory=None,
     social_listening_alerts_memory=None,
     reviews_memory=None,
-    rate_buckets=None,
-    rate_lock=None,
     enforce_rate_limit=None,
     coerce_int=None,
 ) -> None:
     """Inject memory store references from legacy_main.py."""
     global _social_listening_memory, _social_listening_alert_rules_memory
     global _social_listening_alerts_memory, _reviews_memory
-    global _rate_buckets, _rate_lock, _enforce_rate_limit, _coerce_int
+    global _enforce_rate_limit, _coerce_int
     if social_listening_memory is not None:
         _social_listening_memory = social_listening_memory
     if social_listening_alert_rules_memory is not None:
@@ -52,10 +50,6 @@ def set_memory_stores(
         _social_listening_alerts_memory = social_listening_alerts_memory
     if reviews_memory is not None:
         _reviews_memory = reviews_memory
-    if rate_buckets is not None:
-        _rate_buckets = rate_buckets
-    if rate_lock is not None:
-        _rate_lock = rate_lock
     if enforce_rate_limit is not None:
         _enforce_rate_limit = enforce_rate_limit
     if coerce_int is not None:
@@ -297,10 +291,6 @@ def get_reviews_summary(auth: AuthDep) -> JsonObject:
 
 
 # ── Request Models ────────────────────────────────────────────
-
-from typing import Literal
-from pydantic import BaseModel, Field
-
 
 class SocialListeningIngestRequest(BaseModel):
     platform: Literal['linkedin', 'x', 'instagram', 'facebook', 'reddit', 'youtube', 'news']

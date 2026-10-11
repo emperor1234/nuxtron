@@ -77,7 +77,7 @@
 
 .error {
   padding: 12px 14px;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--danger-line);
   border-radius: var(--nx-radius-sm);
   background: var(--nx-red-soft);
   color: var(--nx-red);

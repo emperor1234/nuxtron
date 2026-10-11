@@ -61,10 +61,10 @@ const REGISTRY_SEED: FallbackSeed[] = [
     key: 'aeo',
     display_name: 'AEO: Answer Engine Optimization',
     group: 'Search Intelligence',
-    description: 'OpenLens + Playwright + LlamaIndex + JSON-LD optimization for answer engines.',
+    description: 'Answer-engine visibility monitoring, browser validation, retrieval workflows, and structured-data improvements.',
     route_path: '/seo/aeo',
     badge: 'Core',
-    integrations: ['openlens', 'playwright', 'llamaindex', 'json-ld'],
+    integrations: ['AI visibility checks', 'browser validation', 'retrieval workflows', 'structured data'],
   },
   {
     key: 'geo',
@@ -335,7 +335,7 @@ const REGISTRY_SEED: FallbackSeed[] = [
       'amazon_ads',
       'apple_search_ads',
       'youtube_ads',
-      'supabase',
+      'postgres',
       'redis',
     ],
     supported_channels: [
@@ -349,7 +349,7 @@ const REGISTRY_SEED: FallbackSeed[] = [
       'Next.js control tower UI',
       'FastAPI orchestration layer',
       'Django admin and billing spine',
-      'PostgreSQL + Supabase control plane',
+      'PostgreSQL control plane',
       'Redis + Celery execution fabric',
     ],
     automation_features: [
@@ -460,7 +460,7 @@ const REGISTRY_SEED: FallbackSeed[] = [
       'Server-side tracking and attribution fabric that unifies ad clicks, conversions, revenue events, and offline outcomes into decision-grade reporting.',
     route_path: '/seo/attribution-conversion-intelligence',
     badge: 'Core',
-    integrations: ['posthog', 'snowplow', 'supabase', 'postgres', 'google_conversion_api'],
+    integrations: ['posthog', 'snowplow', 'postgres', 'google_conversion_api'],
     supported_channels: ['Paid search', 'Retail media', 'Organic assist', 'CRM/offline revenue'],
     architecture_layers: [
       'Event ingestion API',

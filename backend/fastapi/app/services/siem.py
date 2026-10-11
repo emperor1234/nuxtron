@@ -91,8 +91,21 @@ def _coerce_float(value: object, default: float = 0.0) -> float:
 
 
 def _record_audit(tenant_id: str, action: str, detail: JsonObject) -> None:
-    """Record an audit event. Placeholder - actual implementation stays in legacy_main."""
-    pass
+    """Record a structured SIEM audit event for the owning tenant.
+
+    The shared memory store remains a development adapter. Production startup
+    requires durable audit infrastructure, so this helper records the event
+    explicitly instead of returning a false success.
+    """
+    event: JsonObject = {
+        'id': len(_audit_log_memory) + 1,
+        'tenant_id': tenant_id,
+        'action': action,
+        'details': detail.copy(),
+        'timestamp': datetime.now(UTC).isoformat(),
+    }
+    with _siem_lock:
+        _audit_log_memory.append(event)
 
 
 def _siem_extract_ip(record: JsonObject) -> str:

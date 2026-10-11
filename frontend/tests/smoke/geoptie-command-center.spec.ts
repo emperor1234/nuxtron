@@ -179,8 +179,8 @@ test.describe('Geoptie command center', () => {
     await page.goto('/seo/geoptie-readiness');
     const main = page.locator('main');
 
-    await expect(main.getByRole('heading', { name: 'Geoptie End-to-End Readiness Hub' })).toBeVisible();
-    await expect(main.getByText('Current status:')).toContainText('PASSED');
+    await expect(main.getByRole('heading', { name: 'Geoptie Overview' })).toBeVisible();
+    await expect(main.getByText('12/12')).toBeVisible();
     await expect(main.locator('a[href="/seo/geoptie-automation"]').first()).toBeVisible();
     await expect(main.locator('a[href="/seo/geoptie-integrations"]').first()).toBeVisible();
   });
@@ -189,25 +189,26 @@ test.describe('Geoptie command center', () => {
     await mockGeoptieApis(page);
     await page.goto('/seo/geoptie-automation');
 
-    await expect(page.getByRole('heading', { name: 'Geoptie Run And Product Control' })).toBeVisible();
-    const runBlueprintButton = page.getByRole('button', { name: 'Run Full Automation Blueprint' });
-    const blueprintHeading = page.getByRole('heading', { name: 'Automation Blueprint' });
+    await expect(page.getByRole('heading', { name: 'Geoptie Automation' })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Domain', exact: true }).fill('nuxtron.ai');
+    const runBlueprintButton = page.getByRole('button', { name: 'Run full automation' });
+    const blueprintHeading = page.getByText('Latest automation');
     await runBlueprintButton.click();
     if (!(await blueprintHeading.isVisible())) {
       await runBlueprintButton.click();
     }
     await expect(blueprintHeading).toBeVisible({ timeout: 20000 });
     await expect(page.getByText('Rank Tracker monitors visibility across major AI model surfaces.')).toBeVisible();
-    await expect(page.getByText('Vendors referenced: 2')).toBeVisible();
+    await expect(page.getByText('2 provider connections participated.')).toBeVisible();
   });
 
   test('integrations page can apply wiring', async ({ page }) => {
     await mockGeoptieApis(page);
     await page.goto('/seo/geoptie-integrations');
 
-    await expect(page.getByRole('heading', { name: 'Provider Wiring And Remediation' })).toBeVisible();
-    await page.getByRole('button', { name: 'Apply All Missing Wiring' }).click();
-    await expect(page.getByText('Wiring result: 100% configured, gate PASSED.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Geoptie Connections' })).toBeVisible();
+    await page.getByRole('button', { name: 'Apply available settings' }).click();
+    await expect(page.getByText('100% complete')).toBeVisible();
   });
 
   test('assist page returns operational guidance', async ({ page }) => {
@@ -216,8 +217,8 @@ test.describe('Geoptie command center', () => {
     await mockGeoptieApis(page);
     await page.goto('/seo/geoptie-assist');
 
-    const assistHeading = page.getByRole('heading', { name: 'Assist Prompt Console' });
-    const runAssistButton = page.getByRole('button', { name: 'Run Assist' });
+    const assistHeading = page.getByRole('heading', { name: 'Geoptie AI Assist' });
+    const runAssistButton = page.getByRole('button', { name: 'Get recommendations' });
     await expect(assistHeading).toBeVisible();
     await runAssistButton.click();
     if (new URL(page.url()).search) {
@@ -225,7 +226,7 @@ test.describe('Geoptie command center', () => {
       await expect(assistHeading).toBeVisible();
       await runAssistButton.click();
     }
-    await expect(page.getByRole('heading', { name: 'Assist Response' })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('heading', { name: 'Recommendations' })).toBeVisible({ timeout: 30000 });
     await expect(page.getByText('Geoptie rollout is healthy and production ready for this tenant.')).toBeVisible();
   });
 });

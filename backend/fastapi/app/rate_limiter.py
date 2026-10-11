@@ -1,10 +1,13 @@
 """Rate limiting utilities with Redis backend and in-process fallback."""
 
-import os
 import threading
 import time
+from collections.abc import Mapping
+from dataclasses import dataclass
+from types import MappingProxyType
+from typing import Any
 
-from .security_redis import fixed_window_increment
+from .domains.identity.security_redis import fixed_window_increment
 
 
 class RateLimitExceededError(Exception):
@@ -17,6 +20,15 @@ class RateLimitExceededError(Exception):
 # In-process fallback state
 _rate_lock = threading.Lock()
 _rate_buckets: dict[str, list[float]] = {}
+
+
+@dataclass(frozen=True)
+class RateLimitMetrics:
+    """Immutable point-in-time view of in-process limiter activity."""
+
+    active_keys: int
+    sample_count: int
+    bucket_sizes: Mapping[str, int]
 
 
 def enforce_rate_limit_in_process(key: str, limit: int, window_seconds: int) -> None:
@@ -57,19 +69,20 @@ def enforce_rate_limit(key: str, limit: int, window_seconds: int) -> None:
         raise RateLimitExceededError('Rate limit exceeded. Please retry later.')
 
 
-def reset_rate_limits_for_tests() -> None:
+def reset_rate_limits_for_tests(*, include_redis: bool = False) -> None:
     """Test helper to isolate rate limiter state between test cases.
-    
-    Clears both the in-process fallback bucket and any Redis-backed counters
-    (best-effort — a missing/unreachable Redis in test environments is
-    expected and not an error here).
+
+    Local state is always cleared. Redis cleanup is opt-in for explicit
+    integration tests so the default per-test fixture never performs SCAN.
     """
     with _rate_lock:
         _rate_buckets.clear()
+    if not include_redis:
+        return
     try:
-        from .security_redis import get_sync_redis
+        from .domains.identity.security_redis import get_sync_redis
 
-        client = get_sync_redis()
+        client: Any = get_sync_redis()
         if client is not None:
             cursor = 0
             while True:
@@ -83,14 +96,15 @@ def reset_rate_limits_for_tests() -> None:
         logging.getLogger(__name__).debug('Redis cleanup failed during test reset: %s', exc)
 
 
-def get_rate_buckets() -> dict[str, list[float]]:
-    """Get the current rate buckets for metrics."""
-    return _rate_buckets
-
-
-def get_rate_lock() -> threading.Lock:
-    """Get the rate lock for metrics collection."""
-    return _rate_lock
+def rate_limit_metrics_snapshot() -> RateLimitMetrics:
+    """Return metrics without exposing mutable limiter internals."""
+    with _rate_lock:
+        sizes = {key: len(samples) for key, samples in _rate_buckets.items()}
+    return RateLimitMetrics(
+        active_keys=len(sizes),
+        sample_count=sum(sizes.values()),
+        bucket_sizes=MappingProxyType(sizes),
+    )
 
 
 def clear_rate_buckets() -> None:

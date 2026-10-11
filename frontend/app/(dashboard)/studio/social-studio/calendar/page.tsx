@@ -19,10 +19,6 @@ export default function CalendarPage() {
   const [pauseReason, setPauseReason] = useState('Operational review in progress.');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadEvents();
-  }, [currentMonth]);
-
   async function loadEvents() {
     setError(null);
     try {
@@ -48,6 +44,12 @@ export default function CalendarPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentMonth]);
 
   function getDaysInMonth() {
     const year = currentMonth.getFullYear();
@@ -92,7 +94,7 @@ export default function CalendarPage() {
 
   async function handlePauseAll() {
     try {
-      const pause_all = await socialApi.setPauseAll(!(queue?.pause_all.paused ?? false), pauseReason);
+      const pause_all = await socialApi.setPauseAll(!(queue?.pause_all?.paused ?? false), pauseReason);
       setQueue((current) =>
         current ? { ...current, pause_all } : { pause_all, summary: { scheduled: events.length, drafts: 0 }, items: [] }
       );
@@ -114,7 +116,7 @@ export default function CalendarPage() {
           <Link href="/studio/social-studio" style={styles.backLink}>
             ← Back to Hub
           </Link>
-          <h1 style={styles.title}>Campaign Calendar</h1>
+          <h1 style={styles.title}>Content Calendar</h1>
           <p style={styles.subtitle}>Drag posts to reschedule them across platforms</p>
         </div>
       </div>
@@ -142,8 +144,8 @@ export default function CalendarPage() {
         <div>
           <strong style={styles.queueTitle}>Automation Queue</strong>
           <p style={styles.queueCopy}>
-            Scheduled {queue?.summary.scheduled ?? 0} • Drafts {queue?.summary.drafts ?? 0} • State{' '}
-            {queue?.pause_all.paused ? 'Paused' : 'Active'}
+            Scheduled {queue?.summary?.scheduled ?? 0} • Drafts {queue?.summary?.drafts ?? 0} • State{' '}
+            {queue?.pause_all?.paused ? 'Paused' : 'Active'}
           </p>
         </div>
         <div style={styles.queueActions}>
@@ -154,7 +156,7 @@ export default function CalendarPage() {
             style={styles.queueInput}
           />
           <button onClick={handlePauseAll} style={styles.pauseBtn}>
-            {queue?.pause_all.paused ? 'Resume all' : 'Pause all'}
+            {queue?.pause_all?.paused ? 'Resume all' : 'Pause all'}
           </button>
         </div>
       </div>
@@ -296,7 +298,7 @@ const styles: Record<string, React.CSSProperties> = {
   errorBanner: {
     backgroundColor: 'rgba(245, 158, 11, 0.12)',
     border: '1px solid rgba(245, 158, 11, 0.4)',
-    color: '#b45309',
+    color: 'var(--warning-ink)',
     padding: '12px 14px',
     borderRadius: '10px',
     marginBottom: '16px',
@@ -346,7 +348,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pauseBtn: {
     padding: '10px 14px',
-    backgroundColor: '#6366f1',
+    backgroundColor: "var(--brand)",
     color: 'var(--text)',
     border: 'none',
     borderRadius: '8px',
@@ -361,7 +363,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '6px',
     fontSize: '14px',
     cursor: 'pointer',
-    transition: 'all 0.2s',
   },
   monthName: {
     fontSize: '20px',
@@ -418,7 +419,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '4px',
     padding: '4px 6px',
-    backgroundColor: '#6366f1',
+    backgroundColor: "var(--brand)",
     color: 'var(--text)',
     borderRadius: '3px',
     fontSize: '11px',
@@ -483,7 +484,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap',
   },
   eventItemPlatforms: {
-    color: '#6366f1',
+    color: "var(--brand)",
   },
   eventItemRight: {
     display: 'flex',

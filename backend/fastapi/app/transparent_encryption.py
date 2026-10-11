@@ -349,7 +349,7 @@ def encryption_status() -> dict[str, Any]:
         'pqc_private_key_configured': pqc_private_key_configured,
         'envelope_versions': ['nse1 (AES-256-GCM)', 'nse2 (ChaCha20-Poly1305)', 'Fernet (legacy)'],
         'pgcrypto': 'enabled when DB connection provided',
-        'key_source': 'HashiCorp Vault → Supabase Vault → environment',
+        'key_source': 'HashiCorp Vault → environment',
     }
 
 

@@ -19,9 +19,9 @@ function asObject(v: unknown): Json {
 }
 
 const PERCENTILE_COLOR: Record<string, string> = {
-  top_quartile: '#22c55e',
+  top_quartile: 'var(--success)',
   above_median: 'var(--brand)',
-  below_median: '#d97706',
+  below_median: 'var(--warning)',
   no_segment_data: 'var(--muted)',
 };
 
@@ -162,7 +162,7 @@ export default function BenchmarksPage() {
           style={{
             padding: '0.5rem 1.2rem',
             borderRadius: 6,
-            background: '#6366f1',
+            background: "var(--brand)",
             color: 'var(--text)',
             border: 'none',
             cursor: 'pointer',
@@ -172,7 +172,7 @@ export default function BenchmarksPage() {
         </button>
       </div>
 
-      {error && <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</p>}
+      {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem' }}>{error}</p>}
 
       {/* Summary metrics */}
       {Object.keys(metricsData).length > 0 && (
@@ -196,7 +196,7 @@ export default function BenchmarksPage() {
                     {asNumber(d.avg_value).toFixed(1)}
                   </div>
                   {uplift !== null && uplift !== undefined && (
-                    <div style={{ fontSize: '13px', color: asNumber(uplift) >= 0 ? '#22c55e' : '#ef4444' }}>
+                    <div style={{ fontSize: '13px', color: asNumber(uplift) >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                       {asNumber(uplift) >= 0 ? '▲' : '▼'} {Math.abs(asNumber(uplift))}% uplift
                     </div>
                   )}
@@ -375,7 +375,7 @@ export default function BenchmarksPage() {
           style={{
             padding: '0.5rem 1.2rem',
             borderRadius: 6,
-            background: '#6366f1',
+            background: "var(--brand)",
             color: 'var(--text)',
             border: 'none',
             cursor: 'pointer',
@@ -407,7 +407,7 @@ export default function BenchmarksPage() {
                 const hasBaseline = bm.baseline_value !== null && bm.baseline_value !== undefined;
                 const hasUplift = upliftVal !== null && upliftVal !== undefined;
                 const upliftNumber = asNumber(upliftVal);
-                const upliftColorInner = upliftNumber >= 0 ? '#22c55e' : '#ef4444';
+                const upliftColorInner = upliftNumber >= 0 ? 'var(--success)' : 'var(--danger)';
                 const upliftColor = hasUplift ? upliftColorInner : 'var(--muted)';
                 const upliftSign = upliftNumber >= 0 ? '+' : '';
                 const upliftText = hasUplift ? `${upliftSign}${upliftNumber}%` : '—';

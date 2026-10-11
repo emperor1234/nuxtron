@@ -35,8 +35,8 @@ type CreateTargetResponse = {
 
 const pageStyle: React.CSSProperties = {
   minHeight: '100vh',
-  background: 'linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)',
-  color: '#0f172a',
+  background: 'linear-gradient(180deg, var(--line) 0%, var(--info-soft) 100%)',
+  color: 'var(--text)',
 };
 
 const shellStyle: React.CSSProperties = {
@@ -141,7 +141,7 @@ export default function IntelligenceDashboard() {
             padding: 28,
             background:
               'linear-gradient(145deg, rgba(15,23,42,0.94) 0%, rgba(30,41,59,0.92) 44%, rgba(30,64,175,0.86) 120%)',
-            color: '#e2e8f0',
+            color: 'var(--muted)',
           }}
         >
           <div
@@ -149,7 +149,7 @@ export default function IntelligenceDashboard() {
               fontSize: 12,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              color: '#93c5fd',
+              color: 'var(--info)',
               fontWeight: 800,
             }}
           >
@@ -158,7 +158,7 @@ export default function IntelligenceDashboard() {
           <h1 style={{ margin: '10px 0 8px', fontSize: 36, lineHeight: 1.05 }}>
             Competitive intelligence, targets, and execution context
           </h1>
-          <p style={{ margin: 0, maxWidth: 760, lineHeight: 1.65, color: '#cbd5e1' }}>
+          <p style={{ margin: 0, maxWidth: 760, lineHeight: 1.65, color: 'var(--muted)' }}>
             This production-safe dashboard uses the live intelligence API surface already registered in FastAPI. It
             focuses on target tracking, summary telemetry, and quick-add workflows without depending on missing UI
             libraries.
@@ -167,7 +167,7 @@ export default function IntelligenceDashboard() {
 
         {error && (
           <section
-            style={{ ...cardStyle, marginTop: 18, padding: 16, borderColor: 'rgba(239,68,68,0.32)', color: '#991b1b' }}
+            style={{ ...cardStyle, marginTop: 18, padding: 16, borderColor: 'rgba(239,68,68,0.32)', color: 'var(--danger-ink)' }}
           >
             {error}
           </section>
@@ -191,7 +191,7 @@ export default function IntelligenceDashboard() {
               <div
                 style={{
                   fontSize: 12,
-                  color: '#64748b',
+                  color: "var(--muted)",
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                   fontWeight: 700,
@@ -199,7 +199,7 @@ export default function IntelligenceDashboard() {
               >
                 {item.label}
               </div>
-              <div style={{ marginTop: 8, fontSize: 32, fontWeight: 800, color: '#0f172a' }}>
+              <div style={{ marginTop: 8, fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
                 {metricValue(item.value)}
               </div>
             </article>
@@ -218,7 +218,7 @@ export default function IntelligenceDashboard() {
           >
             <div style={{ maxWidth: 560 }}>
               <h2 style={{ margin: 0, fontSize: 22 }}>Add Intelligence Target</h2>
-              <p style={{ margin: '6px 0 0', color: '#64748b', lineHeight: 1.6 }}>
+              <p style={{ margin: '6px 0 0', color: "var(--muted)", lineHeight: 1.6 }}>
                 Register a live competitor, partner, or reference domain to expand the intelligence dataset.
               </p>
             </div>
@@ -229,7 +229,7 @@ export default function IntelligenceDashboard() {
                 borderRadius: 999,
                 border: '1px solid rgba(59,130,246,0.24)',
                 background: 'rgba(59,130,246,0.08)',
-                color: '#1d4ed8',
+                color: 'var(--info)',
                 fontWeight: 700,
                 padding: '10px 14px',
                 cursor: 'pointer',
@@ -282,13 +282,13 @@ export default function IntelligenceDashboard() {
             }}
           >
             <h2 style={{ margin: 0, fontSize: 22 }}>Tracked Targets</h2>
-            <span style={{ color: '#64748b', fontSize: 13 }}>{targets.length} total</span>
+            <span style={{ color: "var(--muted)", fontSize: 13 }}>{targets.length} total</span>
           </div>
 
           {loading ? (
-            <div style={{ padding: '24px 0', color: '#64748b' }}>Loading targets...</div>
+            <div style={{ padding: '24px 0', color: "var(--muted)" }}>Loading targets...</div>
           ) : targets.length === 0 ? (
-            <div style={{ padding: '24px 0', color: '#64748b' }}>No targets found yet.</div>
+            <div style={{ padding: '24px 0', color: "var(--muted)" }}>No targets found yet.</div>
           ) : (
             <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
               {targets.map((target) => (
@@ -307,21 +307,21 @@ export default function IntelligenceDashboard() {
                         <strong style={{ fontSize: 16 }}>{target.name}</strong>
                         <span
                           style={badgeStyle(
-                            target.is_active !== false ? '#dcfce7' : '#e5e7eb',
-                            target.is_active !== false ? '#166534' : '#475569'
+                            target.is_active !== false ? 'var(--success-soft)' : 'var(--line)',
+                            target.is_active !== false ? 'var(--success-ink)' : 'var(--ink-2)'
                           )}
                         >
                           {target.is_active !== false ? 'Active' : 'Paused'}
                         </span>
-                        {target.category && <span style={badgeStyle('#dbeafe', '#1d4ed8')}>{target.category}</span>}
+                        {target.category && <span style={badgeStyle('var(--info-soft)', 'var(--info)')}>{target.category}</span>}
                       </div>
-                      <div style={{ marginTop: 8, color: '#475569', fontSize: 14 }}>
+                      <div style={{ marginTop: 8, color: 'var(--ink-2)', fontSize: 14 }}>
                         {target.domain || 'No domain set'}
                       </div>
                     </div>
                     <div style={{ display: 'grid', gap: 6, minWidth: 180 }}>
-                      <span style={{ color: '#64748b', fontSize: 12 }}>Priority: {target.priority ?? 3}</span>
-                      <span style={{ color: '#64748b', fontSize: 12 }}>
+                      <span style={{ color: "var(--muted)", fontSize: 12 }}>Priority: {target.priority ?? 3}</span>
+                      <span style={{ color: "var(--muted)", fontSize: 12 }}>
                         Last scan:{' '}
                         {target.last_full_scan_at
                           ? new Date(target.last_full_scan_at).toLocaleString()
@@ -343,8 +343,8 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   borderRadius: 14,
   border: '1px solid rgba(148,163,184,0.34)',
-  background: '#fff',
-  color: '#0f172a',
+  background: 'var(--card)',
+  color: 'var(--text)',
   padding: '12px 14px',
   fontSize: 14,
   outline: 'none',
@@ -353,8 +353,8 @@ const inputStyle: React.CSSProperties = {
 const primaryButtonStyle: React.CSSProperties = {
   borderRadius: 14,
   border: '1px solid rgba(37,99,235,0.22)',
-  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-  color: '#eff6ff',
+  background: 'linear-gradient(135deg, var(--info) 0%, var(--info) 100%)',
+  color: 'var(--info-soft)',
   fontWeight: 800,
   padding: '12px 16px',
   cursor: 'pointer',

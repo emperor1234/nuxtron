@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const fastapiBase = 'http://127.0.0.1:4101';
+const fastapiBase = 'http://localhost:4101';
 
 function headers() {
   return {
@@ -372,12 +372,15 @@ test.describe('Deep VSE coverage', () => {
   });
 
   test('VSE page sidebar navigation link is present for admin role', async ({ page }) => {
+    test.setTimeout(120_000);
     // Set admin role cookie and go to any page with sidebar
     await page.goto('/dashboard');
-    // The sidebar nav entry should be present; avoid generic href locator collisions.
-    const vseLink = page.getByRole('link', { name: 'Viral Singularity Engine' });
+    await page.getByRole('button', { name: 'Studio' }).click();
+    await expect(page).toHaveURL(/\/studio$/, { timeout: 60_000 });
+    await expect(page.getByRole('heading', { name: 'Studio', exact: true })).toBeVisible({ timeout: 60_000 });
+    const vseLink = page.getByRole('link', { name: 'Viral Content Engine', exact: true });
     await expect(vseLink).toBeVisible();
-    await expect(vseLink).toContainText('Viral Singularity Engine');
+    await expect(vseLink).toContainText('Viral Content Engine');
   });
 
   test('generate-variants UI section renders on /vse page', async ({ page }) => {

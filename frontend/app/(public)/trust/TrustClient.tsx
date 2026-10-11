@@ -46,11 +46,11 @@ function StaggeredControl({ control, index }: { control: typeof CONTROLS[0]; ind
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: index * 0.08 }}
       className="mk-card p-8 group"
     >
-      <div className="mb-5 inline-flex w-fit rounded-lg border border-[#18181814] bg-[#18181808] p-3 text-[#466cf3] transition-all duration-300 group-hover:scale-105 group-hover:border-[#466cf3]/50">
+      <div className="mb-5 inline-flex w-fit rounded-lg border border-line bg-line-soft p-3 text-brand transition-colors duration-300 group-hover:scale-105 group-hover:border-brand/50">
         <control.icon size={22} strokeWidth={1.75} aria-hidden="true" />
       </div>
-      <h2 className="mb-2.5 text-lg font-semibold text-[#181818]">{control.title}</h2>
-      <p className="text-[15px] leading-relaxed text-[#46484d]">{control.body}</p>
+      <h2 className="mb-2.5 text-lg font-semibold text-ink">{control.title}</h2>
+      <p className="text-[15px] leading-relaxed text-ink-2">{control.body}</p>
     </motion.div>
   );
 }
@@ -67,10 +67,10 @@ export default function TrustClient() {
           className="mk-container max-w-2xl"
         >
           <span className="mk-eyebrow mb-5">Trust & security</span>
-          <h1 className="text-5xl font-semibold tracking-tight text-[#181818] sm:text-6xl">
+          <h1 className="text-5xl font-semibold tracking-tight text-ink sm:text-6xl">
             Security is not an afterthought
           </h1>
-          <p className="mt-5 text-lg text-[#46484d]">
+          <p className="mt-5 text-lg text-ink-2">
             The same tenant isolation and access controls that protect your data protect every other tenant on
             Nuxtron — here&apos;s what that actually means underneath the product.
           </p>
@@ -100,12 +100,12 @@ export default function TrustClient() {
           className="mk-container max-w-3xl"
         >
           <div className="mk-card p-10 group">
-            <h2 className="mb-3 text-2xl font-semibold text-[#181818]">Have a security question?</h2>
-            <p className="mb-6 text-[15px] leading-relaxed text-[#46484d]">
+            <h2 className="mb-3 text-2xl font-semibold text-ink">Have a security question?</h2>
+            <p className="mb-6 text-[15px] leading-relaxed text-ink-2">
               For security disclosures, questionnaires, or a deeper technical review, reach out and we&apos;ll loop
               in the right person.
             </p>
-            <Link href="/contact" className="inline-flex items-center gap-2 font-semibold text-[#466cf3] group">
+            <Link href="/contact" className="inline-flex items-center gap-2 font-semibold text-brand group">
               Contact security <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </Link>
           </div>

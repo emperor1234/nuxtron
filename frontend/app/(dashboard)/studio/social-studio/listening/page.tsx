@@ -56,7 +56,7 @@ const NETWORK_COLORS: Record<string, string> = {
   linkedin: '#0A66C2',
   tiktok: '#69C9D0',
   reddit: '#FF4500',
-  youtube: '#FF0000',
+  youtube: 'var(--danger)',
 };
 
 export default function SocialListeningPage() {
@@ -145,8 +145,8 @@ export default function SocialListeningPage() {
     }
   }
 
-  const getSentimentColor = (s: string) => (s === 'positive' ? '#22c55e' : s === 'negative' ? '#EF4444' : 'var(--muted)');
-  const getSentimentBg = (s: string) => (s === 'positive' ? '#dcfce722' : s === 'negative' ? '#fee2e222' : '#eef0f4');
+  const getSentimentColor = (s: string) => (s === 'positive' ? 'var(--success)' : s === 'negative' ? 'var(--danger)' : 'var(--muted)');
+  const getSentimentBg = (s: string) => (s === 'positive' ? 'color-mix(in oklab, var(--success-soft) 13%, transparent)' : s === 'negative' ? 'color-mix(in oklab, var(--danger-soft) 13%, transparent)' : 'var(--neutral-soft)');
 
   return (
     <div style={styles.container}>
@@ -164,10 +164,10 @@ export default function SocialListeningPage() {
         <div style={styles.headerStats}>
           {summary && (
             <>
-              <div style={{ ...styles.statBadge, background: '#fee2e222', borderColor: '#EF4444' }}>
+              <div style={{ ...styles.statBadge, background: 'color-mix(in oklab, var(--danger-soft) 13%, transparent)', borderColor: 'var(--danger)' }}>
                 🚨 {summary.crisis} Crisis Alerts
               </div>
-              <div style={{ ...styles.statBadge, background: '#dcfce722', borderColor: '#22c55e' }}>
+              <div style={{ ...styles.statBadge, background: 'color-mix(in oklab, var(--success-soft) 13%, transparent)', borderColor: 'var(--success)' }}>
                 📡 {(summary.total_reach / 1000).toFixed(1)}K Reach
               </div>
             </>
@@ -189,9 +189,9 @@ export default function SocialListeningPage() {
         <div style={styles.kpiRow}>
           {[
             { label: 'Total Mentions', value: summary.total, icon: '🔔' },
-            { label: 'Crisis Alerts', value: summary.crisis, icon: '🚨', accent: '#EF4444' },
-            { label: 'Positive', value: summary.positive, icon: '✅', accent: '#22c55e' },
-            { label: 'Negative', value: summary.negative, icon: '⚠️', accent: '#EF4444' },
+            { label: 'Crisis Alerts', value: summary.crisis, icon: '🚨', accent: 'var(--danger)' },
+            { label: 'Positive', value: summary.positive, icon: '✅', accent: 'var(--success)' },
+            { label: 'Negative', value: summary.negative, icon: '⚠️', accent: 'var(--danger)' },
             { label: 'Total Reach', value: `${(summary.total_reach / 1000).toFixed(1)}K`, icon: '📡' },
             {
               label: 'Sentiment Score',
@@ -200,7 +200,7 @@ export default function SocialListeningPage() {
               accent: sentiment ? getSentimentColor(sentiment.label) : undefined,
             },
           ].map((kpi, i) => (
-            <div key={i} style={{ ...styles.kpiCard, borderColor: kpi.accent ?? '#e7e9ef' }}>
+            <div key={i} style={{ ...styles.kpiCard, borderColor: kpi.accent ?? 'var(--neutral-soft)' }}>
               <span style={styles.kpiIcon}>{kpi.icon}</span>
               <span style={{ ...styles.kpiValue, color: kpi.accent ?? 'var(--text)' }}>{kpi.value}</span>
               <span style={styles.kpiLabel}>{kpi.label}</span>
@@ -252,13 +252,13 @@ export default function SocialListeningPage() {
                     style={{
                       ...styles.mentionCard,
                       opacity: mention.alert_dismissed ? 0.5 : 1,
-                      borderLeft: `3px solid ${mention.is_crisis ? '#EF4444' : getSentimentColor(mention.sentiment)}`,
+                      borderLeft: `3px solid ${mention.is_crisis ? 'var(--danger)' : getSentimentColor(mention.sentiment)}`,
                     }}
                   >
                     <div style={styles.mentionHeader}>
                       <div style={styles.mentionMeta}>
                         <span
-                          style={{ ...styles.networkBadge, background: NETWORK_COLORS[mention.network] ?? '#e7e9ef' }}
+                          style={{ ...styles.networkBadge, background: NETWORK_COLORS[mention.network] ?? 'var(--neutral-soft)' }}
                         >
                           {mention.network}
                         </span>
@@ -355,7 +355,7 @@ export default function SocialListeningPage() {
                         style={{
                           ...styles.progressFill,
                           width: `${(sentiment.breakdown.positive / sentiment.breakdown.total) * 100}%`,
-                          background: '#22c55e',
+                          background: 'var(--success)',
                         }}
                       />
                     </div>
@@ -381,7 +381,7 @@ export default function SocialListeningPage() {
                         style={{
                           ...styles.progressFill,
                           width: `${(sentiment.breakdown.negative / sentiment.breakdown.total) * 100}%`,
-                          background: '#EF4444',
+                          background: 'var(--danger)',
                         }}
                       />
                     </div>
@@ -394,10 +394,10 @@ export default function SocialListeningPage() {
                 <div style={styles.networkGrid}>
                   {Object.entries(sentiment.network_breakdown).map(([net, data]) => (
                     <div key={net} style={styles.networkSentCard}>
-                      <div style={{ ...styles.networkDot, background: NETWORK_COLORS[net] ?? '#e7e9ef' }} />
+                      <div style={{ ...styles.networkDot, background: NETWORK_COLORS[net] ?? 'var(--neutral-soft)' }} />
                       <span style={styles.networkName}>{net}</span>
-                      <span style={{ ...styles.netSent, color: '#22c55e' }}>+{data.positive}</span>
-                      <span style={{ ...styles.netSent, color: '#EF4444' }}>-{data.negative}</span>
+                      <span style={{ ...styles.netSent, color: 'var(--success)' }}>+{data.positive}</span>
+                      <span style={{ ...styles.netSent, color: 'var(--danger)' }}>-{data.negative}</span>
                     </div>
                   ))}
                 </div>
@@ -425,8 +425,8 @@ const styles: Record<string, React.CSSProperties> = {
   headerStats: { display: 'flex', gap: 10 },
   statBadge: { padding: '6px 14px', borderRadius: 8, border: '1px solid', fontSize: 13, fontWeight: 600 },
   errorBanner: {
-    background: '#fee2e2',
-    border: '1px solid #EF4444',
+    background: 'var(--danger-soft)',
+    border: '1px solid var(--danger)',
     borderRadius: 8,
     padding: '10px 16px',
     marginBottom: 16,
@@ -491,18 +491,18 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 4,
     fontSize: 11,
     fontWeight: 600,
-    color: '#fff',
+    color: 'var(--on-status)',
     textTransform: 'capitalize',
   },
   mentionAuthor: { fontWeight: 600, fontSize: 14 },
   crisisBadge: {
-    background: '#fee2e2',
-    color: '#dc2626',
+    background: 'var(--danger-soft)',
+    color: 'var(--danger)',
     fontSize: 11,
     padding: '2px 8px',
     borderRadius: 4,
     fontWeight: 700,
-    border: '1px solid #EF444466',
+    border: '1px solid color-mix(in oklab, var(--danger) 40%, transparent)',
   },
   mentionActions: { display: 'flex', gap: 8, alignItems: 'center' },
   sentimentChip: { padding: '3px 10px', borderRadius: 16, fontSize: 11, fontWeight: 600, textTransform: 'capitalize' },
@@ -529,9 +529,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
   },
   primaryBtn: {
-    background: '#6366f1',
+    background: "var(--brand)",
     border: 'none',
-    color: '#fff',
+    color: 'var(--on-brand)',
     padding: '9px 18px',
     borderRadius: 8,
     cursor: 'pointer',
@@ -544,9 +544,9 @@ const styles: Record<string, React.CSSProperties> = {
   keywordHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   keywordText: { fontWeight: 600, fontSize: 15, fontFamily: 'monospace', color: 'var(--brand)' },
   deleteBtn: {
-    background: '#fee2e233',
-    border: '1px solid #EF444466',
-    color: '#dc2626',
+    background: 'color-mix(in oklab, var(--danger-soft) 20%, transparent)',
+    border: '1px solid color-mix(in oklab, var(--danger) 40%, transparent)',
+    color: 'var(--danger)',
     padding: '4px 10px',
     borderRadius: 6,
     cursor: 'pointer',

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { ProviderMark } from '@/app/(dashboard)/_ui/provider-mark';
 
 const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
 const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
@@ -79,7 +80,7 @@ export default function GEOPage() {
   }
 
   const card = {
-    background: '#ffffff',
+    background: 'var(--card)fff',
     border: '1px solid rgba(148, 163, 184, 0.16)',
     borderRadius: 16,
     padding: 16,
@@ -92,7 +93,7 @@ export default function GEOPage() {
     padding: '10px 12px',
     borderRadius: 12,
     border: '1px solid rgba(148, 163, 184, 0.22)',
-    background: '#ffffff',
+    background: 'var(--card)fff',
     color: 'var(--text)',
     marginBottom: 10,
     boxSizing: 'border-box' as const,
@@ -164,7 +165,7 @@ export default function GEOPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 8 }}>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -179,7 +180,7 @@ export default function GEOPage() {
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -194,7 +195,7 @@ export default function GEOPage() {
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -203,11 +204,13 @@ export default function GEOPage() {
                 <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Engines
                 </div>
-                <div style={{ marginTop: 2, fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{engines.length}</div>
+                <div role="group" aria-label="Target answer engines" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                  {engines.map((engine) => <ProviderMark key={engine} name={engine} size={18} />)}
+                </div>
               </div>
               <div
                 style={{
-                  background: '#f6f7fa',
+                  background: "var(--bg)",
                   border: '1px solid rgba(148,163,184,0.2)',
                   borderRadius: 10,
                   padding: '8px 10px',
@@ -221,7 +224,7 @@ export default function GEOPage() {
             </div>
           </div>
         </section>
-        {error && <div style={{ ...card, color: '#b91c1c' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
         <div
           style={{
             display: 'grid',
@@ -324,7 +327,7 @@ export default function GEOPage() {
                 borderRadius: 10,
                 border: '1px solid rgba(147,197,253,0.4)',
                 background: 'linear-gradient(90deg, rgba(59,130,246,0.9) 0%, rgba(14,165,233,0.86) 100%)',
-                color: '#eff6ff',
+                color: 'var(--info-soft)',
                 fontWeight: 700,
                 cursor: 'pointer',
                 opacity: loading ? 0.7 : 1,
@@ -352,7 +355,7 @@ export default function GEOPage() {
                     border: '1px solid rgba(148,163,184,0.16)',
                     borderRadius: 10,
                     padding: '8px 10px',
-                    background: '#f4f5f8',
+                    background: 'var(--bg-soft)',
                   }}
                 >
                   <div
@@ -382,7 +385,7 @@ export default function GEOPage() {
                 border: '1px solid rgba(148,163,184,0.16)',
                 borderRadius: 10,
                 padding: '10px 12px',
-                background: '#f4f5f8',
+                background: 'var(--bg-soft)',
               }}
             >
               <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -439,7 +442,7 @@ export default function GEOPage() {
                 }}
               >
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>GEO Score</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#22c55e' }}>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--success)' }}>
                   {(result.geo_score as number) ?? '—'}
                   <span style={{ fontSize: 12, fontWeight: 400 }}>/100</span>
                 </div>
@@ -466,7 +469,7 @@ export default function GEOPage() {
                       <span style={{ fontSize: 11, fontWeight: 400 }}>/100</span>
                     </div>
                     <div style={{ background: 'var(--line)', borderRadius: 4, height: 4, marginTop: 6 }}>
-                      <div style={{ width: `${score}%`, height: '100%', background: '#22d3ee', borderRadius: 4 }} />
+                      <div style={{ width: `${score}%`, height: '100%', background: 'var(--info)', borderRadius: 4 }} />
                     </div>
                   </div>
                 ))}
@@ -486,11 +489,11 @@ export default function GEOPage() {
                 const val = result[key] as number;
                 if (val === undefined) return null;
 
-                let barColor = '#ef4444';
+                let barColor = 'var(--danger)';
                 if (val >= 80) {
-                  barColor = '#22c55e';
+                  barColor = 'var(--success)';
                 } else if (val >= 60) {
-                  barColor = '#f59e0b';
+                  barColor = 'var(--warning)';
                 }
 
                 return (

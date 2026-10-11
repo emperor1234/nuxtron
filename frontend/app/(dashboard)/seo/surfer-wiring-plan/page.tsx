@@ -64,7 +64,7 @@ export default function SurferWiringPlanPage() {
         <button onClick={() => void loadPlan()} disabled={loading}>
           {loading ? 'Refreshing...' : 'Refresh'}
         </button>
-        {error ? <p style={{ color: '#f87171' }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)' }}>{error}</p> : null}
       </section>
 
       {data ? (

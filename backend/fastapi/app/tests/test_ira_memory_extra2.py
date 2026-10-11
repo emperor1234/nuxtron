@@ -14,7 +14,6 @@ os.environ.setdefault("FASTAPI_API_KEY", "test-api-key")
 
 from backend.fastapi.app.ira_memory import (
     IRAMemorySystem,
-    _load_vault_secrets,
     _vault_get,
 )
 
@@ -40,64 +39,24 @@ def _make_memory(**kwargs: Any) -> IRAMemorySystem:
     return IRAMemorySystem(**defaults)
 
 
-class TestLoadVaultSecretsDbPath:
-    """Test _load_vault_secrets when postgres env vars are set."""
-
-    def test_connection_failure_returns_empty(self) -> None:
-        """When postgres is configured but connection fails → returns {}."""
-        import backend.fastapi.app.ira_memory as mod
-        orig_cache = mod._vault_cache
-        orig_attempted = mod._vault_cache_attempted
-        try:
-            mod._vault_cache = None
-            mod._vault_cache_attempted = False
-            with patch.dict(os.environ, {"POSTGRES_HOST": "fakehost"}, clear=False):
-                with patch("psycopg.connect", side_effect=Exception("no DB")):
-                    result = _load_vault_secrets()
-            assert result == {}
-        finally:
-            mod._vault_cache = orig_cache
-            mod._vault_cache_attempted = orig_attempted
-
-    def test_successful_connection_populates_cache(self) -> None:
-        """When postgres is configured and connection succeeds → returns secrets dict."""
-        import backend.fastapi.app.ira_memory as mod
-        orig_cache = mod._vault_cache
-        orig_attempted = mod._vault_cache_attempted
-        try:
-            mod._vault_cache = None
-            mod._vault_cache_attempted = False
-            mock_cur = MagicMock()
-            mock_cur.fetchall.return_value = [("my_secret", "my_value"), ("other", "val2")]
-            mock_conn = MagicMock()
-            mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-            mock_conn.__exit__ = MagicMock(return_value=False)
-            mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cur)
-            mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
-            with patch.dict(os.environ, {"POSTGRES_HOST": "fakehost"}, clear=False):
-                with patch("psycopg.connect", return_value=mock_conn):
-                    result = _load_vault_secrets()
-            assert isinstance(result, dict)
-        finally:
-            mod._vault_cache = orig_cache
-            mod._vault_cache_attempted = orig_attempted
-
-
 class TestVaultGetWithVaultName:
     """Test _vault_get when a vault_name_env is configured."""
 
-    def test_vault_name_set_but_vault_empty_falls_back_to_env(self) -> None:
-        """When vault_secret_name is set but vault has no matching value → uses env var."""
+    def test_named_secret_falls_back_to_environment(self) -> None:
         with patch.dict(os.environ, {"IRA_VAULT_SECRET_MY_KEY": "my-secret-name", "MY_ENV_KEY": "from-env"}):
-            with patch("backend.fastapi.app.ira_memory._load_vault_secrets", return_value={}):
+            with patch(
+                "backend.fastapi.app.vault.secrets_manager.SecretsManager.get_secret",
+                return_value="from-env",
+            ):
                 result = _vault_get("MY_ENV_KEY", "IRA_VAULT_SECRET_MY_KEY")
         assert result == "from-env"
 
-    def test_vault_name_set_and_vault_has_value(self) -> None:
-        """When vault_secret_name is set and vault has a matching value → uses vault value."""
-        vault_data = {"my-secret-name": "vault-secret-value"}
+    def test_named_secret_uses_vault_value(self) -> None:
         with patch.dict(os.environ, {"IRA_VAULT_SECRET_MY_KEY": "my-secret-name"}):
-            with patch("backend.fastapi.app.ira_memory._load_vault_secrets", return_value=vault_data):
+            with patch(
+                "backend.fastapi.app.vault.secrets_manager.SecretsManager.get_secret",
+                return_value="vault-secret-value",
+            ):
                 result = _vault_get("MY_ENV_KEY", "IRA_VAULT_SECRET_MY_KEY")
         assert result == "vault-secret-value"
 
@@ -106,19 +65,19 @@ class TestProviderStatus:
     """Test provider_status branches."""
 
     def test_postgres_backend(self) -> None:
-        """When POSTGRES_HOST set → long_term backend = supabase_postgres."""
+        """When POSTGRES_HOST is set, PostgreSQL is the long-term backend."""
         mem = _make_memory()
         with patch.dict(os.environ, {"POSTGRES_HOST": "fakehost"}):
             result = mem.provider_status()
-        assert result["long_term"]["active_backend"] == "supabase_postgres"
-        assert result["long_term"]["supabase_postgres_ready"] is True
+        assert result["long_term"]["active_backend"] == "postgres"
+        assert result["long_term"]["postgres_ready"] is True
 
     def test_pinecone_backend(self) -> None:
         """When pinecone env vars set → long_term backend = pinecone."""
         mem = _make_memory()
         env = {
             "POSTGRES_HOST": "",
-            "SUPABASE_DB_URL": "",
+            "DATABASE_URL": "",
             "PINECONE_API_KEY": "pk-test",
             "PINECONE_INDEX_HOST": "myindex.pinecone.io",
         }
@@ -132,7 +91,7 @@ class TestProviderStatus:
         mem = _make_memory()
         env = {
             "POSTGRES_HOST": "",
-            "SUPABASE_DB_URL": "",
+            "DATABASE_URL": "",
             "PINECONE_API_KEY": "",
             "PINECONE_INDEX_HOST": "",
             "WEAVIATE_URL": "http://weaviate:8080",
@@ -147,7 +106,7 @@ class TestProviderStatus:
         mem = _make_memory()
         env = {
             "POSTGRES_HOST": "",
-            "SUPABASE_DB_URL": "",
+            "DATABASE_URL": "",
             "PINECONE_API_KEY": "",
             "PINECONE_INDEX_HOST": "",
             "WEAVIATE_URL": "",
@@ -183,7 +142,7 @@ class TestUpsertStructuredMemoryDbPaths:
         assert result["source"] == "in_memory"
 
     def test_postgres_success(self) -> None:
-        """When postgres is ready and connection succeeds → source='supabase_postgres'."""
+        """When PostgreSQL succeeds, it is recorded as the source."""
         mem = _make_memory()
         mock_cur = MagicMock()
         mock_conn = MagicMock()
@@ -200,7 +159,7 @@ class TestUpsertStructuredMemoryDbPaths:
                         memory_key="key2",
                         payload={"y": 2},
                     )
-        assert result["source"] == "supabase_postgres"
+        assert result["source"] == "postgres"
 
     def test_upsert_updates_existing(self) -> None:
         """Upserting same key updates existing record."""
@@ -254,7 +213,7 @@ class TestListStructuredMemoryDbPaths:
                     result = mem.list_structured_memory("t4")
         assert len(result) == 1
         assert result[0]["memory_key"] == "k1"
-        assert result[0]["source"] == "supabase_postgres"
+        assert result[0]["source"] == "postgres"
 
 
 class TestSyncLongTermMemoryPaths:
@@ -423,7 +382,7 @@ class TestQueryLongTermMemory:
         """When postgres ready but empty results → uses in_memory fallback."""
         mem = _make_memory()
         with patch.object(mem, "_postgres_ready", return_value=True):
-            with patch.object(mem, "_query_supabase_postgres", return_value=[]):
+            with patch.object(mem, "_query_postgres", return_value=[]):
                 provider, results = mem.query_long_term_memory(
                     tenant_id="t1",
                     query="test query",
@@ -434,11 +393,11 @@ class TestQueryLongTermMemory:
         assert provider == "in_memory"
 
     def test_postgres_ready_returns_results(self) -> None:
-        """When postgres ready and returns results → provider='supabase_postgres'."""
+        """When PostgreSQL returns results, it is recorded as the provider."""
         mem = _make_memory()
         fake_results = [{"content": "found it", "score": 0.9}]
         with patch.object(mem, "_postgres_ready", return_value=True):
-            with patch.object(mem, "_query_supabase_postgres", return_value=fake_results):
+            with patch.object(mem, "_query_postgres", return_value=fake_results):
                 provider, results = mem.query_long_term_memory(
                     tenant_id="t1",
                     query="test query",
@@ -446,7 +405,7 @@ class TestQueryLongTermMemory:
                     min_score=0.0,
                     fallback_items=[],
                 )
-        assert provider == "supabase_postgres"
+        assert provider == "postgres"
         assert len(results) == 1
 
     def test_fallback_with_embeddings(self) -> None:

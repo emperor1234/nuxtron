@@ -44,13 +44,10 @@ def allowed_hosts() -> list[str]:
     raw = os.getenv('ALLOWED_HOSTS', '').strip()
     if raw:
         hosts = [item.strip() for item in raw.split(',') if item.strip()]
-        # Container-local healthchecks (Docker HEALTHCHECK, Coolify's internal
-        # probe) hit /healthz over loopback with Host: 127.0.0.1, which never
-        # matches a real public ALLOWED_HOSTS domain. Always allow loopback
-        # so those checks succeed without weakening the public-facing check.
-        for local_host in ('localhost', '127.0.0.1'):
-            if local_host not in hosts:
-                hosts.append(local_host)
+        # Docker/Coolify healthchecks reach /healthz through loopback hosts.
+        for loopback in ('localhost', '127.0.0.1'):
+            if loopback not in hosts:
+                hosts.append(loopback)
         return hosts
     if is_production_environment():
         raise RuntimeError('ALLOWED_HOSTS must be configured in production mode.')

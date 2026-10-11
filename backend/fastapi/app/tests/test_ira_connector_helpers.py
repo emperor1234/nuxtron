@@ -83,10 +83,17 @@ class TestResolveTwilioConfig:
         assert result["auth_token"] == "token123"
         assert result["from_number"] == "+15550000"
 
-    def test_trailing_slash_removed_from_base_url(self):
+    def test_tenant_cannot_override_twilio_base_url(self, monkeypatch):
+        monkeypatch.delenv("TWILIO_API_BASE_URL", raising=False)
         connector = {"config": {"base_url": "https://custom.twilio.com/"}}
         result = resolve_twilio_config(connector)
-        assert result["base_url"] == "https://custom.twilio.com"
+        assert result["base_url"] == "https://api.twilio.com"
+
+    def test_operator_twilio_base_url_override_is_normalized(self, monkeypatch):
+        monkeypatch.setenv("TWILIO_API_BASE_URL", "https://proxy.example/twilio/")
+        connector = {"config": {"base_url": "https://tenant.example/"}}
+        result = resolve_twilio_config(connector)
+        assert result["base_url"] == "https://proxy.example/twilio"
 
 
 class TestResolveWebhookConfig:

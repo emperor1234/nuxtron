@@ -1,0 +1,490 @@
+/* ---------------------------------------------------------------------------
+   Use-case walkthrough.
+
+   Motion budget (explanation tier, seen once per visit):
+   - Progress track: constant motion, so linear, --step-ms (4000ms) per step.
+     Runs only while the tour is playing; pauses in place with the tour.
+   - Panel entrance on step change: eyebrow → title → body → surface, 380ms
+     var(--ease-out), 8px rise, 50ms apart. One sequenced change, not four.
+   - Panel contents: rows and answer lines 360ms, 45ms stagger after the
+     surface lands; bars grow with scaleY from the baseline, 520ms.
+   - Reduced motion: no autoplay (handled in JS), opacity-only entrance, bars
+     drawn at full height.
+   --------------------------------------------------------------------------- */
+
+.section {
+  background: var(--bg);
+  color: var(--text);
+  border-top: 1px solid var(--line);
+}
+
+.inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 112px 48px;
+}
+
+.header {
+  max-width: 680px;
+  margin-bottom: 48px;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.intro {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.tour {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+/* Tab rail --------------------------------------------------------------- */
+
+.rail {
+  display: grid;
+  gap: 16px;
+}
+
+.tabs {
+  display: grid;
+  gap: 6px;
+  height: auto;
+  padding: 0;
+  background: transparent;
+}
+
+.tab {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 16px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.tab[data-state="active"] {
+  border-color: var(--line);
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tab:not([data-state="active"]):hover {
+    background: var(--card);
+    color: var(--text);
+  }
+}
+
+.tabIcon {
+  color: var(--muted);
+}
+
+.tab[data-state="active"] .tabIcon {
+  color: var(--brand);
+}
+
+.tabLabel {
+  min-width: 0;
+}
+
+.tabIndex {
+  color: var(--faint);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Countdown track: only the active step, only while the tour plays. */
+.progress {
+  position: absolute;
+  right: 16px;
+  bottom: 8px;
+  left: 16px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line-soft);
+  opacity: 0;
+}
+
+.progress::after {
+  content: "";
+  display: block;
+  height: 100%;
+  background: var(--brand);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.control {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.control:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .control:hover {
+    border-color: var(--ink-2);
+    color: var(--text);
+  }
+}
+
+/* Stage ------------------------------------------------------------------ */
+
+.panels {
+  min-width: 0;
+}
+
+.panel {
+  margin: 0;
+}
+
+.panel:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+  border-radius: var(--radius-lg);
+}
+
+.stage {
+  display: grid;
+  gap: 28px;
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-md);
+}
+
+.stepEyebrow {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stepTitle {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.stepBody {
+  margin: 12px 0 0;
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.surface {
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.caption {
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Rows */
+
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 14px;
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.rowCheck {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+/* Bars */
+
+.bars {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  grid-template-areas:
+    "label value"
+    "track track";
+  gap: 6px 12px;
+  align-items: center;
+}
+
+.barLabel {
+  grid-area: label;
+  font-size: 14px;
+}
+
+.barValue {
+  grid-area: value;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.barTrack {
+  grid-area: track;
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line-soft);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand);
+  transform: scaleX(var(--value));
+  transform-origin: left center;
+}
+
+/* Answer */
+
+.answer {
+  display: grid;
+  gap: 14px;
+}
+
+.question {
+  justify-self: end;
+  max-width: 85%;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px 14px 4px 14px;
+  background: var(--ink-surface);
+  color: var(--on-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.answerLines {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px 14px 14px 4px;
+  background: var(--card);
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.citation {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--brand-line);
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+
+/* Motion ----------------------------------------------------------------- */
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes countdown {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tabs[data-status="playing"] .tab[data-state="active"] .progress,
+  .tabs[data-status="paused"] .tab[data-state="active"] .progress {
+    opacity: 1;
+  }
+
+  .tabs[data-status="playing"] .tab[data-state="active"] .progress::after,
+  .tabs[data-status="paused"] .tab[data-state="active"] .progress::after {
+    animation: countdown var(--step-ms) linear forwards;
+  }
+
+  .tabs[data-status="paused"] .tab[data-state="active"] .progress::after {
+    animation-play-state: paused;
+  }
+
+  .panels[data-animate="true"] .seq {
+    animation: enter 380ms var(--ease-out) backwards;
+    animation-delay: calc(var(--seq) * 50ms);
+  }
+
+  .panels[data-animate="true"] .row,
+  .panels[data-animate="true"] .answerLine {
+    animation: enter 360ms var(--ease-out) backwards;
+    animation-delay: calc(240ms + var(--i) * 45ms);
+  }
+
+  .panels[data-animate="true"] .barFill {
+    animation: grow 520ms var(--ease-out) backwards;
+    animation-delay: calc(240ms + var(--i) * 45ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panels[data-animate="true"] .seq {
+    animation: fade 200ms ease backwards;
+  }
+}
+
+/* Responsive ------------------------------------------------------------- */
+
+@media (max-width: 860px) {
+  .inner {
+    padding: 80px 20px;
+  }
+
+  .tour {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .tab {
+    flex: 0 0 auto;
+    grid-template-columns: 18px auto;
+    width: auto;
+    scroll-snap-align: start;
+  }
+
+  .tabIndex {
+    display: none;
+  }
+
+  .stage {
+    padding: 20px;
+  }
+
+  .stepTitle {
+    font-size: 22px;
+  }
+}

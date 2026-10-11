@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'nodejs';
-export const alt = 'Nuxtron Platform';
+export const alt = 'Nuxtron — Search, AI visibility, content, social and growth';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -15,7 +15,7 @@ export default function OgImage() {
         justifyContent: 'center',
         width: '100%',
         height: '100%',
-        background: 'linear-gradient(165deg, #f5f8ff 0%, #eef4ff 45%, #f8faff 100%)',
+        background: 'linear-gradient(165deg, #f4f7ff 0%, #e8f0fb 45%, #fffefc 100%)',
         fontFamily: 'sans-serif',
       }}
     >
@@ -31,13 +31,13 @@ export default function OgImage() {
           style={{
             width: 96,
             height: 96,
-            background: '#ffffff',
+            background: '#0b1330',
             borderRadius: 16,
             border: '2px solid #22cdea',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#0f213f',
+            color: '#f4f7ff',
             fontSize: 44,
             fontWeight: 800,
             letterSpacing: -2,
@@ -53,7 +53,7 @@ export default function OgImage() {
         >
           <span
             style={{
-              color: '#0f213f',
+              color: '#0b1330',
               fontSize: 72,
               fontWeight: 800,
               letterSpacing: -3,
@@ -64,27 +64,27 @@ export default function OgImage() {
           </span>
           <span
             style={{
-              color: '#22cdea',
+              color: '#2563c9',
               fontSize: 22,
               fontWeight: 500,
               letterSpacing: 6,
               textTransform: 'uppercase',
             }}
           >
-            Platform
+            Search & AI · Marketing
           </span>
         </div>
       </div>
       <div
         style={{
-          color: '#4f627f',
+          color: '#526071',
           fontSize: 28,
           fontWeight: 400,
           textAlign: 'center',
           maxWidth: 720,
         }}
       >
-        AI content · analytics · integrations · automation
+        Search & AI visibility · Content · Social · Growth
       </div>
     </div>,
     { ...size }

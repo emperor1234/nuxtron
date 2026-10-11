@@ -343,7 +343,7 @@ export default function SEOPlannerPage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
               opacity: loading ? 0.75 : 1,
@@ -359,7 +359,7 @@ export default function SEOPlannerPage() {
           </button>
 
           {error && (
-            <div style={{ color: '#fca5a5', border: '1px solid #ef4444', borderRadius: 8, padding: 10, fontSize: 12 }}>
+            <div style={{ color: 'var(--danger-line)', border: '1px solid var(--danger)', borderRadius: 8, padding: 10, fontSize: 12 }}>
               {error}
             </div>
           )}
@@ -378,7 +378,7 @@ export default function SEOPlannerPage() {
                       borderRadius: 999,
                       background:
                         result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
-                      color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)',
+                      color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)',
                     }}
                   >
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
@@ -392,7 +392,7 @@ export default function SEOPlannerPage() {
                       padding: '4px 10px',
                       borderRadius: 999,
                       background: 'rgba(56,189,248,0.15)',
-                      color: '#38bdf8',
+                      color: 'var(--info)',
                     }}
                   >
                     Cached result

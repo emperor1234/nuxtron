@@ -82,18 +82,18 @@ const DEFAULT_QUEUE_AUTO_REFRESH_SECONDS = 8;
 function jobStatusBadgeStyle(status: string): Record<string, string | number> {
   const normalized = status.trim().toLowerCase();
   if (normalized === 'completed') {
-    return { background: 'rgba(34,197,94,0.16)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.35)' };
+    return { background: 'rgba(34,197,94,0.16)', color: 'var(--success)', border: '1px solid rgba(34,197,94,0.35)' };
   }
   if (normalized === 'failed') {
-    return { background: 'rgba(248,113,113,0.16)', color: '#f87171', border: '1px solid rgba(248,113,113,0.35)' };
+    return { background: 'rgba(248,113,113,0.16)', color: 'var(--danger)', border: '1px solid rgba(248,113,113,0.35)' };
   }
   if (normalized === 'pending' || normalized === 'running') {
-    return { background: 'rgba(251,191,36,0.16)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.35)' };
+    return { background: 'rgba(251,191,36,0.16)', color: 'var(--warning)', border: '1px solid rgba(251,191,36,0.35)' };
   }
   if (normalized === 'cancelled') {
-    return { background: 'rgba(148,163,184,0.16)', color: '#cbd5e1', border: '1px solid rgba(148,163,184,0.35)' };
+    return { background: 'rgba(148,163,184,0.16)', color: 'var(--neutral-line)', border: '1px solid rgba(148,163,184,0.35)' };
   }
-  return { background: 'rgba(148,163,184,0.12)', color: '#cbd5e1', border: '1px solid rgba(148,163,184,0.25)' };
+  return { background: 'rgba(148,163,184,0.12)', color: 'var(--neutral-line)', border: '1px solid rgba(148,163,184,0.25)' };
 }
 
 function normalizeJobStage(stage: string): string {
@@ -121,12 +121,12 @@ export function filterQueueItemsByStage(
 function stageBadgeStyle(stage: string): Record<string, string | number> {
   const normalized = normalizeJobStage(stage);
   if (normalized === 'timeout') {
-    return { background: 'rgba(249,115,22,0.16)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.35)' };
+    return { background: 'rgba(249,115,22,0.16)', color: 'var(--warning)', border: '1px solid rgba(249,115,22,0.35)' };
   }
   if (normalized === 'failed') {
-    return { background: 'rgba(248,113,113,0.16)', color: '#f87171', border: '1px solid rgba(248,113,113,0.35)' };
+    return { background: 'rgba(248,113,113,0.16)', color: 'var(--danger)', border: '1px solid rgba(248,113,113,0.35)' };
   }
-  return { background: 'rgba(148,163,184,0.12)', color: '#cbd5e1', border: '1px solid rgba(148,163,184,0.25)' };
+  return { background: 'rgba(148,163,184,0.12)', color: 'var(--neutral-line)', border: '1px solid rgba(148,163,184,0.25)' };
 }
 
 function relativeTimeLabel(iso: string, nowMs: number): string {
@@ -562,7 +562,7 @@ export default function ContentGenerationPage() {
                 border: 'none',
                 borderRadius: 10,
                 background: 'var(--brand)',
-                color: '#00101e',
+                color: 'var(--on-brand)',
                 fontWeight: 700,
                 opacity: runningAsync ? 0.7 : 1,
               }}
@@ -712,7 +712,7 @@ export default function ContentGenerationPage() {
           </section>
         )}
 
-        {error && <div style={{ ...card, color: '#f87171' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
 
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 20 }}>
           <div style={card}>
@@ -885,7 +885,7 @@ export default function ContentGenerationPage() {
                     borderRadius: 999,
                     border: '1px solid var(--line)',
                     background: active ? 'var(--brand)' : 'transparent',
-                    color: active ? '#00101e' : 'var(--text)',
+                    color: active ? 'var(--on-brand)' : 'var(--text)',
                     fontWeight: 600,
                   }}
                 >
@@ -908,7 +908,7 @@ export default function ContentGenerationPage() {
                     borderRadius: 999,
                     border: '1px solid var(--line)',
                     background: active ? 'rgba(249,115,22,0.2)' : 'transparent',
-                    color: active ? '#fb923c' : 'var(--text)',
+                    color: active ? 'var(--warning)' : 'var(--text)',
                     fontWeight: 600,
                   }}
                 >

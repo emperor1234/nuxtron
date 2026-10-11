@@ -274,7 +274,7 @@ export default function TranslationStudioPage() {
     <main>
       <section className="hero" style={{ marginBottom: 16 }}>
         <p className="eyebrow">Translation Studio</p>
-        <h1>DeepL-style translation workflow, wired end-to-end</h1>
+        <h1>A complete translation workflow, wired end-to-end</h1>
         <p>
           This page uses live backend vendor calls only. If vendor keys are missing, requests fail explicitly instead of
           using mock translations.
@@ -282,7 +282,7 @@ export default function TranslationStudioPage() {
       </section>
 
       {error ? (
-        <section style={{ ...cardStyle, borderColor: '#ef4444', color: '#fecaca', marginBottom: 12 }}>{error}</section>
+        <section style={{ ...cardStyle, borderColor: 'var(--danger-line)', color: 'var(--danger-ink)', marginBottom: 12 }}>{error}</section>
       ) : null}
 
       <section className="grid" style={{ marginTop: 0 }}>

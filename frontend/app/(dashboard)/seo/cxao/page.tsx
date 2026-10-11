@@ -125,7 +125,7 @@ export default function CxaoPage() {
         <h1 style={{ marginTop: 0 }}>CXAO</h1>
         <p style={{ color: 'var(--muted)' }}>Conversational experience answer optimization for assistants and chat.</p>
 
-        {error && <div style={{ ...card, color: '#f87171' }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
 
         <section style={card}>
           <label htmlFor="cxao-surface" style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
@@ -224,7 +224,7 @@ export default function CxaoPage() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: 'pointer',
               opacity: loading ? 0.7 : 1,
@@ -262,7 +262,7 @@ export default function CxaoPage() {
                       borderRadius: 999,
                       background:
                         result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
-                      color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)',
+                      color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)',
                     }}
                   >
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
@@ -276,7 +276,7 @@ export default function CxaoPage() {
                       padding: '4px 10px',
                       borderRadius: 999,
                       background: 'rgba(56,189,248,0.12)',
-                      color: '#38bdf8',
+                      color: 'var(--info)',
                     }}
                   >
                     Cached result

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { socialApi, type AnalyticsMetrics, type CompetitorInsight } from '@/app/lib/social-api';
 
@@ -17,12 +17,7 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [period]);
-
-  async function loadAnalytics() {
-    setError(null);
+  const loadAnalytics = useCallback(async () => {
     try {
       const [metricsData, competitorsData] = await Promise.all([
         socialApi.getAnalytics(period),
@@ -43,7 +38,17 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [period]);
+
+  useEffect(() => {
+    let active = true;
+    globalThis.queueMicrotask(() => {
+      if (active) void loadAnalytics();
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadAnalytics]);
 
   const kpis = metrics
     ? [
@@ -74,11 +79,14 @@ export default function AnalyticsPage() {
           {(['day', 'week', 'month'] as const).map((p) => (
             <button
               key={p}
-              onClick={() => setPeriod(p)}
+              onClick={() => {
+                setLoading(true);
+                setPeriod(p);
+              }}
               style={{
                 ...styles.periodBtn,
-                backgroundColor: period === p ? '#6366f1' : '#eef0f4',
-                borderColor: period === p ? '#6366f1' : '#e7e9ef',
+                backgroundColor: period === p ? "var(--brand)" : "var(--line-soft)",
+                borderColor: period === p ? "var(--brand)" : "var(--line)",
               }}
             >
               {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -100,7 +108,7 @@ export default function AnalyticsPage() {
           {/* KPI Cards */}
           {metrics && (
             <div style={styles.kpiGrid}>
-              {kpis.map((kpi, idx) => (
+              {kpis.map((kpi) => (
                 <div key={kpi.label} style={styles.kpiCard}>
                   <div style={styles.kpiIcon}>{kpi.icon}</div>
                   <div>
@@ -166,7 +174,7 @@ export default function AnalyticsPage() {
             <section style={styles.section}>
               <h2 style={styles.sectionTitle}>Competitor Analysis</h2>
               <div style={styles.competitorGrid}>
-                {competitors.map((comp, idx) => (
+                {competitors.map((comp) => (
                   <div key={comp.competitor} style={styles.competitorCard}>
                     <div style={styles.competitorHeader}>
                       <h3 style={styles.competitorName}>{comp.competitor}</h3>
@@ -242,7 +250,7 @@ export default function AnalyticsPage() {
                     <p style={styles.insightText}>
                       Competitors average{' '}
                       {(competitors.reduce((a, c) => a + c.engagement_rate, 0) / competitors.length).toFixed(1)}%
-                      engagement. You're{' '}
+                      engagement. You&apos;re{' '}
                       {(competitors[0].engagement_rate - (metrics.engagement / metrics.reach) * 100).toFixed(1)}%
                       behind.
                     </p>
@@ -301,7 +309,7 @@ const styles: Record<string, React.CSSProperties> = {
   errorBanner: {
     backgroundColor: 'rgba(245, 158, 11, 0.12)',
     border: '1px solid rgba(245, 158, 11, 0.4)',
-    color: '#b45309',
+    color: 'var(--warning-ink)',
     padding: '12px 14px',
     borderRadius: '10px',
     marginBottom: '16px',
@@ -315,7 +323,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '13px',
     fontWeight: 500,
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'background-color 200ms ease, border-color 200ms ease',
   },
   kpiGrid: {
     display: 'grid',
@@ -383,7 +391,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   breakdownFill: {
     height: '100%',
-    backgroundColor: '#6366f1',
+    backgroundColor: "var(--brand)",
     transition: 'width 0.3s',
   },
   breakdownPercent: {
@@ -417,7 +425,7 @@ const styles: Record<string, React.CSSProperties> = {
   networkBadge: {
     display: 'inline-block',
     padding: '4px 8px',
-    backgroundColor: '#6366f126',
+    backgroundColor: 'color-mix(in oklab, var(--info) 15%, transparent)',
     color: 'var(--brand)',
     borderRadius: '4px',
     fontSize: '11px',

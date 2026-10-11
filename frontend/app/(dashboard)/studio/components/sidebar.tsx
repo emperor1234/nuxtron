@@ -35,20 +35,13 @@ export function StudioSidebar() {
       description: 'Bot traffic',
     },
     {
-      id: 'prompt-volumes',
-      title: 'Prompt Volumes',
-      icon: '📈',
-      href: '/studio/prompt-volumes',
-      description: 'Keywords',
-    },
-    {
       id: 'brands',
       title: 'Brand Hub',
       icon: '🏢',
       href: '/studio/brands',
       description: 'Your brands',
     },
-  ];
+  ] as const;
 
   const isActive = (href: string) => {
     if (href === '/studio') {

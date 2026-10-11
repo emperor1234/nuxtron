@@ -718,7 +718,7 @@ export default function WritesonicAutomationPage() {
             {loading ? 'Executing...' : 'Run Full Automation Blueprint'}
           </button>
         </div>
-        {error ? <p style={{ color: '#f87171' }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)' }}>{error}</p> : null}
       </section>
 
       <ProjectRunSummarySection projects={projects} runs={runs} />

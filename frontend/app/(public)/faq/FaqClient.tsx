@@ -87,12 +87,12 @@ function StaggeredFaqGroup({ group, index }: { group: FaqGroup; index: number })
       viewport={{ once: true, margin: '-50px' }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: index * 0.15 }}
     >
-      <h2 className="mb-4 text-2xl font-semibold tracking-tight text-[#0b1b2b]">{group.title}</h2>
-      <dl className="divide-y divide-[#dbe6ee] rounded-2xl border border-[#dbe6ee] bg-white stagger-children">
+      <h2 className="mb-4 text-2xl font-semibold tracking-tight text-info-ink">{group.title}</h2>
+      <dl className="divide-y divide-line-soft rounded-2xl border border-line-soft bg-white stagger-children">
         {group.items.map((item) => (
-          <div key={item.q} className="p-6 transition-colors hover:bg-[#0b1b2b]/3">
-            <dt className="mb-2 font-semibold text-[#0b1b2b]">{item.q}</dt>
-            <dd className="text-sm leading-relaxed text-[#55677c]">{item.a}</dd>
+          <div key={item.q} className="p-6 transition-colors hover:bg-info/3">
+            <dt className="mb-2 font-semibold text-info-ink">{item.q}</dt>
+            <dd className="text-sm leading-relaxed text-info-ink">{item.a}</dd>
           </div>
         ))}
       </dl>
@@ -114,11 +114,11 @@ export default function FaqClient() {
           className="mk-container max-w-2xl"
         >
           <span className="mk-eyebrow mb-5">FAQ</span>
-          <h1 className="text-5xl font-semibold tracking-tight text-[#0b1b2b] sm:text-6xl">
+          <h1 className="text-5xl font-semibold tracking-tight text-info-ink sm:text-6xl">
             Frequently asked questions
           </h1>
-          <p className="mt-5 text-lg text-[#55677c]">
-            Can&apos;t find what you&apos;re looking for? <Link href="/contact" className="font-semibold text-[#0c8fcc] hover:underline">Talk to our team</Link>.
+          <p className="mt-5 text-lg text-info-ink">
+            Can&apos;t find what you&apos;re looking for? <Link href="/contact" className="font-semibold text-info-ink hover:underline">Talk to our team</Link>.
           </p>
         </motion.div>
       </section>
@@ -139,7 +139,7 @@ export default function FaqClient() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
           className="mk-container max-w-2xl"
         >
-          <h2 className="text-4xl font-semibold tracking-tight text-[#0b1b2b] sm:text-5xl">Still have questions?</h2>
+          <h2 className="text-4xl font-semibold tracking-tight text-info-ink sm:text-5xl">Still have questions?</h2>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link href="/register" className="mk-shiny-cta group">
               Start free <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />

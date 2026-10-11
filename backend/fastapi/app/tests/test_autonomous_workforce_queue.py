@@ -15,6 +15,14 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///./test_autonomous_workforce_que
 H = {"X-API-Key": "test-api-key", "X-Tenant-Id": "autonomous-workforce-queue-test"}
 
 
+def test_documented_worker_uses_canonical_app_and_registers_workforce_task() -> None:
+    from backend.fastapi.app.celery_app import celery_app as producer_app
+    from backend.fastapi.app.worker import celery_app as worker_app
+
+    assert worker_app is producer_app
+    assert "workforce.execute_mission" in worker_app.tasks
+
+
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setenv("WORKFORCE_USE_CELERY", "true")

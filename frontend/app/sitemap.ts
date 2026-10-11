@@ -17,6 +17,8 @@ const PUBLIC_ROUTES: Array<{
   changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'];
 }> = [
   { path: '/', priority: 1.0, changeFrequency: 'weekly' },
+  { path: '/marketing', priority: 1.0, changeFrequency: 'weekly' },
+  { path: '/tools', priority: 0.7, changeFrequency: 'monthly' },
   { path: '/features', priority: 0.9, changeFrequency: 'weekly' },
   { path: '/pricing', priority: 0.9, changeFrequency: 'weekly' },
   { path: '/integrations', priority: 0.7, changeFrequency: 'monthly' },

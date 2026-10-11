@@ -47,8 +47,8 @@ function StaggeredValue({ value, index }: { value: typeof VALUES[0]; index: numb
       <div className="mk-icon-tile mb-5 transition-transform group-hover:scale-105 group-hover:rotate-2">
         <value.icon size={22} strokeWidth={1.75} aria-hidden="true" />
       </div>
-      <h2 className="mb-2.5 text-xl font-semibold text-[#0b1b2b]">{value.title}</h2>
-      <p className="text-[15px] leading-relaxed text-[#55677c]">{value.body}</p>
+      <h2 className="mb-2.5 text-xl font-semibold text-info-ink">{value.title}</h2>
+      <p className="text-[15px] leading-relaxed text-info-ink">{value.body}</p>
     </motion.div>
   );
 }
@@ -60,17 +60,17 @@ function StaggeredRole({ role, index }: { role: typeof ROLES[0]; index: number }
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: '-50px' }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: index * 0.06 }}
-      className="flex flex-col gap-2 p-6 sm:flex-row sm:items-center sm:justify-between transition-colors hover:bg-[#0b1b2b]/3"
+      className="flex flex-col gap-2 p-6 sm:flex-row sm:items-center sm:justify-between transition-colors hover:bg-info/3"
     >
       <div>
-        <h3 className="text-base font-semibold text-[#0b1b2b]">{role.title}</h3>
-        <p className="mt-1 text-sm text-[#8595a8]">
+        <h3 className="text-base font-semibold text-info-ink">{role.title}</h3>
+        <p className="mt-1 text-sm text-info">
           {role.team} · {role.location}
         </p>
       </div>
       <Link
         href="/contact"
-        className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-[#0c8fcc] sm:self-auto transition-transform hover:translate-x-1"
+        className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-info-ink sm:self-auto transition-transform hover:translate-x-1"
       >
         Apply <ArrowRight size={14} />
       </Link>
@@ -90,8 +90,8 @@ export default function CareersClient() {
           className="mk-container max-w-2xl"
         >
           <span className="mk-eyebrow mb-5">Careers</span>
-          <h1 className="text-5xl font-semibold tracking-tight text-[#0b1b2b] sm:text-6xl">Build the workspace</h1>
-          <p className="mt-5 text-lg text-[#55677c]">
+          <h1 className="text-5xl font-semibold tracking-tight text-info-ink sm:text-6xl">Build the workspace</h1>
+          <p className="mt-5 text-lg text-info-ink">
             We&apos;re a small remote team replacing the six-tool tax with one connected system — and we&apos;re
             looking for people who want real ownership over what they build.
           </p>
@@ -120,17 +120,17 @@ export default function CareersClient() {
             viewport={{ once: true, margin: '-50px' }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
-            <h2 className="mb-8 text-center text-3xl font-semibold tracking-tight text-[#0b1b2b] sm:text-4xl">
+            <h2 className="mb-8 text-center text-3xl font-semibold tracking-tight text-info-ink sm:text-4xl">
               Open roles
             </h2>
-            <div className="divide-y divide-[#dbe6ee] rounded-2xl border border-[#dbe6ee] bg-white">
+            <div className="divide-y divide-line-soft rounded-2xl border border-line-soft bg-white">
               {ROLES.map((role, index) => (
                 <StaggeredRole key={role.title} role={role} index={index} />
               ))}
             </div>
-            <p className="mt-8 text-center text-sm text-[#55677c]">
+            <p className="mt-8 text-center text-sm text-info-ink">
               Don&apos;t see a fit but think you should be here anyway?{' '}
-              <Link href="/contact" className="font-semibold text-[#0c8fcc] hover:underline">
+              <Link href="/contact" className="font-semibold text-info-ink hover:underline">
                 Reach out
               </Link>
               .

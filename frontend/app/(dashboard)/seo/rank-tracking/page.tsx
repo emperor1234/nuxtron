@@ -76,32 +76,32 @@ const RANK_AUDIT_PHASES = [
 ];
 
 function getScoreColor(score: number): string {
-  if (score >= 75) return '#26d78e';
-  if (score >= 50) return '#ffb867';
-  return '#dc2626';
+  if (score >= 75) return 'var(--success)';
+  if (score >= 50) return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function getVolatilityMeta(value: number): { color: string; label: string } {
-  if (value >= 0.7) return { color: '#dc2626', label: 'High' };
-  if (value >= 0.4) return { color: '#ffb867', label: 'Medium' };
-  return { color: '#26d78e', label: 'Low' };
+  if (value >= 0.7) return { color: 'var(--danger)', label: 'High' };
+  if (value >= 0.4) return { color: 'var(--warning)', label: 'Medium' };
+  return { color: 'var(--success)', label: 'Low' };
 }
 
 function getChangeColor(change: number): string {
-  if (change > 0) return '#26d78e';
-  if (change < 0) return '#dc2626';
+  if (change > 0) return 'var(--success)';
+  if (change < 0) return 'var(--danger)';
   return 'var(--muted)';
 }
 
 function getPositionColor(pos: number): string {
-  if (pos <= 3) return '#ffb867';
-  if (pos <= 10) return '#26d78e';
+  if (pos <= 3) return 'var(--warning)';
+  if (pos <= 10) return 'var(--success)';
   return 'var(--text)';
 }
 
 function getTrendDirectionMeta(direction: string): { color: string; label: string } {
-  if (direction === 'up') return { color: '#26d78e', label: '📈 Upward' };
-  if (direction === 'down') return { color: '#dc2626', label: '📉 Downward' };
+  if (direction === 'up') return { color: 'var(--success)', label: '📈 Upward' };
+  if (direction === 'down') return { color: 'var(--danger)', label: '📉 Downward' };
   return { color: 'var(--muted)', label: '➡️ Stable' };
 }
 
@@ -331,7 +331,7 @@ export default function RankTrackingPage() {
   }, [result, domain]);
 
   const card: React.CSSProperties = {
-    background: '#ffffff',
+    background: 'var(--card)fff',
     border: '1px solid rgba(148, 163, 184, 0.16)',
     borderRadius: 16,
     padding: '20px 24px',
@@ -344,7 +344,7 @@ export default function RankTrackingPage() {
     padding: '10px 12px',
     borderRadius: 12,
     border: '1px solid rgba(148, 163, 184, 0.22)',
-    background: '#ffffff',
+    background: 'var(--card)fff',
     color: 'var(--text)',
     marginBottom: 10,
     boxSizing: 'border-box',
@@ -438,7 +438,7 @@ export default function RankTrackingPage() {
                   color: 'var(--text)',
                 }}
               >
-                <TrendingUp size={26} color="#60a5fa" />
+                <TrendingUp size={26} color="var(--info)" />
                 Rank Tracking
               </h1>
               <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 15 }}>
@@ -455,7 +455,7 @@ export default function RankTrackingPage() {
                   padding: '8px 16px',
                   border: '1px solid rgba(148,163,184,0.35)',
                   borderRadius: 10,
-                  background: '#f4f5f8',
+                  background: 'var(--bg-soft)',
                   color: 'var(--text)',
                   cursor: 'pointer',
                   fontSize: 13,
@@ -469,7 +469,7 @@ export default function RankTrackingPage() {
         </section>
 
         {error && (
-          <div style={{ ...card, color: '#dc2626', borderColor: '#dc262644', background: '#dc262611' }}>{error}</div>
+          <div style={{ ...card, color: 'var(--danger)', borderColor: 'color-mix(in oklab, var(--danger) 27%, transparent)', background: 'color-mix(in oklab, var(--danger) 7%, transparent)' }}>{error}</div>
         )}
 
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))' }}>
@@ -614,7 +614,7 @@ export default function RankTrackingPage() {
                 border: 'none',
                 borderRadius: 8,
                 background: loading ? 'var(--muted)' : 'var(--brand)',
-                color: '#00101e',
+                color: 'var(--on-brand)',
                 fontWeight: 800,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 fontSize: 14,
@@ -653,7 +653,7 @@ export default function RankTrackingPage() {
                     border: '1px solid rgba(148,163,184,0.16)',
                     borderRadius: 10,
                     padding: '8px 10px',
-                    background: '#f4f5f8',
+                    background: 'var(--bg-soft)',
                   }}
                 >
                   <div
@@ -683,7 +683,7 @@ export default function RankTrackingPage() {
                 border: '1px solid rgba(148,163,184,0.16)',
                 borderRadius: 10,
                 padding: '10px 12px',
-                background: '#f4f5f8',
+                background: 'var(--bg-soft)',
               }}
             >
               <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -726,12 +726,12 @@ export default function RankTrackingPage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>Cached result</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
                 )}
               </div>
             )}
@@ -750,16 +750,16 @@ export default function RankTrackingPage() {
                 sub="out of 100"
                 color="var(--brand)"
               />
-              <StatCard icon={<Zap size={16} />} label="Top 3" value={top3} sub="positions" color="#ffb867" />
-              <StatCard icon={<Target size={16} />} label="Top 10" value={top10} sub="first page" color="#26d78e" />
-              <StatCard icon={<ChevronUp size={16} />} label="Gainers" value={gainers} sub="improved" color="#26d78e" />
-              <StatCard icon={<ChevronDown size={16} />} label="Losers" value={losers} sub="dropped" color="#dc2626" />
+              <StatCard icon={<Zap size={16} />} label="Top 3" value={top3} sub="positions" color="var(--warning)" />
+              <StatCard icon={<Target size={16} />} label="Top 10" value={top10} sub="first page" color="var(--success)" />
+              <StatCard icon={<ChevronUp size={16} />} label="Gainers" value={gainers} sub="improved" color="var(--success)" />
+              <StatCard icon={<ChevronDown size={16} />} label="Losers" value={losers} sub="dropped" color="var(--danger)" />
               <StatCard
                 icon={<AlertTriangle size={16} />}
                 label="Volatile"
                 value={result.volatile_keywords?.length ?? 0}
                 sub="need attention"
-                color="#dc2626"
+                color="var(--danger)"
               />
             </div>
 
@@ -786,7 +786,7 @@ export default function RankTrackingPage() {
                         padding: '3px 10px',
                         borderRadius: 999,
                         background: 'rgba(248,113,113,0.12)',
-                        color: '#dc2626',
+                        color: 'var(--danger)',
                         fontSize: 11,
                         fontWeight: 700,
                         border: '1px solid rgba(248,113,113,0.3)',
@@ -849,7 +849,7 @@ export default function RankTrackingPage() {
                     </div>
                     {result.alert_triggers?.map((a, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-                        <Bell size={12} color="#dc2626" style={{ marginTop: 2, flexShrink: 0 }} />
+                        <Bell size={12} color="var(--danger)" style={{ marginTop: 2, flexShrink: 0 }} />
                         <span style={{ fontSize: 13 }}>{a}</span>
                       </div>
                     ))}
@@ -869,7 +869,7 @@ export default function RankTrackingPage() {
                     </div>
                     {result.next_actions?.map((a, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-                        <Zap size={12} color="#26d78e" style={{ marginTop: 2, flexShrink: 0 }} />
+                        <Zap size={12} color="var(--success)" style={{ marginTop: 2, flexShrink: 0 }} />
                         <span style={{ fontSize: 13 }}>{a}</span>
                       </div>
                     ))}
@@ -926,7 +926,7 @@ export default function RankTrackingPage() {
                           <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
                             <td style={td}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                {isVolatile && <AlertTriangle size={11} color="#ffb867" />}
+                                {isVolatile && <AlertTriangle size={11} color="var(--warning)" />}
                                 <span style={{ fontWeight: 600 }}>{r.keyword}</span>
                               </div>
                             </td>
@@ -938,9 +938,9 @@ export default function RankTrackingPage() {
                                 style={{
                                   color:
                                     r.position_change > 0
-                                      ? '#26d78e'
+                                      ? 'var(--success)'
                                       : r.position_change < 0
-                                        ? '#dc2626'
+                                        ? 'var(--danger)'
                                         : 'var(--muted)',
                                   fontWeight: 700,
                                 }}
@@ -950,9 +950,9 @@ export default function RankTrackingPage() {
                             </td>
                             <td style={td}>
                               {r.trend === 'up' ? (
-                                <TrendingUp size={14} color="#26d78e" />
+                                <TrendingUp size={14} color="var(--success)" />
                               ) : r.trend === 'down' ? (
-                                <TrendingDown size={14} color="#dc2626" />
+                                <TrendingDown size={14} color="var(--danger)" />
                               ) : (
                                 <Minus size={14} color="var(--muted)" />
                               )}
@@ -965,7 +965,7 @@ export default function RankTrackingPage() {
                                     padding: '2px 8px',
                                     borderRadius: 999,
                                     background: 'rgba(248,113,113,0.12)',
-                                    color: '#dc2626',
+                                    color: 'var(--danger)',
                                     fontSize: 10,
                                     fontWeight: 700,
                                   }}
@@ -1053,7 +1053,7 @@ export default function RankTrackingPage() {
                             </td>
                             <td style={td}>{c.keyword}</td>
                             <td style={td}>
-                              <span style={{ color: c.change > 0 ? '#26d78e' : '#dc2626', fontWeight: 700 }}>
+                              <span style={{ color: c.change > 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
                                 {c.change > 0 ? `+${c.change}` : c.change}
                               </span>
                             </td>
@@ -1083,9 +1083,9 @@ export default function RankTrackingPage() {
                         fontWeight: 800,
                         color:
                           result.trend_forecast.direction === 'up'
-                            ? '#26d78e'
+                            ? 'var(--success)'
                             : result.trend_forecast.direction === 'down'
-                              ? '#dc2626'
+                              ? 'var(--danger)'
                               : 'var(--muted)',
                       }}
                     >

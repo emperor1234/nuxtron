@@ -60,7 +60,7 @@ export default function SurferSetupPlaybookPage() {
         <button onClick={() => void loadPlaybook()} disabled={loading}>
           {loading ? 'Refreshing...' : 'Refresh'}
         </button>
-        {error ? <p style={{ color: '#f87171' }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--danger)' }}>{error}</p> : null}
       </section>
 
       {data ? (

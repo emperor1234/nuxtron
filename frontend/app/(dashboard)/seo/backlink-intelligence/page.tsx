@@ -56,9 +56,9 @@ interface BacklinkResult {
 }
 
 const DIFFICULTY_COLOR: Record<string, string> = {
-  low: '#22c55e',
-  medium: '#f59e0b',
-  high: '#ef4444',
+  low: 'var(--success)',
+  medium: 'var(--warning)',
+  high: 'var(--danger)',
 };
 
 function ScoreRing({ score, label, color }: { score: number; label: string; color: string }) {
@@ -225,7 +225,7 @@ export default function BacklinkIntelligencePage() {
         </div>
 
         {error && (
-          <div style={{ ...s.card, color: '#dc2626', borderColor: '#dc262644', background: '#dc262611' }}>{error}</div>
+          <div style={{ ...s.card, color: 'var(--danger)', borderColor: 'color-mix(in oklab, var(--danger) 27%, transparent)', background: 'color-mix(in oklab, var(--danger) 7%, transparent)' }}>{error}</div>
         )}
 
         {/* Input Form */}
@@ -276,7 +276,7 @@ export default function BacklinkIntelligencePage() {
               border: 'none',
               borderRadius: 8,
               background: loading ? 'var(--muted)' : 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 800,
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: 14,
@@ -302,12 +302,12 @@ export default function BacklinkIntelligencePage() {
             {(result.analysis_mode || result.cached) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? '#4ade80' : 'var(--muted)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
                     {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
                   </span>
                 )}
                 {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>Cached result</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
                 )}
               </div>
             )}
@@ -324,8 +324,8 @@ export default function BacklinkIntelligencePage() {
                   alignItems: 'center',
                 }}
               >
-                <ScoreRing score={result.backlink_intelligence_score} label="Intelligence Score" color="#22d3ee" />
-                <ScoreRing score={result.domain_authority_estimate} label="Domain Authority Est." color="#a78bfa" />
+                <ScoreRing score={result.backlink_intelligence_score} label="Intelligence Score" color="var(--info)" />
+                <ScoreRing score={result.domain_authority_estimate} label="Domain Authority Est." color="var(--info)" />
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--brand)' }}>
                     {lk?.total_estimated_backlinks?.toLocaleString() ?? '—'}
@@ -333,13 +333,13 @@ export default function BacklinkIntelligencePage() {
                   <div style={{ fontSize: 12, color: 'var(--muted)' }}>Total Backlinks (est.)</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: '#22c55e' }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--success)' }}>
                     {lk?.referring_domains?.toLocaleString() ?? '—'}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--muted)' }}>Referring Domains</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: '#f59e0b' }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--warning)' }}>
                     {result.acquisition_opportunities?.length ?? 0}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--muted)' }}>Opportunities Found</div>
@@ -353,9 +353,9 @@ export default function BacklinkIntelligencePage() {
                 <p style={s.sectionTitle}>🏛️ Authority Tier Distribution</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 20 }}>
                   {[
-                    { label: 'Tier 1 — High Authority', value: ad.tier_1_domains_pct, color: '#22c55e' },
-                    { label: 'Tier 2 — Mid Authority', value: ad.tier_2_domains_pct, color: '#f59e0b' },
-                    { label: 'Long Tail', value: ad.long_tail_pct, color: '#94a3b8' },
+                    { label: 'Tier 1 — High Authority', value: ad.tier_1_domains_pct, color: 'var(--success)' },
+                    { label: 'Tier 2 — Mid Authority', value: ad.tier_2_domains_pct, color: 'var(--warning)' },
+                    { label: 'Long Tail', value: ad.long_tail_pct, color: 'var(--neutral)' },
                   ].map(({ label, value, color }) => (
                     <div key={label}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
@@ -397,7 +397,7 @@ export default function BacklinkIntelligencePage() {
                         <td style={s.td}>{c.link_count.toLocaleString()}</td>
                         <td style={s.td}>{(c.anchor_diversity * 100).toFixed(0)}%</td>
                         <td style={{ ...s.td, width: 180 }}>
-                          <ProgressBar value={c.anchor_diversity * 100} max={100} color="#22d3ee" />
+                          <ProgressBar value={c.anchor_diversity * 100} max={100} color="var(--info)" />
                         </td>
                       </tr>
                     ))}
@@ -431,7 +431,7 @@ export default function BacklinkIntelligencePage() {
                         <td style={s.td}>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                             {c.acquisition_tactics.map((t) => (
-                              <Badge key={t} label={t} color="#22d3ee" />
+                              <Badge key={t} label={t} color="var(--info)" />
                             ))}
                           </div>
                         </td>
@@ -468,14 +468,14 @@ export default function BacklinkIntelligencePage() {
                         <span style={{ fontSize: 13, fontWeight: 700, textTransform: 'capitalize' }}>
                           {opp.type.replace(/_/g, ' ')}
                         </span>
-                        <Badge label={opp.difficulty} color={DIFFICULTY_COLOR[opp.difficulty] ?? '#94a3b8'} />
+                        <Badge label={opp.difficulty} color={DIFFICULTY_COLOR[opp.difficulty] ?? 'var(--neutral)'} />
                       </div>
                       <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--brand)' }}>{opp.potential_links}</div>
                       <div style={{ fontSize: 11, color: 'var(--muted)' }}>potential links</div>
                       <ProgressBar
                         value={opp.potential_links}
                         max={30}
-                        color={DIFFICULTY_COLOR[opp.difficulty] ?? '#94a3b8'}
+                        color={DIFFICULTY_COLOR[opp.difficulty] ?? 'var(--neutral)'}
                       />
                     </div>
                   ))}

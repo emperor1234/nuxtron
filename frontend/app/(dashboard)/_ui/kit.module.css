@@ -76,7 +76,7 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  height: 38px;
+  min-height: 40px;
   padding: 0 16px;
   border-radius: var(--nx-radius-sm);
   border: 1px solid transparent;
@@ -108,7 +108,7 @@
 }
 
 .btnPrimary:hover:not(:disabled) {
-  background: #5b4df0;
+  background: var(--nx-brand-hover);
 }
 
 .btnGhost {
@@ -158,6 +158,45 @@
   background: var(--nx-red-soft);
 }
 
+.dataStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--nx-radius-pill);
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.dataStatusDot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.dataStatusLive {
+  color: var(--nx-green);
+  background: var(--nx-green-soft);
+  border-color: color-mix(in srgb, var(--nx-green) 20%, transparent);
+}
+
+.dataStatusPreview {
+  color: var(--warning-ink);
+  background: var(--warning-soft);
+  border-color: var(--warning-line);
+}
+
+.dataStatusUnavailable {
+  color: var(--nx-muted);
+  background: var(--nx-border-soft);
+  border-color: var(--nx-border);
+}
+
 .dot {
   width: 6px;
   height: 6px;
@@ -168,7 +207,7 @@
 /* ---------- stat card ---------- */
 .statGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
   gap: 14px;
 }
 
@@ -248,7 +287,7 @@
 }
 
 .input {
-  height: 38px;
+  min-height: 40px;
   padding: 0 12px;
   border: 1px solid var(--nx-border);
   border-radius: var(--nx-radius-sm);
@@ -263,3 +302,11 @@
   outline-offset: 1px;
   border-color: var(--nx-brand);
 }
+
+.page, .field, .stat { min-width: 0; }
+.title, .statValue { overflow-wrap: anywhere; }
+.subtitle, .cardSub { line-height: 1.6; }
+.btn { white-space: normal; line-height: 1.4; padding-block: 8px; }
+.badge { flex-shrink: 0; white-space: nowrap; }
+.tableWrap { max-width: 100%; scrollbar-gutter: stable; }
+.input { width: 100%; min-width: 0; }

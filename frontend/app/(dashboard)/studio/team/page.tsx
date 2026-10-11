@@ -57,7 +57,7 @@ export default function TeamPage() {
     <main>
       <section className="hero">
         <p className="eyebrow">Team & Governance</p>
-        <h1>Roles, Approvals & Workspace Controls</h1>
+        <h1>Team & Roles</h1>
         <p>Professional team management with granular permissions and audit trails.</p>
       </section>
 
@@ -104,7 +104,7 @@ export default function TeamPage() {
             </select>
           </div>
 
-          {error && <p style={{ color: '#f44', fontSize: 12, marginBottom: 8 }}>{error}</p>}
+          {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{error}</p>}
 
           <button
             onClick={() => void addMember()}
@@ -115,7 +115,7 @@ export default function TeamPage() {
               borderRadius: 8,
               border: 'none',
               background: submitting || !newMember.trim() ? 'var(--muted)' : 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
               cursor: submitting || !newMember.trim() ? 'not-allowed' : 'pointer',
               marginBottom: 12,

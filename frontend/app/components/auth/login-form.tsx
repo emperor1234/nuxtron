@@ -2,24 +2,44 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { ArrowRight, Building2, Lock, Mail } from 'lucide-react';
-import { apiPost, DEFAULT_TENANT_ID, setAuthSession, syncServerSession } from '@/app/lib/api-client';
+import {
+  apiPost,
+  DEFAULT_TENANT_ID,
+  setAuthSession,
+  setStoredProductLine,
+  syncServerSession,
+} from '@/app/lib/api-client';
 import { loginSchema } from '@/app/lib/auth/schemas';
+import { PRODUCT_META, productAuthHref, productForPath, type ProductLine } from '@/app/lib/product-line';
 import { AuthField } from './auth-field';
 import { AuthSubmit, AuthAltLinks, authLink } from './auth-layout';
+import { ProductSwitch, useAuthProduct } from './product-switch';
 
 const SAFE_REDIRECT_PATTERN = /^\/[a-z0-9/_-]*$/i;
+const DEFAULT_POST_LOGIN_PATH = '/dashboard';
 
-/** Reads `?next=` from the URL directly (no useSearchParams/Suspense needed)
+/**
+ * Where to send the user after signing in to `product`.
+ *
+ * Reads `?next=` from the URL directly (no useSearchParams/Suspense needed)
  * and only accepts a same-origin relative path, never an absolute/external
- * URL (open-redirect guard). */
-function resolvePostLoginPath(): string {
-  if (!globalThis.window) return '/dashboard';
-  const next = new URLSearchParams(globalThis.window.location.search).get('next') || '';
-  return SAFE_REDIRECT_PATTERN.test(next) ? next : '/dashboard';
+ * URL (open-redirect guard). A leading `//` is rejected too: browsers treat
+ * it as a protocol-relative URL to another host. A `next` that belongs to the
+ * other product would only be bounced by proxy.ts, so go straight to the
+ * shared dashboard instead.
+ */
+export function resolvePostLoginPath(product: ProductLine, search?: string): string {
+  const query = search ?? globalThis.window?.location.search ?? '';
+  const next = new URLSearchParams(query).get('next') || '';
+  if (!SAFE_REDIRECT_PATTERN.test(next) || next.startsWith('//')) return DEFAULT_POST_LOGIN_PATH;
+  const owner = productForPath(next);
+  return owner === 'shared' || owner === product ? next : DEFAULT_POST_LOGIN_PATH;
 }
 
 export function LoginForm() {
+  const { product } = useAuthProduct();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -48,7 +68,7 @@ export function LoginForm() {
     setSubmitted(true);
     setError('');
     setResult('');
-    if (!parsed.success) return;
+    if (!parsed.success) { if (fieldError.tenantId) setShowWorkspace(true); return; }
 
     setBusy(true);
     try {
@@ -56,12 +76,12 @@ export function LoginForm() {
       const payload = response.result as Record<string, unknown> | undefined;
       const rawToken = payload?.token;
       const token = typeof rawToken === 'string' ? rawToken : '';
-      if (token) {
-        setAuthSession(token, parsed.data.tenantId);
-        await syncServerSession(token);
-        window.location.href = resolvePostLoginPath();
-      }
-      setResult('Login successful. Redirecting…');
+      if (!token) throw new Error('Sign-in did not return a session. Please try again.');
+      setAuthSession(token, parsed.data.tenantId);
+      setStoredProductLine(product);
+      await syncServerSession(token, product);
+      setResult(`Signed in to ${PRODUCT_META[product].name}. Redirecting…`);
+      window.location.href = resolvePostLoginPath(product);
     } catch (ex) {
       setError(ex instanceof Error ? ex.message : 'Login failed.');
     } finally {
@@ -72,6 +92,7 @@ export function LoginForm() {
   return (
     <>
       <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
+        <ProductSwitch legend="Sign in to" />
         <AuthField
           label="Email"
           name="email"
@@ -107,16 +128,16 @@ export function LoginForm() {
             autoComplete="organization"
             required
             icon={<Building2 size={17} aria-hidden="true" />}
-            placeholder="acme"
+            placeholder="your-workspace"
             error={submitted ? fieldError.tenantId : undefined}
           />
         ) : (
           <button
             type="button"
             onClick={() => setShowWorkspace(true)}
-            className="-mt-2 self-start text-xs font-medium text-[#8a8d93] underline-offset-4 transition-colors hover:text-[#46484d] hover:underline"
+            className="-mt-2 self-start text-xs font-medium text-ink-faint underline-offset-4 transition-colors hover:text-ink-2 hover:underline"
           >
-            Signing into a specific workspace? <span className="text-[#46484d]">Add workspace ID</span>
+            Signing into a specific workspace? <span className="text-ink-2">Add workspace ID</span>
           </button>
         )}
 
@@ -132,7 +153,7 @@ export function LoginForm() {
 
         <div aria-live="polite" role="status">
           {error ? <p className="text-sm text-rose-600">{error}</p> : null}
-          {result ? <p className="text-sm text-[#46484d]">{result}</p> : null}
+          {result ? <p className="text-sm text-ink-2">{result}</p> : null}
         </div>
       </form>
 
@@ -141,7 +162,7 @@ export function LoginForm() {
           Reset password
         </Link>
         <span aria-hidden="true"> · </span>
-        <Link href="/register" className={authLink}>
+        <Link href={productAuthHref('/register', product) as Route} className={authLink}>
           Create account
         </Link>
       </AuthAltLinks>

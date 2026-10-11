@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const MIN_EXPECTED_MODULE_COUNT = 51;
+const MIN_EXPECTED_TOOL_LINK_COUNT = 38;
 
 async function gotoWithRetry(page: Page, url: string): Promise<void> {
   try {
@@ -19,10 +19,16 @@ test('seo hub and planner pages render', async ({ page }) => {
   test.slow();
   test.setTimeout(120000);
   await gotoWithRetry(page, '/seo');
-  await expect(page.getByRole('heading', { name: 'SEO Platform' })).toBeVisible();
-  await expect(page.getByTestId('seo-module-card').first()).toBeVisible();
-  expect(await page.getByTestId('seo-module-card').count()).toBeGreaterThanOrEqual(MIN_EXPECTED_MODULE_COUNT);
-  await expect(page.getByRole('link', { name: 'GTmetrix-Style Performance Audit' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'SEO', exact: true })).toBeVisible();
+  const toolLinks = page.getByTestId('seo-tool-link');
+  await expect(toolLinks.first()).toBeVisible();
+  expect(await toolLinks.count()).toBeGreaterThanOrEqual(
+    MIN_EXPECTED_TOOL_LINK_COUNT,
+  );
+  await expect(page.getByRole('link', { name: 'Top Pages', exact: true })).toHaveAttribute(
+    'href',
+    '/seo/performance',
+  );
 
   await gotoWithRetry(page, '/seo/performance');
   await expect(page.getByRole('heading', { name: 'GTmetrix-Style Performance Audit' })).toBeVisible();

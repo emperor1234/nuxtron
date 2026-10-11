@@ -50,7 +50,7 @@ export default function SeoAnalysisPage() {
         <p style={{ color: 'var(--muted)' }}>
           Run keyword and content optimization analysis against your URL and page copy.
         </p>
-        {error && <div style={{ ...card, color: '#f87171', marginBottom: 10 }}>{error}</div>}
+        {error && <div style={{ ...card, color: 'var(--danger)', marginBottom: 10 }}>{error}</div>}
         <section style={card}>
           <input style={input} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="url" />
           <input
@@ -67,7 +67,7 @@ export default function SeoAnalysisPage() {
               border: 'none',
               borderRadius: 8,
               background: 'var(--brand)',
-              color: '#00101e',
+              color: 'var(--on-brand)',
               fontWeight: 700,
             }}
           >

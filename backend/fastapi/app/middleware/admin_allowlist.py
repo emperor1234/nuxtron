@@ -44,8 +44,10 @@ async def require_privileged_ip(request: Request) -> None:
         return  # not configured → no restriction
     client = request.client
     peer_raw = client.host if client else ''
+    if not peer_raw:
+        raise HTTPException(status_code=403, detail='Privileged route: client address is unavailable.')
     try:
-        peer = ipaddress.ip_address(peer_raw or '0.0.0.0')
+        peer = ipaddress.ip_address(peer_raw)
     except ValueError:
         raise HTTPException(status_code=403, detail='Privileged route: unparseable client address.')
     if not any(peer in net for net in networks):

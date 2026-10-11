@@ -91,7 +91,7 @@ test.describe('Studio editor parity calendar wiring', () => {
       });
     });
 
-    await page.goto('/studio/editor');
+    await page.goto('/studio/editor', { waitUntil: 'domcontentloaded' });
     const draftCard = page.locator('.draft-card[data-slide-index="0"]').first();
     const dropCells = page.locator('.calendar-drop-cell');
 

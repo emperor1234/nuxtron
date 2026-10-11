@@ -1,0 +1,131 @@
+/* Scroll-snap carousel. Native scrolling does the moving; nothing autoplays. */
+.carousel {
+  --carousel-gap: 16px;
+  --carousel-inset: 4px;
+  --carousel-slide-base: 85%;
+  --carousel-slide-md: calc((100% - var(--carousel-gap)) / 2);
+  --carousel-slide-lg: calc((100% - 2 * var(--carousel-gap)) / 3);
+  --carousel-slide: var(--carousel-slide-base);
+  min-width: 0;
+}
+
+.track {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--carousel-slide);
+  gap: var(--carousel-gap);
+  /* Room for card hover lift, shadows and focus rings inside the clip box. */
+  padding: 10px var(--carousel-inset) 14px;
+  margin-inline: calc(-1 * var(--carousel-inset));
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--carousel-inset);
+  scrollbar-width: none;
+  border-radius: var(--radius-md);
+}
+.track::-webkit-scrollbar {
+  display: none;
+}
+.track:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.slide {
+  display: flex;
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.slide > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.status {
+  margin: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.status strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--mk-line-strong, var(--line));
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    opacity 150ms ease,
+    transform 140ms var(--ease-out);
+}
+.button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+@media (min-width: 720px) {
+  .carousel {
+    --carousel-slide: var(--carousel-slide-md);
+  }
+}
+@media (min-width: 1080px) {
+  .carousel {
+    --carousel-gap: 24px;
+    --carousel-slide: var(--carousel-slide-lg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .track {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover:not(:disabled) {
+    background: var(--bg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+.controls[data-fits="true"] {
+  visibility: hidden;
+}

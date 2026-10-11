@@ -45,6 +45,7 @@ GET    /live-editor/snippet/payload/{site_key}                   – Snippet pay
 from __future__ import annotations
 
 import hashlib
+import re
 import threading
 import uuid
 from collections.abc import Callable
@@ -63,26 +64,39 @@ AuthDep = Annotated[AuthContext, Depends(require_auth)]
 # ---------------------------------------------------------------------------
 
 ChangeField = Literal[
-    "title",            # <title> tag
-    "meta_description", # <meta name="description">
-    "h1",               # First <h1> element
-    "h2",               # First <h2> element matching selector
-    "body_text",        # Inner text of matched element
-    "inner_html",       # Inner HTML of matched element
-    "attribute",        # Any HTML attribute
-    "schema_json_ld",   # Inject/update <script type="application/ld+json">
-    "og_title",         # <meta property="og:title">
-    "og_description",   # <meta property="og:description">
-    "canonical",        # <link rel="canonical">
-    "hreflang",         # <link rel="alternate" hreflang="…">
-    "css_class",        # Toggle / add / remove a CSS class
-    "custom_element",   # Free-form target
+    "title",  # <title> tag
+    "meta_description",  # <meta name="description">
+    "h1",  # First <h1> element
+    "h2",  # First <h2> element matching selector
+    "body_text",  # Inner text of matched element
+    "inner_html",  # Inner HTML of matched element
+    "attribute",  # Any HTML attribute
+    "schema_json_ld",  # Inject/update <script type="application/ld+json">
+    "og_title",  # <meta property="og:title">
+    "og_description",  # <meta property="og:description">
+    "canonical",  # <link rel="canonical">
+    "hreflang",  # <link rel="alternate" hreflang="…">
+    "css_class",  # Toggle / add / remove a CSS class
+    "custom_element",  # Free-form target
 ]
+
+_SITE_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,80}$")
+
+
+def _validate_site_key(site_key: str) -> str:
+    if not _SITE_KEY_PATTERN.fullmatch(site_key):
+        raise HTTPException(status_code=422, detail="site_key contains unsupported characters.")
+    return site_key
 
 
 class SessionCreateRequest(BaseModel):
     page_url: str = Field(min_length=10, max_length=2048)
-    site_key: str | None = Field(default=None, max_length=80, description="Optional site key for snippet integration")
+    site_key: str | None = Field(
+        default=None,
+        max_length=80,
+        pattern=r"^[A-Za-z0-9_-]{1,80}$",
+        description="Optional site key for snippet integration",
+    )
     session_name: str | None = Field(default=None, max_length=120)
     notes: str | None = Field(default=None, max_length=500)
 
@@ -99,7 +113,9 @@ class ChangeProposalRequest(BaseModel):
         max_length=80,
         description="HTML attribute name for 'attribute' field type.",
     )
-    current_value: str | None = Field(default=None, max_length=5000, description="Current (before) value for audit trail")
+    current_value: str | None = Field(
+        default=None, max_length=5000, description="Current (before) value for audit trail"
+    )
     proposed_value: str = Field(min_length=0, max_length=10000, description="New value to apply")
     reason: str | None = Field(default=None, max_length=500, description="Why this change is needed")
     priority: Literal["critical", "high", "medium", "low"] = "medium"
@@ -126,6 +142,7 @@ class RollbackRequest(BaseModel):
 # Factory
 # ---------------------------------------------------------------------------
 
+
 def create_live_editor_router(
     *,
     enforce_rate_limit: Callable[[str, int, int], None],
@@ -144,14 +161,16 @@ def create_live_editor_router(
 
     def _audit(tenant_id: str, action: str, detail: str = "") -> None:
         with _lock:
-            audit_log_memory.append({
-                "id": len(audit_log_memory) + 1,
-                "tenant_id": tenant_id,
-                "action": action,
-                "detail": detail,
-                "source": "live-editor",
-                "created_at": _now_iso(),
-            })
+            audit_log_memory.append(
+                {
+                    "id": len(audit_log_memory) + 1,
+                    "tenant_id": tenant_id,
+                    "action": action,
+                    "detail": detail,
+                    "source": "live-editor",
+                    "created_at": _now_iso(),
+                }
+            )
 
     def _get_session(tenant_id: str, session_id: str) -> dict[str, Any]:
         with _lock:
@@ -168,10 +187,11 @@ def create_live_editor_router(
     def _get_change(tenant_id: str, session_id: str, change_id: str) -> dict[str, Any]:
         with _lock:
             change = next(
-                (c for c in changes_memory
-                 if c["id"] == change_id
-                 and c["session_id"] == session_id
-                 and c["tenant_id"] == tenant_id),
+                (
+                    c
+                    for c in changes_memory
+                    if c["id"] == change_id and c["session_id"] == session_id and c["tenant_id"] == tenant_id
+                ),
                 None,
             )
         if change is None:
@@ -180,10 +200,7 @@ def create_live_editor_router(
 
     def _session_changes(tenant_id: str, session_id: str) -> list[dict[str, Any]]:
         with _lock:
-            return [
-                c.copy() for c in changes_memory
-                if c["session_id"] == session_id and c["tenant_id"] == tenant_id
-            ]
+            return [c.copy() for c in changes_memory if c["session_id"] == session_id and c["tenant_id"] == tenant_id]
 
     def _site_key_for_session(session: dict[str, Any]) -> str:
         """Derive a stable site key from the page URL for snippet delivery."""
@@ -201,7 +218,8 @@ def create_live_editor_router(
             "id": session_id,
             "tenant_id": auth.tenant_id,
             "page_url": payload.page_url,
-            "site_key": payload.site_key or _site_key_for_session({"tenant_id": auth.tenant_id, "page_url": payload.page_url}),
+            "site_key": payload.site_key
+            or _site_key_for_session({"tenant_id": auth.tenant_id, "page_url": payload.page_url}),
             "session_name": payload.session_name or f"Edit session — {payload.page_url[:60]}",
             "notes": payload.notes or "",
             "status": "open",  # open | published | abandoned
@@ -226,9 +244,9 @@ def create_live_editor_router(
         enforce_rate_limit(f"{auth.tenant_id}:live-editor:sessions:list", 120, 60)
         with _lock:
             all_sessions = [
-                s.copy() for s in sessions_memory
-                if s["tenant_id"] == auth.tenant_id
-                and (not status or s.get("status") == status)
+                s.copy()
+                for s in sessions_memory
+                if s["tenant_id"] == auth.tenant_id and (not status or s.get("status") == status)
             ]
         return {"status": "ok", "count": len(all_sessions), "sessions": all_sessions[-limit:]}
 
@@ -306,7 +324,8 @@ def create_live_editor_router(
         _get_session(auth.tenant_id, session_id)  # validate ownership
         with _lock:
             all_changes = [
-                c.copy() for c in changes_memory
+                c.copy()
+                for c in changes_memory
                 if c["session_id"] == session_id
                 and c["tenant_id"] == auth.tenant_id
                 and (not status or c.get("status") == status)
@@ -320,7 +339,8 @@ def create_live_editor_router(
         with _lock:
             before = len(changes_memory)
             changes_memory[:] = [
-                c for c in changes_memory
+                c
+                for c in changes_memory
                 if not (c["id"] == change_id and c["session_id"] == session_id and c["tenant_id"] == auth.tenant_id)
             ]
         if len(changes_memory) == before:
@@ -337,19 +357,20 @@ def create_live_editor_router(
         if change["status"] == "published":
             raise HTTPException(status_code=409, detail="Change is already published.")
         now = _now_iso()
-        change.update({
-            "status": "approved",
-            "approved_by": auth.tenant_id,
-            "approval_note": payload.note or "",
-            "updated_at": now,
-        })
+        change.update(
+            {
+                "status": "approved",
+                "approved_by": auth.tenant_id,
+                "approval_note": payload.note or "",
+                "updated_at": now,
+            }
+        )
         # Update session approved_count
         with _lock:
             for s in sessions_memory:
                 if s["id"] == session_id:
                     approved_total = sum(
-                        1 for c in changes_memory
-                        if c["session_id"] == session_id and c.get("status") == "approved"
+                        1 for c in changes_memory if c["session_id"] == session_id and c.get("status") == "approved"
                     )
                     s["approved_count"] = approved_total
         return {"status": "ok", "change": change}
@@ -361,11 +382,13 @@ def create_live_editor_router(
         change = _get_change(auth.tenant_id, session_id, change_id)
         if change["status"] == "published":
             raise HTTPException(status_code=409, detail="Cannot reject a published change.")
-        change.update({
-            "status": "rejected",
-            "approval_note": payload.note or "",
-            "updated_at": _now_iso(),
-        })
+        change.update(
+            {
+                "status": "rejected",
+                "approval_note": payload.note or "",
+                "updated_at": _now_iso(),
+            }
+        )
         return {"status": "ok", "change": change}
 
     # ── Preview ───────────────────────────────────────────────────────────────
@@ -377,23 +400,24 @@ def create_live_editor_router(
         statuses = {"pending", "approved"} | ({"rejected"} if payload.include_rejected else set())
         with _lock:
             pending_changes = [
-                c.copy() for c in changes_memory
-                if c["session_id"] == session_id
-                and c["tenant_id"] == auth.tenant_id
-                and c.get("status") in statuses
+                c.copy()
+                for c in changes_memory
+                if c["session_id"] == session_id and c["tenant_id"] == auth.tenant_id and c.get("status") in statuses
             ]
 
         diff: list[dict[str, Any]] = []
         for c in pending_changes:
-            diff.append({
-                "change_id": c["id"],
-                "field": c["field"],
-                "css_selector": c.get("css_selector", ""),
-                "before": c.get("current_value", ""),
-                "after": c["proposed_value"],
-                "status": c["status"],
-                "priority": c.get("priority", "medium"),
-            })
+            diff.append(
+                {
+                    "change_id": c["id"],
+                    "field": c["field"],
+                    "css_selector": c.get("css_selector", ""),
+                    "before": c.get("current_value", ""),
+                    "after": c["proposed_value"],
+                    "status": c["status"],
+                    "priority": c.get("priority", "medium"),
+                }
+            )
 
         # Sort by priority
         priority_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
@@ -420,9 +444,11 @@ def create_live_editor_router(
         published: list[dict[str, Any]] = []
         with _lock:
             for c in changes_memory:
-                if (c["session_id"] == session_id
-                        and c["tenant_id"] == auth.tenant_id
-                        and c.get("status") in target_statuses):
+                if (
+                    c["session_id"] == session_id
+                    and c["tenant_id"] == auth.tenant_id
+                    and c.get("status") in target_statuses
+                ):
                     # Create history record
                     history_record: dict[str, Any] = {
                         "id": str(uuid.uuid4()),
@@ -479,7 +505,8 @@ def create_live_editor_router(
         enforce_rate_limit(f"{auth.tenant_id}:live-editor:history:list", 60, 60)
         with _lock:
             records = [
-                h.copy() for h in history_memory
+                h.copy()
+                for h in history_memory
                 if h["tenant_id"] == auth.tenant_id
                 and (not page_url or h.get("page_url") == page_url)
                 and (not field or h.get("field") == field)
@@ -509,8 +536,8 @@ def create_live_editor_router(
             "page_url": record.get("page_url", ""),
             "field": record.get("field", ""),
             "css_selector": record.get("css_selector", ""),
-            "value_before": record.get("value_after", ""),   # swapped
-            "value_after": record.get("value_before", ""),   # swapped
+            "value_before": record.get("value_after", ""),  # swapped
+            "value_after": record.get("value_before", ""),  # swapped
             "published_by": auth.tenant_id,
             "publish_note": f"Rollback of {record_id}: {payload.reason or ''}",
             "rolled_back": False,
@@ -533,7 +560,7 @@ def create_live_editor_router(
     def get_live_editor_snippet(auth: AuthDep, site_key: str | None = Query(default=None)) -> dict[str, Any]:
         enforce_rate_limit(f"{auth.tenant_id}:live-editor:snippet:get", 60, 60)
         cdn_base = "https://cdn.nuxtron.ai"
-        key = site_key or hashlib.sha256(auth.tenant_id.encode()).hexdigest()[:24]
+        key = _validate_site_key(site_key) if site_key else hashlib.sha256(auth.tenant_id.encode()).hexdigest()[:24]
         snippet = f"""<!-- Nuxtron Live Editor Snippet -->
 <script>
 (function(w,d,s,k){{
@@ -552,6 +579,7 @@ def create_live_editor_router(
         Called by the live-editor.js snippet on page load.
         Returns published changes for the given site_key to apply client-side.
         """
+        _validate_site_key(site_key)
         enforce_rate_limit(f"{auth.tenant_id}:live-editor:snippet:payload", 600, 60)
         with _lock:
             published = [
@@ -561,9 +589,7 @@ def create_live_editor_router(
                     "value": h["value_after"],
                 }
                 for h in history_memory
-                if h["tenant_id"] == auth.tenant_id
-                and not h.get("rolled_back")
-                and h.get("published_at")
+                if h["tenant_id"] == auth.tenant_id and not h.get("rolled_back") and h.get("published_at")
             ]
         return {"status": "ok", "site_key": site_key, "changes": published[-500:]}
 

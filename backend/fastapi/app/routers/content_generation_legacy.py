@@ -17,42 +17,46 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from ..deps import AuthContext, require_auth
+from ..domains.content.campaigns import ContentRequest
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator, Mapping
     from threading import Lock
 
-    from pydantic import BaseModel as PydanticBaseModel
 
 JsonObject = dict[str, object]
+
+
+class content_request_model(ContentRequest):  # noqa: N801 - frozen compatibility name
+    """Named compatibility model for the async content-generation request."""
 
 
 def create_content_generation_router(
     *,
     content_generations_memory: list[dict[str, Any]],
     content_generation_jobs_memory: list[dict[str, Any]],
-    content_generation_jobs_lock: 'Lock',
-    content_generation_telemetry_lock: 'Lock',
-    content_generation_telemetry: dict[str, int],
-    persist_content_generation_job: 'Callable[[dict[str, Any]], dict[str, Any]]',
-    find_content_generation_job: 'Callable[[str, str], dict[str, Any] | None]',
-    content_generation_inflight_count: 'Callable[[str], int]',
-    content_generation_max_inflight: 'Callable[[], int]',
-    content_generation_strict_production_mode: 'Callable[[], bool]',
-    content_generation_required_provider_state: 'Callable[[], tuple[bool, dict[str, bool]]]',
-    content_generation_production_verification_payload: 'Callable[[str], tuple[dict[str, Any], bool]]',
-    content_generation_job_retention_seconds: 'Callable[[], int]',
-    content_generation_job_terminal: 'Callable[[object], bool]',
-    content_generation_job_expires_at: 'Callable[[dict[str, Any]], datetime | None]',
-    content_generation_prune_expired_terminal_jobs: 'Callable[[], None]',
-    run_content_generation_job_if_needed: 'Callable[[dict[str, Any], AuthContext], None]',
-    strict_no_mock_module_store_counts: 'Callable[[str], dict[str, int]]',
-    platform_status_payload: 'Callable[[AuthContext], dict[str, Any]]',
-    json_object: 'Callable[[object], dict[str, Any] | None]',
-    env_bool: 'Callable[[str, bool], bool]',
-    safe_int: 'Callable[[object, int], int]',
-    is_production: 'Callable[[], bool]',
-    content_request_model: type,
+    content_generation_jobs_lock: Lock,
+    content_generation_telemetry_lock: Lock,
+    content_generation_telemetry: Mapping[str, object],
+    content_generation_note_telemetry: Callable[[str, str | None], None],
+    persist_content_generation_job: Callable[[dict[str, Any]], dict[str, Any]],
+    find_content_generation_job: Callable[[str, str], dict[str, Any] | None],
+    content_generation_inflight_count: Callable[[str], int],
+    content_generation_max_inflight: Callable[[], int],
+    content_generation_strict_production_mode: Callable[[], bool],
+    content_generation_required_provider_state: Callable[[], tuple[bool, dict[str, bool]]],
+    content_generation_production_verification_payload: Callable[[str], tuple[dict[str, Any], bool]],
+    content_generation_job_retention_seconds: Callable[[], int],
+    content_generation_job_terminal: Callable[[object], bool],
+    content_generation_job_expires_at: Callable[[dict[str, Any]], datetime | None],
+    content_generation_prune_expired_terminal_jobs: Callable[[], None],
+    run_content_generation_job_if_needed: Callable[[dict[str, Any], AuthContext], None],
+    strict_no_mock_module_store_counts: Callable[[str], dict[str, int]],
+    platform_status_payload: Callable[[AuthContext], dict[str, Any]],
+    json_object: Callable[[object], dict[str, Any] | None],
+    env_bool: Callable[[str, bool], bool],
+    safe_int: Callable[[object, int], int],
+    is_production: Callable[[], bool],
 ) -> APIRouter:
     """Build the content generation router with injected dependencies."""
     router = APIRouter(tags=['content-generation'])
@@ -199,7 +203,15 @@ def create_content_generation_router(
         return payload
 
     @router.post('/content/generate/async', status_code=202)
-    def submit_content_generation_job(payload: content_request_model, auth: AuthContext = Depends(require_auth)) -> JsonObject:
+    def submit_content_generation_job(
+        payload: content_request_model,
+        auth: AuthContext = Depends(require_auth),
+    ) -> JsonObject:
+        if content_generation_strict_production_mode() and is_production():
+            raise HTTPException(
+                status_code=503,
+                detail='Durable content-generation worker is not configured for production.',
+            )
         if content_generation_inflight_count(auth.tenant_id) >= content_generation_max_inflight():
             raise HTTPException(status_code=429, detail='Too many in-flight content generation jobs.')
 
@@ -255,7 +267,13 @@ def create_content_generation_router(
                 job['updated_at'] = now_iso
                 job['error'] = f'Job exceeded max runtime ({max_runtime}s).'
                 persist_content_generation_job(job)
+                content_generation_note_telemetry('timeout_failures_total', 'job_timeout')
 
+        if str(job.get('status', '')) == 'pending' and content_generation_strict_production_mode() and is_production():
+            raise HTTPException(
+                status_code=503,
+                detail='Durable content-generation worker is not configured for production.',
+            )
         if str(job.get('status', '')) == 'pending':
             run_content_generation_job_if_needed(job, auth)
 
@@ -350,7 +368,7 @@ def create_content_generation_router(
         if job is None:
             raise HTTPException(status_code=404, detail='Content generation job not found.')
 
-        def _event_stream() -> object:
+        def _event_stream() -> Iterator[str]:
             snapshot = json.dumps({'payload': job}, separators=(',', ':'))
             yield f"event: content-job.snapshot\ndata: {snapshot}\n\n"
             if content_generation_job_terminal(job.get('status')):

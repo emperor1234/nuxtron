@@ -47,6 +47,8 @@ def _b64url_encode(raw: bytes) -> str:
     return base64.urlsafe_b64encode(raw).rstrip(b'=').decode('ascii')
 
 
+# Intentionally independent cross-check: the smoke client signs JWTs without
+# calling production auth helpers, so it can detect regressions in that code.
 def _selftest_jwt(tenant: str) -> str:
     secret = os.getenv('JWT_SIGNING_KEY', '').strip() or os.getenv('FASTAPI_API_KEY', 'change-this-fastapi-key').strip()
     now = int(time.time())
@@ -73,6 +75,7 @@ def _headers(tenant: str) -> dict[str, str]:
     }
 
 
+# TOTP generation is likewise independent to validate the server algorithm.
 def _totp_code(secret: str, step: int = 30, digits: int = 6) -> str:
     counter = int(time.time()) // step
     padded = secret + ('=' * ((8 - len(secret) % 8) % 8))
@@ -600,8 +603,6 @@ def run_selftest() -> None:  # NOSONAR
         assert ops.json().get('tenant_id') == 'tenant-a'
         integrations = ops.json().get('integrations', {})
         assert 'hashicorp_vault_configured' in integrations
-        assert 'supabase_configured' in integrations
-        assert 'supabase_vault_ready' in integrations
         fallback_buffers = ops.json().get('fallback_buffers', {})
         assert isinstance(fallback_buffers.get('max_items_per_buffer'), int)
         assert fallback_buffers.get('max_items_per_buffer') >= 1
