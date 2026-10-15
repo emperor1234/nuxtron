@@ -1,274 +1,418 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { socialApi, type ApprovalRequest } from '@/app/lib/social-api';
+import { apiGet, apiSend } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
 
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
+// Same contract as the Publishing Queue and Social Studio approval panels, so a
+// request created here is the one reviewers see everywhere else.
+type ApprovalRequest = {
+  id: number;
+  status: string;
+  scheduled_post_id: number;
+  platform?: string;
+  content_preview?: string;
+  requested_by?: string;
+  approval_levels?: string[];
+  approvals_received?: string[];
+  rejection_reason?: string;
+  created_at?: string;
+  expires_at?: string;
+};
+
+type QueuePost = {
+  id: string | number;
+  title?: string;
+  caption?: string;
+  text?: string;
+  platform?: string;
+  platforms?: string[];
+  status?: string;
+};
+
+type ApprovalConfig = { levels?: string[] } | null;
+
+const REQUESTABLE_STATUSES = new Set(['draft', 'scheduled', 'queued']);
+const PREVIEW_LIMIT = 500;
+
+function postText(post: QueuePost): string {
+  return (post.caption || post.text || post.title || '').trim();
+}
+
+function postPlatform(post: QueuePost): string {
+  return (post.platforms?.[0] || post.platform || '').trim();
+}
+
+function outstandingLevels(request: ApprovalRequest): string[] {
+  const received = new Set((request.approvals_received ?? []).map((level) => level.toLowerCase()));
+  return (request.approval_levels ?? []).filter((level) => !received.has(level.toLowerCase()));
+}
+
+function formatWhen(value?: string): string {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString();
+}
 
 export default function ApprovalsPage() {
+  const [tenantId] = useState(resolveSessionTenant);
   const [requests, setRequests] = useState<ApprovalRequest[]>([]);
+  const [posts, setPosts] = useState<QueuePost[]>([]);
+  const [config, setConfig] = useState<ApprovalConfig>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [selectedApprovers, setSelectedApprovers] = useState<string[]>([]);
-  const [autoPublish, setAutoPublish] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedPostId, setSelectedPostId] = useState('');
+  const [requestedBy, setRequestedBy] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [busyRequestId, setBusyRequestId] = useState<number | null>(null);
+  const [reviewerRoles, setReviewerRoles] = useState<Record<number, string>>({});
+  const [comments, setComments] = useState<Record<number, string>>({});
 
-  async function loadApprovals() {
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
     try {
-      const result = await socialApi.listPendingApprovals();
-      setRequests(result || []);
+      const [requestRes, queueRes, configRes] = await Promise.all([
+        apiGet<{ requests?: ApprovalRequest[] }>('/content/approval/requests', tenantId),
+        apiGet<{ queue?: QueuePost[] }>('/social/queue?status=all', tenantId),
+        apiGet<{ config?: ApprovalConfig }>('/content/approval/config', tenantId),
+      ]);
+      setRequests(requestRes.requests ?? []);
+      setPosts(queueRes.queue ?? []);
+      setConfig(configRes.config ?? null);
     } catch (err) {
-      console.error('Failed to load approvals:', err);
       setRequests([]);
-      setError(
-        IS_STRICT_NO_MOCK_MODE
-          ? 'Approvals backend unavailable in strict no-mock mode.'
-          : 'Approvals backend unavailable in fail-closed mode.'
-      );
+      setLoadError(err instanceof Error ? err.message : 'Approvals are unavailable right now.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [tenantId]);
 
   useEffect(() => {
-    let active = true;
-    globalThis.queueMicrotask(() => {
-      if (active) void loadApprovals();
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+  }, [load]);
 
-  async function handleApprove(requestId: string) {
+  const pendingPostIds = useMemo(
+    () => new Set(requests.filter((r) => r.status === 'pending').map((r) => String(r.scheduled_post_id))),
+    [requests]
+  );
+
+  const requestablePosts = useMemo(
+    () =>
+      posts.filter((post) => {
+        const id = Number(post.id);
+        return (
+          Number.isInteger(id) &&
+          id > 0 &&
+          REQUESTABLE_STATUSES.has((post.status || '').toLowerCase()) &&
+          postText(post).length > 0 &&
+          postPlatform(post).length > 0 &&
+          !pendingPostIds.has(String(post.id))
+        );
+      }),
+    [posts, pendingPostIds]
+  );
+
+  const selectedPost = requestablePosts.find((post) => String(post.id) === selectedPostId);
+  const canSubmit = Boolean(selectedPost) && requestedBy.trim().length > 0 && !submitting;
+
+  async function submitRequest() {
+    if (!selectedPost || !requestedBy.trim()) return;
+    setSubmitting(true);
+    setActionError('');
     try {
-      await socialApi.approveRequest(requestId);
-      setRequests(requests.map((r) => (r.id === requestId ? { ...r, status: 'approved' } : r)));
+      await apiSend(
+        '/content/approval/requests',
+        'POST',
+        {
+          scheduled_post_id: Number(selectedPost.id),
+          platform: postPlatform(selectedPost),
+          content_preview: postText(selectedPost).slice(0, PREVIEW_LIMIT),
+          requested_by: requestedBy.trim(),
+        },
+        tenantId
+      );
+      setSelectedPostId('');
+      setShowForm(false);
+      await load();
     } catch (err) {
-      console.error('Approve failed:', err);
-      alert('Failed to approve request');
+      setActionError(err instanceof Error ? err.message : 'Failed to submit the approval request.');
+    } finally {
+      setSubmitting(false);
     }
   }
 
-  async function handleReject(requestId: string, reason: string) {
+  async function decide(request: ApprovalRequest, decision: 'approved' | 'rejected') {
+    const role = reviewerRoles[request.id] || outstandingLevels(request)[0] || '';
+    const comment = (comments[request.id] || '').trim();
+    if (!role) {
+      setActionError('This request has no outstanding approval level to sign off.');
+      return;
+    }
+    if (decision === 'rejected' && !comment) {
+      setActionError('Add a reason so the creator knows what to change.');
+      return;
+    }
+    setBusyRequestId(request.id);
+    setActionError('');
     try {
-      await socialApi.rejectRequest(requestId, reason);
-      setRequests(requests.map((r) => (r.id === requestId ? { ...r, status: 'rejected' } : r)));
+      const res = await apiSend<{ request?: ApprovalRequest }>(
+        `/content/approval/requests/${request.id}/decision`,
+        'POST',
+        { decision, reviewer_role: role, comment: comment || null },
+        tenantId
+      );
+      // Show the server's resulting state: a multi-level chain stays pending
+      // until every level has signed off.
+      if (res.request) {
+        const updated = res.request;
+        setRequests((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      } else {
+        await load();
+      }
+      setComments((current) => ({ ...current, [request.id]: '' }));
+      setReviewerRoles((current) => ({ ...current, [request.id]: '' }));
     } catch (err) {
-      console.error('Reject failed:', err);
-      alert('Failed to reject request');
+      setActionError(err instanceof Error ? err.message : 'Failed to record the decision.');
+    } finally {
+      setBusyRequestId(null);
     }
   }
 
   const pending = requests.filter((r) => r.status === 'pending');
   const approved = requests.filter((r) => r.status === 'approved');
-  const rejected = requests.filter((r) => r.status === 'rejected');
+  const closed = requests.filter((r) => r.status !== 'pending' && r.status !== 'approved');
+  const configuredLevels = config?.levels ?? [];
 
   return (
     <div style={styles.container}>
-      {/* Header */}
       <div style={styles.header}>
         <div>
           <Link href="/studio/social-studio" style={styles.backLink}>
-            ← Back to Hub
+            ← Back to Social Studio
           </Link>
           <h1 style={styles.title}>Content Approvals</h1>
-          <p style={styles.subtitle}>Manage content review workflows and approvals across your team</p>
+          <p style={styles.subtitle}>
+            Send scheduled posts for review and record sign-off from each approval level.
+          </p>
         </div>
         <button
+          type="button"
           onClick={() => setShowForm(!showForm)}
-          style={{
-            ...styles.requestBtn,
-            backgroundColor: showForm ? "var(--line)" : "var(--brand)",
-          }}
+          disabled={loading || Boolean(loadError)}
+          style={styles.requestBtn}
         >
-          {showForm ? 'Cancel' : '+ Request Approval'}
+          {showForm ? 'Cancel' : 'Request approval'}
         </button>
       </div>
 
-      {error ? <div style={styles.errorBanner}>⚠ {error}</div> : null}
-
-      {/* Request Form */}
-      {showForm && (
-        <div style={styles.formCard}>
-          <h2 style={styles.formTitle}>Request Content Approval</h2>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Select Content</label>
-            <select style={styles.select}>
-              <option>Choose a post...</option>
-              <option>Announcing new features 🚀</option>
-              <option>Behind-the-scenes studio tour</option>
-            </select>
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Approvers (Email)</label>
-            <div style={styles.approversGrid}>
-              {['manager@company.com', 'legal@company.com', 'brand@company.com'].map((email) => (
-                <button
-                  key={email}
-                  onClick={() =>
-                    setSelectedApprovers(
-                      selectedApprovers.includes(email)
-                        ? selectedApprovers.filter((e) => e !== email)
-                        : [...selectedApprovers, email]
-                    )
-                  }
-                  style={{
-                    ...styles.approverChip,
-                    backgroundColor: selectedApprovers.includes(email) ? "var(--brand)" : "var(--line-soft)",
-                    borderColor: selectedApprovers.includes(email) ? "var(--brand)" : "var(--line)",
-                  }}
-                >
-                  {email}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.checkboxLabel}>
-              <input type="checkbox" checked={autoPublish} onChange={(e) => setAutoPublish(e.target.checked)} />
-              Auto-publish when all approvals received
-            </label>
-          </div>
-
-          <div style={styles.formActions}>
-            <button style={styles.submitBtn}>Send for Approval</button>
-          </div>
+      {loadError ? (
+        <div role="alert" style={styles.errorBanner}>
+          Approvals could not be loaded: {loadError}{' '}
+          <button type="button" onClick={() => void load()} style={styles.linkBtn}>
+            Retry
+          </button>
         </div>
-      )}
+      ) : null}
+      {actionError ? (
+        <div role="alert" style={styles.errorBanner}>
+          {actionError}
+        </div>
+      ) : null}
+
+      {!loading && !loadError ? (
+        <p style={styles.configNote}>
+          {configuredLevels.length
+            ? `Approval chain: ${configuredLevels.join(' → ')}`
+            : 'No approval chain configured yet. New requests require a manager sign-off until you configure one in Social Studio.'}
+        </p>
+      ) : null}
+
+      {showForm ? (
+        <div style={styles.formCard}>
+          <h2 style={styles.formTitle}>Request content approval</h2>
+          {requestablePosts.length === 0 ? (
+            <p style={styles.muted}>
+              No draft or scheduled posts are waiting for review. Create or schedule a post first, then request approval.
+            </p>
+          ) : (
+            <>
+              <div style={styles.formGroup}>
+                <label htmlFor="approval-post" style={styles.label}>
+                  Post
+                </label>
+                <select
+                  id="approval-post"
+                  style={styles.field}
+                  value={selectedPostId}
+                  onChange={(e) => setSelectedPostId(e.target.value)}
+                >
+                  <option value="">Choose a post…</option>
+                  {requestablePosts.map((post) => (
+                    <option key={String(post.id)} value={String(post.id)}>
+                      #{post.id} · {postPlatform(post)} · {postText(post).slice(0, 80)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={styles.formGroup}>
+                <label htmlFor="approval-requested-by" style={styles.label}>
+                  Requested by
+                </label>
+                <input
+                  id="approval-requested-by"
+                  style={styles.field}
+                  value={requestedBy}
+                  maxLength={120}
+                  onChange={(e) => setRequestedBy(e.target.value)}
+                  placeholder="Your name or handle"
+                />
+              </div>
+              <button
+                type="button"
+                style={styles.submitBtn}
+                disabled={!canSubmit}
+                onClick={() => void submitRequest()}
+              >
+                {submitting ? 'Sending…' : 'Send for approval'}
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
 
       {loading ? (
-        <div style={styles.skeleton}>
-          <div style={styles.skeletonCard} />
-          <div style={styles.skeletonCard} />
+        <p style={styles.muted} aria-live="polite">
+          Loading approval requests…
+        </p>
+      ) : loadError ? null : requests.length === 0 ? (
+        <div style={styles.emptyState}>
+          <h3 style={styles.formTitle}>No approval requests yet</h3>
+          <p style={styles.muted}>Requests you send for review will appear here.</p>
         </div>
       ) : (
         <>
-          {/* Pending Approvals */}
-          {pending.length > 0 && (
-            <section style={styles.section}>
-              <h2 style={{ ...styles.sectionTitle, color: 'var(--warning)' }}>⏳ Pending Approvals ({pending.length})</h2>
-              <div style={styles.requestsList}>
-                {pending.map((req) => (
-                  <div key={req.id} style={styles.requestCard}>
+          <section style={styles.section} aria-labelledby="approvals-pending">
+            <h2 id="approvals-pending" style={styles.sectionTitle}>
+              Pending ({pending.length})
+            </h2>
+            {pending.length === 0 ? <p style={styles.muted}>Nothing is waiting for review.</p> : null}
+            <div style={styles.requestsList}>
+              {pending.map((req) => {
+                const levels = outstandingLevels(req);
+                const busy = busyRequestId === req.id;
+                return (
+                  <article key={req.id} style={styles.requestCard}>
                     <div style={styles.requestHeader}>
                       <div>
-                        <h3 style={styles.contentPreview}>{req.contentPreview}</h3>
+                        <h3 style={styles.contentPreview}>{req.content_preview || `Post #${req.scheduled_post_id}`}</h3>
                         <div style={styles.requestMeta}>
-                          <span>📅 Requested {new Date(req.requestedAt).toLocaleString()}</span>
-                          <span>👤 {req.requestedBy}</span>
+                          <span>Post #{req.scheduled_post_id}</span>
+                          {req.platform ? <span>{req.platform}</span> : null}
+                          {req.requested_by ? <span>Requested by {req.requested_by}</span> : null}
+                          {formatWhen(req.created_at) ? <span>{formatWhen(req.created_at)}</span> : null}
                         </div>
                       </div>
-                      <div style={styles.platformBadges}>
-                        {req.platforms.map((p) => (
-                          <span key={p} style={styles.platformBadge}>
-                            {p}
-                          </span>
-                        ))}
-                      </div>
                     </div>
-
-                    <div style={styles.approversSection}>
-                      <span style={styles.approversLabel}>Approvers:</span>
-                      <div style={styles.approversList}>
-                        {req.approvers.map((approver) => (
-                          <span key={approver} style={styles.approverItem}>
-                            ✓ {approver}
-                          </span>
+                    <p style={styles.levels}>
+                      Signed off: {(req.approvals_received ?? []).join(', ') || 'none yet'} · Waiting on:{' '}
+                      {levels.join(', ') || 'none'}
+                    </p>
+                    <div style={styles.decisionRow}>
+                      <label style={styles.srOnly} htmlFor={`role-${req.id}`}>
+                        Reviewing as
+                      </label>
+                      <select
+                        id={`role-${req.id}`}
+                        style={{ ...styles.field, maxWidth: 200 }}
+                        value={reviewerRoles[req.id] || levels[0] || ''}
+                        onChange={(e) => setReviewerRoles((current) => ({ ...current, [req.id]: e.target.value }))}
+                        disabled={levels.length === 0}
+                      >
+                        {levels.map((level) => (
+                          <option key={level} value={level}>
+                            Review as {level}
+                          </option>
                         ))}
-                      </div>
+                      </select>
+                      <label style={styles.srOnly} htmlFor={`comment-${req.id}`}>
+                        Reviewer comment
+                      </label>
+                      <input
+                        id={`comment-${req.id}`}
+                        style={{ ...styles.field, flex: 1 }}
+                        value={comments[req.id] || ''}
+                        maxLength={1000}
+                        onChange={(e) => setComments((current) => ({ ...current, [req.id]: e.target.value }))}
+                        placeholder="Comment (required to reject)"
+                      />
                     </div>
-
                     <div style={styles.actions}>
-                      <button onClick={() => handleApprove(req.id)} style={styles.approveBtn}>
-                        ✓ Approve
+                      <button
+                        type="button"
+                        onClick={() => void decide(req, 'approved')}
+                        style={styles.approveBtn}
+                        disabled={busy || levels.length === 0}
+                      >
+                        Approve
                       </button>
                       <button
-                        onClick={() => {
-                          const reason = globalThis.prompt('Enter rejection reason:');
-                          if (reason) handleReject(req.id, reason);
-                        }}
+                        type="button"
+                        onClick={() => void decide(req, 'rejected')}
                         style={styles.rejectBtn}
+                        disabled={busy || levels.length === 0}
                       >
-                        ✗ Reject
+                        Reject
                       </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
 
-          {/* Approved */}
-          {approved.length > 0 && (
-            <section style={styles.section}>
-              <h2 style={{ ...styles.sectionTitle, color: 'var(--success)' }}>✓ Approved ({approved.length})</h2>
+          {approved.length > 0 ? (
+            <section style={styles.section} aria-labelledby="approvals-approved">
+              <h2 id="approvals-approved" style={styles.sectionTitle}>
+                Approved ({approved.length})
+              </h2>
               <div style={styles.requestsList}>
                 {approved.map((req) => (
-                  <div
-                    key={req.id}
-                    style={{
-                      ...styles.requestCard,
-                      borderLeftColor: 'var(--success)',
-                      opacity: 0.8,
-                    }}
-                  >
-                    <div style={styles.requestHeader}>
-                      <div>
-                        <h3 style={styles.contentPreview}>{req.contentPreview}</h3>
-                        <div style={styles.requestMeta}>
-                          <span>✓ Approved for publication</span>
-                          <span>{req.autoPublishOnApprove ? '🤖 Auto-publish enabled' : '👤 Manual publish'}</span>
-                        </div>
-                      </div>
+                  <article key={req.id} style={{ ...styles.requestCard, borderLeftColor: 'var(--success)' }}>
+                    <h3 style={styles.contentPreview}>{req.content_preview || `Post #${req.scheduled_post_id}`}</h3>
+                    <div style={styles.requestMeta}>
+                      <span>Post #{req.scheduled_post_id}</span>
+                      <span>Signed off by {(req.approvals_received ?? []).join(', ')}</span>
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
             </section>
-          )}
+          ) : null}
 
-          {/* Rejected */}
-          {rejected.length > 0 && (
-            <section style={styles.section}>
-              <h2 style={{ ...styles.sectionTitle, color: 'var(--danger)' }}>✗ Rejected ({rejected.length})</h2>
+          {closed.length > 0 ? (
+            <section style={styles.section} aria-labelledby="approvals-closed">
+              <h2 id="approvals-closed" style={styles.sectionTitle}>
+                Rejected or expired ({closed.length})
+              </h2>
               <div style={styles.requestsList}>
-                {rejected.map((req) => (
-                  <div
-                    key={req.id}
-                    style={{
-                      ...styles.requestCard,
-                      borderLeftColor: 'var(--danger)',
-                      opacity: 0.6,
-                    }}
-                  >
-                    <div style={styles.requestHeader}>
-                      <div>
-                        <h3 style={styles.contentPreview}>{req.contentPreview}</h3>
-                        <small style={styles.rejectedLabel}>Rejected</small>
-                      </div>
+                {closed.map((req) => (
+                  <article key={req.id} style={{ ...styles.requestCard, borderLeftColor: 'var(--danger)' }}>
+                    <h3 style={styles.contentPreview}>{req.content_preview || `Post #${req.scheduled_post_id}`}</h3>
+                    <div style={styles.requestMeta}>
+                      <span>Post #{req.scheduled_post_id}</span>
+                      <span style={{ color: 'var(--danger)' }}>{req.status}</span>
+                      {req.rejection_reason ? <span>Reason: {req.rejection_reason}</span> : null}
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
             </section>
-          )}
-
-          {pending.length === 0 && approved.length === 0 && rejected.length === 0 && (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>✅</div>
-              <h2>No Approval Requests</h2>
-              <p>All your content is ready to go!</p>
-            </div>
-          )}
+          ) : null}
         </>
       )}
     </div>
@@ -277,8 +421,6 @@ export default function ApprovalsPage() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    minHeight: '100vh',
-    backgroundColor: 'var(--card)',
     color: 'var(--text)',
     padding: '32px 24px',
   },
@@ -286,7 +428,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: '32px',
+    gap: '16px',
+    flexWrap: 'wrap',
+    marginBottom: '24px',
   },
   backLink: {
     display: 'inline-block',
@@ -296,7 +440,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
   },
   title: {
-    fontSize: '32px',
+    fontSize: '28px',
     fontWeight: 700,
     margin: '0 0 8px',
   },
@@ -307,22 +451,35 @@ const styles: Record<string, React.CSSProperties> = {
   },
   requestBtn: {
     padding: '10px 20px',
-    backgroundColor: "var(--brand)",
-    color: 'var(--text)',
+    backgroundColor: 'var(--brand)',
+    color: 'var(--on-brand)',
     border: 'none',
     borderRadius: '6px',
     fontSize: '14px',
     fontWeight: 600,
     cursor: 'pointer',
-    transition: 'background-color 200ms ease',
   },
   errorBanner: {
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-    border: '1px solid rgba(245, 158, 11, 0.4)',
-    color: 'var(--warning-ink)',
+    backgroundColor: 'var(--danger-soft)',
+    border: '1px solid var(--danger)',
+    color: 'var(--text)',
     padding: '12px 14px',
     borderRadius: '10px',
     marginBottom: '16px',
+  },
+  linkBtn: {
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    color: 'var(--brand)',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    font: 'inherit',
+  },
+  configNote: {
+    fontSize: '13px',
+    color: 'var(--muted)',
+    margin: '0 0 24px',
   },
   formCard: {
     backgroundColor: 'var(--card)',
@@ -334,65 +491,41 @@ const styles: Record<string, React.CSSProperties> = {
   formTitle: {
     fontSize: '18px',
     fontWeight: 600,
-    margin: '0 0 20px',
+    margin: '0 0 16px',
   },
   formGroup: {
-    marginBottom: '20px',
+    marginBottom: '16px',
   },
   label: {
     display: 'block',
     fontSize: '14px',
     fontWeight: 500,
     marginBottom: '8px',
-    color: 'var(--text)',
   },
-  select: {
+  field: {
     width: '100%',
-    padding: '10px 12px',
-    backgroundColor: 'var(--card)',
+    padding: '8px 10px',
+    backgroundColor: 'var(--bg)',
     color: 'var(--text)',
     border: '1px solid var(--line)',
     borderRadius: '6px',
     fontSize: '14px',
-  },
-  approversGrid: {
-    display: 'grid',
-    gap: '8px',
-  },
-  approverChip: {
-    padding: '8px 12px',
-    backgroundColor: 'var(--card)',
-    color: 'var(--text)',
-    border: '1px solid var(--line)',
-    borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'background-color 200ms ease, border-color 200ms ease',
-    textAlign: 'left',
-  },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '14px',
-    color: 'var(--text)',
-    cursor: 'pointer',
-  },
-  formActions: {
-    display: 'flex',
-    gap: '12px',
-    marginTop: '24px',
+    boxSizing: 'border-box',
   },
   submitBtn: {
     padding: '10px 20px',
-    backgroundColor: 'var(--success)',
-    color: 'var(--text)',
+    backgroundColor: 'var(--brand)',
+    color: 'var(--on-brand)',
     border: 'none',
     borderRadius: '6px',
     fontSize: '14px',
     fontWeight: 600,
     cursor: 'pointer',
+  },
+  muted: {
+    color: 'var(--muted)',
+    fontSize: '14px',
+    margin: 0,
   },
   section: {
     marginBottom: '32px',
@@ -400,7 +533,7 @@ const styles: Record<string, React.CSSProperties> = {
   sectionTitle: {
     fontSize: '18px',
     fontWeight: 600,
-    marginBottom: '16px',
+    marginBottom: '12px',
   },
   requestsList: {
     display: 'grid',
@@ -417,60 +550,32 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: '12px',
+    marginBottom: '8px',
     gap: '12px',
   },
   contentPreview: {
     margin: '0 0 6px',
     fontSize: '14px',
     fontWeight: 600,
-    color: 'var(--text)',
+    overflowWrap: 'anywhere',
   },
   requestMeta: {
     display: 'flex',
     gap: '12px',
-    fontSize: '12px',
-    color: 'var(--muted)',
-  },
-  platformBadges: {
-    display: 'flex',
-    gap: '6px',
     flexWrap: 'wrap',
-  },
-  platformBadge: {
-    display: 'inline-block',
-    padding: '3px 8px',
-    backgroundColor: "var(--line)",
-    color: 'var(--text)',
-    borderRadius: '3px',
-    fontSize: '11px',
-  },
-  approversSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '12px',
-    paddingBottom: '12px',
-    borderBottom: '1px solid var(--line)',
     fontSize: '12px',
-  },
-  approversLabel: {
-    fontWeight: 600,
     color: 'var(--muted)',
   },
-  approversList: {
+  levels: {
+    fontSize: '12px',
+    color: 'var(--muted)',
+    margin: '0 0 12px',
+  },
+  decisionRow: {
     display: 'flex',
     gap: '8px',
-    flex: 1,
     flexWrap: 'wrap',
-  },
-  approverItem: {
-    display: 'inline-block',
-    padding: '2px 6px',
-    backgroundColor: 'var(--scrim)',
-    color: 'var(--muted)',
-    borderRadius: '3px',
-    fontSize: '11px',
+    marginBottom: '12px',
   },
   actions: {
     display: 'flex',
@@ -479,9 +584,9 @@ const styles: Record<string, React.CSSProperties> = {
   approveBtn: {
     flex: 1,
     padding: '8px',
-    backgroundColor: 'color-mix(in oklab, var(--success) 15%, transparent)',
+    backgroundColor: 'var(--success-soft)',
     color: 'var(--success-ink)',
-    border: '1px solid color-mix(in oklab, var(--success) 15%, transparent)',
+    border: '1px solid var(--success)',
     borderRadius: '4px',
     fontSize: '13px',
     fontWeight: 600,
@@ -490,40 +595,30 @@ const styles: Record<string, React.CSSProperties> = {
   rejectBtn: {
     flex: 1,
     padding: '8px',
-    backgroundColor: 'color-mix(in oklab, var(--danger) 15%, transparent)',
+    backgroundColor: 'var(--danger-soft)',
     color: 'var(--danger)',
-    border: '1px solid color-mix(in oklab, var(--danger) 15%, transparent)',
+    border: '1px solid var(--danger)',
     borderRadius: '4px',
     fontSize: '13px',
     fontWeight: 600,
     cursor: 'pointer',
   },
-  rejectedLabel: {
-    display: 'block',
-    marginTop: '6px',
-    fontSize: '11px',
-    color: 'var(--danger)',
-    fontWeight: 600,
-  },
-  skeleton: {
-    display: 'grid',
-    gap: '16px',
-  },
-  skeletonCard: {
-    height: '150px',
-    backgroundColor: 'var(--card)',
-    borderRadius: '12px',
-    animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-  },
   emptyState: {
     textAlign: 'center',
-    padding: '60px 24px',
+    padding: '48px 24px',
     backgroundColor: 'var(--card)',
     borderRadius: '12px',
-    border: "1px dashed var(--line)",
+    border: '1px dashed var(--line)',
   },
-  emptyIcon: {
-    fontSize: '48px',
-    marginBottom: '16px',
+  srOnly: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    padding: 0,
+    margin: -1,
+    overflow: 'hidden',
+    clip: 'rect(0, 0, 0, 0)',
+    whiteSpace: 'nowrap',
+    border: 0,
   },
 };

@@ -48,7 +48,7 @@ class ApprovalConfigRequest(BaseModel):
 class ApprovalSubmitRequest(BaseModel):
     """ADDED: Submit a scheduled post (by its ID) for approval before publishing."""
     scheduled_post_id: int = Field(ge=1, description='ID of the scheduled post from /social/schedule.')
-    platform: str = Field(min_length=2, max_length=40, description='Target platform (linkedin, x, etc.).')
+    platform: str = Field(min_length=1, max_length=40, description='Target platform (linkedin, x, etc.).')
     content_preview: str = Field(min_length=1, max_length=500, description='Short preview of the post content.')
     campaign_tag: str | None = Field(default=None, max_length=80, description='Optional campaign tag.')
     requested_by: str = Field(min_length=1, max_length=120, description='Name or handle of the submitter.')

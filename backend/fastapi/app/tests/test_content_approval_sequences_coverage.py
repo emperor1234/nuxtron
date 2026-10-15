@@ -77,6 +77,21 @@ class TestContentApprovalCoverage:
         assert data["request"]["status"] == "pending"
         assert data["request"]["platform"] == "linkedin"
 
+    def test_submit_for_single_letter_platform(self, client: TestClient) -> None:
+        # X's canonical platform id is "x"; it must be submittable like any other network.
+        r = client.post(
+            "/content/approval/requests",
+            headers=H,
+            json={
+                "scheduled_post_id": 102,
+                "platform": "x",
+                "content_preview": "Launch thread",
+                "requested_by": "marketer@example.com",
+            },
+        )
+        assert r.status_code in (200, 201)
+        assert r.json()["request"]["platform"] == "x"
+
     def test_submit_duplicate_rejected(self, client: TestClient) -> None:
         # Submitting again for the same scheduled_post_id should return 400
         r = client.post(

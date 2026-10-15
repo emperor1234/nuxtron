@@ -122,6 +122,7 @@ type ApprovalRequestItem = {
   platform: string;
   content_preview: string;
   approval_levels?: string[];
+  approvals_received?: string[];
 };
 
 type SavedReplyItem = {
@@ -2396,21 +2397,25 @@ export default function SocialStudioPage() {
     }
   }
 
-  async function decideApproval(requestId: number, decision: 'approved' | 'rejected') {
+  async function decideApproval(request: ApprovalRequestItem, decision: 'approved' | 'rejected') {
+    // Sign off the next outstanding level in the request's own chain instead of
+    // assuming a "manager" level exists for every tenant.
+    const received = new Set((request.approvals_received || []).map((level) => level.toLowerCase()));
+    const reviewerRole = (request.approval_levels || []).find((level) => !received.has(level.toLowerCase()));
+    if (!reviewerRole) {
+      setOpsMessage(`Approval request #${request.id} has no outstanding level to sign off.`);
+      return;
+    }
     setOpsMessage('');
     try {
       await apiSend(
-        `/content/approval/requests/${requestId}/decision`,
+        `/content/approval/requests/${request.id}/decision`,
         'POST',
-        {
-          decision,
-          reviewer_role: 'manager',
-          comment: decision === 'approved' ? 'Approved for publishing.' : 'Needs revisions before publish.',
-        },
+        { decision, reviewer_role: reviewerRole },
         tenantId
       );
       addActivity(
-        `Approval request #${requestId} marked ${decision}.`,
+        `Approval request #${request.id}: ${reviewerRole} ${decision}.`,
         decision === 'approved' ? 'success' : 'warning'
       );
       await loadSocialOpsData('approvals');
@@ -4339,14 +4344,14 @@ export default function SocialStudioPage() {
                             <button
                               type="button"
                               className="command-btn command-btn-success"
-                              onClick={() => void decideApproval(request.id, 'approved')}
+                              onClick={() => void decideApproval(request, 'approved')}
                             >
                               Approve
                             </button>
                             <button
                               type="button"
                               className="command-btn command-btn-muted"
-                              onClick={() => void decideApproval(request.id, 'rejected')}
+                              onClick={() => void decideApproval(request, 'rejected')}
                             >
                               Reject
                             </button>

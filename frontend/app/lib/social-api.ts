@@ -77,18 +77,6 @@ export interface CalendarEvent {
   autoPost: boolean;
 }
 
-export interface ApprovalRequest {
-  id: string;
-  postId: string;
-  platforms: SocialNetwork[];
-  contentPreview: string;
-  requestedAt: string;
-  requestedBy: string;
-  status: 'pending' | 'approved' | 'rejected';
-  approvers: string[];
-  autoPublishOnApprove: boolean;
-}
-
 export interface ShortLinkRecord {
   id: number;
   provider: 'bitly' | 'tinyurl' | 'rebrandly' | string;
@@ -880,31 +868,6 @@ export const socialApi = {
   async deleteReport(reportId: number): Promise<{ success: boolean }> {
     await apiSend(`/social/reports/${reportId}`, 'DELETE', {});
     return { success: true };
-  },
-
-  /**
-   * Approvals: Request and manage content approval workflows
-   */
-  async requestApproval(postId: string, approvers: string[], autoPublishOnApprove = true): Promise<ApprovalRequest> {
-    const response = await apiSend<{ request?: ApprovalRequest }>('/social/approvals', 'POST', {
-      post_id: postId,
-      approvers,
-      auto_publish_on_approve: autoPublishOnApprove,
-    });
-    return (response.request ?? response) as ApprovalRequest;
-  },
-
-  async listPendingApprovals(): Promise<ApprovalRequest[]> {
-    const response = await apiGet<{ requests?: ApprovalRequest[] }>('/social/approvals/pending');
-    return response.requests || [];
-  },
-
-  async approveRequest(requestId: string): Promise<{ success: boolean; postId: string }> {
-    return apiSend(`/social/approvals/${requestId}/approve`, 'POST', {});
-  },
-
-  async rejectRequest(requestId: string, reason: string): Promise<{ success: boolean }> {
-    return apiSend(`/social/approvals/${requestId}/reject`, 'POST', { reason });
   },
 
   async shortenLink(
