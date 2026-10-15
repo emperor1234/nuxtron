@@ -30,11 +30,16 @@ RUN npm run build
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /app/.next ./.next
+# Create the runtime user before copying so ownership is set by COPY itself.
+# A trailing `chown -R` over node_modules rewrote every file into a second
+# full-size layer, which exhausted the build host and failed deploys.
+RUN addgroup -S app && adduser -S -G app app
+# Only .next needs to be writable at runtime (next start writes .next/cache).
+# Dependencies, assets and package.json stay root-owned and read-only to app.
+COPY --from=build --chown=app:app /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
-RUN addgroup -S app && adduser -S -G app app && chown -R app:app /app
 USER app
 EXPOSE 4173
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
