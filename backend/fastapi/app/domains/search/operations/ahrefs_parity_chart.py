@@ -1,25 +1,31 @@
 """Search use cases: ahrefs parity chart."""
 
+from typing import Any, cast
+
+from fastapi import HTTPException
+
 from ....deps import AuthContext
 from ....domains.seo.seo_module_registry import audit_ahrefs_core_tool_parity
+from ....domains.seo.services.seo_keyword_research_service import raise_keyword_research_unavailable
 from ....routers import backlink_intelligence as backlink_intel_router
 from ....routers import rank_tracker as rank_tracker_router
 from ..constants import AuthDep
 from ..runtime import SearchRuntime
-from ..schemas import AhrefsEnvTemplateRequest
-from ..schemas import AhrefsFullAutomationRequest
-from ..schemas import AhrefsProductionGateRequest
-from ..schemas import AhrefsProviderProbeRequest
+from ..schemas import (
+    AhrefsEnvTemplateRequest,
+    AhrefsFullAutomationRequest,
+    AhrefsProductionGateRequest,
+    AhrefsProviderProbeRequest,
+)
 from ..values import coerce_int as _coerce_int
-from .ahrefs_provider_probe_payload import helper_ahrefs_env_template
-from .ahrefs_provider_probe_payload import helper_ahrefs_provider_requirements
-from .ahrefs_provider_probe_payload import helper_ahrefs_run_provider_probes
-from .ahrefs_provider_probe_payload import helper_ahrefs_vendor_inventory
+from .ahrefs_provider_probe_payload import (
+    helper_ahrefs_env_template,
+    helper_ahrefs_provider_requirements,
+    helper_ahrefs_run_provider_probes,
+    helper_ahrefs_vendor_inventory,
+)
 from .platform_now_iso import helper_now_iso
 from .platform_run_provider_probes import operation_vendors
-from fastapi import HTTPException
-from typing import Any
-from typing import cast
 
 
 def helper_ahrefs_parity_chart(runtime: SearchRuntime, auth: AuthContext) -> dict[str, Any]:
@@ -99,10 +105,10 @@ def helper_ahrefs_parity_chart(runtime: SearchRuntime, auth: AuthContext) -> dic
             ],
         },
     ]
-    configured_units = sum((1 for item in checklist if item["configured"]))
+    configured_units = sum(1 for item in checklist if item["configured"])
     total_units = len(checklist)
     implementation_pct = round(
-        sum((1 for module in modules if module["implemented"])) / max(len(modules), 1) * 100.0, 1
+        sum(1 for module in modules if module["implemented"]) / max(len(modules), 1) * 100.0, 1
     )
     integration_pct = round(configured_units / max(total_units, 1) * 100.0, 1)
     core_tools_total = _coerce_int(ahrefs_audit.get("total_tools"), len(core_tools))
@@ -115,7 +121,7 @@ def helper_ahrefs_parity_chart(runtime: SearchRuntime, auth: AuthContext) -> dic
         "ahrefs_parity_chart": modules,
         "summary": {
             "modules_total": len(modules),
-            "modules_implemented": sum((1 for module in modules if module["implemented"])),
+            "modules_implemented": sum(1 for module in modules if module["implemented"]),
             "implementation_pct": implementation_pct,
             "integration_configured_units": configured_units,
             "integration_total_units": total_units,
@@ -133,7 +139,7 @@ def helper_ahrefs_parity_chart(runtime: SearchRuntime, auth: AuthContext) -> dic
                 "pct": round(core_tools_fully_covered / max(core_tools_total, 1) * 100.0, 1),
             },
             "automation_layers": {
-                "done": sum((1 for module in modules if module["implemented"])),
+                "done": sum(1 for module in modules if module["implemented"]),
                 "total": len(modules),
                 "pct": implementation_pct,
             },
@@ -193,7 +199,7 @@ def operation_ahrefs_e2e_verification(runtime: SearchRuntime, auth: AuthDep) -> 
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:ahrefs:e2e-verification", 60, 60)
     parity = helper_ahrefs_parity_chart(runtime, auth)
     checklist = helper_ahrefs_provider_requirements(runtime, auth)
-    configured = sum((1 for item in checklist if item["configured"]))
+    configured = sum(1 for item in checklist if item["configured"])
     total = len(checklist)
     return {
         "status": "ok",
@@ -223,6 +229,7 @@ def operation_ahrefs_e2e_verification(runtime: SearchRuntime, auth: AuthDep) -> 
 def operation_ahrefs_full_automation(
     runtime: SearchRuntime, payload: AhrefsFullAutomationRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    raise_keyword_research_unavailable()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:ahrefs:full-automation", 30, 60)
     discover_payload = rank_tracker_router.KeywordResearchRequest(
         seed_keyword=payload.seed_keyword,
@@ -377,6 +384,7 @@ def helper_ahrefs_strict_live_probe(
 def operation_ahrefs_production_gate(
     runtime: SearchRuntime, payload: AhrefsProductionGateRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    raise_keyword_research_unavailable()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:ahrefs:production-gate", 30, 60)
     parity = helper_ahrefs_parity_chart(runtime, auth)
     checklist = helper_ahrefs_provider_requirements(runtime, auth)
@@ -410,7 +418,7 @@ def operation_ahrefs_production_gate(
         "parity_summary": parity.get("summary", {}),
         "strict_live_probe": strict_probe,
         "provider_checklist_summary": {
-            "configured": sum((1 for item in checklist if item["configured"])),
+            "configured": sum(1 for item in checklist if item["configured"]),
             "total": len(checklist),
             "missing_requirements": missing_requirements,
         },

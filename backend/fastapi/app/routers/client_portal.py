@@ -1,75 +1,53 @@
-# pyright: reportUnusedFunction=false
-"""
-Client Portal router — SEMrush Client Portal / Agency White-Label parity.
+"""Client Portal compatibility routes.
 
-White-label reporting portal for agencies:
-  - Manage clients and their branding settings
-  - Generate automated PDF/HTML reports (weekly/monthly)
-  - Shareable live report links with optional password protection
-  - Report templates and custom metric selection
-  - Scheduled delivery via email or webhook
-
-Endpoints
----------
-POST /client-portal/clients                      – Create a client
-GET  /client-portal/clients                      – List clients
-GET  /client-portal/clients/{id}                 – Get client details
-PATCH /client-portal/clients/{id}                – Update client
-DELETE /client-portal/clients/{id}               – Remove client
-
-POST /client-portal/reports                      – Generate a report for a client
-GET  /client-portal/reports                      – List reports
-GET  /client-portal/reports/{id}                 – Get report metadata
-GET  /client-portal/reports/{id}/download        – Download report (HTML)
-DELETE /client-portal/reports/{id}               – Delete report
-
-POST /client-portal/share-link                   – Create a shareable link for a report
-GET  /client-portal/share-link/{token}           – Access shared report by token
-
-POST /client-portal/templates                    – Create a report template
-GET  /client-portal/templates                    – List templates
-
-POST /client-portal/schedules                    – Schedule automatic report delivery
-GET  /client-portal/schedules                    – List schedules
-DELETE /client-portal/schedules/{id}             – Remove schedule
+This customer-facing reporting surface is unavailable until durable, tenant-scoped
+client/report storage, verified analytics inputs, a delivery worker, and production
+share-link configuration are connected. The routes remain registered so existing
+API clients receive an explicit typed error instead of fabricated success data.
 """
 
 from __future__ import annotations
 
-import hashlib
 import html
 import ipaddress
-import logging
-import os
 import re
-import secrets
-import threading
-import uuid
-from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Any, NoReturn
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field, field_validator
 
 from ..deps import AuthContext, require_auth
 
-logger = logging.getLogger(__name__)
-AuthDep = Annotated[AuthContext, Depends(require_auth)]
+
+class ClientPortalUnavailableDetail(BaseModel):
+    code: str
+    message: str
+
+
+class ClientPortalUnavailableEnvelope(BaseModel):
+    detail: ClientPortalUnavailableDetail
+
+
+_UNAVAILABLE_MESSAGE = (
+    "Client portal reporting is unavailable until durable workspace storage, verified analytics sources, "
+    "scheduled delivery, and production share-link configuration are connected. No sample metrics are generated."
+)
+_UNAVAILABLE_RESPONSE = {
+    501: {
+        "model": ClientPortalUnavailableEnvelope,
+        "description": "Client Portal is unavailable; no sample reports, metrics, or share links are generated.",
+    }
+}
 
 router = APIRouter(prefix="/client-portal", tags=["Client Portal"])
-_lock = threading.Lock()
-
-_clients: dict[str, list[dict[str, Any]]] = {}
-_reports: dict[str, list[dict[str, Any]]] = {}
-_templates: dict[str, list[dict[str, Any]]] = {}
-_schedules: dict[str, list[dict[str, Any]]] = {}
-_share_links: dict[str, dict[str, Any]] = {}  # token -> {report, metadata}
 
 
-def _now() -> str:
-    return datetime.now(UTC).isoformat()
+def _raise_unavailable() -> NoReturn:
+    raise HTTPException(
+        status_code=501,
+        detail={"code": "NOT_IMPLEMENTED", "message": _UNAVAILABLE_MESSAGE},
+    )
 
 
 def _escape_html(value: object) -> str:
@@ -102,8 +80,10 @@ def _safe_report_logo_src(value: object) -> str:
             if not ipaddress.ip_address(hostname).is_global:
                 return ""
         except ValueError:
-            if "." not in normalized_hostname or normalized_hostname.endswith(
-                (".local", ".internal", ".lan", ".home", ".test")
+            if (
+                not normalized_hostname
+                or "." not in normalized_hostname
+                or normalized_hostname.endswith((".local", ".internal", ".lan", ".home", ".test"))
             ):
                 return ""
     except ValueError:
@@ -111,24 +91,21 @@ def _safe_report_logo_src(value: object) -> str:
     return _escape_html(candidate)
 
 
-# ── Report HTML generator ─────────────────────────────────────────────────────
-
-
-def _generate_html_report(client: dict, report: dict, metrics: dict) -> str:
+def _generate_html_report(client: dict[str, Any], report: dict[str, Any], metrics: dict[str, Any]) -> str:
+    """Render supplied values safely; this helper does not calculate business metrics."""
     brand_color = _safe_report_brand_color(client.get("brand_color", "#4A90E2"))
     logo = _safe_report_logo_src(client.get("logo_url", ""))
     client_name = _escape_html(client.get("name", "Client"))
     agency_name = _escape_html(client.get("agency_name", "Your Agency"))
     period = _escape_html(report.get("period", "Monthly"))
-    date = _escape_html(str(report.get("created_at", _now()))[:10])
+    date = _escape_html(str(report.get("created_at", ""))[:10])
     domains = _escape_html(", ".join(str(domain) for domain in report.get("domains", [])))
-    kpi_rows = ""
-    for k, v in metrics.items():
-        kpi_rows += (
-            "<tr><td style='padding:8px;border-bottom:1px solid #eee'>"
-            f"{_escape_html(k)}</td><td style='padding:8px;border-bottom:1px solid #eee;font-weight:bold'>"
-            f"{_escape_html(v)}</td></tr>"
-        )
+    kpi_rows = "".join(
+        "<tr><td style='padding:8px;border-bottom:1px solid #eee'>"
+        f"{_escape_html(key)}</td><td style='padding:8px;border-bottom:1px solid #eee;font-weight:bold'>"
+        f"{_escape_html(value)}</td></tr>"
+        for key, value in metrics.items()
+    )
     logo_tag = f'<img src="{logo}" style="height:50px" alt="Logo" />' if logo else ""
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -177,31 +154,6 @@ def _generate_html_report(client: dict, report: dict, metrics: dict) -> str:
   </div>
 </body>
 </html>"""
-
-
-def _build_metrics(domains: list[str], report_type: str) -> dict[str, Any]:
-    """Generate deterministic metrics for a report."""
-    import random
-
-    domain_key = "|".join(sorted(domains))
-    random.seed(
-        int(hashlib.md5(f"{domain_key}:{report_type}".encode(), usedforsecurity=False).hexdigest(), 16) % (2**32)
-    )
-    return {
-        "Organic Traffic": f"{random.randint(5000, 500_000):,}",
-        "Organic Keywords": f"{random.randint(500, 50_000):,}",
-        "Domain Authority": random.randint(20, 80),
-        "Backlinks": f"{random.randint(100, 100_000):,}",
-        "Ranking Keywords (Top 10)": f"{random.randint(50, 10_000):,}",
-        "Avg. Position": round(random.uniform(5, 25), 1),
-        "Estimated Monthly Traffic Value ($)": f"${random.randint(1000, 500_000):,}",
-        "New Backlinks (This Period)": random.randint(5, 500),
-        "Lost Backlinks": random.randint(1, 100),
-        "Site Health Score": f"{random.randint(60, 98)}%",
-    }
-
-
-# ── Models ────────────────────────────────────────────────────────────────────
 
 
 class ClientCreateRequest(BaseModel):
@@ -286,286 +238,93 @@ class ScheduleCreateRequest(BaseModel):
     active: bool = Field(default=True)
 
 
-# ── Routes ── Clients ─────────────────────────────────────────────────────────
-
-
-@router.post("/clients")
+@router.post("/clients", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def create_client(payload: ClientCreateRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    client = {
-        "id": str(uuid.uuid4()),
-        "tenant_id": auth.tenant_id,
-        **payload.model_dump(),
-        "created_at": _now(),
-        "report_count": 0,
-    }
-    with _lock:
-        _clients.setdefault(auth.tenant_id, []).append(client)
-    return client
+    return _raise_unavailable()
 
 
-@router.get("/clients")
+@router.get("/clients", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def list_clients(auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    with _lock:
-        clients = list(_clients.get(auth.tenant_id, []))
-    return {"clients": clients, "total": len(clients)}
+    return _raise_unavailable()
 
 
-@router.get("/clients/{client_id}")
+@router.get("/clients/{client_id}", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def get_client(client_id: str, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    with _lock:
-        client = next((c for c in _clients.get(auth.tenant_id, []) if c["id"] == client_id), None)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-    return client
+    return _raise_unavailable()
 
 
-@router.patch("/clients/{client_id}")
+@router.patch("/clients/{client_id}", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def update_client(
-    client_id: str, payload: ClientUpdateRequest, auth: AuthContext = Depends(require_auth)
+    client_id: str,
+    payload: ClientUpdateRequest,
+    auth: AuthContext = Depends(require_auth),
 ) -> dict[str, Any]:
-    with _lock:
-        client = next((c for c in _clients.get(auth.tenant_id, []) if c["id"] == client_id), None)
-        if not client:
-            raise HTTPException(status_code=404, detail="Client not found")
-        update = payload.model_dump(exclude_none=True)
-        client.update(update)
-        client["updated_at"] = _now()
-    return client
+    return _raise_unavailable()
 
 
-@router.delete("/clients/{client_id}")
+@router.delete("/clients/{client_id}", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def delete_client(client_id: str, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    with _lock:
-        before = len(_clients.get(auth.tenant_id, []))
-        _clients[auth.tenant_id] = [c for c in _clients.get(auth.tenant_id, []) if c["id"] != client_id]
-        removed = before - len(_clients[auth.tenant_id])
-    if not removed:
-        raise HTTPException(status_code=404, detail="Client not found")
-    return {"deleted": client_id}
+    return _raise_unavailable()
 
 
-# ── Routes ── Reports ─────────────────────────────────────────────────────────
-
-
-@router.post("/reports")
+@router.post("/reports", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def generate_report(payload: ReportCreateRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    with _lock:
-        client = next((c for c in _clients.get(auth.tenant_id, []) if c["id"] == payload.client_id), None)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-    metrics = _build_metrics(payload.domains, payload.report_type)
-    html = _generate_html_report(
-        client, {"period": payload.period, "created_at": _now(), "domains": payload.domains}, metrics
-    )
-    report = {
-        "id": str(uuid.uuid4()),
-        "tenant_id": auth.tenant_id,
-        "client_id": payload.client_id,
-        "client_name": client["name"],
-        "domains": payload.domains,
-        "period": payload.period,
-        "report_type": payload.report_type,
-        "template_id": payload.template_id,
-        "status": "completed",
-        "metrics": metrics,
-        "html": html,
-        "created_at": _now(),
-        "size_bytes": len(html.encode()),
-    }
-    with _lock:
-        _reports.setdefault(auth.tenant_id, []).append(report)
-        # update client report count
-        for c in _clients.get(auth.tenant_id, []):
-            if c["id"] == payload.client_id:
-                c["report_count"] = c.get("report_count", 0) + 1
-    return {k: v for k, v in report.items() if k != "html"}
+    return _raise_unavailable()
 
 
-@router.get("/reports")
+@router.get("/reports", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def list_reports(
     client_id: str | None = Query(default=None),
     auth: AuthContext = Depends(require_auth),
 ) -> dict[str, Any]:
-    with _lock:
-        reps = [{k: v for k, v in r.items() if k != "html"} for r in _reports.get(auth.tenant_id, [])]
-    if client_id:
-        reps = [r for r in reps if r.get("client_id") == client_id]
-    return {"reports": reps, "total": len(reps)}
+    return _raise_unavailable()
 
 
-@router.get("/reports/{report_id}")
+@router.get("/reports/{report_id}", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def get_report(report_id: str, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    with _lock:
-        report = next((r for r in _reports.get(auth.tenant_id, []) if r["id"] == report_id), None)
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
-    return {k: v for k, v in report.items() if k != "html"}
+    return _raise_unavailable()
 
 
-@router.get("/reports/{report_id}/download", response_class=HTMLResponse)
-def download_report(report_id: str, auth: AuthContext = Depends(require_auth)) -> HTMLResponse:
-    with _lock:
-        report = next((r for r in _reports.get(auth.tenant_id, []) if r["id"] == report_id), None)
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
-    html = report.get("html", "<p>Report content unavailable.</p>")
-    return HTMLResponse(content=html, media_type="text/html")
+@router.get("/reports/{report_id}/download", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
+def download_report(report_id: str, auth: AuthContext = Depends(require_auth)) -> NoReturn:
+    return _raise_unavailable()
 
 
-@router.delete("/reports/{report_id}")
+@router.delete("/reports/{report_id}", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def delete_report(report_id: str, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    with _lock:
-        before = len(_reports.get(auth.tenant_id, []))
-        _reports[auth.tenant_id] = [r for r in _reports.get(auth.tenant_id, []) if r["id"] != report_id]
-        removed = before - len(_reports[auth.tenant_id])
-    if not removed:
-        raise HTTPException(status_code=404, detail="Report not found")
-    return {"deleted": report_id}
+    return _raise_unavailable()
 
 
-# ── Routes ── Share Links ─────────────────────────────────────────────────────
-
-
-@router.post("/share-link")
+@router.post("/share-link", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def create_share_link(payload: ShareLinkRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    with _lock:
-        report = next((r for r in _reports.get(auth.tenant_id, []) if r["id"] == payload.report_id), None)
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
-    token = secrets.token_urlsafe(32)
-    from datetime import timedelta
-
-    expires_at = (datetime.now(UTC) + timedelta(days=payload.expires_days)).isoformat()
-    link = {
-        "token": token,
-        "report_id": payload.report_id,
-        "tenant_id": auth.tenant_id,
-        "password_hash": hashlib.sha256(payload.password.encode()).hexdigest() if payload.password else None,
-        "expires_at": expires_at,
-        "created_at": _now(),
-        "views": 0,
-    }
-    with _lock:
-        _share_links[token] = link
-    base_url = os.getenv("PUBLIC_BASE_URL", "https://yourdomain.com")
-    return {
-        "token": token,
-        "url": f"{base_url}/client-portal/share-link/{token}",
-        "expires_at": expires_at,
-        "password_protected": bool(payload.password),
-    }
+    return _raise_unavailable()
 
 
-@router.get("/share-link/{token}", response_class=HTMLResponse)
-def access_shared_report(
-    token: str,
-    password: str = Query(default=""),
-) -> HTMLResponse:
-    with _lock:
-        link = _share_links.get(token)
-    if not link:
-        raise HTTPException(status_code=404, detail="Link not found or expired")
-    expires_at = link.get("expires_at", "")
-    if expires_at and expires_at < _now():
-        raise HTTPException(status_code=410, detail="Link has expired")
-    if link.get("password_hash") and hashlib.sha256(password.encode()).hexdigest() != link["password_hash"]:
-        raise HTTPException(status_code=401, detail="Invalid password")
-    with _lock:
-        link["views"] = link.get("views", 0) + 1
-    tenant_id = link["tenant_id"]
-    report_id = link["report_id"]
-    with _lock:
-        report = next((r for r in _reports.get(tenant_id, []) if r["id"] == report_id), None)
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
-    return HTMLResponse(content=report.get("html", "<p>Report unavailable.</p>"), media_type="text/html")
+@router.get("/share-link/{token}", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
+def access_shared_report(token: str, password: str = Query(default="")) -> NoReturn:
+    return _raise_unavailable()
 
 
-# ── Routes ── Templates ───────────────────────────────────────────────────────
-
-
-@router.post("/templates")
+@router.post("/templates", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def create_template(payload: TemplateCreateRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    template = {
-        "id": str(uuid.uuid4()),
-        "tenant_id": auth.tenant_id,
-        **payload.model_dump(),
-        "created_at": _now(),
-    }
-    with _lock:
-        _templates.setdefault(auth.tenant_id, []).append(template)
-    return template
+    return _raise_unavailable()
 
 
-@router.get("/templates")
+@router.get("/templates", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def list_templates(auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    default_templates = [
-        {
-            "id": "default-seo",
-            "name": "SEO Performance",
-            "sections": ["traffic", "keywords", "backlinks", "health"],
-            "default_period": "Monthly",
-        },
-        {
-            "id": "default-full",
-            "name": "Full Digital Marketing",
-            "sections": ["traffic", "keywords", "backlinks", "ppc", "social", "health"],
-            "default_period": "Monthly",
-        },
-        {
-            "id": "default-backlinks",
-            "name": "Link Building Report",
-            "sections": ["backlinks", "authority", "link-gap"],
-            "default_period": "Monthly",
-        },
-        {
-            "id": "default-ppc",
-            "name": "PPC Performance",
-            "sections": ["ads", "spend", "keywords", "quality-score"],
-            "default_period": "Weekly",
-        },
-    ]
-    with _lock:
-        custom = list(_templates.get(auth.tenant_id, []))
-    return {"templates": default_templates + custom, "total": len(default_templates) + len(custom)}
+    return _raise_unavailable()
 
 
-# ── Routes ── Schedules ───────────────────────────────────────────────────────
-
-
-@router.post("/schedules")
+@router.post("/schedules", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def create_schedule(payload: ScheduleCreateRequest, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    with _lock:
-        client = next((c for c in _clients.get(auth.tenant_id, []) if c["id"] == payload.client_id), None)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-    schedule = {
-        "id": str(uuid.uuid4()),
-        "tenant_id": auth.tenant_id,
-        "client_name": client["name"],
-        **payload.model_dump(),
-        "created_at": _now(),
-        "last_run": None,
-        "next_run": None,
-    }
-    with _lock:
-        _schedules.setdefault(auth.tenant_id, []).append(schedule)
-    return schedule
+    return _raise_unavailable()
 
 
-@router.get("/schedules")
+@router.get("/schedules", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def list_schedules(auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    with _lock:
-        schedules = list(_schedules.get(auth.tenant_id, []))
-    return {"schedules": schedules, "total": len(schedules)}
+    return _raise_unavailable()
 
 
-@router.delete("/schedules/{schedule_id}")
+@router.delete("/schedules/{schedule_id}", status_code=501, response_model=None, responses=_UNAVAILABLE_RESPONSE)
 def delete_schedule(schedule_id: str, auth: AuthContext = Depends(require_auth)) -> dict[str, Any]:
-    with _lock:
-        before = len(_schedules.get(auth.tenant_id, []))
-        _schedules[auth.tenant_id] = [s for s in _schedules.get(auth.tenant_id, []) if s["id"] != schedule_id]
-        removed = before - len(_schedules[auth.tenant_id])
-    if not removed:
-        raise HTTPException(status_code=404, detail="Schedule not found")
-    return {"deleted": schedule_id}
+    return _raise_unavailable()

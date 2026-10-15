@@ -3,6 +3,8 @@ from __future__ import annotations
 import datetime
 import os
 
+os.environ.setdefault("ENVIRONMENT", "development")
+
 # Python 3.9 compatibility: datetime.UTC was added in 3.11.
 if not hasattr(datetime, "UTC"):
     datetime.UTC = datetime.UTC  # type: ignore[attr-defined]

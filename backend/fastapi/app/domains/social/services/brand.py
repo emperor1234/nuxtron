@@ -1,26 +1,24 @@
 """Social Workspace brand service."""
 
-from ....domains.social.persistence import _SocialWorkspaceState
-from ....domains.social.persistence import _sw_audit
-from ....domains.social.persistence import _sw_load_profile_from_db
-from ....domains.social.persistence import _sw_save_profile_to_db
-from ....domains.social.schemas import BrandProfileRequest
-from ....domains.social.schemas import UgcTemplateProfileRequest
-from ..constants import AVATAR_PRESET_CATALOG
-from ..constants import DEFAULT_BACKGROUND_MEDIA
-from ..constants import DEFAULT_FONT_FAMILY
-from ..constants import DEFAULT_SUBTITLES_LANGUAGE
-from ..constants import JSON_CONTENT_TYPE
-from ..constants import VOICEOVER_GLOBAL_LIBRARY
-from ..constants import _DEFAULT_KEYWORDS
-from .workspace import _normalized_text
-from .workspace import _sw_http_error
-from datetime import UTC
-from datetime import datetime
-from fastapi import HTTPException
+from datetime import UTC, datetime
 from typing import Any
-import httpx
-import os
+
+from ....domains.social.persistence import (
+    _SocialWorkspaceState,
+    _sw_audit,
+    _sw_load_profile_from_db,
+    _sw_save_profile_to_db,
+)
+from ....domains.social.schemas import BrandProfileRequest, UgcTemplateProfileRequest
+from ..constants import (
+    _DEFAULT_KEYWORDS,
+    AVATAR_PRESET_CATALOG,
+    DEFAULT_BACKGROUND_MEDIA,
+    DEFAULT_FONT_FAMILY,
+    DEFAULT_SUBTITLES_LANGUAGE,
+    VOICEOVER_GLOBAL_LIBRARY,
+)
+from .workspace import _normalized_text
 
 
 def _normalize_avatar_profile(source: dict[str, Any] | None) -> dict[str, str]:
@@ -170,87 +168,6 @@ def _sw_profile_defaults(st: _SocialWorkspaceState, tenant_id: str) -> dict[str,
         st.brand_profiles.append(profile)
         _sw_save_profile_to_db(st, profile)
         return profile
-
-
-def _ugc_http_json_request(
-    method: str, url: str, headers: dict[str, str], json_payload: dict[str, Any] | None = None
-) -> dict[str, Any]:
-    """Make HTTP request to UGC vendor API with timeout/error handling."""
-    try:
-        with httpx.Client(timeout=15.0) as client:
-            if method.upper() == "GET":
-                resp = client.get(url, headers=headers)
-            elif method.upper() == "POST":
-                resp = client.post(url, headers=headers, json=json_payload)
-            else:
-                raise _sw_http_error(status_code=502, detail="Unsupported HTTP method")
-            if resp.status_code >= 400:
-                raise _sw_http_error(status_code=502, detail=f"UGC vendor error: {resp.status_code}")
-            return resp.json()
-    except (httpx.TimeoutException, httpx.ConnectError):
-        raise _sw_http_error(status_code=504, detail="UGC discovery service timeout")
-    except Exception as e:
-        raise _sw_http_error(status_code=502, detail=f"UGC discovery service error: {str(e)}")
-
-
-def _fetch_ugc_assets(brand_domain: str, limit: int = 20) -> list[dict[str, Any]]:
-    """Fetch UGC assets from external discovery API (production vendor integration)."""
-    endpoint = os.getenv("UGC_DISCOVERY_ENDPOINT", "").strip()
-    api_key = os.getenv("UGC_DISCOVERY_API_KEY", "").strip()
-    if not endpoint or not api_key:
-        raise _sw_http_error(status_code=503, detail="UGC discovery service not configured")
-    try:
-        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": JSON_CONTENT_TYPE}
-        payload = {
-            "domain": brand_domain,
-            "limit": limit,
-            "include_sentiment": True,
-            "include_engagement_metrics": True,
-        }
-        result = _ugc_http_json_request("POST", endpoint, headers, payload)
-        if not isinstance(result.get("assets"), list):
-            raise _sw_http_error(status_code=502, detail="UGC vendor response missing assets list")
-        assets: list[dict[str, Any]] = []
-        for item in result.get("assets", []):
-            asset = {
-                "id": len(assets) + 1,
-                "network": item.get("platform", "instagram"),
-                "author": item.get("author_handle", "unknown"),
-                "author_followers": item.get("author_followers", 0),
-                "media_type": item.get("media_type", "image"),
-                "caption": item.get("caption", ""),
-                "media_url": item.get("media_url"),
-                "thumbnail_url": item.get("thumbnail_url"),
-                "engagement": item.get("engagement_count", 0),
-                "sentiment": item.get("sentiment", "neutral"),
-                "rights_status": "pending",
-                "approved": None,
-                "tags": item.get("tags", []),
-                "created_at": datetime.now(UTC).isoformat(),
-            }
-            assets.append(asset)
-        return assets
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise _sw_http_error(status_code=502, detail=f"UGC fetch failed: {str(e)}")
-
-
-def _sw_seed_ugc(st: _SocialWorkspaceState, tenant_id: str) -> None:
-    """Load UGC assets from production vendor API (fail-closed)."""
-    with st.lock:
-        if any((item.get("tenant_id") == tenant_id for item in st.ugc_assets)):
-            return
-    try:
-        assets = _fetch_ugc_assets(brand_domain=f"{tenant_id}.example.com", limit=20)
-        with st.lock:
-            for asset in assets:
-                asset["tenant_id"] = tenant_id
-                st.ugc_assets.append(asset)
-    except HTTPException:
-        raise
-    except Exception:
-        raise _sw_http_error(status_code=503, detail="UGC discovery service unavailable")
 
 
 def _sw_avatar_catalog(tenant_id: str) -> dict[str, Any]:

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 from ..constants import AuthDep
-from ..constants import JOB_NOT_FOUND
 from ..operations.append_audit import execute_list_providers
 from ..operations.job_progress_stream import execute_job_progress_stream
 from ..operations.job_progress_stream import execute_media_jobs_stats
@@ -11,6 +10,7 @@ from ..operations.job_progress_stream import execute_sandbox_dispatch
 from ..operations.purge_raw_input import execute_job_audit_trail
 from ..operations.purge_raw_input import execute_purge_raw_input
 from ..runtime import ContextRuntime
+from ..runtime import MEDIA_JOBS_UNAVAILABLE_RESPONSE
 from ..schemas import MediaSandboxDispatchRequest
 from fastapi import APIRouter
 from fastapi import Query
@@ -22,7 +22,12 @@ from typing import Any
 
 def register(router: APIRouter, runtime: ContextRuntime):
 
-    @router.get("/media/jobs/{job_id:int}/stream", responses={404: {"description": JOB_NOT_FOUND}})
+    @router.get(
+        "/media/jobs/{job_id:int}/stream",
+        status_code=501,
+        response_model=None,
+        responses=MEDIA_JOBS_UNAVAILABLE_RESPONSE,
+    )
     async def job_progress_stream(
         request: Request,
         job_id: int,
@@ -31,7 +36,7 @@ def register(router: APIRouter, runtime: ContextRuntime):
     ) -> StreamingResponse:
         return await execute_job_progress_stream(runtime, request, job_id, api_key, tenant_id_param)
 
-    @router.get("/media/jobs/stats")
+    @router.get("/media/jobs/stats", status_code=501, response_model=None, responses=MEDIA_JOBS_UNAVAILABLE_RESPONSE)
     def media_jobs_stats(auth: AuthDep) -> dict[str, Any]:
         return execute_media_jobs_stats(runtime, auth)
 
@@ -45,10 +50,13 @@ def register(router: APIRouter, runtime: ContextRuntime):
 
     @router.post(
         "/media/sandbox/dispatch",
+        status_code=501,
+        response_model=None,
         responses={
             400: {"description": "Unknown provider or media type mismatch."},
             422: {"description": "Invalid media_type."},
             429: {"description": "Per-tenant concurrency limit reached."},
+            **MEDIA_JOBS_UNAVAILABLE_RESPONSE,
         },
     )
     async def sandbox_dispatch(payload: MediaSandboxDispatchRequest, auth: AuthDep) -> dict[str, Any]:
@@ -58,10 +66,10 @@ def register(router: APIRouter, runtime: ContextRuntime):
         "/media/raw-input", responses={403: {"description": "Storage key does not belong to the authenticated tenant."}}
     )
     def purge_raw_input(
-        storage_key: Annotated[str, Query(min_length=1, max_length=1024)], auth: AuthDep
+        storage_key: Annotated[str, Query(min_length=1, max_length=1024)], auth: AuthDep, request: Request
     ) -> dict[str, Any]:
-        return execute_purge_raw_input(runtime, storage_key, auth)
+        return execute_purge_raw_input(runtime, storage_key, auth, request)
 
-    @router.get("/media/jobs/{job_id:int}/audit", responses={404: {"description": JOB_NOT_FOUND}})
+    @router.get("/media/jobs/{job_id:int}/audit", status_code=501, response_model=None, responses=MEDIA_JOBS_UNAVAILABLE_RESPONSE)
     def job_audit_trail(job_id: int, auth: AuthDep) -> dict[str, Any]:
         return execute_job_audit_trail(runtime, job_id, auth)

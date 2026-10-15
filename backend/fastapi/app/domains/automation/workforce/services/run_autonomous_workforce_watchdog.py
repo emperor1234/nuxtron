@@ -7,6 +7,7 @@ from .mission_execution import _generate_mission_artifact
 from .mission_execution import _now_iso
 from .mission_execution import _parse_iso_utc
 from .mission_execution import _verify_provider_live_standalone
+from ..capabilities import require_workforce_execution_available
 from datetime import UTC
 from datetime import datetime
 from datetime import timedelta
@@ -30,6 +31,7 @@ async def run_autonomous_workforce_watchdog(
     max_due_per_tick: int = 20,
 ) -> None:
     """Continuously executes due autonomous schedules until shutdown."""
+    require_workforce_execution_available()
     loop_sleep = max(5, int(poll_interval_seconds))
     use_celery = str(os.getenv("WORKFORCE_USE_CELERY", "false")).lower() == "true"
     db = WorkforceDB(db_dsn) if db_dsn.startswith("postgresql") else None

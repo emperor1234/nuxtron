@@ -23,6 +23,8 @@ class TestBuildReportResponse:
         assert result["status"] == "ok"
         assert result["totals"]["conversions"] == 0
         assert result["totals"]["revenue"] == 0.0
+        assert result["currency_status"] == "none"
+        assert result["currency_totals"] == []
 
     def test_includes_tenant_id_and_window(self) -> None:
         result = _build_report_response(
@@ -36,8 +38,8 @@ class TestBuildReportResponse:
 
     def test_sums_total_revenue(self) -> None:
         conversions = [
-            {"id": 1, "provider": "stripe", "amount": 100.0, "touchpoint_keys": []},
-            {"id": 2, "provider": "stripe", "amount": 50.0, "touchpoint_keys": []},
+            {"id": 1, "provider": "stripe", "amount": 100.0, "currency": "USD", "touchpoint_keys": []},
+            {"id": 2, "provider": "stripe", "amount": 50.0, "currency": "USD", "touchpoint_keys": []},
         ]
         result = _build_report_response(
             tenant_id="t1",
@@ -52,7 +54,7 @@ class TestBuildReportResponse:
             "tp_1": {"post_id": "post_a", "source": "facebook"},
         }
         conversions = [
-            {"id": 1, "provider": "stripe", "amount": 200.0, "touchpoint_keys": ["tp_1"]},
+            {"id": 1, "provider": "stripe", "amount": 200.0, "currency": "USD", "touchpoint_keys": ["tp_1"]},
         ]
         result = _build_report_response(
             tenant_id="t1",
@@ -66,7 +68,7 @@ class TestBuildReportResponse:
     def test_unattributed_revenue_for_missing_touchpoints(self) -> None:
         touchpoints = {}
         conversions = [
-            {"id": 1, "provider": "stripe", "amount": 100.0, "touchpoint_keys": ["missing-key"]},
+            {"id": 1, "provider": "stripe", "amount": 100.0, "currency": "USD", "touchpoint_keys": ["missing-key"]},
         ]
         result = _build_report_response(
             tenant_id="t1",
@@ -82,8 +84,8 @@ class TestBuildReportResponse:
             "tp_2": {"post_id": "post_b", "source": "ig"},
         }
         conversions = [
-            {"id": 1, "provider": "stripe", "amount": 100.0, "touchpoint_keys": ["tp_1"]},
-            {"id": 2, "provider": "stripe", "amount": 300.0, "touchpoint_keys": ["tp_2"]},
+            {"id": 1, "provider": "stripe", "amount": 100.0, "currency": "USD", "touchpoint_keys": ["tp_1"]},
+            {"id": 2, "provider": "stripe", "amount": 300.0, "currency": "USD", "touchpoint_keys": ["tp_2"]},
         ]
         result = _build_report_response(
             tenant_id="t1",
@@ -99,7 +101,7 @@ class TestBuildReportResponse:
             "tp_1": {"post_id": "post_a", "source": "facebook"},
         }
         conversions = [
-            {"id": 1, "provider": "stripe", "amount": 100.0, "touchpoint_keys": ["tp_1"]},
+            {"id": 1, "provider": "stripe", "amount": 100.0, "currency": "USD", "touchpoint_keys": ["tp_1"]},
         ]
         result = _build_report_response(
             tenant_id="t1",
@@ -113,7 +115,7 @@ class TestBuildReportResponse:
 
     def test_conversion_rows_capped_at_100(self) -> None:
         conversions = [
-            {"id": i, "provider": "stripe", "amount": 10.0, "touchpoint_keys": []}
+            {"id": i, "provider": "stripe", "amount": 10.0, "currency": "USD", "touchpoint_keys": []}
             for i in range(150)
         ]
         result = _build_report_response(
@@ -123,3 +125,37 @@ class TestBuildReportResponse:
             conversions=conversions,
         )
         assert len(result["conversions"]) <= 100
+
+    def test_mixed_currencies_are_kept_separate(self) -> None:
+        touchpoints = {
+            "tp_usd": {"post_id": "post_usd", "source": "search"},
+            "tp_eur": {"post_id": "post_eur", "source": "social"},
+        }
+        conversions = [
+            {"id": 1, "amount": 100.0, "currency": "USD", "touchpoint_keys": ["tp_usd"]},
+            {"id": 2, "amount": 200.0, "currency": "EUR", "touchpoint_keys": ["tp_eur"]},
+        ]
+        result = _build_report_response(
+            tenant_id="t1", window_days=30, touchpoints=touchpoints, conversions=conversions
+        )
+        assert result["currency_status"] == "mixed"
+        assert result["currency_codes"] == ["EUR", "USD"]
+        assert result["totals"]["revenue"] is None
+        assert result["totals"]["attributed_revenue"] is None
+        assert {
+            row["currency"]: row["revenue"] for row in result["currency_totals"]
+        } == {"EUR": 200.0, "USD": 100.0}
+        assert {(row["currency"], row["channel"]) for row in result["channels"]} == {
+            ("USD", "search"), ("EUR", "social")
+        }
+
+    def test_malformed_currency_withholds_amounts(self) -> None:
+        result = _build_report_response(
+            tenant_id="t1",
+            window_days=30,
+            touchpoints={},
+            conversions=[{"id": 1, "amount": 25.0, "currency": "US$", "touchpoint_keys": []}],
+        )
+        assert result["currency_status"] == "unsupported"
+        assert result["totals"]["revenue"] is None
+        assert result["currency_totals"][0]["revenue"] is None

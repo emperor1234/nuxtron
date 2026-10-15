@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from ..constants import AuthDep
+from ..capabilities import require_workforce_execution_available
 from ..constants import MissionStatus
 from ..constants import PROVIDER_CATALOG
 from ..runtime import ContextRuntime
@@ -369,6 +370,7 @@ def execute_list_missions(
 async def execute_approve_mission(
     runtime: ContextRuntime, mission_id: str, payload: MissionDecisionRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    require_workforce_execution_available()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:workforce:missions:approve", 60, 60)
     mission = helper_get_mission_memory(runtime, auth.tenant_id, mission_id)
     if mission is None and helper_db_enabled(runtime):

@@ -36,8 +36,6 @@ def _stub_ollama_calls(monkeypatch: pytest.MonkeyPatch) -> None:
         await asyncio.sleep(0)
         return {}
 
-    from backend.fastapi.app.routers import seo_platform
-
     monkeypatch.setattr('backend.fastapi.app.domains.seo.platform.services.extract_waterfall._ollama_json', _fake_ollama_json)
 
 
@@ -95,11 +93,16 @@ class TestSeoPlatformSmokeCoverage:
             ("/seo-platform/analytics/report", {"goal": "Increase organic traffic", "domain": "example.com", "primary_keyword": "crm", "market": "us"}),
             ("/seo-platform/agency-platform/analyze", {"agency_name": "Acme Agency", "workspaces": ["client-a"], "governance_focus": "standard"}),
             ("/seo-platform/integrations-automation/analyze", {"domain": "example.com", "integrations": ["ga4"], "automation_goals": ["reporting"]}),
+            ("/seo-platform/revenue-attribution/analyze", {"domain": "example.com", "channels": ["organic_search"], "conversion_events": ["order.paid"], "revenue_window_days": 30}),
+            ("/seo-platform/trust-risk-governance/analyze", {"domain": "example.com", "controls": ["rbac"], "incidents_last_90d": 0}),
+            ("/seo-platform/international-multilingual/analyze", {"domain": "example.com", "locales": ["en-US", "fr-FR"], "current_hreflang_map": '<link rel="alternate" hreflang="en-US" href="https://example.com/en/">', "notes": ""}),
             ("/seo-platform/topical-map/build", {"seed_topic": "crm", "domain": "example.com", "depth": 2}),
             ("/seo-platform/log-file/analyze", {"log_snippet": "GET /home 200", "domain": "example.com"}),
             ("/seo-platform/reviews/analyze", {"brand": "Acme", "reviews_text": "Great support", "platforms": ["google"]}),
             ("/seo-platform/brand-voice/rewrite", {"content": "Hello there", "brand_name": "Acme", "tone": "professional"}),
+            ("/seo-platform/planner/draft", {"goal": "Increase organic traffic", "domain": "example.com", "primary_keyword": "crm", "market": "us"}),
             ("/seo-platform/planner/execute", {"goal": "Increase organic traffic", "domain": "example.com", "primary_keyword": "crm"}),
+            ("/seo-platform/planner/execute-all-modules", {"goal": "Plan SEO work for this workspace", "domain": "example.com", "primary_keyword": "crm", "market": "us"}),
             ("/seo-platform/backlink-intelligence/analyze", {"domain": "example.com", "competitors": ["other.com"], "target_keywords": ["crm"]}),
             ("/seo-platform/rank-tracking/analyze", {"domain": "example.com", "keywords": ["crm software"], "location": "US"}),
             ("/seo-platform/content-creation-blogging/plan", {"topic": "crm software", "content_pillars": ["guides"], "target_keywords": ["crm"], "publication_frequency": "weekly"}),
@@ -107,6 +110,41 @@ class TestSeoPlatformSmokeCoverage:
     )
     def test_sync_endpoints_smoke(self, client: TestClient, path: str, payload: dict[str, object]) -> None:
         r = client.post(path, headers=H, json=payload)
+        if path == "/seo-platform/technical/audit":
+            assert r.status_code == 501
+            assert r.json()['detail']['code'] == 'NOT_IMPLEMENTED'
+            return
+        if path == "/seo-platform/accessibility/audit":
+            assert r.status_code == 501
+            assert r.json()['detail']['code'] == 'NOT_IMPLEMENTED'
+            return
+        if path in {
+            "/seo-platform/local/optimize",
+            "/seo-platform/performance/audit",
+            "/seo-platform/reviews/analyze",
+            "/seo-platform/keywords/research",
+            "/seo-platform/media/audit",
+            "/seo-platform/realtime/monitor",
+            "/seo-platform/social/audit",
+            "/seo-platform/security/audit",
+            "/seo-platform/content-auditor/analyze",
+            "/seo-platform/programmatic/generate",
+            "/seo-platform/knowledge-graph/analyze",
+            "/seo-platform/crawl-budget/analyze",
+            "/seo-platform/analytics/report",
+            "/seo-platform/rag-search/query",
+            "/seo-platform/agency-platform/analyze",
+            "/seo-platform/competitor/analyze",
+            "/seo-platform/integrations-automation/analyze",
+            "/seo-platform/revenue-attribution/analyze",
+            "/seo-platform/trust-risk-governance/analyze",
+            "/seo-platform/international-multilingual/analyze",
+            "/seo-platform/planner/execute-all-modules",
+            "/seo-platform/rank-tracking/analyze",
+        }:
+            assert r.status_code == 501
+            assert r.json()['detail']['code'] == 'NOT_IMPLEMENTED'
+            return
         assert r.status_code in OK
 
     def test_async_job_endpoints(self, client: TestClient) -> None:
@@ -119,6 +157,14 @@ class TestSeoPlatformSmokeCoverage:
 
         for path, payload in async_calls:
             r = client.post(path, headers=H, json=payload)
+            if path == "/seo-platform/keywords/research/async":
+                assert r.status_code == 501
+                assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+                continue
+            if path == "/seo-platform/technical/audit/async":
+                assert r.status_code == 501
+                assert r.json()['detail']['code'] == 'NOT_IMPLEMENTED'
+                continue
             assert r.status_code in OK
             data = r.json()
             job_id = data.get("job_id")
@@ -141,7 +187,8 @@ class TestSeoPlatformSmokeCoverage:
                 "include_groups": ["core", "ai"],
             },
         )
-        assert r.status_code in OK
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
         list_r = client.get("/seo-platform/analyses", headers=H)
         assert list_r.status_code == 200

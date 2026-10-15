@@ -137,10 +137,46 @@ class TestStructuredLogger:
 # --------------------------------------------------------------------------- #
 
 class TestValidateEnvironment:
+    @staticmethod
+    def _configure_production_runtime(monkeypatch):
+        values = {
+            "ENVIRONMENT": "production",
+            "JWT_SIGNING_KEY": "test-jwt-signing-key",
+            "APP_ENC_KEY": "test-app-encryption-key",
+            "PASSWORD_PEPPER": "test-password-pepper",
+            "AUTH0_ISSUER": "https://identity.example.test/",
+            "AUTH0_AUDIENCE": "https://api.example.test",
+            "FASTAPI_SECRET": "test-media-validation-signing-secret-000000",
+            "CREDENTIAL_ENCRYPTION_KEY": "test-credential-encryption-key",
+            "REDIS_URL": "rediss://redis.example.test:6379/0",
+            "CELERY_BROKER_URL": "rediss://redis.example.test:6379/1",
+            "CELERY_RESULT_BACKEND": "rediss://redis.example.test:6379/2",
+            "ORG_IDENTITY_MAPPING_REQUIRED": "true",
+            "SECURITY_AUDIT_DURABLE": "true",
+            "POSTGRES_HOST": "postgres.example.test",
+            "POSTGRES_DB": "nuxtron",
+            "POSTGRES_USER": "nuxtron",
+            "POSTGRES_PASSWORD": "test-password",
+        }
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        for key, value in values.items():
+            monkeypatch.setenv(key, value)
+
     def test_returns_dict_in_development(self):
         with patch.dict(os.environ, {"ENVIRONMENT": "development"}):
             result = validate_environment()
         assert isinstance(result, dict)
+
+    def test_requires_explicit_environment(self, monkeypatch):
+        monkeypatch.delenv("ENVIRONMENT", raising=False)
+        with pytest.raises(RuntimeError, match="ENVIRONMENT must be explicitly set"):
+            validate_environment()
+
+    def test_rejects_unknown_environment(self, monkeypatch):
+        monkeypatch.setenv("ENVIRONMENT", "prod")
+        with pytest.raises(RuntimeError, match="ENVIRONMENT must be explicitly set"):
+            validate_environment()
 
     def test_includes_set_optional_vars(self):
         env = {"ENVIRONMENT": "development", "LOG_LEVEL": "INFO"}
@@ -172,6 +208,31 @@ class TestValidateEnvironment:
         with patch.dict(os.environ, env):
             result = validate_environment()
         assert "JWT_SIGNING_KEY" in result
+
+    def test_production_accepts_postgres_component_configuration(self, monkeypatch):
+        self._configure_production_runtime(monkeypatch)
+        result = validate_environment()
+        assert result["POSTGRES_HOST"] == "postgres.example.test"
+
+    def test_production_rejects_missing_media_validation_secret(self, monkeypatch):
+        self._configure_production_runtime(monkeypatch)
+        monkeypatch.delenv("FASTAPI_SECRET", raising=False)
+        with pytest.raises(RuntimeError, match="FASTAPI_SECRET"):
+            validate_environment()
+
+    @pytest.mark.parametrize("secret", ["short", "replace-with-at-least-32-random-characters"])
+    def test_production_rejects_weak_media_validation_secret(self, monkeypatch, secret):
+        self._configure_production_runtime(monkeypatch)
+        monkeypatch.setenv("FASTAPI_SECRET", secret)
+        with pytest.raises(RuntimeError, match="FASTAPI_SECRET"):
+            validate_environment()
+
+    def test_production_rejects_missing_database_configuration(self, monkeypatch):
+        self._configure_production_runtime(monkeypatch)
+        for name in ("POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER"):
+            monkeypatch.delenv(name, raising=False)
+        with pytest.raises(RuntimeError, match="DATABASE_URL or POSTGRES_HOST/POSTGRES_DB/POSTGRES_USER"):
+            validate_environment()
 
 
 # --------------------------------------------------------------------------- #
@@ -293,3 +354,12 @@ class TestGlobalExceptionHandler:
         body = json.loads(response.body)
         assert "error_id" in body
         assert body["status"] == "error"
+
+
+
+def test_production_requires_non_empty_auth0_mfa_assertion_name(monkeypatch):
+    TestValidateEnvironment._configure_production_runtime(monkeypatch)
+    monkeypatch.setenv("AUTH0_MFA_VERIFIED_CLAIM", " ")
+
+    with pytest.raises(RuntimeError, match="AUTH0_MFA_VERIFIED_CLAIM"):
+        validate_environment()

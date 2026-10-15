@@ -1,12 +1,20 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { MENUS, RAIL_ITEMS, SETTINGS_ITEM } from "./nav";
+import { productForPath } from "@/app/lib/product-line";
 import { ROUTE_ALIASES, ROUTE_INDEX } from "./route-index.generated";
 
 const REAL_ROUTES = new Set(ROUTE_INDEX.map((entry) => entry.route));
-const THIRD_PARTY_PRODUCT_PATTERN = /\b(?:semrush|hubspot|profound|ahrefs|hootsuite|sprout\s?social|writesonic|yext|surfer(?:seo)?|jasper|botify|brightedge|neo4j|promptwatch|geoptie)\b/i;
+const APP_ROOT = join(__dirname, "..", "..");
+const THIRD_PARTY_PRODUCT_PATTERN = /\b(?:semrush|hubspot|profound|ahrefs|hootsuite|sprout\s?social|writesonic|yext|surfer(?:seo)?|jasper|botify|brightedge|neo4j|promptwatch|geoptie|contentshake|content\s?shake)\b/i;
+
+function isRealRoute(route: string): boolean {
+  if (REAL_ROUTES.has(route)) return true;
+  const segments = route.split("/").filter(Boolean);
+  return existsSync(join(APP_ROOT, "(public)", ...segments, "page.tsx"));
+}
 
 function navHrefs(): string[] {
   const hrefs = [...RAIL_ITEMS, SETTINGS_ITEM].map((item) => item.href);
@@ -41,6 +49,23 @@ describe("navigation model", () => {
         `rail "${item.label}" -> ${item.href}`,
       ).toBe(true);
     }
+  });
+
+  it("keeps product-owned menu links inside their signed-in product", () => {
+    const owners = new Map(
+      [...RAIL_ITEMS, SETTINGS_ITEM].map((item) => [item.key, item.product]),
+    );
+    const mismatches = Object.entries(MENUS).flatMap(([key, menu]) => {
+      const owner = owners.get(key as keyof typeof MENUS);
+      if (!menu || !owner || owner === "shared") return [];
+      return menu.groups.flatMap((group) =>
+        group.items
+          .filter((item) => productForPath(item.href) !== owner)
+          .map((item) => `${key}: ${item.label} -> ${item.href} (${productForPath(item.href)})`),
+      );
+    });
+
+    expect(mismatches).toEqual([]);
   });
 
   it("never advertises an internal build-status console", () => {
@@ -79,27 +104,104 @@ describe("navigation model", () => {
     }
   });
 
+  it("groups manually supplied analytics separately from saved SEO analysis history", () => {
+    const group = MENUS.seo?.groups.find((item) => item.label === "Analytics & history");
+    expect(group?.items.map((item) => [item.label, item.href])).toEqual([
+      ["Traffic Analytics", "/seo/analytics"],
+      ["Analysis History", "/seo/history"],
+    ]);
+    expect(ROUTE_INDEX.find((item) => item.route === "/seo/history")?.title).toBe("SEO Analysis History");
+  });
+
+  it("labels keyword CSV review without promising provider discovery", () => {
+    const research = MENUS.seo?.groups.find((item) => item.label === "Research & visibility");
+    expect(research?.items).toContainEqual({
+      label: "Keyword Data Review",
+      href: "/seo/keywords",
+    });
+    expect(ROUTE_INDEX.find((item) => item.route === "/seo/keywords")?.title).toBe("Keyword Data Review");
+  });
+
+  it("labels the SEO Planner as a review-only workflow draft tool", () => {
+    const optimize = MENUS.seo?.groups.find((item) => item.label === "Optimize & automate");
+    expect(optimize?.items).toContainEqual({
+      label: "SEO Workflow Planner",
+      href: "/seo/planner",
+    });
+    expect(ROUTE_INDEX.find((item) => item.route === "/seo/planner")?.title).toBe("SEO Workflow Planner");
+  });
+
+  it("groups browser-local hreflang markup review under International SEO", () => {
+    const international = MENUS.seo?.groups.find((item) => item.label === "International SEO");
+    expect(international?.items).toEqual([
+      { label: "Hreflang & Locale Review", href: "/seo/international-multilingual" },
+    ]);
+    expect(ROUTE_INDEX.find((item) => item.route === "/seo/international-multilingual")).toMatchObject({
+      title: "Hreflang & Locale Review",
+      group: "International SEO",
+    });
+  });
+
+  it("labels Programmatic SEO as a local draft preview rather than server generation", () => {
+    const optimize = MENUS.seo?.groups.find((item) => item.label === "Optimize & automate");
+    expect(optimize?.items).toContainEqual({
+      label: "Programmatic SEO Draft Preview",
+      href: "/seo/programmatic",
+    });
+    expect(ROUTE_INDEX.find((item) => item.route === "/seo/programmatic")?.title).toBe("Programmatic SEO Draft Preview");
+  });
+
+  it("discloses Corpus Search Preview as the user-supplied local search tool", () => {
+    const research = MENUS.seo?.groups.find((item) => item.label === "Research & visibility");
+    expect(research?.items).toContainEqual({
+      label: "Corpus Search Preview",
+      href: "/seo/rag-search",
+    });
+    expect(ROUTE_INDEX.find((item) => item.route === "/seo/rag-search")).toMatchObject({
+      title: "Corpus Search Preview",
+      group: "Search Intelligence",
+    });
+  });
+
+  it("labels the manual competitor-observation route explicitly", () => {
+    const market = MENUS.seo?.groups.find((item) => item.label === "Market & research");
+    expect(market?.items).toContainEqual({
+      label: "Competitive Benchmarking",
+      href: "/competitive-benchmarking",
+    });
+    expect(ROUTE_INDEX.find((item) => item.route === "/seo/competitor")?.title).toBe("SEO Competitor Research");
+  });
+
   it("promotes real differentiated product surfaces", () => {
     const promoted = new Set(navHrefs());
     for (const route of [
       "/crm",
       "/workflows",
       "/smart-inbox",
-      "/seo-aeo-geo-audit-tool",
+      "/affiliate",
+      "/affiliate/dashboard",
       "/ai-visibility-dashboard",
       "/studio/social-studio/queue",
       "/trust-center",
-      "/siem",
-      "/white-label",
+      "/account",
+      "/billing",
     ]) {
       expect(promoted.has(route), `${route} should be discoverable`).toBe(true);
     }
   });
 
+  it("keeps the admin microfrontend's internal routes out of this customer app", () => {
+    expect(ROUTE_INDEX.filter((entry) => entry.internal).map((entry) => entry.route)).toEqual([]);
+    expect(REAL_ROUTES.has("/platform/backend")).toBe(false);
+    expect(REAL_ROUTES.has("/platform/ai-agent")).toBe(false);
+    expect(REAL_ROUTES.has("/vendor-inventory-report")).toBe(false);
+    expect(REAL_ROUTES.has("/seo/contentshake")).toBe(false);
+  });
+
   it("resolves every alias to a real page", () => {
     for (const [from, to] of Object.entries(ROUTE_ALIASES)) {
       if (!to.startsWith("/")) continue; // relative re-export, resolved by the bundler
-      expect(REAL_ROUTES.has(to), `${from} -> ${to}`).toBe(true);
+      expect(isRealRoute(to), `${from} -> ${to}`).toBe(true);
     }
   });
 });
@@ -113,7 +215,7 @@ describe("route index", () => {
       "utf8",
     );
     expect(generated).toContain("AUTO-GENERATED");
-    expect(ROUTE_INDEX.length).toBeGreaterThan(200);
+    expect(ROUTE_INDEX.length).toBeGreaterThan(100);
   });
 
   it("has a usable title for every entry", () => {

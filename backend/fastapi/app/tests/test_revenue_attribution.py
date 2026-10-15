@@ -99,7 +99,8 @@ class TestWebhooks:
             headers={**HEADERS, "stripe-signature": ""},
             content=b'{"type":"charge.succeeded"}',
         )
-        assert r.status_code in VALID
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_stripe_webhook_invalid_sig(self, client: TestClient) -> None:
         r = client.post(
@@ -107,7 +108,8 @@ class TestWebhooks:
             headers={**HEADERS, "stripe-signature": "t=123,v1=invalid"},
             content=b'{"type":"charge.succeeded"}',
         )
-        assert r.status_code in VALID
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
 
 class TestAttributionReport:

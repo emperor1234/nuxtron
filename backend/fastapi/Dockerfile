@@ -36,6 +36,7 @@ FROM python:${PYTHON_VERSION}-slim AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    ENVIRONMENT=production \
     PATH="/opt/venv/bin:${PATH}" \
     PYTHONPATH=/monorepo
 

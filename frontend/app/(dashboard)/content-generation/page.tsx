@@ -1,7 +1,18 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { apiGet, apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { resolveSessionTenant } from '@/app/lib/api-client';
+import { apiGet, apiSend } from '@/app/lib/platform-api';
+import {
+  contentProvenance,
+  parseContentLibrary,
+  parseContentResult,
+  parseJobList,
+  type ContentGenerationJob,
+  type ContentLibrarySummary,
+} from './content-generation-model';
+
+export type { ContentGenerationJob } from './content-generation-model';
 
 type GeneratedAsset = {
   id: number;
@@ -14,70 +25,31 @@ type GeneratedAsset = {
   size_bytes: number;
 };
 
-type ContentGenerationItem = {
-  generation_id: string;
-  created_at: string;
-  channel: string;
-  tone: string;
-  topic: string;
-  audience: string;
-  headline: string;
-  body: string;
-  provider_used: string;
-  model_used: string;
-  ai_status: string;
-  asset_urls?: { image?: string; video?: string; voice?: string };
-  generated_assets?: { image?: GeneratedAsset; voice?: GeneratedAsset; video?: GeneratedAsset };
-  seo?: { meta_title: string; meta_description: string; focus_keyword: string } | null;
-};
-
-export type ContentGenerationJob = {
-  job_id: string;
-  status: string;
-  progress_pct: number;
-  stage: string;
-  updated_at?: string | null;
-  started_at?: string | null;
-  completed_at?: string | null;
-  error?: string | null;
-  result?: Record<string, unknown> | null;
-  is_terminal?: boolean;
-  expires_at?: string | null;
-};
-
 type AsyncSubmitResponse = {
   status: string;
   job_id: string;
   poll_url: string;
-  stream_url: string;
-  cancel_url: string;
-  retry_url: string;
 };
 
 type JobEnvelope = {
   status: string;
-  tenant_id: string;
   job: ContentGenerationJob;
-};
-
-type JobListEnvelope = {
-  status: string;
-  tenant_id: string;
-  count: number;
-  items: ContentGenerationJob[];
-  retention?: {
-    terminal_seconds?: number;
-  };
 };
 
 type JobStatusTab = 'all' | 'pending' | 'running' | 'failed' | 'completed' | 'cancelled';
 type JobStatusCounts = Record<JobStatusTab, number>;
 type QueueStageFilter = 'all' | 'timeout' | 'failed';
 
-const QUEUE_AUTO_REFRESH_ENABLED_KEY = 'nuxtron:content-queue:auto-refresh-enabled';
-const QUEUE_AUTO_REFRESH_SECONDS_KEY = 'nuxtron:content-queue:auto-refresh-seconds';
-const DEFAULT_QUEUE_AUTO_REFRESH_ENABLED = true;
-const DEFAULT_QUEUE_AUTO_REFRESH_SECONDS = 8;
+const DEFAULT_QUEUE_AUTO_REFRESH_ENABLED = false;
+const DEFAULT_QUEUE_AUTO_REFRESH_SECONDS = 30;
+
+function sessionWorkspace(): string {
+  try {
+    return resolveSessionTenant();
+  } catch {
+    return '';
+  }
+}
 
 function jobStatusBadgeStyle(status: string): Record<string, string | number> {
   const normalized = status.trim().toLowerCase();
@@ -156,24 +128,29 @@ function relativeTimeLabel(iso: string, nowMs: number): string {
 }
 
 function apiLink(path: string): string {
-  return `/api/fastapi${path}`;
+  const localPath = path.trim();
+  return localPath.startsWith('/') && !localPath.startsWith('//') ? `/api/fastapi${localPath}` : '#';
 }
 
 export default function ContentGenerationPage() {
-  const [tenantId] = useState(DEFAULT_TENANT_ID);
-  const [topic, setTopic] = useState('AI workflow automation');
-  const [audience, setAudience] = useState('Growth teams');
-  const [channel, setChannel] = useState('linkedin');
-  const [tone, setTone] = useState('professional');
+  const [tenantId] = useState(sessionWorkspace);
+  const [topic, setTopic] = useState('');
+  const [audience, setAudience] = useState('');
+  const [channel, setChannel] = useState('');
+  const [tone, setTone] = useState('');
+  const [runInBackground, setRunInBackground] = useState(false);
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [activeJob, setActiveJob] = useState<ContentGenerationJob | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [runningAsync, setRunningAsync] = useState(false);
+  const [runningSync, setRunningSync] = useState(false);
   const [queueStatusTab, setQueueStatusTab] = useState<JobStatusTab>('all');
   const [queueStageFilter, setQueueStageFilter] = useState<QueueStageFilter>('all');
   const [queueItems, setQueueItems] = useState<ContentGenerationJob[]>([]);
   const [queueRetentionSeconds, setQueueRetentionSeconds] = useState(0);
   const [loadingQueue, setLoadingQueue] = useState(false);
+  const [queueLoaded, setQueueLoaded] = useState(false);
+  const [queueError, setQueueError] = useState('');
   const [queueNowTick, setQueueNowTick] = useState(() => Date.now());
   const [queueAutoRefreshEnabled, setQueueAutoRefreshEnabled] = useState(DEFAULT_QUEUE_AUTO_REFRESH_ENABLED);
   const [queueAutoRefreshSeconds, setQueueAutoRefreshSeconds] = useState(DEFAULT_QUEUE_AUTO_REFRESH_SECONDS);
@@ -191,8 +168,12 @@ export default function ContentGenerationPage() {
     timeout: 0,
     failed: 0,
   });
-  const [library, setLibrary] = useState<ContentGenerationItem[]>([]);
+  const [library, setLibrary] = useState<ContentLibrarySummary[]>([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
+  const [libraryError, setLibraryError] = useState('');
+  const [loadingLibraryItemId, setLoadingLibraryItemId] = useState<string | null>(null);
+  const [libraryItemError, setLibraryItemError] = useState('');
   const [jobActionBusy, setJobActionBusy] = useState(false);
   const [usingPollingFallback, setUsingPollingFallback] = useState(false);
   const [error, setError] = useState('');
@@ -211,33 +192,66 @@ export default function ContentGenerationPage() {
     marginBottom: 8,
   };
 
-  async function loadLibrary() {
+  const loadLibrary = useCallback(async () => {
+    if (!tenantId) {
+      setLibraryError('Sign in to a workspace to load saved content.');
+      return;
+    }
     setLoadingLibrary(true);
+    setLibraryError('');
     try {
-      const data = await apiGet<{ items?: ContentGenerationItem[] }>('/content/library', tenantId);
-      setLibrary(data.items ?? []);
+      const data = await apiGet<unknown>('/content/library', tenantId);
+      const items = parseContentLibrary(data);
+      if (!items) throw new Error('The content library returned an invalid response.');
+      setLibrary(items);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load content library');
+      setLibraryError(e instanceof Error ? e.message : 'Failed to load content library');
     } finally {
       setLoadingLibrary(false);
+      setLibraryLoaded(true);
+    }
+  }, [tenantId]);
+
+  async function loadLibraryItem(item: ContentLibrarySummary) {
+    if (!tenantId) return;
+    setLoadingLibraryItemId(item.generationId);
+    setLibraryItemError('');
+    setResult(null);
+    try {
+      const response = await apiGet<unknown>(`/content/library/${encodeURIComponent(item.generationId)}`, tenantId);
+      const savedResult = parseContentResult(response);
+      if (!savedResult) throw new Error('The saved generation did not include readable copy.');
+      setResult(savedResult);
+    } catch (e) {
+      setLibraryItemError(e instanceof Error ? e.message : 'Failed to load the saved generation');
+    } finally {
+      setLoadingLibraryItemId(null);
     }
   }
 
   useEffect(() => {
-    void loadLibrary();
-  }, [tenantId]);
+    const timerId = window.setTimeout(() => void loadLibrary(), 0);
+    return () => window.clearTimeout(timerId);
+  }, [loadLibrary]);
 
-  async function loadJobQueue(tab = queueStatusTab) {
+  const loadJobQueue = useCallback(async (tab = queueStatusTab) => {
+    if (!tenantId) {
+      setQueueError('Sign in to a workspace to load generation jobs.');
+      return;
+    }
     setLoadingQueue(true);
+    setQueueError('');
     try {
       const statusQuery = tab === 'all' ? '' : `&status=${encodeURIComponent(tab)}`;
       const [data, aggregate] = await Promise.all([
-        apiGet<JobListEnvelope>(`/content/generate/jobs?limit=20${statusQuery}`, tenantId),
-        apiGet<JobListEnvelope>('/content/generate/jobs?limit=100', tenantId),
+        apiGet<unknown>(`/content/generate/jobs?limit=20${statusQuery}`, tenantId),
+        apiGet<unknown>('/content/generate/jobs?limit=100', tenantId),
       ]);
-      const rawItems = Array.isArray(data.items) ? data.items : [];
-      setQueueItems(filterQueueItemsByStage(rawItems, queueStageFilter));
-      setQueueRetentionSeconds(Number(data.retention?.terminal_seconds ?? 0));
+      const page = parseJobList(data);
+      const aggregatePage = parseJobList(aggregate);
+      if (!page || !aggregatePage) throw new Error('The generation queue returned an invalid response.');
+      setQueueItems(filterQueueItemsByStage(page.items, queueStageFilter));
+      setQueueRetentionSeconds(page.terminalRetentionSeconds ?? 0);
 
       const counts: JobStatusCounts = {
         all: 0,
@@ -247,7 +261,7 @@ export default function ContentGenerationPage() {
         completed: 0,
         cancelled: 0,
       };
-      for (const item of aggregate.items ?? []) {
+      for (const item of aggregatePage.items) {
         const normalized = String(item.status || '')
           .trim()
           .toLowerCase() as JobStatusTab;
@@ -256,7 +270,7 @@ export default function ContentGenerationPage() {
           counts.all += 1;
         }
       }
-      const aggregateItems = Array.isArray(aggregate.items) ? aggregate.items : [];
+      const aggregateItems = aggregatePage.items;
       const timeoutCount = filterQueueItemsByStage(aggregateItems, 'timeout').length;
       const failedStageCount = filterQueueItemsByStage(aggregateItems, 'failed').length;
       setQueueStatusCounts(counts);
@@ -266,16 +280,18 @@ export default function ContentGenerationPage() {
         failed: failedStageCount,
       });
       setQueueLastRefreshAt(new Date().toISOString());
+      setQueueLoaded(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load content job queue');
+      setQueueError(e instanceof Error ? e.message : 'Failed to load content job queue');
     } finally {
       setLoadingQueue(false);
     }
-  }
+  }, [tenantId, queueStageFilter, queueStatusTab]);
 
   useEffect(() => {
-    void loadJobQueue(queueStatusTab);
-  }, [tenantId, queueStatusTab, queueStageFilter]);
+    const timerId = window.setTimeout(() => void loadJobQueue(queueStatusTab), 0);
+    return () => window.clearTimeout(timerId);
+  }, [loadJobQueue, queueStatusTab]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -284,74 +300,39 @@ export default function ContentGenerationPage() {
     return () => window.clearInterval(intervalId);
   }, []);
 
-  useEffect(() => {
-    try {
-      const rawEnabled = window.localStorage.getItem(QUEUE_AUTO_REFRESH_ENABLED_KEY);
-      if (rawEnabled === 'true' || rawEnabled === 'false') {
-        setQueueAutoRefreshEnabled(rawEnabled === 'true');
-      }
-
-      const rawSeconds = window.localStorage.getItem(QUEUE_AUTO_REFRESH_SECONDS_KEY);
-      const parsedSeconds = Number(rawSeconds || '');
-      if ([5, 8, 10, 15].includes(parsedSeconds)) {
-        setQueueAutoRefreshSeconds(parsedSeconds);
-      }
-    } catch {
-      // Ignore storage access issues (private mode / strict browser policies).
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(QUEUE_AUTO_REFRESH_ENABLED_KEY, String(queueAutoRefreshEnabled));
-    } catch {
-      // Ignore persistence failures; runtime behavior still works.
-    }
-  }, [queueAutoRefreshEnabled]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(QUEUE_AUTO_REFRESH_SECONDS_KEY, String(queueAutoRefreshSeconds));
-    } catch {
-      // Ignore persistence failures; runtime behavior still works.
-    }
-  }, [queueAutoRefreshSeconds]);
-
   function resetQueuePreferences() {
     setQueueAutoRefreshEnabled(DEFAULT_QUEUE_AUTO_REFRESH_ENABLED);
     setQueueAutoRefreshSeconds(DEFAULT_QUEUE_AUTO_REFRESH_SECONDS);
-    try {
-      window.localStorage.removeItem(QUEUE_AUTO_REFRESH_ENABLED_KEY);
-      window.localStorage.removeItem(QUEUE_AUTO_REFRESH_SECONDS_KEY);
-    } catch {
-      // Ignore storage removal failures; in-memory defaults still apply.
-    }
   }
 
   useEffect(() => {
     if (!queueAutoRefreshEnabled) return;
-    const intervalMs = Math.max(3, queueAutoRefreshSeconds) * 1000;
+    const intervalMs = Math.max(30, queueAutoRefreshSeconds) * 1000;
     const intervalId = window.setInterval(() => {
       if (document.visibilityState !== 'visible') return;
       void loadJobQueue(queueStatusTab);
     }, intervalMs);
     return () => window.clearInterval(intervalId);
-  }, [queueAutoRefreshEnabled, queueAutoRefreshSeconds, queueStatusTab, queueStageFilter]);
+  }, [queueAutoRefreshEnabled, queueAutoRefreshSeconds, queueStatusTab, loadJobQueue]);
 
-  function closeStream() {
+  const closeStream = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.close();
       streamRef.current = null;
     }
-  }
+  }, []);
 
-  function stopPollingFallback() {
+  const clearPollingTimer = useCallback(() => {
     if (pollTimerRef.current !== null) {
       window.clearInterval(pollTimerRef.current);
       pollTimerRef.current = null;
     }
+  }, []);
+
+  const stopPollingFallback = useCallback(() => {
+    clearPollingTimer();
     setUsingPollingFallback(false);
-  }
+  }, [clearPollingTimer]);
 
   function startPollingFallback(jobId: string) {
     if (pollTimerRef.current !== null) return;
@@ -372,10 +353,13 @@ export default function ContentGenerationPage() {
   function updateJobAndResult(job: ContentGenerationJob) {
     setActiveJob(job);
     if (job.result && typeof job.result === 'object') {
-      setResult(job.result);
+      const generatedResult = parseContentResult(job.result);
+      if (generatedResult) setResult(generatedResult);
+      else if (job.status === 'completed') setError('The completed job did not return a readable content result.');
     }
     if (['completed', 'failed', 'cancelled'].includes(job.status)) {
       setRunningAsync(false);
+      setUsingPollingFallback(false);
     }
   }
 
@@ -426,16 +410,21 @@ export default function ContentGenerationPage() {
   }
 
   async function startAsyncGeneration() {
+    if (!tenantId) {
+      setError('Sign in to a workspace before generating content.');
+      return;
+    }
     try {
       setError('');
+      setResult(null);
       setRunningAsync(true);
       setUsingPollingFallback(false);
       const accepted = await apiSend<AsyncSubmitResponse>(
         '/content/generate/async',
         'POST',
         {
-          topic,
-          audience,
+          topic: topic.trim(),
+          audience: audience.trim(),
           channel,
           tone,
           include_seo: true,
@@ -496,114 +485,151 @@ export default function ContentGenerationPage() {
   }
 
   useEffect(() => {
-    if (!activeJob) return;
-    if (['completed', 'failed', 'cancelled'].includes(activeJob.status)) {
-      closeStream();
-      stopPollingFallback();
+    if (!activeJob || !['completed', 'failed', 'cancelled'].includes(activeJob.status)) return;
+    closeStream();
+    clearPollingTimer();
+    const refreshId = window.setTimeout(() => {
       void loadLibrary();
       void loadJobQueue();
-    }
-  }, [activeJob]);
+    }, 0);
+    return () => window.clearTimeout(refreshId);
+  }, [activeJob, clearPollingTimer, closeStream, loadJobQueue, loadLibrary]);
 
   useEffect(() => {
     return () => {
       closeStream();
-      stopPollingFallback();
+      clearPollingTimer();
     };
-  }, []);
+  }, [clearPollingTimer, closeStream]);
 
   async function run() {
+    if (!tenantId) {
+      setError('Sign in to a workspace before generating content.');
+      return;
+    }
     try {
       setError('');
-      const data = await apiSend<Record<string, unknown>>(
+      setResult(null);
+      setRunningSync(true);
+      const data = await apiSend<unknown>(
         '/content/generate',
         'POST',
         {
-          topic,
-          audience,
+          topic: topic.trim(),
+          audience: audience.trim(),
           channel,
           tone,
           include_seo: true,
         },
         tenantId
       );
-      setResult(data);
+      const generatedResult = parseContentResult(data);
+      if (!generatedResult) throw new Error('The generation service returned an invalid content response.');
+      setResult(generatedResult);
       await loadLibrary();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Content generation failed');
+    } finally {
+      setRunningSync(false);
     }
   }
 
+  function submitGeneration(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    if (!tenantId) {
+      setError('Sign in to a workspace before generating content.');
+      return;
+    }
+    if (topic.trim().length < 3 || audience.trim().length < 3 || !channel || !tone) {
+      setError('Complete the topic, audience, channel, and tone before generating.');
+      return;
+    }
+    if (runInBackground) void startAsyncGeneration();
+    else void run();
+  }
+
   const latest = library[0];
-  const outputs = result && typeof result.outputs === 'object' ? (result.outputs as Record<string, unknown>) : null;
   const generatedAssets =
     result && typeof result.generated_assets === 'object'
       ? (result.generated_assets as Record<string, GeneratedAsset>)
       : null;
   const seo = result && typeof result.seo === 'object' ? (result.seo as Record<string, unknown>) : null;
+  const provenance = result ? contentProvenance(result) : 'unknown';
+  const hasWorkspace = Boolean(tenantId);
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
       <div style={{ maxWidth: 1180, margin: '0 auto', display: 'grid', gap: 20 }}>
         <section
           style={{ ...card, background: 'linear-gradient(135deg, rgba(6,182,212,0.12), rgba(16,185,129,0.08))' }}
         >
           <h1 style={{ marginTop: 0, marginBottom: 8 }}>AI Content Generation</h1>
           <p style={{ color: 'var(--muted)', marginTop: 0, maxWidth: 760 }}>
-            Generate channel-ready marketing content, persist the output history, and jump directly to downloadable
-            assets from the same workflow.
+            Create a brief first. Provider output and template fallbacks are identified separately so you can review the source before using the copy.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 16 }}>
-            <button
-              onClick={() => void startAsyncGeneration()}
-              disabled={runningAsync}
-              style={{
-                padding: '10px 14px',
-                border: 'none',
-                borderRadius: 10,
-                background: 'var(--brand)',
-                color: 'var(--on-brand)',
-                fontWeight: 700,
-                opacity: runningAsync ? 0.7 : 1,
-              }}
-            >
-              {runningAsync ? 'Generating...' : 'Generate Async'}
-            </button>
-            <button
-              onClick={() => void run()}
-              style={{
-                padding: '10px 14px',
-                border: '1px solid var(--line)',
-                borderRadius: 10,
-                background: 'transparent',
-                color: 'var(--text)',
-                fontWeight: 600,
-              }}
-            >
-              Generate Sync
-            </button>
-            <button
-              onClick={() => void loadLibrary()}
-              style={{
-                padding: '10px 14px',
-                border: '1px solid var(--line)',
-                borderRadius: 10,
-                background: 'transparent',
-                color: 'var(--text)',
-                fontWeight: 600,
-              }}
-            >
-              {loadingLibrary ? 'Refreshing...' : 'Refresh Library'}
+        </section>
+
+        <form onSubmit={submitGeneration} style={{ ...card, display: 'grid', gap: 12 }}>
+          <div>
+            <h2 style={{ marginTop: 0, marginBottom: 6 }}>Content brief</h2>
+            <p style={{ color: 'var(--muted)', margin: 0 }}>Provide the topic and audience; select a channel and tone to shape the result.</p>
+          </div>
+          <label htmlFor="content-topic" style={{ display: 'grid', gap: 6 }}>
+            Topic
+            <input id="content-topic" style={input} value={topic} onChange={(event) => { setTopic(event.target.value); setResult(null); }} placeholder="Describe the topic or campaign focus" maxLength={180} minLength={3} required disabled={runningAsync || runningSync} />
+          </label>
+          <label htmlFor="content-audience" style={{ display: 'grid', gap: 6 }}>
+            Audience
+            <input id="content-audience" style={input} value={audience} onChange={(event) => { setAudience(event.target.value); setResult(null); }} placeholder="Who should this content reach?" maxLength={120} minLength={3} required disabled={runningAsync || runningSync} />
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 12 }}>
+            <label htmlFor="content-channel" style={{ display: 'grid', gap: 6 }}>
+              Channel
+              <select id="content-channel" style={input} value={channel} onChange={(event) => { setChannel(event.target.value); setResult(null); }} required disabled={runningAsync || runningSync}>
+                <option value="" disabled>Choose a channel</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="x">X</option>
+                <option value="instagram">Instagram</option>
+                <option value="facebook">Facebook</option>
+                <option value="blog">Blog</option>
+                <option value="youtube">YouTube</option>
+                <option value="tiktok">TikTok</option>
+                <option value="threads">Threads</option>
+                <option value="snapchat">Snapchat</option>
+                <option value="pinterest">Pinterest</option>
+                <option value="reddit">Reddit</option>
+              </select>
+            </label>
+            <label htmlFor="content-tone" style={{ display: 'grid', gap: 6 }}>
+              Tone
+              <select id="content-tone" style={input} value={tone} onChange={(event) => { setTone(event.target.value); setResult(null); }} required disabled={runningAsync || runningSync}>
+                <option value="" disabled>Choose a tone</option>
+                <option value="professional">Professional</option>
+                <option value="casual">Casual</option>
+                <option value="bold">Bold</option>
+                <option value="friendly">Friendly</option>
+              </select>
+            </label>
+          </div>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <input type="checkbox" checked={runInBackground} onChange={(event) => setRunInBackground(event.target.checked)} disabled={runningAsync || runningSync} />
+            <span>Run as a background job and follow progress. This option may be unavailable when durable workers are not configured.</span>
+          </label>
+          {!hasWorkspace ? <p role="alert" style={{ color: 'var(--danger)', margin: 0 }}>Sign in to a workspace to generate content.</p> : null}
+          <div>
+            <button type="submit" disabled={!hasWorkspace || runningAsync || runningSync} style={{ padding: '10px 14px', border: 'none', borderRadius: 10, background: 'var(--brand)', color: 'var(--on-brand)', fontWeight: 700, opacity: !hasWorkspace || runningAsync || runningSync ? 0.7 : 1 }}>
+              {runningAsync || runningSync ? 'Generating…' : 'Generate content'}
             </button>
           </div>
-        </section>
+        </form>
 
         {activeJob && (
           <section style={card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
               <div>
                 <h2 style={{ marginTop: 0, marginBottom: 6 }}>Active Async Job</h2>
-                <div style={{ color: 'var(--muted)' }}>
+                <div aria-live="polite" style={{ color: 'var(--muted)' }}>
                   Job {activeJob.job_id} • Status {activeJob.status} • Stage {activeJob.stage}
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
@@ -686,6 +712,12 @@ export default function ContentGenerationPage() {
             </div>
             <div style={{ marginTop: 12 }}>
               <div
+                role="progressbar"
+                aria-label={`Generation progress for job ${activeJob.job_id}`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.max(0, Math.min(100, Number(activeJob.progress_pct) || 0))}
+                aria-valuetext={`${Math.max(0, Math.min(100, Number(activeJob.progress_pct) || 0))}% complete`}
                 style={{
                   width: '100%',
                   height: 10,
@@ -712,49 +744,32 @@ export default function ContentGenerationPage() {
           </section>
         )}
 
-        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
+        {error && <div role="alert" style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
 
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 20 }}>
           <div style={card}>
-            <h2 style={{ marginTop: 0 }}>Prompt Inputs</h2>
-            <input style={input} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="topic" />
-            <input
-              style={input}
-              value={audience}
-              onChange={(e) => setAudience(e.target.value)}
-              placeholder="audience"
-            />
-            <select style={input} value={channel} onChange={(e) => setChannel(e.target.value)}>
-              <option value="linkedin">linkedin</option>
-              <option value="x">x</option>
-              <option value="instagram">instagram</option>
-              <option value="facebook">facebook</option>
-              <option value="blog">blog</option>
-              <option value="youtube">youtube</option>
-              <option value="tiktok">tiktok</option>
-              <option value="threads">threads</option>
-            </select>
-            <select style={input} value={tone} onChange={(e) => setTone(e.target.value)}>
-              <option value="professional">professional</option>
-              <option value="casual">casual</option>
-              <option value="bold">bold</option>
-              <option value="friendly">friendly</option>
-            </select>
-          </div>
-
-          <div style={card}>
-            <h2 style={{ marginTop: 0 }}>Latest Result</h2>
+            <h2 style={{ marginTop: 0 }}>Generation result</h2>
             {result ? (
               <div style={{ display: 'grid', gap: 12 }}>
+                {provenance === 'template-fallback' ? (
+                  <div role="alert" style={{ border: '1px solid var(--warning-line)', borderRadius: 8, padding: 12, color: 'var(--warning-ink)' }}>
+                    Template fallback — this copy was not generated by an AI provider. Review provider availability before treating it as generated content.
+                  </div>
+                ) : provenance === 'unknown' ? (
+                  <div role="status" style={{ border: '1px solid var(--line)', borderRadius: 8, padding: 12, color: 'var(--muted)' }}>
+                    The service did not report content provenance. Verify the source before using this copy.
+                  </div>
+                ) : (
+                  <div role="status" style={{ color: 'var(--success)' }}>Provider-generated content</div>
+                )}
                 <div>
                   <strong>{String(result.headline ?? 'Untitled')}</strong>
                   <div style={{ color: 'var(--muted)', marginTop: 4 }}>{String(result.body ?? '')}</div>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, color: 'var(--muted)' }}>
                   <span>Generation: {String(result.generation_id ?? 'n/a')}</span>
-                  <span>Provider: {String(result.provider_used ?? 'n/a')}</span>
-                  <span>Model: {String(result.model_used ?? 'n/a')}</span>
-                  <span>Status: {String(result.ai_status ?? 'unknown')}</span>
+                  {provenance === 'ai-generated' ? <span>Provider: {String(result.provider_used ?? 'not reported')}</span> : null}
+                  {provenance === 'ai-generated' ? <span>Model: {String(result.model_used ?? 'not reported')}</span> : null}
                 </div>
                 {seo && (
                   <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
@@ -763,40 +778,21 @@ export default function ContentGenerationPage() {
                     <div style={{ color: 'var(--muted)' }}>{String(seo.meta_description ?? '')}</div>
                   </div>
                 )}
-                {outputs && (
-                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12, display: 'grid', gap: 8 }}>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>Asset Links</div>
-                    {['image_url', 'video_url', 'voice_url'].map((key) => {
-                      const raw = String(outputs[key] ?? '');
-                      if (!raw) return null;
-                      return (
-                        <a
-                          key={key}
-                          href={apiLink(raw)}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ color: 'var(--brand)' }}
-                        >
-                          Open {key.replace('_url', '')}
-                        </a>
-                      );
-                    })}
-                  </div>
-                )}
                 {generatedAssets && (
                   <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12, display: 'grid', gap: 8 }}>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>Generated Assets</div>
-                    {Object.entries(generatedAssets).map(([kind, asset]) => (
-                      <a
-                        key={kind}
-                        href={apiLink(asset.download_url)}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: 'var(--brand)' }}
-                      >
-                        {kind}: {asset.file_name}
-                      </a>
-                    ))}
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>Media asset status</div>
+                    {Object.entries(generatedAssets).map(([kind, asset]) => {
+                      const assetStatus = typeof asset?.generation_status === 'string' ? asset.generation_status : 'status unavailable';
+                      const downloadUrl = typeof asset?.download_url === 'string' ? asset.download_url : '';
+                      const isRealAsset = assetStatus === 'generated' && downloadUrl.startsWith('/') && !downloadUrl.startsWith('//');
+                      return isRealAsset ? (
+                        <a key={kind} href={apiLink(downloadUrl)} target="_blank" rel="noreferrer" style={{ color: 'var(--brand)' }}>
+                          {kind}: {String(asset.file_name || 'Open asset')}
+                        </a>
+                      ) : (
+                        <span key={kind} style={{ color: 'var(--muted)' }}>{kind}: {assetStatus}</span>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -811,43 +807,13 @@ export default function ContentGenerationPage() {
             <div>
               <h2 style={{ marginTop: 0, marginBottom: 6 }}>Job Queue</h2>
               <p style={{ color: 'var(--muted)', margin: 0 }}>
-                Recent tenant jobs with status filters and retention-aware visibility.
+                Recent workspace jobs. Background refresh is off until you enable it.
               </p>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button
-                onClick={() => setQueueAutoRefreshEnabled((current) => !current)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid var(--line)',
-                  borderRadius: 8,
-                  background: queueAutoRefreshEnabled ? 'rgba(34,197,94,0.16)' : 'transparent',
-                  color: 'var(--text)',
-                  fontWeight: 600,
-                }}
-              >
-                Auto Refresh: {queueAutoRefreshEnabled ? 'On' : 'Off'}
-              </button>
-              <select
-                value={String(queueAutoRefreshSeconds)}
-                onChange={(event) => setQueueAutoRefreshSeconds(Number(event.target.value) || 8)}
-                disabled={!queueAutoRefreshEnabled}
-                style={{
-                  padding: '8px 10px',
-                  border: '1px solid var(--line)',
-                  borderRadius: 8,
-                  background: 'var(--bg)',
-                  color: 'var(--text)',
-                  opacity: queueAutoRefreshEnabled ? 1 : 0.6,
-                }}
-              >
-                <option value="5">5s</option>
-                <option value="8">8s</option>
-                <option value="10">10s</option>
-                <option value="15">15s</option>
-              </select>
-              <button
                 onClick={() => void loadJobQueue()}
+                disabled={loadingQueue || !hasWorkspace}
                 style={{
                   padding: '8px 12px',
                   border: '1px solid var(--line)',
@@ -856,67 +822,63 @@ export default function ContentGenerationPage() {
                   color: 'var(--text)',
                 }}
               >
-                {loadingQueue ? 'Refreshing...' : 'Refresh Queue'}
-              </button>
-              <button
-                onClick={resetQueuePreferences}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid var(--line)',
-                  borderRadius: 8,
-                  background: 'transparent',
-                  color: 'var(--text)',
-                }}
-              >
-                Reset Preferences
+                {loadingQueue ? 'Refreshing…' : 'Refresh queue'}
               </button>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
-            {(['all', 'pending', 'running', 'failed', 'completed', 'cancelled'] as JobStatusTab[]).map((tab) => {
-              const active = queueStatusTab === tab;
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setQueueStatusTab(tab)}
-                  style={{
-                    padding: '7px 11px',
-                    borderRadius: 999,
-                    border: '1px solid var(--line)',
-                    background: active ? 'var(--brand)' : 'transparent',
-                    color: active ? 'var(--on-brand)' : 'var(--text)',
-                    fontWeight: 600,
-                  }}
-                >
-                  {tab} ({queueStatusCounts[tab] ?? 0})
-                </button>
-              );
-            })}
-          </div>
+          <details style={{ marginTop: 12 }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Filters and background refresh</summary>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12 }}>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={queueAutoRefreshEnabled}
+                onClick={() => setQueueAutoRefreshEnabled((current) => !current)}
+                style={{ padding: '8px 12px', border: '1px solid var(--line)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontWeight: 600 }}
+              >
+                Background refresh: {queueAutoRefreshEnabled ? 'On' : 'Off'}
+              </button>
+              <label htmlFor="content-queue-refresh-interval">Refresh interval</label>
+              <select
+                id="content-queue-refresh-interval"
+                aria-label="Background refresh interval"
+                value={String(queueAutoRefreshSeconds)}
+                onChange={(event) => setQueueAutoRefreshSeconds(Number(event.target.value) || 30)}
+                disabled={!queueAutoRefreshEnabled}
+                style={{ padding: '8px 10px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', opacity: queueAutoRefreshEnabled ? 1 : 0.6 }}
+              >
+                <option value="30">30 seconds</option>
+                <option value="60">60 seconds</option>
+                <option value="120">2 minutes</option>
+              </select>
+              <button type="button" onClick={resetQueuePreferences} style={{ padding: '8px 12px', border: '1px solid var(--line)', borderRadius: 8, background: 'transparent', color: 'var(--text)' }}>
+                Reset refresh preferences
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+              {(['all', 'pending', 'running', 'failed', 'completed', 'cancelled'] as JobStatusTab[]).map((tab) => {
+                const active = queueStatusTab === tab;
+                return (
+                  <button key={tab} aria-pressed={active} onClick={() => setQueueStatusTab(tab)} style={{ padding: '7px 11px', borderRadius: 999, border: '1px solid var(--line)', background: active ? 'var(--brand)' : 'transparent', color: active ? 'var(--on-brand)' : 'var(--text)', fontWeight: 600 }}>
+                    {tab}{queueLoaded ? ` (${queueStatusCounts[tab]})` : ''}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+              {(['all', 'timeout', 'failed'] as QueueStageFilter[]).map((stageFilter) => {
+                const active = queueStageFilter === stageFilter;
+                return (
+                  <button key={stageFilter} aria-pressed={active} onClick={() => setQueueStageFilter(stageFilter)} style={{ padding: '6px 10px', borderRadius: 999, border: '1px solid var(--line)', background: active ? 'rgba(249,115,22,0.2)' : 'transparent', color: active ? 'var(--warning)' : 'var(--text)', fontWeight: 600 }}>
+                    Stage: {stageFilter}{queueLoaded ? ` (${queueStageCounts[stageFilter]})` : ''}
+                  </button>
+                );
+              })}
+            </div>
+          </details>
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-            {(['all', 'timeout', 'failed'] as QueueStageFilter[]).map((stageFilter) => {
-              const active = queueStageFilter === stageFilter;
-              const count = queueStageCounts[stageFilter] ?? 0;
-              return (
-                <button
-                  key={stageFilter}
-                  onClick={() => setQueueStageFilter(stageFilter)}
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: 999,
-                    border: '1px solid var(--line)',
-                    background: active ? 'rgba(249,115,22,0.2)' : 'transparent',
-                    color: active ? 'var(--warning)' : 'var(--text)',
-                    fontWeight: 600,
-                  }}
-                >
-                  stage:{stageFilter} ({count})
-                </button>
-              );
-            })}
-          </div>
+          {queueError ? <p role="alert" style={{ color: 'var(--danger)' }}>{queueError}</p> : null}
 
           <div style={{ display: 'grid', gap: 10, marginTop: 14 }}>
             {queueItems.length > 0 ? (
@@ -980,7 +942,7 @@ export default function ContentGenerationPage() {
               ))
             ) : (
               <div style={{ color: 'var(--muted)' }}>
-                {loadingQueue ? 'Loading queue...' : 'No jobs found for this filter.'}
+                {loadingQueue ? 'Loading generation jobs…' : queueError ? 'Queue results are unavailable. Retry the request.' : queueLoaded ? 'No jobs match the selected filters.' : 'The generation queue has not loaded.'}
               </div>
             )}
           </div>
@@ -1001,11 +963,18 @@ export default function ContentGenerationPage() {
         <section style={card}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
             <div>
-              <h2 style={{ marginTop: 0, marginBottom: 6 }}>Content Library</h2>
-              <p style={{ color: 'var(--muted)', margin: 0 }}>Persisted generation history for the current tenant.</p>
+              <h2 style={{ marginTop: 0, marginBottom: 6 }}>Recent generations</h2>
+              <p style={{ color: 'var(--muted)', margin: 0 }}>Content records currently returned for this workspace.</p>
             </div>
-            <div style={{ color: 'var(--muted)' }}>{library.length} item(s)</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ color: 'var(--muted)' }}>{libraryError ? 'Count unavailable' : libraryLoaded ? `${library.length} items` : loadingLibrary ? 'Loading…' : 'Count unavailable'}</span>
+              <button type="button" onClick={() => void loadLibrary()} disabled={loadingLibrary || !hasWorkspace} style={{ padding: '8px 12px', border: '1px solid var(--line)', borderRadius: 8, background: 'transparent', color: 'var(--text)' }}>
+                {loadingLibrary ? 'Refreshing…' : 'Refresh'}
+              </button>
+            </div>
           </div>
+          {libraryError ? <p role="alert" style={{ color: 'var(--danger)' }}>{libraryError}</p> : null}
+          {libraryItemError ? <p role="alert" style={{ color: 'var(--danger)' }}>{libraryItemError}</p> : null}
           <div
             style={{
               display: 'grid',
@@ -1017,14 +986,13 @@ export default function ContentGenerationPage() {
             {library.length > 0 ? (
               library.map((item) => (
                 <article
-                  key={item.generation_id}
+                  key={item.generationId}
                   style={{ border: '1px solid var(--line)', borderRadius: 12, padding: 14 }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                     <strong>{item.headline}</strong>
                     <span style={{ color: 'var(--muted)' }}>{item.channel}</span>
                   </div>
-                  <div style={{ color: 'var(--muted)', marginTop: 6, lineHeight: 1.5 }}>{item.body}</div>
                   <div
                     style={{
                       display: 'flex',
@@ -1035,45 +1003,29 @@ export default function ContentGenerationPage() {
                       color: 'var(--muted)',
                     }}
                   >
-                    <span>{item.tone}</span>
-                    <span>{item.provider_used}</span>
-                    <span>{new Date(item.created_at).toLocaleString()}</span>
+                    <span>Topic: {item.topic}</span>
+                    <span>{item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Date not reported'}</span>
                   </div>
                   <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
-                    <a
-                      href={apiLink(`/content/library/${item.generation_id}`)}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ color: 'var(--brand)' }}
-                    >
-                      Open generation
-                    </a>
-                    {item.generated_assets &&
-                      Object.values(item.generated_assets).map((asset) => (
-                        <a
-                          key={asset.id}
-                          href={apiLink(asset.download_url)}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ color: 'var(--brand)' }}
-                        >
-                          Download {asset.kind} asset
-                        </a>
-                      ))}
+                    <button type="button" onClick={() => void loadLibraryItem(item)} disabled={loadingLibraryItemId !== null} style={{ padding: '8px 12px', border: '1px solid var(--line)', borderRadius: 8, background: 'transparent', color: 'var(--text)', textAlign: 'left' }}>
+                      {loadingLibraryItemId === item.generationId ? 'Loading saved content…' : 'View saved content'}
+                    </button>
                   </div>
                 </article>
               ))
             ) : (
-              <div style={{ color: 'var(--muted)' }}>No content has been generated yet.</div>
+              <div style={{ color: 'var(--muted)' }}>
+                {loadingLibrary ? 'Loading workspace content…' : libraryError ? 'Saved content is unavailable. Retry the request.' : libraryLoaded ? 'No content records were returned for this workspace.' : 'Content records have not loaded.'}
+              </div>
             )}
           </div>
           {latest && (
             <div style={{ marginTop: 16, color: 'var(--muted)' }}>
-              Latest generation: {latest.generation_id} from {new Date(latest.created_at).toLocaleString()}
+              Latest returned record: {latest.headline}{latest.createdAt ? ` · ${new Date(latest.createdAt).toLocaleString()}` : ''}
             </div>
           )}
         </section>
       </div>
-    </main>
+    </div>
   );
 }

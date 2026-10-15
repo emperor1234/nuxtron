@@ -665,7 +665,6 @@ INSERT INTO ai_agent_tools (tenant_id, key, display_name, group_name, descriptio
   ('tenant-demo', 'create_project',       'Create Project',        'Platform Tools', 'Create a new client project',                      'create_project(client_id, name)',           'medium', FALSE, '/crm/projects'),
   ('tenant-demo', 'add_domain',           'Add Domain',            'Platform Tools', 'Add a domain to a client account',                 'add_domain(client_id, domain)',             'medium', FALSE, '/platform/domains'),
   ('tenant-demo', 'trigger_migration',    'Trigger Migration',     'Platform Tools', 'Trigger a site migration workflow',                'trigger_migration(site_id)',                'high',   TRUE,  '/seo-platform/site-migration/analyze'),
-  ('tenant-demo', 'run_lighthouse_audit', 'Lighthouse Audit',      'Platform Tools', 'Run a Lighthouse performance audit on a URL',      'run_lighthouse_audit(url_id)',              'low',    FALSE, '/seo-platform/performance/audit'),
   ('tenant-demo', 'create_brief',         'Create Content Brief',  'Content Tools',  'Generate a content brief for a keyword',           'create_brief(keyword)',                     'low',    FALSE, '/seo-platform/content/brief'),
   ('tenant-demo', 'rewrite_paragraph',    'Rewrite Paragraph',     'Content Tools',  'AI rewrite of a content block on a page',          'rewrite_paragraph(page_id, block_id)',      'medium', FALSE, '/seo-platform/brand-voice/rewrite')
 ON CONFLICT DO NOTHING;

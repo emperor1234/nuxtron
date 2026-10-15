@@ -19,8 +19,9 @@ from typing import Protocol, cast
 
 from fastapi import FastAPI
 
+from ..config import validate_startup_security
 from ..database import close_db
-from ..production_middleware import StructuredLogger
+from ..production_middleware import StructuredLogger, validate_environment
 from ..rate_limiter import clear_rate_buckets
 
 AUTONOMOUS_WORKFORCE_WATCHDOG_ENABLED_VALUES = {'1', 'true', 'yes', 'on'}
@@ -71,20 +72,27 @@ def _legacy_startup_steps() -> LegacyStartupSteps:
 
 
 def autonomous_workforce_watchdog_enabled() -> bool:
-    raw = os.getenv('AUTONOMOUS_WORKFORCE_WATCHDOG_ENABLED', '1').strip().lower()
+    production = os.getenv('ENVIRONMENT', 'development').strip().lower() in {'prod', 'production'}
+    default = '0' if production else '1'
+    raw = os.getenv('AUTONOMOUS_WORKFORCE_WATCHDOG_ENABLED', default).strip().lower()
     return raw in AUTONOMOUS_WORKFORCE_WATCHDOG_ENABLED_VALUES
 
 
 async def _initialize_runtime_state(steps: LegacyStartupSteps, logger: StructuredLogger) -> None:
     """Run secret, encryption, validation, database and governance bootstrap."""
+    validate_environment()
+    validate_startup_security()
+    logger.info('Security validation complete')
     await steps._initialize_vault(logger)
     await steps._initialize_transparent_encryption(logger)
     await steps._initialize_database_state(logger)
 
 
 def _start_background_workers(steps: LegacyStartupSteps) -> StartedWorkers:
-    """Start the workers this application owns and publish their handles."""
+    """Start development-only in-process loops; production workers require a dedicated deployment."""
     workers = StartedWorkers()
+    if os.getenv('ENVIRONMENT', 'development').strip().lower() in {'prod', 'production'}:
+        return workers
 
     workers.security_alerts = steps._start_security_alert_worker()
     steps._security_alert_worker_stop, steps._security_alert_worker_task = workers.security_alerts

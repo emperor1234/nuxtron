@@ -1,22 +1,31 @@
 """Search HTTP operations beginning with frase provider probes."""
 
-from ..constants import AuthDep
-from ..operations.frase_provider_checklist import operation_frase_env_template
-from ..operations.frase_provider_checklist import operation_frase_full_automation
-from ..operations.frase_provider_checklist import operation_frase_provider_probes
-from ..operations.sitebulb_completion_chart import operation_sitebulb_run_project
-from ..operations.sitebulb_project_lookup import operation_sitebulb_create_project
-from ..operations.sitebulb_project_lookup import operation_sitebulb_get_run
-from ..operations.sitebulb_project_lookup import operation_sitebulb_list_projects
-from ..operations.sitebulb_project_lookup import operation_sitebulb_list_runs
-from ..runtime import SearchRuntime
-from ..schemas import FraseEnvTemplateRequest
-from ..schemas import FraseFullAutomationRequest
-from ..schemas import FraseProviderProbeRequest
-from ..schemas import SitebulbProjectCreateRequest
-from ..schemas import SitebulbProjectRunRequest
-from fastapi import APIRouter
 from typing import Any
+
+from fastapi import APIRouter
+
+from ..constants import AuthDep
+from ..operations.frase_provider_checklist import (
+    operation_frase_env_template,
+    operation_frase_full_automation,
+    operation_frase_provider_probes,
+)
+from ..operations.sitebulb_completion_chart import operation_sitebulb_run_project
+from ..operations.sitebulb_project_lookup import (
+    operation_sitebulb_create_project,
+    operation_sitebulb_get_run,
+    operation_sitebulb_list_projects,
+    operation_sitebulb_list_runs,
+)
+from ..runtime import SearchRuntime
+from ..schemas import (
+    FraseEnvTemplateRequest,
+    FraseFullAutomationRequest,
+    FraseProviderProbeRequest,
+    SitebulbProjectCreateRequest,
+    SitebulbProjectRunRequest,
+)
+from .keyword_unavailable_response import KEYWORD_RESEARCH_501_RESPONSE
 
 
 def register(router: APIRouter, runtime: SearchRuntime):
@@ -29,7 +38,7 @@ def register(router: APIRouter, runtime: SearchRuntime):
     def frase_env_template(payload: FraseEnvTemplateRequest, auth: AuthDep) -> dict[str, Any]:
         return operation_frase_env_template(runtime, payload, auth)
 
-    @router.post("/frase/full-automation")
+    @router.post("/frase/full-automation", status_code=501, response_model=None, responses={501: KEYWORD_RESEARCH_501_RESPONSE})
     def frase_full_automation(payload: FraseFullAutomationRequest, auth: AuthDep) -> dict[str, Any]:
         return operation_frase_full_automation(runtime, payload, auth)
 
@@ -41,7 +50,7 @@ def register(router: APIRouter, runtime: SearchRuntime):
     def sitebulb_list_projects(auth: AuthDep) -> dict[str, Any]:
         return operation_sitebulb_list_projects(runtime, auth)
 
-    @router.post("/sitebulb/projects/{project_id}/run")
+    @router.post("/sitebulb/projects/{project_id}/run", status_code=501, response_model=None, responses={501: KEYWORD_RESEARCH_501_RESPONSE})
     def sitebulb_run_project(project_id: str, payload: SitebulbProjectRunRequest, auth: AuthDep) -> dict[str, Any]:
         return operation_sitebulb_run_project(runtime, project_id, payload, auth)
 

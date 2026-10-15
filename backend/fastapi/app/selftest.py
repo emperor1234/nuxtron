@@ -483,22 +483,8 @@ def run_selftest() -> None:  # NOSONAR
                 'category': 'onboarding',
             },
         )
-        assert review_ingest.status_code == 200, review_ingest.text
-        review_id = review_ingest.json().get('review', {}).get('id')
-        assert isinstance(review_id, int) and review_id > 0
-
-        review_respond = client.post(
-            f'/reviews/{review_id}/respond',
-            headers=_headers('tenant-a'),
-            json={'response': 'Thanks. We improved setup docs and assigned onboarding support.'},
-        )
-        assert review_respond.status_code == 200, review_respond.text
-        assert review_respond.json().get('review', {}).get('responded') is True
-
-        review_summary = client.get('/reviews/summary', headers=_headers('tenant-a'))
-        assert review_summary.status_code == 200, review_summary.text
-        assert review_summary.json().get('summary', {}).get('total_reviews', 0) >= 1
-        assert review_summary.json().get('summary', {}).get('reputation_score', 0) >= 0
+        assert review_ingest.status_code == 501, review_ingest.text
+        assert review_ingest.json().get('detail', {}).get('code') == 'NOT_IMPLEMENTED'
 
         c = client.post(
             '/email/contacts',
@@ -4643,4 +4629,3 @@ if __name__ == '__main__':
 
         run_vse_selftest()
         print('FastAPI VSE selftest extension passed')
-

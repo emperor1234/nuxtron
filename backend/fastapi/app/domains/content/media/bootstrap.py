@@ -67,9 +67,8 @@ def create_media_jobs_router(
 ) -> APIRouter:
     """
     NEW: Media Job Queue router implementing the Sandboxed Media SaaS
-    Architecture pipeline.  All processing is intentionally simulated
-    (memory-fallback) so the API layer is complete and correct; swap in
-    real BullMQ/SQS dispatchers in the worker layer without changing routes.
+    Architecture pipeline. Job endpoints fail closed until durable tenant-scoped
+    persistence, queue dispatch, isolated workers, and artifact tracking exist.
     """
     router = APIRouter()
     _lock = threading.Lock()

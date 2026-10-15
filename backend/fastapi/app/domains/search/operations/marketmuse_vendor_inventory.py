@@ -1,21 +1,25 @@
 """Search use cases: marketmuse vendor inventory."""
 
+from typing import Any
+
 from ....deps import AuthContext
+from ....domains.seo.services.seo_keyword_research_service import raise_keyword_research_unavailable
 from ..constants import AuthDep
 from ..runtime import SearchRuntime
-from ..schemas import SemrushFullAutomationRequest
-from ..schemas import SitebulbEnvTemplateRequest
-from ..schemas import SliceAssistRequest
-from ..schemas import SliceWiringApplyRequest
-from .marketmuse_product_catalog import helper_marketmuse_products_completion_chart
-from .marketmuse_product_catalog import operation_marketmuse_products_production_gate
-from .marketmuse_product_catalog import operation_marketmuse_provider_checklist
-from .platform_now_iso import helper_env_configured
-from .platform_now_iso import helper_now_iso
+from ..schemas import (
+    SemrushFullAutomationRequest,
+    SitebulbEnvTemplateRequest,
+    SliceAssistRequest,
+    SliceWiringApplyRequest,
+)
+from .marketmuse_product_catalog import (
+    helper_marketmuse_products_completion_chart,
+    operation_marketmuse_products_production_gate,
+    operation_marketmuse_provider_checklist,
+)
+from .platform_now_iso import helper_env_configured, helper_now_iso
 from .semrush_list_projects import operation_semrush_full_automation
-from .sitebulb_project_lookup import helper_sitebulb_env_template
-from .sitebulb_project_lookup import helper_sitebulb_vendor_inventory
-from typing import Any
+from .sitebulb_project_lookup import helper_sitebulb_env_template, helper_sitebulb_vendor_inventory
 
 
 def helper_marketmuse_vendor_inventory(
@@ -86,9 +90,9 @@ def operation_marketmuse_wiring_state(runtime: SearchRuntime, auth: AuthDep) -> 
     return {
         "status": "ok",
         "tenant_id": auth.tenant_id,
-        "wired_providers": sorted((str(item.get("provider")) for item in configured_items)),
+        "wired_providers": sorted(str(item.get("provider")) for item in configured_items),
         "wired_count": len(configured_items),
-        "missing_providers": sorted((str(item.get("provider")) for item in missing_items)),
+        "missing_providers": sorted(str(item.get("provider")) for item in missing_items),
         "generated_at": helper_now_iso(),
     }
 
@@ -156,6 +160,7 @@ def operation_marketmuse_parity_audit(runtime: SearchRuntime, auth: AuthDep) -> 
 def operation_marketmuse_full_automation(
     runtime: SearchRuntime, payload: SemrushFullAutomationRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    raise_keyword_research_unavailable()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:marketmuse:full-automation", 30, 60)
     base_result = operation_semrush_full_automation(runtime, payload, auth)
     completion = helper_marketmuse_products_completion_chart(runtime, auth)
@@ -200,7 +205,7 @@ def operation_marketmuse_vendors(runtime: SearchRuntime, auth: AuthDep) -> dict[
     inventory = helper_marketmuse_vendor_inventory(
         runtime, auth, force_configured=auth.tenant_id in runtime.marketmuse_wired_tenants
     )
-    configured = sum((1 for item in inventory if bool(item.get("configured"))))
+    configured = sum(1 for item in inventory if bool(item.get("configured")))
     return {
         "status": "ok",
         "tenant_id": auth.tenant_id,

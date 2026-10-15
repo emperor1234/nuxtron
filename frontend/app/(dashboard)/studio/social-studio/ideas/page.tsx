@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { apiGet, apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { apiGet, apiSend } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
 
 type Idea = {
   id: string;
@@ -93,7 +94,7 @@ function statusTone(status: string): { background: string; color: string } {
 }
 
 export default function IdeasDraftsPage() {
-  const [tenantId] = useState(DEFAULT_TENANT_ID || 'tenant-demo');
+  const [tenantId] = useState(resolveSessionTenant);
   const [view, setView] = useState<'board' | 'list' | 'templates' | 'hashtags'>('board');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);

@@ -1,193 +1,158 @@
 'use client';
 
-import { useState } from 'react';
-import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
-
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
-
-type KGEntity = { name: string; type: string; confidence: number };
-type KGRelationship = { from: string; to: string; type: string; confidence: number };
-
-type KGResult = {
-  analysis_id: string;
-  graph_health_score: number;
-  entities: KGEntity[];
-  relationships: KGRelationship[];
-  coverage: { entity_pages_pct: number; orphan_entities: number; duplicate_entities: number };
-  gaps: string[];
-  next_entities_to_build: string[];
-  quick_wins: string[];
-  analyzed_at: string;
-  cached?: boolean;
-  analysis_mode?: 'llm' | 'heuristic';
-  fallback?: boolean;
-};
+import { useState, type FormEvent } from 'react';
+import { Badge, Button, Card, CardTitle, Page, PageHeader, Stat, StatGrid } from '../../_ui/kit';
+import { buildEntityGraphDraft, entityGraphDraftCsv, type EntityGraphDraft } from './entity-graph-model';
+import styles from './entity-graph.module.css';
 
 export default function KnowledgeGraphPage() {
-  const [domain, setDomain] = useState('');
-  const [seedEntities, setSeedEntities] = useState('brand\ncore product\nindustry concept');
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [context, setContext] = useState('');
+  const [entityInput, setEntityInput] = useState('');
+  const [relationshipInput, setRelationshipInput] = useState('');
+  const [draft, setDraft] = useState<EntityGraphDraft | null>(null);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<KGResult | null>(null);
 
-  async function runAnalyze(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError('');
-    setResult(null);
+    setDraft(null);
     try {
-      const seeds = seedEntities
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean);
-      const data = await apiSend<KGResult>(
-        '/seo-platform/knowledge-graph/analyze',
-        'POST',
-        { domain, seed_entities: seeds, notes },
-        DEFAULT_TENANT_ID
-      );
-      if (data?.fallback === true && data?.analysis_mode !== 'heuristic') {
-        throw new Error(
-          IS_STRICT_NO_MOCK_MODE
-            ? 'Live LLM backend is unavailable in strict no-mock mode.'
-            : 'Live LLM backend is unavailable in fail-closed mode.'
-        );
-      }
-      setResult(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Analysis failed');
-    } finally {
-      setLoading(false);
+      setDraft(buildEntityGraphDraft(entityInput, relationshipInput));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not build this outline.');
     }
   }
 
+  function exportDraft() {
+    if (!draft || draft.relationships.length === 0) return;
+    const blob = new Blob([entityGraphDraftCsv(draft)], { type: 'text/csv;charset=utf-8' });
+    const href = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.download = 'entity-relationship-outline.csv';
+    anchor.click();
+    URL.revokeObjectURL(href);
+  }
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Knowledge Graph Management</h1>
-        <p className="text-gray-500 mt-1">
-          Analyze entity graph health, relationships, and missing nodes for stronger entity SEO.
+    <Page>
+      <PageHeader
+        title="Entity Graph Planner"
+        subtitle="Draft an entity and relationship outline from information you provide."
+      />
+
+      <Card className={styles.scopeNotice}>
+        <Badge tone="brand">Local outline</Badge>
+        <p>
+          This page does not query Google, Wikidata, your site, or an external graph service. It does not infer facts, calculate live graph health, or publish structured data.
         </p>
-      </div>
+      </Card>
 
-      <form onSubmit={runAnalyze} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <div>
-          <label htmlFor="domain" className="block text-sm font-medium text-gray-700 mb-1">
-            Domain *
+      <Card>
+        <CardTitle sub="List entities and optional relationships. Counts and unlinked status are calculated only from this draft.">
+          Build your outline
+        </CardTitle>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <label className={styles.field} htmlFor="entity-context">
+            <span>Project or site label <em>Optional</em></span>
+            <input
+              id="entity-context"
+              value={context}
+              maxLength={200}
+              onChange={(event) => setContext(event.target.value)}
+              placeholder="A name to help identify this draft"
+            />
           </label>
-          <input
-            id="domain"
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="seed-entities" className="block text-sm font-medium text-gray-700 mb-1">
-            Seed Entities (one per line)
-          </label>
-          <textarea
-            id="seed-entities"
-            value={seedEntities}
-            onChange={(e) => setSeedEntities(e.target.value)}
-            rows={4}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-            Notes
-          </label>
-          <textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading || !domain}
-          className="w-full bg-[var(--brand)] text-white py-2 px-4 rounded-lg text-sm font-medium disabled:opacity-50"
-        >
-          {loading ? 'Analyzing...' : 'Analyze Knowledge Graph'}
-        </button>
-      </form>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>
-      )}
-
-      {result && (
-        <div className="space-y-4">
-          {(result.analysis_mode || result.cached) && (
-            <div className="flex gap-2 flex-wrap">
-              {result.analysis_mode && (
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${result.analysis_mode === 'llm' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                  {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
-                </span>
-              )}
-              {result.cached && (
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-sky-100 text-[var(--brand)]">Cached result</span>
-              )}
-            </div>
-          )}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 grid grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-4xl font-bold text-gray-800">{result.graph_health_score}</div>
-              <div className="text-xs text-gray-500">Graph Health</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-800">{result.entities.length}</div>
-              <div className="text-xs text-gray-500">Entities</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-800">{result.relationships.length}</div>
-              <div className="text-xs text-gray-500">Relations</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">{result.coverage.orphan_entities}</div>
-              <div className="text-xs text-gray-500">Orphans</div>
-            </div>
+          <div className={styles.inputGrid}>
+            <label className={styles.field} htmlFor="entity-list">
+              <span>Entities <em>Required · one per line</em></span>
+              <textarea
+                id="entity-list"
+                rows={8}
+                value={entityInput}
+                onChange={(event) => setEntityInput(event.target.value)}
+                placeholder={'Organization\nProduct\nTopic or person'}
+                required
+              />
+              <small>Up to 100 entries. Duplicate names are counted once, case-insensitively.</small>
+            </label>
+            <label className={styles.field} htmlFor="relationship-list">
+              <span>Relationships <em>Optional · one per line</em></span>
+              <textarea
+                id="relationship-list"
+                rows={8}
+                className={styles.mono}
+                value={relationshipInput}
+                onChange={(event) => setRelationshipInput(event.target.value)}
+                placeholder={'Organization | offers | Product\nProduct | relates to | Topic'}
+              />
+              <small>Format: source entity | relationship | target entity. Endpoints must match your entity list.</small>
+            </label>
           </div>
+          {error && <p role="alert" className={styles.error}>{error}</p>}
+          <Button type="submit" variant="primary">Build local outline</Button>
+        </form>
+      </Card>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-base font-semibold text-gray-800 mb-3">Entities</h2>
-            <div className="flex flex-wrap gap-2">
-              {result.entities.map((e, i) => (
-                <span
-                  key={`${e.name}-${e.type}-${i}`}
-                  className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
-                >
-                  {e.name} ({e.type})
-                </span>
+      {draft && (
+        <section className={styles.results} aria-label="Entity outline results">
+          <Card className={styles.resultHeader}>
+            <div>
+              <CardTitle sub={context.trim() ? `Draft: ${context.trim()}` : 'Draft based on the entities and relationships you entered.'}>
+                Outline summary
+              </CardTitle>
+            </div>
+            <Button type="button" onClick={exportDraft} disabled={draft.relationships.length === 0}>
+              Export relationship list
+            </Button>
+          </Card>
+
+          <StatGrid>
+            <Stat label="Distinct entities" value={draft.entities.length} hint={`${draft.duplicateEntityCount} duplicate entries`} />
+            <Stat label="Explicit relationships" value={draft.relationships.length} hint={`${draft.duplicateRelationshipCount} duplicate rows`} />
+            <Stat label="Connected entities" value={draft.linkedEntityCount} hint="In this outline only" />
+            <Stat label="Unlinked in draft" value={draft.unlinkedEntities.length} hint={`${draft.connectionCoveragePct}% connected within entered list`} />
+          </StatGrid>
+
+          <Card>
+            <CardTitle sub="“Unlinked” means no relationship row was entered for this entity; it does not describe your live website or search graph.">
+              Entities in this outline
+            </CardTitle>
+            <div className={styles.entityList}>
+              {draft.entities.map((entity) => (
+                <article className={styles.entity} key={entity.name}>
+                  <div className={styles.entityHeader}>
+                    <strong>{entity.name}</strong>
+                    <Badge tone={entity.relationshipCount > 0 ? 'success' : 'neutral'}>
+                      {entity.relationshipCount > 0 ? 'Linked in draft' : 'Unlinked in draft'}
+                    </Badge>
+                  </div>
+                  <span className={styles.entityMeta}>{entity.relationshipCount} explicit relationship{entity.relationshipCount === 1 ? '' : 's'}</span>
+                </article>
               ))}
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-base font-semibold text-gray-800 mb-3">Gaps</h2>
-            <ul className="space-y-1">
-              {result.gaps.map((g, i) => (
-                <li key={`${g}-${i}`} className="text-sm text-gray-700">
-                  - {g}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <Card>
+            <CardTitle sub="Only relationships you entered are shown; no links are inferred.">Relationship rows</CardTitle>
+            {draft.relationships.length === 0 ? (
+              <p className={styles.empty}>No relationships were entered. All listed entities are currently unlinked in this draft.</p>
+            ) : (
+              <ul className={styles.relationshipList}>
+                {draft.relationships.map((relationship, index) => (
+                  <li key={`${relationship.from}-${relationship.type}-${relationship.to}-${index}`}>
+                    <span>{relationship.from}</span>
+                    <b>{relationship.type}</b>
+                    <span>{relationship.to}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
 
-          <p className="text-xs text-[var(--muted)] text-right">
-            Analyzed: {new Date(result.analyzed_at).toLocaleString()} · ID: {result.analysis_id.slice(0, 8)}
-          </p>
-        </div>
+          <p className={styles.limitNote}>Local draft only. No page crawling, knowledge-graph lookup, rank measurement, or schema publishing occurs.</p>
+        </section>
       )}
-    </div>
+    </Page>
   );
 }

@@ -1,19 +1,20 @@
 """Seo/Platform HTTP adapters beginning with backlink intelligence analyze."""
 
-from .....deps import AuthContext
-from .....deps import require_auth
-from ..operations.review_reputation_analyze import execute_backlink_intelligence_analyze
-from ..operations.review_reputation_analyze import execute_content_creation_blogging_plan
-from ..operations.review_reputation_analyze import execute_get_analysis
-from ..operations.review_reputation_analyze import execute_list_analyses
-from ..operations.review_reputation_analyze import execute_rank_tracking_analyze
-from ..runtime import ContextRuntime
-from ..schemas import BacklinkIntelligenceReq
-from ..schemas import ContentCreationBloggingReq
-from ..schemas import RankTrackingReq
-from fastapi import APIRouter
-from fastapi import Depends
 from typing import Annotated
+
+from fastapi import APIRouter, Depends
+
+from .....deps import AuthContext, require_auth
+from .....domains.seo.services.seo_rank_tracking_service import RANK_TRACKING_501_RESPONSE
+from ..operations.review_reputation_analyze import (
+    execute_backlink_intelligence_analyze,
+    execute_content_creation_blogging_plan,
+    execute_get_analysis,
+    execute_list_analyses,
+    execute_rank_tracking_analyze,
+)
+from ..runtime import ContextRuntime
+from ..schemas import BacklinkIntelligenceReq, ContentCreationBloggingReq, RankTrackingReq
 
 
 def register(router: APIRouter, runtime: ContextRuntime):
@@ -24,7 +25,12 @@ def register(router: APIRouter, runtime: ContextRuntime):
     ):
         return await execute_backlink_intelligence_analyze(runtime, req, auth)
 
-    @router.post("/rank-tracking/analyze")
+    @router.post(
+        "/rank-tracking/analyze",
+        status_code=501,
+        response_model=None,
+        responses={501: RANK_TRACKING_501_RESPONSE},
+    )
     async def rank_tracking_analyze(req: RankTrackingReq, auth: Annotated[AuthContext, Depends(require_auth)]):
         return await execute_rank_tracking_analyze(runtime, req, auth)
 

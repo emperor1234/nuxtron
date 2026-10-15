@@ -2,16 +2,35 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Annotated, Any
+from typing import Annotated, Any, NoReturn
 
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from ..authz import require_role
 from ..deps import AuthContext, require_auth
 from ..middleware.admin_allowlist import require_privileged_ip
 
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 JsonObject = dict[str, object]
+PLATFORM_CATALOG_UNAVAILABLE_DETAIL = {
+    'code': 'NOT_IMPLEMENTED',
+    'message': 'Platform stack recommendations and module registry are not available in the customer API; the separate admin service is not implemented here.',
+}
+PLATFORM_CATALOG_UNAVAILABLE_RESPONSE = {
+    501: {
+        'description': 'Platform catalogue is unavailable.',
+        'content': {'application/json': {'example': {'detail': PLATFORM_CATALOG_UNAVAILABLE_DETAIL}}},
+    }
+}
+
+
+def _raise_platform_catalog_unavailable() -> NoReturn:
+    raise HTTPException(
+        status_code=501,
+        detail=PLATFORM_CATALOG_UNAVAILABLE_DETAIL,
+        headers={'Cache-Control': 'no-store'},
+    )
 
 
 class PasswordHashRequest(BaseModel):
@@ -117,7 +136,7 @@ def create_ops_router(
     # actually wired onto any route; this is that wiring. A nested sub-router
     # is used (rather than adding the dependency to every handler) so the
     # non-SIEM platform routes registered above are unaffected.
-    siem_router = APIRouter(dependencies=[Depends(require_privileged_ip)])
+    siem_router = APIRouter(dependencies=[Depends(require_privileged_ip), Depends(require_role('admin'))])
     _register_siem_core_routes(cb, siem_router)
     _register_siem_security_routes(cb, siem_router)
     _register_siem_advanced_routes(cb, siem_router)
@@ -158,8 +177,6 @@ class _OpsCallbacks:
     run_siem_dead_code_scan: Callable[[AuthContext, str, bool, bool, str], dict[str, Any]] | None = field(default=None)
     list_siem_dead_code_findings: Callable[[AuthContext, str, int], dict[str, Any]] | None = field(default=None)
     get_siem_advanced_threat_hunt: Callable[[AuthContext, int], dict[str, Any]] | None = field(default=None)
-    get_hybrid_stacks: Callable[[AuthContext], dict[str, Any]] | None = field(default=None)
-    get_module_registry: Callable[[AuthContext], dict[str, Any]] | None = field(default=None)
     require_super_admin_access: Callable[[Request, str | None], None] | None = field(default=None)
 
 
@@ -192,43 +209,25 @@ def _register_platform_routes(
     def platform_capabilities(auth: AuthDep) -> dict[str, Any]:
         return _invoke(cb.get_capabilities, {'status': 'ok', 'tenant_id': auth.tenant_id, 'generated_at': '', 'categories': [], 'totals': {'features': 0, 'categories': 0}}, auth)
 
-    @router.get('/ops/platform/hybrid-stacks')
-    def platform_hybrid_stacks(auth: AuthDep) -> dict[str, Any]:
-            # Return fallback minimal response if no callback is wired
-        if cb.get_hybrid_stacks is None:
-            return {
-                'status': 'ok',
-                'tenant_id': auth.tenant_id,
-                'generated_at': '',
-                'recommendation': {
-                    'hybrid': 'OpenLens (Free) + Promptwatch (Paid)',
-                    'score': '100/100 (100%)',
-                    'benefits': [],
-                    'positioning': '',
-                },
-                'stacks': [],
-                'summary': [],
-            }
-        return cb.get_hybrid_stacks(auth)
+    @router.get(
+        '/ops/platform/hybrid-stacks',
+        status_code=501,
+        response_model=None,
+        responses=PLATFORM_CATALOG_UNAVAILABLE_RESPONSE,
+    )
+    def platform_hybrid_stacks(auth: AuthDep) -> NoReturn:
+        _ = auth
+        _raise_platform_catalog_unavailable()
 
-    @router.get('/ops/platform/module-registry')
-    def platform_module_registry(auth: AuthDep) -> dict[str, Any]:
-        if cb.get_module_registry is not None:
-            return cb.get_module_registry(auth)
-        else:
-            return {
-                'status': 'ok',
-                'tenant_id': auth.tenant_id,
-                'generated_at': '',
-                'source': 'fallback',
-                'modules': [],
-                'totals': {
-                    'total_modules': 0,
-                    'free_tools': 0,
-                    'open_source_tools': 0,
-                    'avg_hybrid_score': 0.0,
-                },
-            }
+    @router.get(
+        '/ops/platform/module-registry',
+        status_code=501,
+        response_model=None,
+        responses=PLATFORM_CATALOG_UNAVAILABLE_RESPONSE,
+    )
+    def platform_module_registry(auth: AuthDep) -> NoReturn:
+        _ = auth
+        _raise_platform_catalog_unavailable()
 
     @router.get('/ops/platform/super-admin/dashboard', responses={
         401: {'description': 'Invalid super admin key.'},

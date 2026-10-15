@@ -14,9 +14,9 @@ const COPY: AuthProductCopy = {
     subheading: 'Sign in to Nuxtron SEO.',
     panelTitle: 'Pick up your search and AI visibility work where you left it.',
     panelPoints: [
-      'Site audits, rank tracking and keyword research in one workspace.',
+      'Browser-local review of supplied keyword and rank exports, plus manual KPI comparisons.',
       'See how AI answer engines describe your brand, next to classic search.',
-      'Local listings, reviews and traffic reports alongside the rest.',
+      'Provider-backed local listings, review feeds, and traffic data are not connected yet.',
     ],
   },
   marketing: {

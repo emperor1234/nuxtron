@@ -1,0 +1,29 @@
+.section {
+  display: grid;
+  gap: 12px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.55fr);
+  align-items: end;
+  gap: 12px;
+}
+
+.queueNote {
+  border-left: 3px solid var(--nx-brand);
+  padding: 10px 12px;
+  background: var(--nx-card);
+  color: var(--nx-ink-2);
+  line-height: 1.5;
+}
+
+.eventLabel {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

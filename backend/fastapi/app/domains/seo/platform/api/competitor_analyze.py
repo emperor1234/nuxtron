@@ -26,7 +26,10 @@ from typing import Annotated
 
 def register(router: APIRouter, runtime: ContextRuntime):
 
-    @router.post("/competitor/analyze")
+    @router.post(
+        "/competitor/analyze",
+        responses={501: {"description": "Verified SERP and competitor evidence sources are not connected."}},
+    )
     async def competitor_analyze(req: CompetitorIntelReq, auth: Annotated[AuthContext, Depends(require_auth)]):
         return await execute_competitor_analyze(runtime, req, auth)
 

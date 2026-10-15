@@ -1,5 +1,8 @@
 """Search use cases: platform airanklab completion chart."""
 
+import os
+from typing import Any, cast
+
 from ....deps import AuthContext
 from ..constants import AuthDep
 from ..runtime import SearchRuntime
@@ -8,17 +11,11 @@ from .ahrefs_parity_chart import helper_ahrefs_parity_chart
 from .brightedge_vendor_inventory import operation_brightedge_parity_audit
 from .frase_provider_checklist import helper_frase_parity_chart
 from .hubspot_route_coverage_chart import operation_hubspot_parity_audit
-from .platform_now_iso import helper_airanklab_wiring_required_keys
-from .platform_now_iso import helper_now_iso
-from .platform_run_provider_probes import operation_readiness
-from .platform_run_provider_probes import operation_vendors
+from .platform_now_iso import helper_airanklab_wiring_required_keys, helper_now_iso
+from .platform_run_provider_probes import operation_readiness, operation_vendors
 from .semrush_list_projects import helper_semrush_parity_chart
-from .sitebulb_completion_chart import helper_sitebulb_completion_chart
-from .sitebulb_completion_chart import helper_sitebulb_gate_state
+from .sitebulb_completion_chart import helper_sitebulb_completion_chart, helper_sitebulb_gate_state
 from .surfer_parity_chart import helper_surfer_parity_chart
-from typing import Any
-from typing import cast
-import os
 
 
 def helper_airanklab_completion_chart(runtime: SearchRuntime, auth: AuthContext) -> dict[str, Any]:
@@ -179,9 +176,9 @@ def helper_airanklab_completion_chart(runtime: SearchRuntime, auth: AuthContext)
                 },
                 {
                     "key": "programmatic-seo-engine",
-                    "label": "Programmatic SEO Engine",
+                    "label": "Programmatic SEO Draft Preview",
                     "route_path": "/seo/programmatic",
-                    "implemented": True,
+                    "implemented": False,
                 },
                 {
                     "key": "seo-ab-testing",
@@ -209,9 +206,9 @@ def helper_airanklab_completion_chart(runtime: SearchRuntime, auth: AuthContext)
             "features": [
                 {
                     "key": "international-multilingual-seo",
-                    "label": "International & Multilingual SEO",
+                    "label": "Hreflang & Locale Review",
                     "route_path": "/seo/international-multilingual",
-                    "implemented": True,
+                    "implemented": False,
                 },
                 {
                     "key": "site-migration-seo-manager",
@@ -239,33 +236,31 @@ def helper_airanklab_completion_chart(runtime: SearchRuntime, auth: AuthContext)
                 },
                 {
                     "key": "analytics-reporting-intelligence",
-                    "label": "Analytics, Reporting & Intelligence",
+                    "label": "SEO Analysis History",
                     "route_path": "/seo/history",
                     "implemented": True,
                 },
                 {
                     "key": "agency-multi-tenant-platform",
-                    "label": "Agency & Multi-Tenant Platform",
+                    "label": "Agency Workspace Health",
                     "route_path": "/seo/agency-platform",
-                    "implemented": True,
+                    "implemented": False,
                 },
                 {
                     "key": "integrations-automation-layer",
                     "label": "Integrations & Automation Layer",
                     "route_path": "/seo/integrations-automation",
-                    "implemented": True,
+                    "implemented": False,
                 },
             ],
         },
     ]
-    screenshot_total = sum((len(group.get("features", [])) for group in screenshot_category_groups))
+    screenshot_total = sum(len(group.get("features", [])) for group in screenshot_category_groups)
     screenshot_implemented = sum(
-        (
-            1
-            for group in screenshot_category_groups
-            for feature in group.get("features", [])
-            if bool(feature.get("implemented", False))
-        )
+        1
+        for group in screenshot_category_groups
+        for feature in group.get("features", [])
+        if bool(feature.get("implemented", False))
     )
     module_rows = [
         {
@@ -290,13 +285,12 @@ def helper_airanklab_completion_chart(runtime: SearchRuntime, auth: AuthContext)
         },
         {
             "module": "keyword_research_and_llm_scoring",
-            "label": "Keyword Planner + LLM Scoring",
-            "implemented": True,
+            "label": "Keyword Data Review — server discovery unavailable",
+            "implemented": False,
             "evidence": [
-                "GET /search-everywhere/semrush/parity-audit",
-                "GET /search-everywhere/ahrefs/parity-audit",
-                "GET /search-everywhere/surfer/parity-audit",
-                "GET /search-everywhere/frase/parity-audit",
+                "POST /seo-platform/keywords/research → NOT_IMPLEMENTED",
+                "POST /rank-tracker/keyword-research/discover → NOT_IMPLEMENTED",
+                "POST /rank-tracker/keyword-research/content-gap → NOT_IMPLEMENTED",
             ],
         },
         {
@@ -313,7 +307,7 @@ def helper_airanklab_completion_chart(runtime: SearchRuntime, auth: AuthContext)
     parity_implementation_values = [row["implementation_pct"] for row in parity_rows if row["implemented"]]
     parity_integration_values = [row["integration_configured_pct"] for row in parity_rows if row["implemented"]]
     implementation_pct = round(
-        sum((1 for item in module_rows if item["implemented"])) / max(len(module_rows), 1) * 100.0, 1
+        sum(1 for item in module_rows if item["implemented"]) / max(len(module_rows), 1) * 100.0, 1
     )
     parity_vendor_avg_implementation_pct = round(
         sum(parity_implementation_values) / max(len(parity_implementation_values), 1), 1
@@ -326,7 +320,7 @@ def helper_airanklab_completion_chart(runtime: SearchRuntime, auth: AuthContext)
         "tenant_id": auth.tenant_id,
         "summary": {
             "modules_total": len(module_rows),
-            "modules_implemented": sum((1 for item in module_rows if item["implemented"])),
+            "modules_implemented": sum(1 for item in module_rows if item["implemented"]),
             "implementation_pct": implementation_pct,
             "integration_configured_pct": integration_pct,
             "parity_vendor_avg_implementation_pct": parity_vendor_avg_implementation_pct,

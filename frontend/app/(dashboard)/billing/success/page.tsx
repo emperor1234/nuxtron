@@ -1,96 +1,82 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Button, Card, Page, PageHeader } from '@/app/(dashboard)/_ui/kit';
 import { apiSend } from '@/app/lib/platform-api';
 import { resolveSessionTenant } from '@/app/lib/api-client';
+
+type VerificationState = 'loading' | 'success' | 'pending' | 'error';
 
 export default function BillingSuccessPage() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [state, setState] = useState<VerificationState>('loading');
   const [message, setMessage] = useState('');
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    async function activate() {
+    let active = true;
+    async function verify() {
       if (!sessionId) {
-        setStatus('error');
-        setMessage('No session found. Please return to pricing and try again.');
+        setState('error');
+        setMessage('No checkout session was provided. Open Billing to review your account status.');
         return;
       }
       try {
-        // Entitlements are granted only by the signed Stripe webhook. This
-        // endpoint verifies that the returned Session belongs to this tenant.
         const result = await apiSend<{ payment_status: string }>(
           '/billing/stripe/session-status',
           'POST',
           { session_id: sessionId },
           resolveSessionTenant()
         );
+        if (!active) return;
         if (result.payment_status === 'paid' || result.payment_status === 'no_payment_required') {
-          setStatus('success');
-          setMessage('Payment received. Stripe is finalizing your account now.');
+          setState('success');
+          setMessage('Payment is verified. Subscription access is finalized by the billing service; check Billing if the plan does not appear shortly.');
         } else {
-          setStatus('error');
-          setMessage('Stripe has not confirmed payment yet. Please check Billing again shortly.');
+          setState('pending');
+          setMessage('Stripe has not confirmed this payment yet. You do not need to start another checkout while this session is being resolved.');
         }
       } catch {
-        setStatus('error');
-        setMessage('We could not verify this Checkout Session. No account changes were made.');
+        if (!active) return;
+        setState('error');
+        setMessage('We could not verify this checkout session. No account changes were confirmed. You can safely check again or review Billing.');
       }
     }
-    void activate();
-  }, [sessionId]);
+    void verify();
+    return () => {
+      active = false;
+    };
+  }, [attempt, sessionId]);
+
+  const loading = state === 'loading';
+  const heading = state === 'success'
+    ? 'Payment verified'
+    : state === 'pending'
+      ? 'Payment confirmation is pending'
+      : state === 'error'
+        ? 'We could not confirm this checkout'
+        : 'Checking your payment';
 
   return (
-    <main style={{ textAlign: 'center', padding: '80px 24px' }}>
-      {status === 'loading' && (
-        <>
-          <h1>Activating your plan…</h1>
-          <p>Please wait while we set up your subscription.</p>
-        </>
-      )}
-      {status === 'success' && (
-        <>
-          <h1 style={{ color: 'var(--success)' }}>You&apos;re all set! 🎉</h1>
-          <p>{message || 'Your subscription is now active. Welcome aboard!'}</p>
-          <a
-            href="/dashboard"
-            style={{
-              display: 'inline-block',
-              marginTop: 24,
-              padding: '12px 32px',
-              background: 'var(--info)',
-              borderRadius: 8,
-              color: 'var(--on-status)',
-              fontWeight: 700,
-              textDecoration: 'none',
-            }}
-          >
-            Go to Dashboard
-          </a>
-        </>
-      )}
-      {status === 'error' && (
-        <>
-          <h1 style={{ color: 'var(--danger)' }}>Something went wrong</h1>
-          <p>{message}</p>
-          <a
-            href="/pricing"
-            style={{
-              display: 'inline-block',
-              marginTop: 24,
-              padding: '12px 32px',
-              background: 'var(--ink-2)',
-              borderRadius: 8,
-              color: 'var(--on-status)',
-              textDecoration: 'none',
-            }}
-          >
-            Back to Pricing
-          </a>
-        </>
-      )}
-    </main>
+    <Page>
+      <PageHeader title={heading} subtitle="Checkout status for your current account." />
+      <Card>
+        <div aria-live={state === 'error' ? 'assertive' : 'polite'} role={state === 'error' ? 'alert' : 'status'}>
+          {loading ? <p>Verifying the checkout session…</p> : <p>{message}</p>}
+        </div>
+        <div className="billing-result-actions">
+          {(state === 'pending' || state === 'error') ? (
+            <Button variant="primary" onClick={() => { setState('loading'); setAttempt((value) => value + 1); }} disabled={loading}>
+              Check status again
+            </Button>
+          ) : null}
+          <Link href="/billing">Open Billing</Link>
+          {state === 'success' ? <Link href="/dashboard">Go to dashboard</Link> : null}
+        </div>
+      </Card>
+    </Page>
   );
 }

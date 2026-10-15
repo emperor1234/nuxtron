@@ -17,7 +17,6 @@ from backend.fastapi.app.routers.revenue_attribution import (
     _extract_touchpoints,
     _extract_woocommerce_conversion,
     _inject_utm,
-    _resolve_tenant_id,
     _shapley_contributions,
     _verify_base64_hmac,
     _verify_stripe_signature,
@@ -233,30 +232,6 @@ class TestExtractWoocommerceConversion:
         assert customer == "woo@example.com"
 
 
-# ─── _resolve_tenant_id ──────────────────────────────────────────────────────
-
-class TestResolveTenantId:
-    def test_header_takes_priority(self):
-        result = _resolve_tenant_id("header-tenant", {"tenant_id": "body-tenant"})
-        assert result == "header-tenant"
-
-    def test_payload_fallback(self):
-        result = _resolve_tenant_id(None, {"tenant_id": "payload-tenant"})
-        assert result == "payload-tenant"
-
-    def test_metadata_fallback(self):
-        result = _resolve_tenant_id(None, {"metadata": {"tenant_id": "meta-tenant"}})
-        assert result == "meta-tenant"
-
-    def test_default_demo(self):
-        result = _resolve_tenant_id(None, {})
-        assert result == "tenant-demo"
-
-    def test_empty_header_falls_through(self):
-        result = _resolve_tenant_id("", {"tenant_id": "payload-tenant"})
-        assert result == "payload-tenant"
-
-
 # ─── _shapley_contributions ──────────────────────────────────────────────────
 
 class TestShapleyContributions:
@@ -298,7 +273,7 @@ class TestBuildReportResponse:
     def test_unattributed_revenue(self):
         conversions = [
             {"id": 1, "provider": "stripe", "external_order_id": "o1",
-             "amount": 100.0, "touchpoint_keys": []}
+             "amount": 100.0, "currency": "USD", "touchpoint_keys": []}
         ]
         result = _build_report_response(
             tenant_id="t1", window_days=30, touchpoints={}, conversions=conversions
@@ -309,7 +284,7 @@ class TestBuildReportResponse:
         touchpoints = {"tp_1": {"post_id": "post_a", "source": "linkedin", "platform": "linkedin"}}
         conversions = [
             {"id": 1, "provider": "stripe", "external_order_id": "o1",
-             "amount": 200.0, "touchpoint_keys": ["tp_1"]}
+             "amount": 200.0, "currency": "USD", "touchpoint_keys": ["tp_1"]}
         ]
         result = _build_report_response(
             tenant_id="t1", window_days=30, touchpoints=touchpoints, conversions=conversions

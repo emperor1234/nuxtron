@@ -68,6 +68,14 @@ def create_health_router(
                 status_code=503,
                 content={'status': 'not-ready', 'reason': 'Database connectivity check failed'},
             )
+        if os.getenv('ENVIRONMENT', 'development').strip().lower() == 'production':
+            from ..domains.identity.security_redis import security_redis_ready
+
+            if not security_redis_ready():
+                return JSONResponse(
+                    status_code=503,
+                    content={'status': 'not-ready', 'reason': 'Shared security counter store is unavailable'},
+                )
         return {'status': 'ready', 'timestamp': datetime.now(UTC).isoformat()}
 
     @router.get('/health/vaults', dependencies=[Depends(require_auth)])

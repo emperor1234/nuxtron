@@ -5,6 +5,7 @@ import os
 from typing import Any
 
 from ..celery_app import celery_app
+from ..domains.automation.workforce.capabilities import require_workforce_execution_available
 from ..routers.autonomous_workforce import (
     _dispatch_provider_action,
     _generate_mission_artifact,
@@ -34,6 +35,7 @@ def execute_workforce_mission_task(
     provider_connections: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """Execute an autonomous workforce mission in a Celery worker."""
+    require_workforce_execution_available()
 
     async def _run() -> dict[str, Any]:
         dsn_raw = str(os.getenv("WORKFORCE_DB_DSN", "") or os.getenv("DATABASE_URL", "")).strip()
@@ -139,6 +141,7 @@ def enqueue_execute_mission(
     provider_connections: list[dict[str, Any]],
 ) -> str:
     """Queue mission execution in Celery and return task ID."""
+    require_workforce_execution_available()
     task = execute_workforce_mission_task.apply_async(
         kwargs={
             "tenant_id": tenant_id,

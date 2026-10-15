@@ -53,6 +53,8 @@ describe("workspace overview", () => {
     await screen.findByText("Some workspace data couldn’t load");
     expect(screen.getByText("25")).toBeTruthy();
     expect(screen.getByText("History is unavailable")).toBeTruthy();
+    expect(screen.queryByText("Live data")).toBeNull();
+    expect(screen.getByRole("link", { name: /Account overview/ }).getAttribute("href")).toBe("/account");
     apiGet.mockResolvedValue({
       current_plan: "Starter",
       credit_balance: 25,

@@ -38,6 +38,8 @@ def _make_app(trusted_cidrs: str) -> FastAPI:
         return {
             "cert_verified": request.headers.get("x-client-cert-verified"),
             "proto": request.headers.get("x-forwarded-proto"),
+            "client_ip": request.client.host if request.client else None,
+            "forwarded_for": request.headers.get("x-forwarded-for"),
         }
 
     return app
@@ -76,6 +78,34 @@ class TestHeaderStrippingFromUntrustedPeer:
         body = response.json()
         assert body["cert_verified"] is None
         assert body["proto"] is None
+        assert body["forwarded_for"] is None
+        assert body["client_ip"] == "testclient"
+
+    def test_trusted_peer_normalizes_forwarded_chain_and_consumes_header(self) -> None:
+        app = _make_app(trusted_cidrs="10.0.0.0/8")
+        client = TestClient(app, client=("10.5.3.2", 50000))
+        response = client.get(
+            "/whoami",
+            headers={
+                "x-client-cert-verified": "true",
+                "x-forwarded-proto": "https",
+                "x-forwarded-for": "198.51.100.9, 10.6.0.4",
+            },
+        )
+        body = response.json()
+        assert body["cert_verified"] == "true"
+        assert body["proto"] == "https"
+        assert body["client_ip"] == "198.51.100.9"
+        assert body["forwarded_for"] is None
+
+    def test_malformed_trusted_chain_falls_back_to_proxy_peer(self) -> None:
+        app = _make_app(trusted_cidrs="10.0.0.0/8")
+        client = TestClient(app, client=("10.5.3.2", 50000))
+        response = client.get(
+            "/whoami",
+            headers={"x-forwarded-for": "198.51.100.9, not-an-ip"},
+        )
+        assert response.json()["client_ip"] == "10.5.3.2"
 
 
 class TestTrustedPeerPassthrough:

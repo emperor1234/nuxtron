@@ -48,11 +48,391 @@
     },
     {
       "from": "/reviews",
-      "to": "/studio/social-studio/reviews"
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/seo/reviews",
+      "to": "/seo"
+    },
+    {
+      "from": "/studio/social-studio/reviews",
+      "to": "/studio/social-studio"
     },
     {
       "from": "/seo/one2target",
       "to": "/seo/audience-intelligence"
+    },
+    {
+      "from": "/airanklab/wiring",
+      "to": "/seo/integrations-automation"
+    },
+    {
+      "from": "/hubspot-e2e",
+      "to": "/crm"
+    },
+    {
+      "from": "/seo/ai-content-grader",
+      "to": "/seo/content-auditor"
+    },
+    {
+      "from": "/seo/ai-content-helper",
+      "to": "/seo/content-creation-blogging"
+    },
+    {
+      "from": "/seo/bot-analytics",
+      "to": "/seo/realtime-monitoring"
+    },
+    {
+      "from": "/seo/brand-radar",
+      "to": "/seo/realtime-monitoring"
+    },
+    {
+      "from": "/seo/content-explorer",
+      "to": "/seo/content-creation-blogging"
+    },
+    {
+      "from": "/seo/custom-prompts",
+      "to": "/seo/planner"
+    },
+    {
+      "from": "/seo/dashboard",
+      "to": "/dashboard"
+    },
+    {
+      "from": "/seo/eyeon",
+      "to": "/seo/competitor-monitoring"
+    },
+    {
+      "from": "/seo/gbp-monitor",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/local",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/local-seo",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/local-heatmap",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/map-rank-tracker",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/gsc-insights",
+      "to": "/seo/history"
+    },
+    {
+      "from": "/seo/keywords-explorer",
+      "to": "/seo/keywords"
+    },
+    {
+      "from": "/seo/nsvo",
+      "to": "/seo/msvo"
+    },
+    {
+      "from": "/seo/patches",
+      "to": "/seo/technical"
+    },
+    {
+      "from": "/seo/portfolios",
+      "to": "/seo/agency-platform"
+    },
+    {
+      "from": "/seo/rank-tracker",
+      "to": "/seo/rank-tracking"
+    },
+    {
+      "from": "/seo/report-builder",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/client-portal",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/performance",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/retail-media-app-growth-hub",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/modules/retail-media-app-growth-hub",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/ai-creative-keyword-lab",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/modules/ai-creative-keyword-lab",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/attribution-conversion-intelligence",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/modules/attribution-conversion-intelligence",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/budget-pacing-bid-engine",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/modules/budget-pacing-bid-engine",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/cross-network-campaign-orchestrator",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/modules/cross-network-campaign-orchestrator",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/unified-ads-control-tower",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/modules/unified-ads-control-tower",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/ads-connectors",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/ads-campaigns",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/ads-calendar",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/ads-metrics",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/ads-kpis",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/ads-smart-schedule",
+      "to": "/seo"
+    },
+    {
+      "from": "/seo/site-audit",
+      "to": "/seo/technical"
+    },
+    {
+      "from": "/seo/site-explorer",
+      "to": "/seo/domain-overview"
+    },
+    {
+      "from": "/seo/social-media-manager",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/seo/web-analytics",
+      "to": "/seo/analytics"
+    },
+    {
+      "from": "/studio/ar-experience-studio",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/blog-studio",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/editing-suite",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/hologram-stage",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/image-slider",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/keyword-research",
+      "to": "/seo/keywords"
+    },
+    {
+      "from": "/studio/rank-tracker",
+      "to": "/seo/rank-tracking"
+    },
+    {
+      "from": "/studio/music-generator",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/social-accounts",
+      "to": "/studio/social-studio/accounts"
+    },
+    {
+      "from": "/studio/social-ads",
+      "to": "/studio/social-studio/ads"
+    },
+    {
+      "from": "/studio/social-advocacy",
+      "to": "/studio/social-studio/advocacy"
+    },
+    {
+      "from": "/studio/social-analytics",
+      "to": "/studio/social-studio/analytics"
+    },
+    {
+      "from": "/studio/social-approvals",
+      "to": "/studio/social-studio/approvals"
+    },
+    {
+      "from": "/studio/social-automation",
+      "to": "/studio/social-studio/automation"
+    },
+    {
+      "from": "/studio/social-studio/manychat",
+      "to": "/studio/social-studio/automation"
+    },
+    {
+      "from": "/studio/social-studio/mobile",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/social-best-time",
+      "to": "/studio/social-studio/best-time"
+    },
+    {
+      "from": "/studio/social-bulk-schedule",
+      "to": "/studio/social-studio/bulk-schedule"
+    },
+    {
+      "from": "/studio/social-calendar",
+      "to": "/studio/social-studio/calendar"
+    },
+    {
+      "from": "/studio/social-inbox",
+      "to": "/studio/social-studio/inbox"
+    },
+    {
+      "from": "/studio/social-influencers",
+      "to": "/studio/social-studio/influencers"
+    },
+    {
+      "from": "/studio/social-link-in-bio",
+      "to": "/studio/social-studio/link-in-bio"
+    },
+    {
+      "from": "/studio/social-listening",
+      "to": "/social-listening"
+    },
+    {
+      "from": "/studio/social-studio/listening",
+      "to": "/social-listening"
+    },
+    {
+      "from": "/studio/social-posts",
+      "to": "/studio/social-studio/posts"
+    },
+    {
+      "from": "/studio/social-reports",
+      "to": "/studio/social-studio/reports"
+    },
+    {
+      "from": "/studio/social-reviews",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/social-streams",
+      "to": "/studio/social-studio/streams"
+    },
+    {
+      "from": "/studio/social-trends",
+      "to": "/studio/social-studio/trends"
+    },
+    {
+      "from": "/studio/social-ugc",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/social-studio/ugc",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/sound-design",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/studio/vr-world-builder",
+      "to": "/studio/social-studio"
+    },
+    {
+      "from": "/ai-analytics",
+      "to": "/studio/agent-analytics"
+    },
+    {
+      "from": "/cost-saving-calculator",
+      "to": "/ai-search-impact-calculator"
+    },
+    {
+      "from": "/crm/abm",
+      "to": "/crm"
+    },
+    {
+      "from": "/finance-ops",
+      "to": "/billing"
+    },
+    {
+      "from": "/account/wallet",
+      "to": "/billing"
+    },
+    {
+      "from": "/account/settings",
+      "to": "/account/profile"
+    },
+    {
+      "from": "/seo/ai-localization",
+      "to": "/tools/translation-studio"
+    },
+    {
+      "from": "/studio/ads-engine",
+      "to": "/ads-generation"
+    },
+    {
+      "from": "/studio/seo-suite",
+      "to": "/seo"
+    },
+    {
+      "from": "/studio/growth-suite",
+      "to": "/studio"
+    },
+    {
+      "from": "/seo/contentshake",
+      "to": "/content-generation"
+    },
+    {
+      "from": "/seo-aeo-geo-audit-tool",
+      "to": "/seo/technical"
+    },
+    {
+      "from": "/studio/workflow-orchestrator",
+      "to": "/workflows"
+    },
+    {
+      "from": "/vse",
+      "to": "/studio"
     }
   ]
 }

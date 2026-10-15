@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from ..constants import AuthDep
+from ..capabilities import WORKFORCE_EXECUTION_UNAVAILABLE_RESPONSES
 from ..operations.reject_mission import execute_list_knowledge
 from ..operations.reject_mission import execute_list_outcomes
 from ..operations.reject_mission import execute_list_retry_queue
@@ -31,7 +32,7 @@ def register(router: APIRouter, runtime: ContextRuntime):
     def list_outcomes(auth: AuthDep, limit: Annotated[int, Query(ge=1, le=1000)] = 100) -> dict[str, Any]:
         return execute_list_outcomes(runtime, auth, limit)
 
-    @router.post("/webhook/trigger", status_code=202)
+    @router.post("/webhook/trigger", status_code=202, responses=WORKFORCE_EXECUTION_UNAVAILABLE_RESPONSES)
     async def webhook_trigger(payload: WebhookTriggerRequest, auth: AuthDep, request: Request) -> dict[str, Any]:
         return await execute_webhook_trigger(runtime, payload, auth, request)
 

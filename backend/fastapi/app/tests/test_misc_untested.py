@@ -1,5 +1,6 @@
 """Tests for untested helper functions across various modules."""
 import os
+import hashlib
 
 os.environ.setdefault("APP_ENC_KEY", "00" * 32)
 os.environ.setdefault("NUXTRON_SKIP_STARTUP_DB_INIT", "1")
@@ -107,7 +108,7 @@ class TestAuditApiUsage:
         assert len(store) <= 100
 
     @pytest.mark.asyncio
-    async def test_forwarded_for_header_used(self):
+    async def test_untrusted_forwarded_for_header_is_ignored(self):
         from backend.fastapi.app.deps import _audit_api_usage
         store = []
         req = self._make_request(store)
@@ -116,7 +117,8 @@ class TestAuditApiUsage:
             'User-Agent': 'test',
         }.get(k, d))
         await _audit_api_usage(req, tenant_id="t1", auth_mode="api_key", api_key_value=None)
-        assert store[0]["ip_hash"] != ''
+        expected = hashlib.sha256(b"127.0.0.1").hexdigest()[:16]
+        assert store[0]["ip_hash"] == expected
 
 
 class TestSecretsManagerClearCaches:

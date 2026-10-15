@@ -260,18 +260,19 @@ class TestPlaybooksRunDbPath:
         assert r.status_code == 404
 
     def test_run_playbook_db_exception_fallback(self, client: TestClient) -> None:
-        """Lines 244-246: DB raises → falls back to memory for run record."""
+        """Live execution is explicitly unsupported and must not touch the DB."""
         import backend.fastapi.app.legacy_main as lm
 
         with patch.object(lm, "_db_ready", True), \
-             patch("backend.fastapi.app.routers.playbooks.psycopg.connect",
-                   side_effect=Exception("DB insert error")):
+             patch("backend.fastapi.app.routers.playbooks.psycopg.connect") as connect:
             r = client.post("/playbooks/run", headers=H, json={
                 "playbook_id": "pb-builtin-002",
                 "dry_run": False,
                 "config": {"audience": "mid-market"},
             })
-        assert r.status_code in (200, 201)
+        assert r.status_code == 501
+        assert r.json()["detail"] == "Playbook execution is not configured. No steps were executed."
+        connect.assert_not_called()
 
 
 class TestPlaybooksListRunsDbPath:
@@ -321,3 +322,42 @@ class TestPlaybooksListRunsDbPath:
         if r.status_code == 200:
             data = r.json()
             assert "runs" in data
+class TestPlaybooksProductionPersistence:
+    @pytest.mark.parametrize(
+        ("method", "path", "payload"),
+        [
+            ("GET", "/playbooks", None),
+            (
+                "GET",
+                "/playbooks/pb-custom-production-outage",
+                None,
+            ),
+            (
+                "POST",
+                "/playbooks",
+                {"name": "Production playbook", "description": "Durable persistence is required."},
+            ),
+            ("POST", "/playbooks/run", {"playbook_id": "pb-builtin-001", "dry_run": True}),
+            ("GET", "/playbooks/runs/list", None),
+        ],
+    )
+    def test_database_outage_fails_closed(
+        self,
+        client: TestClient,
+        monkeypatch: pytest.MonkeyPatch,
+        method: str,
+        path: str,
+        payload: dict[str, object] | None,
+    ) -> None:
+        import backend.fastapi.app.legacy_main as lm
+
+        monkeypatch.setattr("backend.fastapi.app.routers.playbooks._is_production", lambda: True)
+        with patch.object(lm, "_db_ready", True), patch(
+            "backend.fastapi.app.routers.playbooks.psycopg.connect",
+            side_effect=OSError("db-secret-host"),
+        ) as connect:
+            response = client.request(method, path, headers=H, json=payload)
+
+        assert response.status_code == 503
+        assert "db-secret-host" not in response.text
+        connect.assert_called_once()

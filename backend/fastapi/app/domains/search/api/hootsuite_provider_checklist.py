@@ -1,19 +1,22 @@
 """Search HTTP operations beginning with hootsuite provider checklist."""
 
-from ..constants import AuthDep
-from ..operations.hootsuite_features import operation_hootsuite_create_project
-from ..operations.hootsuite_features import operation_hootsuite_list_projects
-from ..operations.hootsuite_features import operation_hootsuite_list_runs
-from ..operations.hootsuite_features import operation_hootsuite_provider_checklist
-from ..operations.hootsuite_features import operation_hootsuite_wiring_state
-from ..operations.hootsuite_product_catalog import operation_hootsuite_run_project
-from ..operations.hootsuite_wiring_apply import operation_hootsuite_full_automation
-from ..operations.hootsuite_wiring_apply import operation_hootsuite_wiring_apply
-from ..runtime import SearchRuntime
-from ..schemas import HootsuiteWiringApplyRequest
-from ..schemas import SemrushFullAutomationRequest
-from fastapi import APIRouter
 from typing import Any
+
+from fastapi import APIRouter
+
+from ..constants import AuthDep
+from ..operations.hootsuite_features import (
+    operation_hootsuite_create_project,
+    operation_hootsuite_list_projects,
+    operation_hootsuite_list_runs,
+    operation_hootsuite_provider_checklist,
+    operation_hootsuite_wiring_state,
+)
+from ..operations.hootsuite_product_catalog import operation_hootsuite_run_project
+from ..operations.hootsuite_wiring_apply import operation_hootsuite_full_automation, operation_hootsuite_wiring_apply
+from ..runtime import SearchRuntime
+from ..schemas import HootsuiteWiringApplyRequest, SemrushFullAutomationRequest
+from .keyword_unavailable_response import KEYWORD_RESEARCH_501_RESPONSE
 
 
 def register(router: APIRouter, runtime: SearchRuntime):
@@ -26,11 +29,11 @@ def register(router: APIRouter, runtime: SearchRuntime):
     def hootsuite_wiring_state(auth: AuthDep) -> dict[str, Any]:
         return operation_hootsuite_wiring_state(runtime, auth)
 
-    @router.post("/hootsuite/wiring/apply")
+    @router.post("/hootsuite/wiring/apply", status_code=501, response_model=None, responses={501: KEYWORD_RESEARCH_501_RESPONSE})
     def hootsuite_wiring_apply(payload: HootsuiteWiringApplyRequest, auth: AuthDep) -> dict[str, Any]:
         return operation_hootsuite_wiring_apply(runtime, payload, auth)
 
-    @router.post("/hootsuite/full-automation")
+    @router.post("/hootsuite/full-automation", status_code=501, response_model=None, responses={501: KEYWORD_RESEARCH_501_RESPONSE})
     def hootsuite_full_automation(payload: SemrushFullAutomationRequest, auth: AuthDep) -> dict[str, Any]:
         return operation_hootsuite_full_automation(runtime, payload, auth)
 

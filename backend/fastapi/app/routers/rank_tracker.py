@@ -47,10 +47,20 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..deps import AuthContext, require_auth
+from ..domains.seo.services.seo_keyword_research_service import (
+    KEYWORD_RESEARCH_UNAVAILABLE_DETAIL,
+    raise_keyword_research_unavailable,
+)
+from ..domains.seo.services.seo_rank_tracking_service import RANK_TRACKING_501_RESPONSE, raise_rank_tracking_unavailable
 
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
 router = APIRouter(prefix="/rank-tracker", tags=["Rank Tracker"])
+
+_KEYWORD_RESEARCH_501_RESPONSE = {
+    "description": "Verified workspace-scoped keyword provider data is unavailable.",
+    "content": {"application/json": {"example": {"detail": KEYWORD_RESEARCH_UNAVAILABLE_DETAIL}}},
+}
 
 # ---------------------------------------------------------------------------
 # In-memory stores keyed by tenant_id
@@ -238,7 +248,7 @@ class KeywordResearchRequest(BaseModel):
     max_results: int = Field(default=80, ge=10, le=200)
     require_live_providers: bool = Field(
         default=False,
-        description="If true, fail when no live provider succeeds instead of using synthetic fallback.",
+        description="Deprecated compatibility field; this endpoint remains unavailable until source-level results are verifiable.",
     )
 
 
@@ -248,7 +258,7 @@ class KeywordContentGapRequest(BaseModel):
     max_results: int = Field(default=30, ge=5, le=100)
     require_live_providers: bool = Field(
         default=False,
-        description="If true, fail when no live provider succeeds instead of using synthetic fallback.",
+        description="Deprecated compatibility field; this endpoint remains unavailable until source-level results are verifiable.",
     )
 
 
@@ -1210,9 +1220,10 @@ def _provider_configured_for_tenant(tenant_id: str, provider: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-@router.post("/tracked-keywords", status_code=201)
+@router.post("/tracked-keywords", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def add_keyword(payload: AddKeywordRequest, auth: AuthDep) -> dict[str, Any]:
     """Add a keyword to track."""
+    raise_rank_tracking_unavailable()
     keywords = _get_tracked_keywords(auth.tenant_id)
     with _lock:
         existing = [k for k in keywords if k["keyword"].lower() == payload.keyword.lower()]
@@ -1238,15 +1249,17 @@ def add_keyword(payload: AddKeywordRequest, auth: AuthDep) -> dict[str, Any]:
     return {"keyword": record}
 
 
-@router.get("/tracked-keywords")
+@router.get("/tracked-keywords", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def list_keywords(auth: AuthDep) -> dict[str, Any]:
     """List all tracked keywords for tenant."""
+    raise_rank_tracking_unavailable()
     keywords = _get_tracked_keywords(auth.tenant_id)
     return {"keywords": keywords, "total": len(keywords), "tracking": sum(1 for k in keywords if k.get("is_tracking"))}
 
 
-@router.delete("/tracked-keywords/{keyword_id}")
+@router.delete("/tracked-keywords/{keyword_id}", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def remove_keyword(keyword_id: str, auth: AuthDep) -> dict[str, Any]:
+    raise_rank_tracking_unavailable()
     keywords = _get_tracked_keywords(auth.tenant_id)
     with _lock:
         idx = next((i for i, k in enumerate(keywords) if k["id"] == keyword_id and k["tenant_id"] == auth.tenant_id), None)
@@ -1256,9 +1269,10 @@ def remove_keyword(keyword_id: str, auth: AuthDep) -> dict[str, Any]:
     return {"deleted": keyword_id}
 
 
-@router.post("/add-project", status_code=201)
+@router.post("/add-project", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def create_project(payload: AddProjectRequest, auth: AuthDep) -> dict[str, Any]:
     """Create a new rank tracking project."""
+    raise_rank_tracking_unavailable()
     projects = _get_projects(auth.tenant_id)
     with _lock:
         record: dict[str, Any] = {
@@ -1275,14 +1289,16 @@ def create_project(payload: AddProjectRequest, auth: AuthDep) -> dict[str, Any]:
     return {"project": record}
 
 
-@router.get("/projects")
+@router.get("/projects", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def list_projects(auth: AuthDep) -> dict[str, Any]:
+    raise_rank_tracking_unavailable()
     projects = _get_projects(auth.tenant_id)
     return {"projects": projects, "total": len(projects)}
 
 
-@router.delete("/projects/{project_id}")
+@router.delete("/projects/{project_id}", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def remove_project(project_id: str, auth: AuthDep) -> dict[str, Any]:
+    raise_rank_tracking_unavailable()
     projects = _get_projects(auth.tenant_id)
     with _lock:
         idx = next((i for i, p in enumerate(projects) if p["id"] == project_id and p["tenant_id"] == auth.tenant_id), None)
@@ -1292,9 +1308,10 @@ def remove_project(project_id: str, auth: AuthDep) -> dict[str, Any]:
     return {"deleted": project_id}
 
 
-@router.get("/positions")
+@router.get("/positions", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def get_positions(auth: AuthDep, page: int = Query(default=1, ge=1), page_size: int = Query(default=25, ge=1, le=100)) -> dict[str, Any]:
     """Get current SERP positions for all tracked keywords."""
+    raise_rank_tracking_unavailable()
     keywords = _get_tracked_keywords(auth.tenant_id)
     total = len(keywords)
     pages = math.ceil(total / page_size)
@@ -1319,9 +1336,10 @@ def get_positions(auth: AuthDep, page: int = Query(default=1, ge=1), page_size: 
     }
 
 
-@router.post("/positions/check")
+@router.post("/positions/check", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def check_serp(payload: CheckSERPRequest, auth: AuthDep) -> dict[str, Any]:
     """Manually refresh SERP positions for keyword(s)."""
+    raise_rank_tracking_unavailable()
     results = []
     for kw in payload.keywords:
         position = random.randint(1, 100)
@@ -1337,9 +1355,10 @@ def check_serp(payload: CheckSERPRequest, auth: AuthDep) -> dict[str, Any]:
     return {"serp_check": results}
 
 
-@router.post("/competitors", status_code=201)
+@router.post("/competitors", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def add_competitor(payload: AddCompetitorRequest, auth: AuthDep) -> dict[str, Any]:
     """Add competitor domain to track."""
+    raise_rank_tracking_unavailable()
     competitors = _get_competitors(auth.tenant_id)
     with _lock:
         existing = [c for c in competitors if c["domain"].lower() == payload.domain.lower()]
@@ -1358,14 +1377,16 @@ def add_competitor(payload: AddCompetitorRequest, auth: AuthDep) -> dict[str, An
     return {"competitor": record}
 
 
-@router.get("/competitors")
+@router.get("/competitors", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def list_competitors(auth: AuthDep) -> dict[str, Any]:
+    raise_rank_tracking_unavailable()
     competitors = _get_competitors(auth.tenant_id)
     return {"competitors": competitors, "total": len(competitors)}
 
 
-@router.delete("/competitors/{competitor_id}")
+@router.delete("/competitors/{competitor_id}", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def remove_competitor(competitor_id: str, auth: AuthDep) -> dict[str, Any]:
+    raise_rank_tracking_unavailable()
     competitors = _get_competitors(auth.tenant_id)
     with _lock:
         idx = next((i for i, c in enumerate(competitors) if c["id"] == competitor_id and c["tenant_id"] == auth.tenant_id), None)
@@ -1375,9 +1396,10 @@ def remove_competitor(competitor_id: str, auth: AuthDep) -> dict[str, Any]:
     return {"deleted": competitor_id}
 
 
-@router.get("/history")
+@router.get("/history", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def get_history(auth: AuthDep, days: int = Query(default=90, ge=7, le=365), keyword_id: str | None = None) -> dict[str, Any]:
     """Get ranking history timeseries for keywords (all or specific)."""
+    raise_rank_tracking_unavailable()
     history = _get_position_history(auth.tenant_id)
     keywords = _get_tracked_keywords(auth.tenant_id)
     
@@ -1425,9 +1447,10 @@ def get_history(auth: AuthDep, days: int = Query(default=90, ge=7, le=365), keyw
     }
 
 
-@router.get("/lost-gained")
+@router.get("/lost-gained", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def lost_gained(auth: AuthDep, days: int = Query(default=30, ge=1, le=365)) -> dict[str, Any]:
     """Get keywords that rose or fell in rankings."""
+    raise_rank_tracking_unavailable()
     keywords = _get_tracked_keywords(auth.tenant_id)
     # Simple: use 30d change as proxy
     gained = sorted([k for k in keywords if k.get("position_change_30d", 0) < -2], key=lambda x: x.get("position_change_30d", 0))[:10]
@@ -1460,9 +1483,10 @@ def lost_gained(auth: AuthDep, days: int = Query(default=30, ge=1, le=365)) -> d
     }
 
 
-@router.get("/visibility-score")
+@router.get("/visibility-score", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def visibility_score(auth: AuthDep) -> dict[str, Any]:
     """Aggregate visibility score — estimated organic traffic."""
+    raise_rank_tracking_unavailable()
     keywords = _get_tracked_keywords(auth.tenant_id)
     total_traffic = sum(k.get("traffic_potential", 0) for k in keywords)
     top_3_keywords = [k for k in keywords if k.get("current_position", 101) <= 3]
@@ -1485,9 +1509,10 @@ def visibility_score(auth: AuthDep) -> dict[str, Any]:
     }
 
 
-@router.get("/forecasts")
+@router.get("/forecasts", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def traffic_forecasts(auth: AuthDep) -> dict[str, Any]:
     """Traffic forecast estimates by rank position."""
+    raise_rank_tracking_unavailable()
     forecasts = []
     base_monthly_traffic = 10000
     for position in [1, 2, 3, 5, 10, 15, 20, 30, 50, 100]:
@@ -1505,9 +1530,10 @@ def traffic_forecasts(auth: AuthDep) -> dict[str, Any]:
     return {"forecasts": forecasts}
 
 
-@router.get("/analytics")
+@router.get("/analytics", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def analytics(auth: AuthDep) -> dict[str, Any]:
     """Daily summary: top movers, changes, alerts."""
+    raise_rank_tracking_unavailable()
     keywords = _get_tracked_keywords(auth.tenant_id)
     improved = [k for k in keywords if k.get("position_change_30d", 0) < -2]
     dropped = [k for k in keywords if k.get("position_change_30d", 0) > 2]
@@ -1542,9 +1568,10 @@ def analytics(auth: AuthDep) -> dict[str, Any]:
     }
 
 
-@router.post("/alerts/set", status_code=201)
+@router.post("/alerts/set", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def set_alert(payload: SetAlertRequest, auth: AuthDep) -> dict[str, Any]:
     """Configure rank change alerts."""
+    raise_rank_tracking_unavailable()
     alerts = _get_alerts(auth.tenant_id)
     with _lock:
         keywords = _get_tracked_keywords(auth.tenant_id)
@@ -1565,81 +1592,28 @@ def set_alert(payload: SetAlertRequest, auth: AuthDep) -> dict[str, Any]:
     return {"alert": record}
 
 
-@router.get("/alerts")
+@router.get("/alerts", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def get_alerts(auth: AuthDep) -> dict[str, Any]:
+    raise_rank_tracking_unavailable()
     alerts = _get_alerts(auth.tenant_id)
     active = [a for a in alerts if a.get("is_active")]
     return {"alerts": alerts, "total": len(alerts), "active": len(active)}
 
 
-@router.get("/keyword-research/sources")
+@router.get("/keyword-research/sources", status_code=501, response_model=None, responses={501: _KEYWORD_RESEARCH_501_RESPONSE})
 def keyword_research_sources(auth: AuthDep) -> dict[str, Any]:
-    tools = _source_configuration()
-    configured_count = len([tool for tool in tools if tool["configured"]])
-    with _lock:
-        cache_size = len(_keyword_provider_cache)
-    return {
-        "sources": tools,
-        "priority_order": _KEYWORD_PROVIDER_PRIORITY + [_SYNTHETIC_PROVIDER_KEY],
-        "configured_count": configured_count,
-        "total_sources": len(tools),
-        "network_enabled": _provider_network_enabled(),
-        "cache_ttl_seconds": _KEYWORD_PROVIDER_CACHE_TTL_SECONDS,
-        "cache_entries": cache_size,
-        "tenant_id": auth.tenant_id,
-    }
+    raise_keyword_research_unavailable()
 
 
-@router.get("/keyword-research/vendors")
+@router.get("/keyword-research/vendors", status_code=501, response_model=None, responses={501: _KEYWORD_RESEARCH_501_RESPONSE})
 def keyword_research_vendors(auth: AuthDep) -> dict[str, Any]:
-    return {
-        "tenant_id": auth.tenant_id,
-        "strategy": "hybrid_multi_source_with_resilient_fallback",
-        "providers": [
-            {
-                "key": "dataforseo",
-                "category": "third_party",
-                "coverage": ["keyword_ideas", "serp_metrics"],
-                "configured": _provider_configured_for_tenant(auth.tenant_id, "dataforseo"),
-            },
-            {
-                "key": "serper",
-                "category": "third_party",
-                "coverage": ["related_searches", "people_also_ask"],
-                "configured": _provider_configured_for_tenant(auth.tenant_id, "serper"),
-            },
-            {
-                "key": "google_keyword_planner",
-                "category": "first_party_google",
-                "coverage": ["cpc", "paid_intent"],
-                "configured": _provider_configured_for_tenant(auth.tenant_id, "google_keyword_planner"),
-                "status": "live" if _provider_configured_for_tenant(auth.tenant_id, "google_keyword_planner") else "needs_google_ads_oauth",
-            },
-            {
-                "key": "google_search_console",
-                "category": "first_party_google",
-                "coverage": ["impressions", "clicks", "ctr"],
-                "configured": _provider_configured_for_tenant(auth.tenant_id, "google_search_console"),
-                "status": "live" if _provider_configured_for_tenant(auth.tenant_id, "google_search_console") else "needs_gsc_access",
-            },
-            {
-                "key": _SYNTHETIC_PROVIDER_KEY,
-                "category": "internal_fallback",
-                "coverage": ["deterministic_baseline_generation"],
-                "configured": True,
-            },
-        ],
-        "pipeline": {
-            "priority_order": _KEYWORD_PROVIDER_PRIORITY + [_SYNTHETIC_PROVIDER_KEY],
-            "network_enabled": _provider_network_enabled(),
-            "cache_ttl_seconds": _KEYWORD_PROVIDER_CACHE_TTL_SECONDS,
-        },
-    }
+    raise_keyword_research_unavailable()
 
 
-@router.post("/oauth/google-ads-callback")
+@router.post("/oauth/google-ads-callback", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def oauth_google_ads_callback(code: str, state: str, auth: AuthDep) -> dict[str, Any]:
     """OAuth 2.0 callback handler for Google Ads API."""
+    raise_rank_tracking_unavailable()
     with _lock:
         session = _oauth_sessions.get(state)
     if not session or session["tenant_id"] != auth.tenant_id:
@@ -1692,9 +1666,10 @@ def oauth_google_ads_callback(code: str, state: str, auth: AuthDep) -> dict[str,
     }
 
 
-@router.post("/oauth/gsc-callback")
+@router.post("/oauth/gsc-callback", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def oauth_gsc_callback(code: str, state: str, auth: AuthDep) -> dict[str, Any]:
     """OAuth 2.0 callback handler for Google Search Console."""
+    raise_rank_tracking_unavailable()
     with _lock:
         session = _oauth_sessions.get(state)
     if not session or session["tenant_id"] != auth.tenant_id:
@@ -1747,9 +1722,10 @@ def oauth_gsc_callback(code: str, state: str, auth: AuthDep) -> dict[str, Any]:
     }
 
 
-@router.post("/provider-config/init-oauth")
+@router.post("/provider-config/init-oauth", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def provider_config_init_oauth(provider: str, redirect_uri: str, auth: AuthDep) -> dict[str, Any]:
     """Initiate OAuth flow for a given provider."""
+    raise_rank_tracking_unavailable()
     valid_providers = ["google_keyword_planner", "google_search_console"]
     if provider not in valid_providers:
         raise HTTPException(status_code=400, detail=f"Provider must be one of {valid_providers}")
@@ -1787,9 +1763,10 @@ def provider_config_init_oauth(provider: str, redirect_uri: str, auth: AuthDep) 
     }
 
 
-@router.get("/provider-config/status")
+@router.get("/provider-config/status", status_code=501, response_model=None, responses={501: RANK_TRACKING_501_RESPONSE})
 def provider_config_status(auth: AuthDep) -> dict[str, Any]:
     """Get current provider configuration status for the tenant."""
+    raise_rank_tracking_unavailable()
     cfg = _get_provider_config(auth.tenant_id)
     return {
         "tenant_id": auth.tenant_id,
@@ -1808,191 +1785,11 @@ def provider_config_status(auth: AuthDep) -> dict[str, Any]:
     }
 
 
-@router.post("/keyword-research/discover")
+@router.post("/keyword-research/discover", status_code=501, response_model=None, responses={501: _KEYWORD_RESEARCH_501_RESPONSE})
 def keyword_research_discover(payload: KeywordResearchRequest, auth: AuthDep) -> dict[str, Any]:
-    rng = _keyword_rng(payload.seed_keyword, auth.tenant_id)
-    provider_payload = {
-        "seed_keyword": payload.seed_keyword,
-        "location": payload.location,
-        "language": payload.language,
-        "max_results": payload.max_results,
-    }
-    provider_result = _run_provider_chain(
-        operation="discover",
-        tenant_id=auth.tenant_id,
-        payload=provider_payload,
-    )
-    if payload.require_live_providers and provider_result.get("fallback_used"):
-        raise HTTPException(
-            status_code=412,
-            detail={
-                "code": "live_provider_required",
-                "message": "No live keyword provider succeeded; configure at least one provider.",
-                "provider_attempts": provider_result.get("provider_attempts", []),
-                "fallback_reason": provider_result.get("fallback_reason"),
-            },
-        )
-    synthetic_ideas = _build_keyword_ideas(payload.seed_keyword, payload.include_questions)
-    if payload.require_live_providers:
-        selected = _merge_keyword_candidates(provider_result.get("provider_keywords", []), limit=payload.max_results)
-    else:
-        selected = _merge_keyword_candidates(
-            provider_result.get("provider_keywords", []),
-            synthetic_ideas,
-            limit=payload.max_results,
-        )
-
-    opportunities: list[dict[str, Any]] = []
-    for keyword in selected:
-        difficulty = rng.randint(8, 86)
-        volume = rng.randint(120, 28000)
-        cpc = round(rng.uniform(0.2, 19.5), 2)
-        trend = [rng.randint(-22, 38), rng.randint(-18, 32), rng.randint(-15, 27)]
-        opportunities.append(
-            {
-                "keyword": keyword,
-                "search_volume": volume,
-                "keyword_difficulty": difficulty,
-                "cpc_usd": cpc,
-                "intent": rng.choice(_RESEARCH_INTENTS),
-                "serp_features": rng.sample(_SERP_FEATURES, k=rng.randint(1, 3)),
-                "trend_3m_pct": trend,
-                "competition_level": "high" if difficulty >= 70 else ("medium" if difficulty >= 40 else "low"),
-                "priority_score": round((volume / max(1, difficulty + 5)) * (1.0 + rng.uniform(0.0, 0.6)), 2),
-            }
-        )
-
-    opportunities.sort(key=lambda item: item["priority_score"], reverse=True)
-
-    clusters_map: dict[str, dict[str, Any]] = {}
-    for item in opportunities:
-        topic = _keyword_topic(item["keyword"])
-        cluster = clusters_map.setdefault(
-            topic,
-            {
-                "topic": topic,
-                "keywords": [],
-                "total_volume": 0,
-                "avg_difficulty": 0.0,
-            },
-        )
-        cluster["keywords"].append(item)
-        cluster["total_volume"] += item["search_volume"]
-
-    clusters: list[dict[str, Any]] = []
-    for cluster in clusters_map.values():
-        keywords = cluster["keywords"]
-        cluster["avg_difficulty"] = round(
-            sum(item["keyword_difficulty"] for item in keywords) / max(1, len(keywords)),
-            1,
-        )
-        clusters.append(cluster)
-    clusters.sort(key=lambda item: item["total_volume"], reverse=True)
-
-    return {
-        "seed_keyword": _normalize_keyword(payload.seed_keyword),
-        "location": payload.location,
-        "language": payload.language,
-        "generated_at": _now(),
-        "opportunities": opportunities,
-        "clusters": clusters,
-        "providers_used": provider_result["providers_used"],
-        "provider_selected": provider_result["provider_selected"],
-        "provider_strategy": provider_result["provider_strategy"],
-        "provider_attempts": provider_result["provider_attempts"],
-        "fallback_used": provider_result["fallback_used"],
-        "fallback_reason": provider_result["fallback_reason"],
-        "telemetry": provider_result["telemetry"],
-        "coverage": {
-            "keywords_analyzed": len(opportunities),
-            "clusters_found": len(clusters),
-            "high_intent_keywords": len(
-                [
-                    item
-                    for item in opportunities
-                    if item["intent"] in {"commercial", "transactional"}
-                ]
-            ),
-        },
-    }
+    raise_keyword_research_unavailable()
 
 
-@router.post("/keyword-research/content-gap")
+@router.post("/keyword-research/content-gap", status_code=501, response_model=None, responses={501: _KEYWORD_RESEARCH_501_RESPONSE})
 def keyword_research_content_gap(payload: KeywordContentGapRequest, auth: AuthDep) -> dict[str, Any]:
-    normalized_your_domain = _normalize_domain(payload.your_domain)
-    normalized_competitors = [_normalize_domain(domain) for domain in payload.competitor_domains]
-    rng = _keyword_rng(normalized_your_domain, auth.tenant_id)
-    provider_seed = f"{_extract_domain_label(normalized_your_domain)} alternatives"
-    provider_payload = {
-        "seed_keyword": provider_seed,
-        "location": "United States",
-        "language": "en",
-        "max_results": payload.max_results,
-    }
-    provider_result = _run_provider_chain(
-        operation="content_gap",
-        tenant_id=auth.tenant_id,
-        payload=provider_payload,
-    )
-    if payload.require_live_providers and provider_result.get("fallback_used"):
-        raise HTTPException(
-            status_code=412,
-            detail={
-                "code": "live_provider_required",
-                "message": "No live keyword provider succeeded for content gap; configure at least one provider.",
-                "provider_attempts": provider_result.get("provider_attempts", []),
-                "fallback_reason": provider_result.get("fallback_reason"),
-            },
-        )
-    competitor_count = len(normalized_competitors)
-    provider_terms = provider_result.get("provider_keywords", [])
-    fallback_terms = [
-        f"{_extract_domain_label(domain)} alternatives"
-        for domain in normalized_competitors
-    ]
-    if payload.require_live_providers:
-        content_gap_terms = _merge_keyword_candidates(provider_terms, limit=max(payload.max_results, 60))
-    else:
-        content_gap_terms = _merge_keyword_candidates(provider_terms, fallback_terms, _KEYWORDS_POOL, limit=max(payload.max_results, 60))
-    opportunities: list[dict[str, Any]] = []
-    for idx in range(payload.max_results):
-        stem = content_gap_terms[idx % len(content_gap_terms)]
-        keyword = f"{stem} {rng.choice(['guide', 'template', 'tool', 'strategy', 'examples'])}"
-        opportunities.append(
-            {
-                "keyword": keyword,
-                "search_volume": rng.randint(100, 24000),
-                "difficulty": rng.randint(10, 88),
-                "covered_by_competitors": rng.randint(1, competitor_count),
-                "estimated_monthly_clicks": rng.randint(20, 3400),
-                "recommended_content_type": rng.choice(["landing_page", "blog", "comparison", "template", "video"]),
-            }
-        )
-
-    opportunities.sort(
-        key=lambda item: (item["covered_by_competitors"], item["search_volume"]),
-        reverse=True,
-    )
-    return {
-        "your_domain": normalized_your_domain,
-        "competitors": normalized_competitors,
-        "opportunities": opportunities,
-        "providers_used": provider_result["providers_used"],
-        "provider_selected": provider_result["provider_selected"],
-        "provider_strategy": provider_result["provider_strategy"],
-        "provider_attempts": provider_result["provider_attempts"],
-        "fallback_used": provider_result["fallback_used"],
-        "fallback_reason": provider_result["fallback_reason"],
-        "telemetry": provider_result["telemetry"],
-        "summary": {
-            "total_opportunities": len(opportunities),
-            "avg_difficulty": round(
-                sum(item["difficulty"] for item in opportunities) / max(1, len(opportunities)),
-                1,
-            ),
-            "high_coverage_gaps": len(
-                [item for item in opportunities if item["covered_by_competitors"] >= max(2, competitor_count // 2)]
-            ),
-        },
-        "generated_at": _now(),
-    }
+    raise_keyword_research_unavailable()

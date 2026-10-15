@@ -43,61 +43,6 @@ _coerce_int: Callable[[object, int], int] = _default_coerce_int
 _coerce_float: Callable[[object, float], float] = _default_coerce_float
 _json_object: Callable[[object], JsonObject | None] = _default_json_object
 
-# Module-level constants
-_HYBRID_STACKS_IDS: tuple[str, ...] = (
-    'seo-ai', 'geo', 'aio-2', 'llmo', 'sageo', 'vso', 'sxo', 'gxo', 'entity-first-seo', 'peao',
-    'msvo', 'daeo', 'cxao', 'eeat-suite', 'autonomous-agent-engine', 'programmatic-seo-engine',
-    'seo-ab-testing', 'ecommerce-seo-suite', 'autonomous-link-building-system', 'international-multilingual-seo',
-    'site-migration-seo-manager', 'video-seo-module', 'local-seo-suite', 'news-seo-google-discover',
-    'analytics-reporting-intelligence', 'agency-multi-tenant-platform', 'integrations-automation-layer',
-    'realtime-search-ai-monitoring', 'ai-technical-seo-engine', 'content-quality-hallucination-auditor',
-    'knowledge-graph-management', 'ai-internal-linking-engine', 'crawl-budget-optimizer',
-    'ai-schema-engine', 'ux-conversion-optimizer', 'rag-site-search-engine', 'competitor-intelligence-engine',
-    'topical-map-silo-builder', 'log-file-analysis-engine', 'review-reputation-engine',
-    'brand-voice-style-engine', 'accessibility-optimizer', 'image-media-seo-engine',
-    'social-seo-distribution', 'landing-page-builder', 'security-seo-health-monitor',
-    'voice-search-optimizer', 'ai-content-writer', 'semantic-analysis-engine', 'llm-monitor',
-)
-
-_HYBRID_STACK_CATEGORY_MAP: dict[str, str] = {
-    'eeat-suite': 'E-E-A-T',
-    'entity-first-seo': 'ENTITY-FIRST SEO',
-    'autonomous-agent-engine': 'AUTONOMOUS AGENT ENGINE',
-    'programmatic-seo-engine': 'PROGRAMMATIC SEO',
-    'seo-ab-testing': 'SEO A/B TESTING',
-    'ecommerce-seo-suite': 'ECOMMERCE SEO',
-    'autonomous-link-building-system': 'AUTONOMOUS LINK BUILDING',
-    'international-multilingual-seo': 'INTERNATIONAL & MULTILINGUAL SEO',
-    'site-migration-seo-manager': 'SITE MIGRATION SEO',
-    'video-seo-module': 'VIDEO SEO',
-    'local-seo-suite': 'LOCAL SEO',
-    'news-seo-google-discover': 'NEWS SEO & GOOGLE DISCOVER',
-    'analytics-reporting-intelligence': 'ANALYTICS, REPORTING & INTELLIGENCE',
-    'agency-multi-tenant-platform': 'AGENCY & MULTI-TENANT PLATFORM',
-    'integrations-automation-layer': 'INTEGRATIONS & AUTOMATION LAYER',
-    'realtime-search-ai-monitoring': 'REAL-TIME SEARCH & AI MONITORING',
-    'ai-technical-seo-engine': 'AI-DRIVEN TECHNICAL SEO ENGINE',
-    'content-quality-hallucination-auditor': 'CONTENT QUALITY & HALLUCINATION AUDITOR',
-    'knowledge-graph-management': 'KNOWLEDGE GRAPH MANAGEMENT',
-    'ai-internal-linking-engine': 'AI-FIRST INTERNAL LINKING ENGINE',
-    'crawl-budget-optimizer': 'CRAWL BUDGET OPTIMIZER',
-    'ai-schema-engine': 'AI-GENERATED SCHEMA ENGINE',
-    'ux-conversion-optimizer': 'UX & CONVERSION OPTIMIZER',
-    'rag-site-search-engine': 'RAG-POWERED SITE SEARCH ENGINE',
-    'competitor-intelligence-engine': 'COMPETITOR INTELLIGENCE ENGINE',
-    'topical-map-silo-builder': 'TOPICAL MAP & SILO BUILDER',
-    'log-file-analysis-engine': 'LOG FILE ANALYSIS ENGINE',
-    'review-reputation-engine': 'REVIEW & REPUTATION ENGINE',
-    'brand-voice-style-engine': 'BRAND VOICE & STYLE ENGINE',
-    'accessibility-optimizer': 'ACCESSIBILITY OPTIMIZER',
-    'image-media-seo-engine': 'IMAGE & MEDIA SEO ENGINE',
-    'social-seo-distribution': 'SOCIAL SEO & DISTRIBUTION ENGINE',
-    'landing-page-builder': 'LANDING PAGE BUILDER',
-    'security-seo-health-monitor': 'SECURITY & SEO HEALTH MONITOR',
-}
-
-
-
 def set_helpers(
     coerce_int: Callable[[object, int], int] | None = None,
     coerce_float: Callable[[object, float], float] | None = None,
@@ -473,52 +418,6 @@ def _platform_capabilities_payload(auth: AuthContext) -> JsonObject:
     }
 
 
-def _platform_hybrid_stacks_payload(auth: AuthContext) -> JsonObject:
-    """Generate hybrid stacks payload."""
-    stacks: list[JsonObject] = [
-        {'id': stack_id, 'name': stack_id.replace('-', ' ').title(), 'type': 'module', 'hybrid_score': 95.0}
-        for stack_id in _HYBRID_STACKS_IDS
-    ]
-    summary: list[JsonObject] = [
-        {'category': _HYBRID_STACK_CATEGORY_MAP.get(stack_id, stack_id.upper()), 'count': 1, 'percentage': 2.0}
-        for stack_id in _HYBRID_STACKS_IDS
-    ]
-    return {
-        'status': 'ok',
-        'tenant_id': auth.tenant_id,
-        'generated_at': datetime.now(UTC).isoformat(),
-        'recommendation': {
-            'hybrid': 'OpenLens (Free) + Promptwatch (Paid)',
-            'score': '100/100 (100%)',
-            'benefits': ['Unified observability', 'Cost-optimized hybrid approach', 'Production-ready monitoring'],
-            'positioning': 'Best practice for enterprise Kubernetes observability',
-        },
-        'stacks': stacks,
-        'summary': summary,
-    }
-
-
-def _platform_module_registry_payload(auth: AuthContext) -> JsonObject:
-    """Generate module registry payload."""
-    modules: list[JsonObject] = [
-        {'id': stack_id, 'name': stack_id.replace('-', ' ').title(), 'type': 'module', 'hybrid_score': 95.0, 'free': True, 'open_source': True}
-        for stack_id in _HYBRID_STACKS_IDS
-    ]
-    return {
-        'status': 'ok',
-        'tenant_id': auth.tenant_id,
-        'generated_at': datetime.now(UTC).isoformat(),
-        'source': 'database',
-        'modules': modules,
-        'totals': {
-            'total_modules': len(modules),
-            'free_tools': len(modules),
-            'open_source_tools': len(modules),
-            'avg_hybrid_score': 95.0,
-        },
-    }
-
-
 def _platform_api_usage_payload(auth: AuthContext, limit: int) -> JsonObject:
     """Generate API usage payload."""
     tenant_items = [
@@ -677,10 +576,6 @@ __all__ = [
     '_platform_anti_failure_payload',
     '_platform_use_case_coverage_payload',
     '_platform_capabilities_payload',
-    '_platform_hybrid_stacks_payload',
-    '_platform_module_registry_payload',
     '_platform_api_usage_payload',
     '_platform_super_admin_dashboard_payload',
-    '_HYBRID_STACKS_IDS',
-    '_HYBRID_STACK_CATEGORY_MAP',
 ]

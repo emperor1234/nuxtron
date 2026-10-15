@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MENUS, RAIL_ITEMS, SETTINGS_ITEM } from './nav';
+import { ROUTE_INDEX } from './route-index.generated';
 import styles from './shell.module.css';
 
 function titleize(segment: string): string {
@@ -15,35 +16,44 @@ function titleize(segment: string): string {
 
 export default function DashboardRouteIdentity() {
   const pathname = usePathname() || '/dashboard';
-  if (pathname === '/dashboard' || pathname.startsWith('/seo')) return null;
+  if (pathname === '/dashboard') return null;
 
   const all = [...RAIL_ITEMS, SETTINGS_ITEM];
-  let section = all[0]!;
+  let section: (typeof all)[number] | undefined;
   let best = -1;
   for (const item of all) {
-    if ((pathname === item.href || pathname.startsWith(`${item.href}/`)) && item.href.length > best) {
-      section = item;
-      best = item.href.length;
+    const menuRoutes = MENUS[item.key]?.groups.flatMap((group) =>
+      group.items.map((entry) => entry.href),
+    ) ?? [];
+    for (const prefix of [item.href, ...(item.matchPrefixes ?? []), ...menuRoutes]) {
+      if (
+        (pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
+        prefix.length > best
+      ) {
+        section = item;
+        best = prefix.length;
+      }
     }
   }
 
-  const menu = MENUS[section.key];
+  const menu = section ? MENUS[section.key] : undefined;
   const leaf = pathname
     .split('/')
     .filter(Boolean)
     .slice(-1)[0];
-  const leafLabel = leaf ? titleize(leaf) : section.label;
-  const sameAsSection = pathname === section.href;
+  const canonicalRoute = ROUTE_INDEX.find((entry) => entry.route === pathname);
+  const leafLabel = canonicalRoute?.title ?? (leaf ? titleize(leaf) : 'Dashboard');
+  const sameAsSection = section?.href === pathname;
 
   return (
-    <nav aria-label="Location" className={styles.crumb}>
-      <Link href={section.href}>{menu?.title || section.label}</Link>
-      {!sameAsSection ? (
+    <nav aria-label="Breadcrumb" className={styles.crumb}>
+      {section && !sameAsSection ? (
         <>
+          <Link href={section.href}>{menu?.title || section.label}</Link>
           <span aria-hidden="true">/</span>
-          <strong>{leafLabel}</strong>
         </>
       ) : null}
+      <strong aria-current="page">{leafLabel}</strong>
     </nav>
   );
 }

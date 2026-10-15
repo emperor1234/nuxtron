@@ -184,15 +184,37 @@ class TestSearchEverywhereAutomation:
         airanklab_chart_payload = airanklab_chart.json()
         assert airanklab_chart_payload["status"] == "ok"
         assert airanklab_chart_payload.get("summary", {}).get("modules_total", 0) >= 4
-        assert airanklab_chart_payload.get("summary", {}).get("implementation_pct") == 100.0
+        assert airanklab_chart_payload.get("summary", {}).get("modules_implemented") == 3
+        assert airanklab_chart_payload.get("summary", {}).get("implementation_pct") == 75.0
+        assert airanklab_chart_payload.get("summary", {}).get("production_grade_ready") is False
         assert isinstance(airanklab_chart_payload.get("feature_chart"), list)
+        keyword_module = next(
+            item for item in airanklab_chart_payload["feature_chart"]
+            if item.get("module") == "keyword_research_and_llm_scoring"
+        )
+        assert keyword_module.get("label") == "Keyword Data Review — server discovery unavailable"
+        assert keyword_module.get("implemented") is False
         assert isinstance(airanklab_chart_payload.get("vendor_parity_chart"), list)
         assert airanklab_chart_payload.get("summary", {}).get("screenshot_features_total") == 31
-        assert airanklab_chart_payload.get("summary", {}).get("screenshot_features_implemented") == 31
-        assert airanklab_chart_payload.get("summary", {}).get("screenshot_features_implemented_pct") == 100.0
+        assert airanklab_chart_payload.get("summary", {}).get("screenshot_features_implemented") == 27
+        assert airanklab_chart_payload.get("summary", {}).get("screenshot_features_implemented_pct") == 87.1
         screenshot_groups = airanklab_chart_payload.get("screenshot_category_groups", [])
         assert isinstance(screenshot_groups, list)
         assert len(screenshot_groups) == 8
+        screenshot_features = [feature for group in screenshot_groups for feature in group.get("features", [])]
+        history_feature = next(item for item in screenshot_features if item.get("key") == "analytics-reporting-intelligence")
+        agency_feature = next(item for item in screenshot_features if item.get("key") == "agency-multi-tenant-platform")
+        integrations_feature = next(item for item in screenshot_features if item.get("key") == "integrations-automation-layer")
+        programmatic_feature = next(item for item in screenshot_features if item.get("key") == "programmatic-seo-engine")
+        assert history_feature.get("label") == "SEO Analysis History"
+        assert history_feature.get("route_path") == "/seo/history"
+        assert history_feature.get("implemented") is True
+        assert agency_feature.get("label") == "Agency Workspace Health"
+        assert agency_feature.get("implemented") is False
+        assert integrations_feature.get("implemented") is False
+        assert programmatic_feature.get("label") == "Programmatic SEO Draft Preview"
+        assert programmatic_feature.get("route_path") == "/seo/programmatic"
+        assert programmatic_feature.get("implemented") is False
         vendor_names = {str(item.get("vendor", "")) for item in airanklab_chart_payload.get("vendor_parity_chart", [])}
         assert {
             "Semrush",
@@ -218,6 +240,45 @@ class TestSearchEverywhereAutomation:
         assert "production_grade_ready" in airanklab_verification_payload["verification"]
         assert isinstance(airanklab_verification_payload.get("feature_chart"), list)
 
+    def test_unavailable_seo_engines_are_not_counted_in_completion_chart(self, client: TestClient) -> None:
+        response = client.get(
+            "/search-everywhere/airanklab/completion-chart",
+            headers=_headers("tenant-programmatic-readiness"),
+        )
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["summary"]["screenshot_features_total"] == 31
+        assert payload["summary"]["screenshot_features_implemented"] == 27
+        assert payload["summary"]["screenshot_features_implemented_pct"] == 87.1
+        features = [
+            feature
+            for group in payload["screenshot_category_groups"]
+            for feature in group["features"]
+        ]
+        programmatic = next(item for item in features if item.get("key") == "programmatic-seo-engine")
+        assert programmatic == {
+            "key": "programmatic-seo-engine",
+            "label": "Programmatic SEO Draft Preview",
+            "route_path": "/seo/programmatic",
+            "implemented": False,
+        }
+        international = next(item for item in features if item.get("key") == "international-multilingual-seo")
+        assert international == {
+            "key": "international-multilingual-seo",
+            "label": "Hreflang & Locale Review",
+            "route_path": "/seo/international-multilingual",
+            "implemented": False,
+        }
+        assert payload["summary"]["modules_total"] == 4
+        assert payload["summary"]["modules_implemented"] == 3
+        assert payload["summary"]["implementation_pct"] == 75.0
+        keyword_module = next(
+            item for item in payload["feature_chart"]
+            if item.get("module") == "keyword_research_and_llm_scoring"
+        )
+        assert keyword_module["label"] == "Keyword Data Review — server discovery unavailable"
+        assert keyword_module["implemented"] is False
+
     def test_semrush_full_automation(self, client: TestClient) -> None:
         tenant_id = "tenant-search-everywhere"
         response = client.post(
@@ -226,22 +287,15 @@ class TestSearchEverywhereAutomation:
             json={
                 "seed_keyword": "social media management",
                 "your_domain": "nuxtron.ai",
-                "competitor_domains": ["semrush.com", "ahrefs.com", "moz.com"],
+                "competitor_domains": ["example.org", "example.net"],
                 "location": "United States",
                 "language": "en",
                 "max_results": 12,
                 "require_live_providers": False,
             },
         )
-        assert response.status_code == 200, response.text
-        payload = response.json()
-        assert payload["status"] == "ok"
-        assert "results" in payload
-        assert "keyword_discovery" in payload["results"]
-        assert "content_gap" in payload["results"]
-        assert "backlink_audit" in payload["results"]
-        assert "backlink_gap" in payload["results"]
-        assert "parity_summary" in payload["results"]
+        assert response.status_code == 501, response.text
+        assert response.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_semrush_full_automation_strict_live_failure(self, client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
         from backend.fastapi.app.routers import rank_tracker
@@ -258,12 +312,12 @@ class TestSearchEverywhereAutomation:
             json={
                 "seed_keyword": "social media management",
                 "your_domain": "nuxtron.ai",
-                "competitor_domains": ["semrush.com", "ahrefs.com"],
+                "competitor_domains": ["example.org"],
                 "require_live_providers": True,
             },
         )
-        assert response.status_code == 412
-        assert response.json()["detail"]["code"] == "live_provider_required"
+        assert response.status_code == 501
+        assert response.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_semrush_provider_checklist(self, client: TestClient) -> None:
         tenant_id = "tenant-search-everywhere"
@@ -593,11 +647,11 @@ class TestSearchEverywhereAutomation:
         verification_payload = verification_response.json()
         assert verification_payload["status"] == "ok"
         verification = verification_payload.get("verification", {})
-        assert verification.get("implementation_pct") == 100.0
+        assert verification.get("implementation_pct") == 75.0
         assert verification.get("integration_configured_pct") == 100.0
         assert verification.get("parity_vendor_avg_implementation_pct") == 100.0
         assert verification.get("parity_vendor_avg_integration_pct") == 100.0
-        assert verification.get("production_grade_ready") is True
+        assert verification.get("production_grade_ready") is False
 
     def test_semrush_production_gate(self, client: TestClient) -> None:
         tenant_id = "tenant-search-everywhere"
@@ -611,14 +665,8 @@ class TestSearchEverywhereAutomation:
                 "max_results": 10,
             },
         )
-        assert response.status_code == 200, response.text
-        payload = response.json()
-        assert payload["status"] == "ok"
-        assert "gate" in payload
-        assert "parity_summary" in payload
-        assert "strict_live_probe" in payload
-        assert "provider_checklist_summary" in payload
-        assert payload["strict_live_probe"]["status"] in ("passed", "failed")
+        assert response.status_code == 501, response.text
+        assert response.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_semrush_provider_bootstrap_all_missing(self, client: TestClient) -> None:
         tenant_id = "tenant-search-everywhere"
@@ -728,8 +776,9 @@ class TestSearchEverywhereAutomation:
         assert parity_payload.get("summary", {}).get("modules_total", 0) >= 6
         assert parity_payload.get("summary", {}).get("implementation_pct") == 100.0
         assert parity_payload.get("summary", {}).get("core_tools_total", 0) >= 15
-        assert parity_payload.get("summary", {}).get("core_tools_average_coverage_pct", 0.0) >= 99.9
-        assert parity_payload.get("completion_chart", {}).get("core_tools", {}).get("pct", 0.0) >= 99.9
+        # The legacy Ahrefs parity placeholders are exposed as unavailable, not 100% implemented.
+        assert parity_payload.get("summary", {}).get("core_tools_average_coverage_pct") == 0.0
+        assert parity_payload.get("completion_chart", {}).get("core_tools", {}).get("pct") == 0.0
         assert isinstance(parity_payload.get("vendor_inventory"), list)
         assert any(item.get("vendor") == "Ahrefs API" for item in parity_payload.get("vendor_inventory", []))
 
@@ -739,7 +788,7 @@ class TestSearchEverywhereAutomation:
         assert verification_payload["status"] == "ok"
         assert verification_payload.get("framework") == "ahrefs"
         assert "GET /search-everywhere/ahrefs/e2e-verification" in verification_payload.get("automation_endpoints", [])
-        assert verification_payload.get("parity", {}).get("summary", {}).get("core_tools_average_coverage_pct", 0.0) >= 99.9
+        assert verification_payload.get("parity", {}).get("summary", {}).get("core_tools_average_coverage_pct") == 0.0
 
         response = client.post(
             "/search-everywhere/ahrefs/full-automation",
@@ -754,15 +803,8 @@ class TestSearchEverywhereAutomation:
                 "require_live_providers": False,
             },
         )
-        assert response.status_code == 200, response.text
-        payload = response.json()
-        assert payload["status"] == "ok"
-        assert payload.get("framework") == "ahrefs"
-        assert "results" in payload
-        assert "rank_tracking" in payload["results"]
-        assert "backlink_overview" in payload["results"]
-        assert "how_it_works" in payload
-        assert len(payload["how_it_works"]) >= 4
+        assert response.status_code == 501, response.text
+        assert response.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_ahrefs_provider_ops(self, client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
         from backend.fastapi.app.routers import rank_tracker
@@ -820,12 +862,8 @@ class TestSearchEverywhereAutomation:
                 "max_results": 10,
             },
         )
-        assert gate.status_code == 200, gate.text
-        gate_payload = gate.json()
-        assert gate_payload["status"] == "ok"
-        assert "gate" in gate_payload
-        assert "strict_live_probe" in gate_payload
-        assert gate_payload["strict_live_probe"]["status"] in ("passed", "failed")
+        assert gate.status_code == 501, gate.text
+        assert gate.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_surfer_parity_and_full_automation(self, client: TestClient) -> None:
         tenant_id = "tenant-search-everywhere"
@@ -851,15 +889,8 @@ class TestSearchEverywhereAutomation:
                 "require_live_providers": False,
             },
         )
-        assert response.status_code == 200, response.text
-        payload = response.json()
-        assert payload["status"] == "ok"
-        assert "results" in payload
-        assert "keyword_discovery" in payload["results"]
-        assert "content_gap" in payload["results"]
-        assert "backlink_audit" in payload["results"]
-        assert "backlink_gap" in payload["results"]
-        assert "parity_summary" in payload["results"]
+        assert response.status_code == 501, response.text
+        assert response.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_surfer_provider_checklist(self, client: TestClient) -> None:
         tenant_id = "tenant-search-everywhere"
@@ -931,14 +962,8 @@ class TestSearchEverywhereAutomation:
                 "max_results": 10,
             },
         )
-        assert response.status_code == 200, response.text
-        payload = response.json()
-        assert payload["status"] == "ok"
-        assert "gate" in payload
-        assert "parity_summary" in payload
-        assert "strict_live_probe" in payload
-        assert "provider_checklist_summary" in payload
-        assert payload["strict_live_probe"]["status"] in ("passed", "failed")
+        assert response.status_code == 501, response.text
+        assert response.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_surfer_provider_bootstrap_filtered(self, client: TestClient) -> None:
         tenant_id = "tenant-search-everywhere"
@@ -1014,13 +1039,8 @@ class TestSearchEverywhereAutomation:
                 "require_live_providers": False,
             },
         )
-        assert response.status_code == 200, response.text
-        payload = response.json()
-        assert payload["status"] == "ok"
-        assert payload.get("framework") == "frase"
-        assert "results" in payload
-        assert "frase_workflow" in payload
-        assert "phase_1_discovery" in payload["frase_workflow"]
+        assert response.status_code == 501, response.text
+        assert response.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_frase_wiring_setup_and_gate(self, client: TestClient) -> None:
         tenant_id = "tenant-search-everywhere"
@@ -1049,12 +1069,8 @@ class TestSearchEverywhereAutomation:
                 "max_results": 10,
             },
         )
-        assert gate.status_code == 200, gate.text
-        gate_payload = gate.json()
-        assert gate_payload["status"] == "ok"
-        assert "gate" in gate_payload
-        assert "strict_live_probe" in gate_payload
-        assert gate_payload["strict_live_probe"]["status"] in ("passed", "failed")
+        assert gate.status_code == 501, gate.text
+        assert gate.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_frase_provider_ops(self, client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
         from backend.fastapi.app.routers import rank_tracker
@@ -1133,56 +1149,9 @@ class TestSearchEverywhereAutomation:
                 "require_live_providers": False,
             },
         )
-        assert run.status_code == 200, run.text
-        run_payload = run.json()
-        assert run_payload["status"] == "ok"
-        assert "run" in run_payload
-        assert "issue_chart" in run_payload
-        assert "results" in run_payload
-        run_id = run_payload["run"]["id"]
-
-        runs = client.get(
-            "/search-everywhere/sitebulb/runs",
-            headers=_headers(tenant_id),
-            params={"project_id": project_id},
-        )
-        assert runs.status_code == 200, runs.text
-        runs_payload = runs.json()
-        assert runs_payload["status"] == "ok"
-        assert runs_payload["count"] >= 1
-
-        run_detail = client.get(
-            f"/search-everywhere/sitebulb/runs/{run_id}",
-            headers=_headers(tenant_id),
-        )
-        assert run_detail.status_code == 200, run_detail.text
-        run_detail_payload = run_detail.json()
-        assert run_detail_payload["status"] == "ok"
-        assert run_detail_payload["run"]["id"] == run_id
-
-        completion = client.get(
-            "/search-everywhere/sitebulb/completion-chart",
-            headers=_headers(tenant_id),
-        )
-        assert completion.status_code == 200, completion.text
-        completion_payload = completion.json()
-        assert completion_payload["status"] == "ok"
-        assert "chart" in completion_payload
-        assert "summary" in completion_payload
-        assert completion_payload["summary"]["modules_total"] >= 6
-
-        gate = client.get(
-            "/search-everywhere/sitebulb/production-gate",
-            headers=_headers(tenant_id),
-        )
-        assert gate.status_code == 200, gate.text
-        gate_payload = gate.json()
-        assert gate_payload["status"] == "ok"
-        assert "gate" in gate_payload
-        assert "completion_summary" in gate_payload
-        assert "preflight" in gate_payload
-        assert isinstance(gate_payload.get("missing_provider_steps"), list)
-        assert "next_actions" in gate_payload
+        assert run.status_code == 501, run.text
+        assert run.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        return
 
     def test_sitebulb_schedule_and_vendors(self, client: TestClient) -> None:
         tenant_id = "tenant-search-everywhere"
@@ -1228,132 +1197,9 @@ class TestSearchEverywhereAutomation:
             headers=_headers(tenant_id),
             json={"due_only": False},
         )
-        assert execute.status_code == 200, execute.text
-        execute_payload = execute.json()
-        assert execute_payload["status"] == "ok"
-        assert execute_payload["executed_count"] >= 1
-
-        vendors = client.get(
-            "/search-everywhere/sitebulb/vendors",
-            headers=_headers(tenant_id),
-        )
-        assert vendors.status_code == 200, vendors.text
-        vendors_payload = vendors.json()
-        assert vendors_payload["status"] == "ok"
-        assert vendors_payload["vendors_total"] >= 1
-        assert isinstance(vendors_payload.get("vendor_chart"), list)
-
-        preflight = client.get(
-            "/search-everywhere/sitebulb/preflight",
-            headers=_headers(tenant_id),
-        )
-        assert preflight.status_code == 200, preflight.text
-        preflight_payload = preflight.json()
-        assert preflight_payload["status"] == "ok"
-        assert "configured" in preflight_payload
-        assert "total" in preflight_payload
-        assert "configured_pct" in preflight_payload
-        assert isinstance(preflight_payload.get("missing_provider_steps"), list)
-        if preflight_payload["missing_provider_steps"]:
-            first = preflight_payload["missing_provider_steps"][0]
-            assert first.get("priority") in ("P0", "P1")
-            assert "provider" in first
-            assert isinstance(first.get("preflight_commands_powershell"), list)
-
-        env_template = client.post(
-            "/search-everywhere/sitebulb/env-template",
-            headers=_headers(tenant_id),
-            json={"include_optional": False, "include_configured": False},
-        )
-        assert env_template.status_code == 200, env_template.text
-        env_template_payload = env_template.json()
-        assert env_template_payload["status"] == "ok"
-        assert env_template_payload["filename"].endswith(".env")
-        assert isinstance(env_template_payload.get("missing_keys"), list)
-        assert isinstance(env_template_payload.get("env_template"), str)
-
-        gate_progress = client.get(
-            "/search-everywhere/sitebulb/gate-progress",
-            headers=_headers(tenant_id),
-        )
-        assert gate_progress.status_code == 200, gate_progress.text
-        gate_progress_payload = gate_progress.json()
-        assert gate_progress_payload["status"] == "ok"
-        assert "baseline" in gate_progress_payload
-        assert "projection" in gate_progress_payload
-        assert isinstance(gate_progress_payload.get("provider_progression"), list)
-        assert isinstance(gate_progress_payload["projection"].get("provider_progression"), list)
-        assert "integration_configured_pct" in gate_progress_payload["baseline"]
-        assert "steps_to_100pct" in gate_progress_payload["projection"]
-        if gate_progress_payload["provider_progression"]:
-            first = gate_progress_payload["provider_progression"][0]
-            assert first.get("priority") in ("P0", "P1")
-            assert "integration_pct_if_added" in first
-
-        bundle = client.post(
-            "/search-everywhere/sitebulb/remediation-bundle",
-            headers=_headers(tenant_id),
-            json={"include_optional": False, "include_configured": False, "top_steps": 5},
-        )
-        assert bundle.status_code == 200, bundle.text
-        bundle_payload = bundle.json()
-        assert bundle_payload["status"] == "ok"
-        assert "preflight" in bundle_payload
-        assert "remediation_steps" in bundle_payload
-        assert "gate" in bundle_payload
-        assert "env_template" in bundle_payload
-        assert "bundle" in bundle_payload
-        assert "preflight" in bundle_payload["bundle"]
-        assert "gate_progress" in bundle_payload["bundle"]
-        assert "gate_state" in bundle_payload["bundle"]
-        assert "env_template" in bundle_payload["bundle"]
-        assert isinstance(bundle_payload["bundle"]["preflight"].get("missing_provider_steps"), list)
-        assert isinstance(bundle_payload["bundle"]["gate_progress"].get("provider_progression"), list)
-        assert isinstance(bundle_payload["bundle"]["env_template"].get("missing_keys"), list)
-
-        export_json = client.get(
-            "/search-everywhere/sitebulb/remediation-bundle/export",
-            headers=_headers(tenant_id),
-            params={"format": "json", "top_steps": 5, "include_optional": False, "include_configured": False},
-        )
-        assert export_json.status_code == 200, export_json.text
-        export_json_payload = export_json.json()
-        assert export_json_payload["status"] == "ok"
-        assert export_json_payload["format"] == "json"
-        assert export_json_payload["filename"].endswith(".json")
-        assert isinstance(export_json_payload.get("json"), list)
-
-        export_csv = client.get(
-            "/search-everywhere/sitebulb/remediation-bundle/export",
-            headers=_headers(tenant_id),
-            params={"format": "csv", "top_steps": 5, "include_optional": False, "include_configured": False},
-        )
-        assert export_csv.status_code == 200, export_csv.text
-        export_csv_payload = export_csv.json()
-        assert export_csv_payload["status"] == "ok"
-        assert export_csv_payload["format"] == "csv"
-        assert export_csv_payload["filename"].endswith(".csv")
-        assert isinstance(export_csv_payload.get("csv"), str)
-        if export_csv_payload["count"] > 0:
-            assert "provider,kind,priority,required_missing,integration_pct_if_added,gate_passed,gate_blockers" in export_csv_payload["csv"]
-
-        verification = client.get(
-            "/search-everywhere/sitebulb/verification-report",
-            headers=_headers(tenant_id),
-        )
-        assert verification.status_code == 200, verification.text
-        verification_payload = verification.json()
-        assert verification_payload["status"] == "ok"
-        assert "verification" in verification_payload
-        section = verification_payload["verification"]
-        assert "slice_ready" in section
-        assert "slice_gate" in section
-        assert isinstance(section.get("evidence_table"), list)
-        assert "validation_boundaries" in section
-        if section["evidence_table"]:
-            first_row = section["evidence_table"][0]
-            assert "check" in first_row
-            assert first_row.get("status") in ("pass", "fail")
+        assert execute.status_code == 501, execute.text
+        assert execute.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        return
 
     def test_hootsuite_end_to_end_automation_suite(self, client: TestClient) -> None:
         tenant_id = "tenant-hootsuite-search-everywhere"
@@ -1408,11 +1254,8 @@ class TestSearchEverywhereAutomation:
                 "include_optional_auth": True,
             },
         )
-        assert wiring_apply.status_code == 200, wiring_apply.text
-        wiring_apply_payload = wiring_apply.json()
-        assert wiring_apply_payload["status"] == "ok"
-        assert wiring_apply_payload.get("gate", {}).get("passed") is True
-        assert wiring_apply_payload.get("checklist_summary", {}).get("configured_pct") == 100.0
+        assert wiring_apply.status_code == 501, wiring_apply.text
+        assert wiring_apply.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
         full = client.post(
             "/search-everywhere/hootsuite/full-automation",
@@ -1427,200 +1270,9 @@ class TestSearchEverywhereAutomation:
                 "require_live_providers": False,
             },
         )
-        assert full.status_code == 200, full.text
-        full_payload = full.json()
-        assert full_payload["status"] == "ok"
-        assert "results" in full_payload
-        assert "hootsuite_modules" in full_payload
-        assert isinstance(full_payload.get("third_parties_and_vendors"), list)
-        assert any(item.get("vendor") == "Hootsuite" for item in full_payload.get("third_parties_and_vendors", []))
-        assert full_payload.get("completion_summary", {}).get("implementation_pct") == 100.0
-        full_e2e_pct = float(full_payload.get("completion_summary", {}).get("e2e_verified_pct", 0.0))
-        full_integration_pct = float(full_payload.get("completion_summary", {}).get("integration_configured_pct", 0.0))
-        assert 0.0 <= full_e2e_pct <= 100.0
-        assert 0.0 <= full_integration_pct <= 100.0
-        production_gate = full_payload.get("production_gate", {})
-        assert isinstance(production_gate.get("passed"), bool)
-        assert isinstance(production_gate.get("blockers"), list)
-        if production_gate.get("passed"):
-            assert production_gate.get("blockers") == []
-        else:
-            assert len(production_gate.get("blockers", [])) > 0
-
-        completion = client.get(
-            "/search-everywhere/hootsuite/completion-chart",
-            headers=_headers(tenant_id),
-        )
-        assert completion.status_code == 200, completion.text
-        completion_payload = completion.json()
-        assert completion_payload["status"] == "ok"
-        assert completion_payload.get("summary", {}).get("implementation_pct") == 100.0
-        completion_e2e_pct = float(completion_payload.get("summary", {}).get("e2e_verified_pct", 0.0))
-        assert 0.0 <= completion_e2e_pct <= 100.0
-        completion_integration_pct = float(completion_payload.get("summary", {}).get("integration_configured_pct", 0.0))
-        assert 0.0 <= completion_integration_pct <= 100.0
-
-        gate = client.get(
-            "/search-everywhere/hootsuite/production-gate",
-            headers=_headers(tenant_id),
-        )
-        assert gate.status_code == 200, gate.text
-        gate_payload = gate.json()
-        assert gate_payload["status"] == "ok"
-        assert gate_payload.get("gate", {}).get("passed") is True
-
-        verification = client.get(
-            "/search-everywhere/hootsuite/verification-report",
-            headers=_headers(tenant_id),
-        )
-        assert verification.status_code == 200, verification.text
-        verification_payload = verification.json()
-        assert verification_payload["status"] == "ok"
-        assert verification_payload.get("verification", {}).get("slice_ready") is True
-        boundaries = verification_payload.get("verification", {}).get("validation_boundaries", {})
-        assert boundaries.get("validated_slice") == "search_everywhere hootsuite product suite"
-
-        vendors = client.get(
-            "/search-everywhere/hootsuite/vendors",
-            headers=_headers(tenant_id),
-        )
-        assert vendors.status_code == 200, vendors.text
-        vendors_payload = vendors.json()
-        assert vendors_payload["status"] == "ok"
-        assert isinstance(vendors_payload.get("vendor_chart"), list)
-        assert any(item.get("vendor") == "Hootsuite" for item in vendors_payload.get("vendor_chart", []))
-        assert isinstance(vendors_payload.get("vendor_usage_by_feature"), dict)
-        assert "reputation_management" in vendors_payload.get("vendor_usage_by_feature", {})
-
-        features = client.get(
-            "/search-everywhere/hootsuite/features",
-            headers=_headers(tenant_id),
-        )
-        assert features.status_code == 200, features.text
-        features_payload = features.json()
-        assert features_payload["status"] == "ok"
-        assert isinstance(features_payload.get("feature_matrix"), list)
-        assert len(features_payload.get("feature_matrix", [])) >= 4
-        summary = features_payload.get("summary", {})
-        assert summary.get("implementation_pct") == 100.0
-        assert summary.get("e2e_verified_pct") == 100.0
-        assert isinstance(features_payload.get("coverage_chart"), list)
-
-        features_automation = client.post(
-            "/search-everywhere/hootsuite/features/automation",
-            headers=_headers(tenant_id),
-            json={
-                "objective": "full social coverage",
-                "brands": ["nuxtron"],
-                "competitors": ["hootsuite.com", "sproutsocial.com"],
-                "networks": ["facebook", "instagram", "linkedin", "x"],
-                "timeframe_days": 90,
-                "require_live_providers": False,
-            },
-        )
-        assert features_automation.status_code == 200, features_automation.text
-        features_automation_payload = features_automation.json()
-        assert features_automation_payload["status"] == "ok"
-        assert isinstance(features_automation_payload.get("automation_outputs"), dict)
-        assert "reputation_management" in features_automation_payload.get("automation_outputs", {})
-        assert "market_research" in features_automation_payload.get("automation_outputs", {})
-        assert "social_media_management" in features_automation_payload.get("automation_outputs", {})
-        assert isinstance(features_automation_payload.get("third_parties_and_vendors"), list)
-        assert any(item.get("vendor") == "Talkwalker" for item in features_automation_payload.get("third_parties_and_vendors", []))
-
-        parity = client.get(
-            "/search-everywhere/hootsuite/parity-audit",
-            headers=_headers(tenant_id),
-        )
-        assert parity.status_code == 200, parity.text
-        parity_payload = parity.json()
-        assert parity_payload["status"] == "ok"
-        assert isinstance(parity_payload.get("feature_coverage_chart"), list)
-        feature_summary = parity_payload.get("feature_summary", {})
-        assert feature_summary.get("implementation_pct") == 100.0
-        assert feature_summary.get("e2e_verified_pct") == 100.0
-
-
-        wiring_apply = client.post(
-            "/search-everywhere/brightedge/wiring/apply",
-            headers=_headers(tenant_id),
-            json={
-                "providers": ["Google Search Console", "OpenAI"],
-                "include_all_missing": True,
-                "include_optional_auth": True,
-            },
-        )
-        assert wiring_apply.status_code == 200, wiring_apply.text
-        wiring_apply_payload = wiring_apply.json()
-        assert wiring_apply_payload["status"] == "ok"
-        assert wiring_apply_payload.get("gate", {}).get("passed") is True
-        assert wiring_apply_payload.get("checklist_summary", {}).get("configured_pct") == 100.0
-
-        full = client.post(
-            "/search-everywhere/brightedge/full-automation",
-            headers=_headers(tenant_id),
-            json={
-                "seed_keyword": "enterprise seo and aeo",
-                "your_domain": "nuxtron.ai",
-                "competitor_domains": ["brightedge.com", "conductor.com"],
-                "location": "United States",
-                "language": "en",
-                "max_results": 10,
-                "require_live_providers": False,
-            },
-        )
-        assert full.status_code == 200, full.text
-        full_payload = full.json()
-        assert full_payload["status"] == "ok"
-        assert "results" in full_payload
-        assert "brightedge_modules" in full_payload
-        assert isinstance(full_payload.get("third_parties_and_vendors"), list)
-        assert any(item.get("vendor") == "BrightEdge" for item in full_payload.get("third_parties_and_vendors", []))
-        assert full_payload.get("completion_summary", {}).get("implementation_pct") == 100.0
-        assert full_payload.get("completion_summary", {}).get("e2e_verified_pct") == 100.0
-        assert full_payload.get("completion_summary", {}).get("integration_configured_pct") == 100.0
-        assert full_payload.get("production_gate", {}).get("passed") is True
-
-        completion = client.get(
-            "/search-everywhere/brightedge/completion-chart",
-            headers=_headers(tenant_id),
-        )
-        assert completion.status_code == 200, completion.text
-        completion_payload = completion.json()
-        assert completion_payload["status"] == "ok"
-        assert completion_payload.get("summary", {}).get("implementation_pct") == 100.0
-        assert completion_payload.get("summary", {}).get("e2e_verified_pct") == 100.0
-        assert completion_payload.get("summary", {}).get("integration_configured_pct") == 100.0
-
-        gate = client.get(
-            "/search-everywhere/brightedge/production-gate",
-            headers=_headers(tenant_id),
-        )
-        assert gate.status_code == 200, gate.text
-        gate_payload = gate.json()
-        assert gate_payload["status"] == "ok"
-        assert gate_payload.get("gate", {}).get("passed") is True
-
-        verification = client.get(
-            "/search-everywhere/brightedge/verification-report",
-            headers=_headers(tenant_id),
-        )
-        assert verification.status_code == 200, verification.text
-        verification_payload = verification.json()
-        assert verification_payload["status"] == "ok"
-        assert verification_payload.get("verification", {}).get("slice_ready") is True
-        boundaries = verification_payload.get("verification", {}).get("validation_boundaries", {})
-        assert boundaries.get("validated_slice") == "search_everywhere brightedge product suite"
-
-        vendors = client.get(
-            "/search-everywhere/brightedge/vendors",
-            headers=_headers(tenant_id),
-        )
-        assert vendors.status_code == 200, vendors.text
-        vendors_payload = vendors.json()
-        assert vendors_payload["status"] == "ok"
-        assert isinstance(vendors_payload.get("vendor_chart"), list)
-        assert any(item.get("vendor") == "BrightEdge" for item in vendors_payload.get("vendor_chart", []))
+        assert full.status_code == 501, full.text
+        assert full.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        return
 
     def test_marketmuse_end_to_end_automation_suite(self, client: TestClient) -> None:
         tenant_id = "tenant-marketmuse-search-everywhere"
@@ -1694,58 +1346,9 @@ class TestSearchEverywhereAutomation:
                 "require_live_providers": False,
             },
         )
-        assert full.status_code == 200, full.text
-        full_payload = full.json()
-        assert full_payload["status"] == "ok"
-        assert "results" in full_payload
-        assert "marketmuse_modules" in full_payload
-        assert isinstance(full_payload.get("third_parties_and_vendors"), list)
-        assert any(item.get("vendor") == "MarketMuse" for item in full_payload.get("third_parties_and_vendors", []))
-        assert full_payload.get("completion_summary", {}).get("implementation_pct") == 100.0
-        assert full_payload.get("completion_summary", {}).get("e2e_verified_pct") == 100.0
-        assert full_payload.get("completion_summary", {}).get("integration_configured_pct") == 100.0
-        assert full_payload.get("production_gate", {}).get("passed") is True
-
-        completion = client.get(
-            "/search-everywhere/marketmuse/completion-chart",
-            headers=_headers(tenant_id),
-        )
-        assert completion.status_code == 200, completion.text
-        completion_payload = completion.json()
-        assert completion_payload["status"] == "ok"
-        assert completion_payload.get("summary", {}).get("implementation_pct") == 100.0
-        assert completion_payload.get("summary", {}).get("e2e_verified_pct") == 100.0
-        assert completion_payload.get("summary", {}).get("integration_configured_pct") == 100.0
-
-        gate = client.get(
-            "/search-everywhere/marketmuse/production-gate",
-            headers=_headers(tenant_id),
-        )
-        assert gate.status_code == 200, gate.text
-        gate_payload = gate.json()
-        assert gate_payload["status"] == "ok"
-        assert gate_payload.get("gate", {}).get("passed") is True
-
-        verification = client.get(
-            "/search-everywhere/marketmuse/verification-report",
-            headers=_headers(tenant_id),
-        )
-        assert verification.status_code == 200, verification.text
-        verification_payload = verification.json()
-        assert verification_payload["status"] == "ok"
-        assert verification_payload.get("verification", {}).get("slice_ready") is True
-        boundaries = verification_payload.get("verification", {}).get("validation_boundaries", {})
-        assert boundaries.get("validated_slice") == "search_everywhere marketmuse product suite"
-
-        vendors = client.get(
-            "/search-everywhere/marketmuse/vendors",
-            headers=_headers(tenant_id),
-        )
-        assert vendors.status_code == 200, vendors.text
-        vendors_payload = vendors.json()
-        assert vendors_payload["status"] == "ok"
-        assert isinstance(vendors_payload.get("vendor_chart"), list)
-        assert any(item.get("vendor") == "MarketMuse" for item in vendors_payload.get("vendor_chart", []))
+        assert full.status_code == 501, full.text
+        assert full.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        return
 
     def test_brightedge_end_to_end_automation_suite(self, client: TestClient) -> None:
         tenant_id = "tenant-brightedge-search-everywhere"
@@ -1819,55 +1422,6 @@ class TestSearchEverywhereAutomation:
                 "require_live_providers": False,
             },
         )
-        assert full.status_code == 200, full.text
-        full_payload = full.json()
-        assert full_payload["status"] == "ok"
-        assert "results" in full_payload
-        assert "brightedge_modules" in full_payload
-        assert isinstance(full_payload.get("third_parties_and_vendors"), list)
-        assert any(item.get("vendor") == "BrightEdge" for item in full_payload.get("third_parties_and_vendors", []))
-        assert full_payload.get("completion_summary", {}).get("implementation_pct") == 100.0
-        assert full_payload.get("completion_summary", {}).get("e2e_verified_pct") == 100.0
-        assert full_payload.get("completion_summary", {}).get("integration_configured_pct") == 100.0
-        assert full_payload.get("production_gate", {}).get("passed") is True
-
-        completion = client.get(
-            "/search-everywhere/brightedge/completion-chart",
-            headers=_headers(tenant_id),
-        )
-        assert completion.status_code == 200, completion.text
-        completion_payload = completion.json()
-        assert completion_payload["status"] == "ok"
-        assert completion_payload.get("summary", {}).get("implementation_pct") == 100.0
-        assert completion_payload.get("summary", {}).get("e2e_verified_pct") == 100.0
-        assert completion_payload.get("summary", {}).get("integration_configured_pct") == 100.0
-
-        gate = client.get(
-            "/search-everywhere/brightedge/production-gate",
-            headers=_headers(tenant_id),
-        )
-        assert gate.status_code == 200, gate.text
-        gate_payload = gate.json()
-        assert gate_payload["status"] == "ok"
-        assert gate_payload.get("gate", {}).get("passed") is True
-
-        verification = client.get(
-            "/search-everywhere/brightedge/verification-report",
-            headers=_headers(tenant_id),
-        )
-        assert verification.status_code == 200, verification.text
-        verification_payload = verification.json()
-        assert verification_payload["status"] == "ok"
-        assert verification_payload.get("verification", {}).get("slice_ready") is True
-        boundaries = verification_payload.get("verification", {}).get("validation_boundaries", {})
-        assert boundaries.get("validated_slice") == "search_everywhere brightedge product suite"
-
-        vendors = client.get(
-            "/search-everywhere/brightedge/vendors",
-            headers=_headers(tenant_id),
-        )
-        assert vendors.status_code == 200, vendors.text
-        vendors_payload = vendors.json()
-        assert vendors_payload["status"] == "ok"
-        assert isinstance(vendors_payload.get("vendor_chart"), list)
-        assert any(item.get("vendor") == "BrightEdge" for item in vendors_payload.get("vendor_chart", []))
+        assert full.status_code == 501, full.text
+        assert full.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        return

@@ -2,10 +2,9 @@
 Celery worker for Nuxtron background task processing.
 
 Start with:
-    celery -A backend.fastapi.app.worker worker --loglevel=info -c 4
+    celery -A backend.fastapi.app.celery_app:celery_app worker --loglevel=INFO -c 4
 
-Or via RQ fallback:
-    rq worker nuxtron-tasks --url redis://localhost:6379
+AI task adapters are registered here; Workforce execution is explicitly gated off in production.
 """
 from __future__ import annotations
 
@@ -15,8 +14,7 @@ import os
 from celery.utils.log import get_task_logger
 
 from .celery_app import celery_app
-
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+from .durable_jobs import claim_pending_outbox, load_job, mark_outbox_failed, mark_outbox_published, update_job
 
 
 def _env_int(name: str, default: int, minimum: int = 1) -> int:
@@ -90,11 +88,14 @@ celery_app.conf.update(
         "nuxtron.tasks.ai.process_text": {"queue": "ai-text"},
         "nuxtron.tasks.ai.process_video": {"queue": "ai-video"},
         "nuxtron.tasks.ai.process_voice": {"queue": "ai-voice"},
-        "nuxtron.tasks.analytics.*": {"queue": "analytics"},
-        "nuxtron.tasks.seo.*": {"queue": "seo"},
-        "nuxtron.tasks.notifications.*": {"queue": "notifications"},
     },
 )
+celery_app.conf.beat_schedule = {
+    "publish-ai-job-outbox": {
+        "task": "nuxtron.tasks.ai.publish_outbox",
+        "schedule": 30.0,
+    },
+}
 
 task_logger = get_task_logger(__name__)
 logger = logging.getLogger("nuxtron.worker")
@@ -103,34 +104,12 @@ logger = logging.getLogger("nuxtron.worker")
 # workforce tasks when the documented worker entrypoint is loaded.
 from .tasks import workforce_tasks as _workforce_tasks  # noqa: F401,E402
 
-
 # ---------------------------------------------------------------------------
 # Tasks
 # ---------------------------------------------------------------------------
 
-@celery_app.task(name="nuxtron.tasks.analytics.compute_metrics", bind=True, max_retries=3)  # type: ignore[untyped-decorator]
-def compute_analytics_metrics(self, org_id: str, period: str = "7d") -> dict:  # type: ignore[misc]
-    """Recompute aggregated analytics metrics for an organization."""
-    task_logger.info("Computing analytics metrics org=%s period=%s", org_id, period)
-    raise RuntimeError("Analytics metrics worker is not configured with a durable analytics repository.")
-
-
-@celery_app.task(name="nuxtron.tasks.seo.refresh_scores", bind=True, max_retries=3)  # type: ignore[untyped-decorator]
-def refresh_seo_scores(self, url: str) -> dict:  # type: ignore[misc]
-    """Refresh SEO scores for a URL in the background."""
-    task_logger.info("Refreshing SEO scores url=%s", url)
-    raise RuntimeError("SEO score worker is not configured with a durable crawl repository.")
-
-
-@celery_app.task(name="nuxtron.tasks.notifications.send_digest", bind=True, max_retries=3)  # type: ignore[untyped-decorator]
-def send_notification_digest(self, user_id: str) -> dict:  # type: ignore[misc]
-    """Send daily digest notification for a user."""
-    task_logger.info("Sending notification digest user_id=%s", user_id)
-    raise RuntimeError("Notification digest worker is not configured with a durable delivery repository.")
-
-
-def _run_ai_task(media_type: str, payload: dict) -> dict:
-    """Run a specific AI generation modality inside worker process."""
+def _run_ai_task(media_type: str, job_reference: str) -> dict:
+    """Run a modality from durable storage; no prompt is accepted from Celery."""
     import asyncio
 
     from backend.fastapi.app.routers.ai import (
@@ -141,49 +120,73 @@ def _run_ai_task(media_type: str, payload: dict) -> dict:
         _generate_voice,
     )
 
-    task_logger.info("Processing AI generation media_type=%s", media_type)
-    request_model = AIGenerationRequest(**payload)
-
-    if media_type == "image":
-        response = asyncio.run(_generate_image(request_model))
-        return response.model_dump()
-    if media_type == "text":
-        response = asyncio.run(_generate_text(request_model))
-        return response.model_dump()
-    if media_type == "video":
-        response = asyncio.run(_generate_video(request_model))
-        return response.model_dump()
-    if media_type == "voice":
-        orchestration_plan = payload.get("orchestration_plan")
-        if not isinstance(orchestration_plan, dict):
-            orchestration_plan = None
-        response = asyncio.run(_generate_voice(request_model, orchestration_plan))
-        return response.model_dump()
-
-    return {
-        "status": "error",
-        "error": f"Unsupported Celery media type: {media_type}",
-    }
+    job, _ = load_job(job_reference)
+    payload = dict(job.job_params or {})
+    update_job(job_reference, status="running")
+    try:
+        task_logger.info("Processing durable AI job media_type=%s", media_type)
+        request_model = AIGenerationRequest(**payload)
+        if media_type == "image":
+            response = asyncio.run(_generate_image(request_model))
+        elif media_type == "text":
+            response = asyncio.run(_generate_text(request_model))
+        elif media_type == "video":
+            response = asyncio.run(_generate_video(request_model))
+        elif media_type == "voice":
+            plan = payload.get("orchestration_plan")
+            response = asyncio.run(_generate_voice(request_model, plan if isinstance(plan, dict) else None))
+        else:
+            raise ValueError(f"Unsupported Celery media type: {media_type}")
+        result = response.model_dump()
+        if result.get("status") == "success":
+            update_job(job_reference, status="completed", result=result)
+        else:
+            update_job(job_reference, status="failed", result=result, error_message=str(result.get("error") or "AI worker task failed"))
+        return result
+    except Exception as exc:
+        update_job(job_reference, status="failed", error_message=f"{type(exc).__name__}: {exc}")
+        raise
 
 
 @celery_app.task(name="nuxtron.tasks.ai.process_image", bind=True, max_retries=1)  # type: ignore[untyped-decorator]
-def process_ai_image(self, payload: dict) -> dict:  # type: ignore[misc]
-    return _run_ai_task("image", payload)
+def process_ai_image(self, job_reference: str) -> dict:  # type: ignore[misc]
+    return _run_ai_task("image", job_reference)
 
 
 @celery_app.task(name="nuxtron.tasks.ai.process_text", bind=True, max_retries=1)  # type: ignore[untyped-decorator]
-def process_ai_text(self, payload: dict) -> dict:  # type: ignore[misc]
-    return _run_ai_task("text", payload)
+def process_ai_text(self, job_reference: str) -> dict:  # type: ignore[misc]
+    return _run_ai_task("text", job_reference)
 
 
 @celery_app.task(name="nuxtron.tasks.ai.process_video", bind=True, max_retries=1)  # type: ignore[untyped-decorator]
-def process_ai_video(self, payload: dict) -> dict:  # type: ignore[misc]
-    return _run_ai_task("video", payload)
+def process_ai_video(self, job_reference: str) -> dict:  # type: ignore[misc]
+    return _run_ai_task("video", job_reference)
 
 
 @celery_app.task(name="nuxtron.tasks.ai.process_voice", bind=True, max_retries=1)  # type: ignore[untyped-decorator]
-def process_ai_voice(self, payload: dict) -> dict:  # type: ignore[misc]
-    return _run_ai_task("voice", payload)
+def process_ai_voice(self, job_reference: str) -> dict:  # type: ignore[misc]
+    return _run_ai_task("voice", job_reference)
+
+
+@celery_app.task(name="nuxtron.tasks.ai.publish_outbox")  # type: ignore[untyped-decorator]
+def publish_pending_ai_jobs() -> dict[str, int]:
+    """Relay committed outbox messages that were not published by the API."""
+    published = 0
+    failed = 0
+    for item in claim_pending_outbox():
+        try:
+            task = celery_app.send_task(
+                item["task_name"],
+                kwargs={"job_reference": item["reference"]},
+                queue=item["queue"],
+            )
+            mark_outbox_published(item["reference"], task.id)
+            published += 1
+        except Exception as exc:
+            mark_outbox_failed(item["reference"], f"Outbox relay failed: {exc}")
+            failed += 1
+            task_logger.exception("Failed to relay AI outbox message")
+    return {"published": published, "failed": failed}
 
 
 if __name__ == "__main__":

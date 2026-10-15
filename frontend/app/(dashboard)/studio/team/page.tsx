@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiGet, apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { apiGet, apiSend } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
 
 type TeamMember = {
   id: string;
@@ -12,7 +13,7 @@ type TeamMember = {
 };
 
 export default function TeamPage() {
-  const tenantId = DEFAULT_TENANT_ID || 'tenant-demo';
+  const tenantId = resolveSessionTenant();
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

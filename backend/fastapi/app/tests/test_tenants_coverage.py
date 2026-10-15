@@ -83,7 +83,7 @@ class TestTenantsCreateDbPath:
             "tenants-db-tenant",    # tenant_id
             "encrypted:display_name",  # display_name_cipher
             "Test Corp",            # display_name_preview
-            "pro",                  # plan
+            "starter",              # plan is server-managed
             "active",               # status
             {},                     # settings_json
             datetime(2024, 1, 1, tzinfo=UTC),  # created_at
@@ -92,16 +92,14 @@ class TestTenantsCreateDbPath:
         conn, _ = _make_mock_conn_with_row(db_row)
 
         with patch.object(lm, "_db_ready", True), \
-             patch("psycopg.connect", return_value=conn):
+            patch("psycopg.connect", return_value=conn):
             r = client.post("/tenants", headers=_headers(), json={
                 "display_name": "Test Corp",
-                "plan": "pro",
-                "status": "active",
             })
         assert r.status_code in VALID
         if r.status_code == 200:
             data = r.json()
-            assert data["tenant"]["plan"] == "pro"
+            assert data["tenant"]["plan"] == "starter"
             assert data["tenant"]["persistence"] == "postgres"
 
     def test_create_tenant_db_no_row_returns_500(self, client: TestClient) -> None:
@@ -111,10 +109,9 @@ class TestTenantsCreateDbPath:
         conn, _ = _make_mock_conn_with_row(None)
 
         with patch.object(lm, "_db_ready", True), \
-             patch("psycopg.connect", return_value=conn):
+            patch("psycopg.connect", return_value=conn):
             r = client.post("/tenants", headers=_headers(), json={
                 "display_name": "No Row Corp",
-                "plan": "starter",
             })
         assert r.status_code in (500, 200, 422)
 
@@ -186,7 +183,7 @@ class TestTenantsUpdateDbPath:
             "tenants-db-tenant",
             "encrypted:new_name",
             "New Corp",
-            "pro",
+            "starter",
             "active",
             {"feature": "enabled"},
             datetime(2024, 1, 1, tzinfo=UTC),
@@ -207,10 +204,9 @@ class TestTenantsUpdateDbPath:
         conn.cursor.return_value = cur_ctx
 
         with patch.object(lm, "_db_ready", True), \
-             patch("psycopg.connect", return_value=conn):
+            patch("psycopg.connect", return_value=conn):
             r = client.patch("/tenants/tenants-db-tenant", headers=_headers(), json={
                 "display_name": "New Corp",
-                "plan": "pro",
             })
         assert r.status_code in VALID
         if r.status_code == 200:
@@ -236,7 +232,7 @@ class TestTenantsUpdateDbPath:
              patch("psycopg.connect", return_value=conn):
             h = _headers("notfound-tenant")
             r = client.patch("/tenants/notfound-tenant", headers=h, json={
-                "plan": "pro",
+                "display_name": "Missing Tenant",
             })
         assert r.status_code in (404, 200, 422)
 
@@ -258,9 +254,9 @@ class TestTenantsUpdateDbPath:
         conn.cursor.return_value = cur_ctx
 
         with patch.object(lm, "_db_ready", True), \
-             patch("psycopg.connect", return_value=conn):
+            patch("psycopg.connect", return_value=conn):
             r = client.patch("/tenants/tenants-db-tenant", headers=_headers(), json={
-                "plan": "enterprise",
+                "display_name": "Updated Corp",
             })
         assert r.status_code in (500, 200, 422)
 
@@ -330,7 +326,7 @@ class TestTenantsDeleteDbPath:
         """403 when updating another tenant's profile."""
         h = _headers("my-tenant")
         r = client.patch("/tenants/other-tenant-id", headers=h, json={
-            "plan": "enterprise",
+            "display_name": "Unauthorized Cross-Tenant Update",
         })
         assert r.status_code == 403
 

@@ -1,92 +1,115 @@
 'use client';
 
-import AccountNav from '@/app/components/account-nav';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import AccountNav from '@/app/components/account-nav';
+import { Button } from '@/app/(dashboard)/_ui/kit';
 import { apiGet, resolveSessionTenant } from '@/app/lib/api-client';
 
-/** Shown until the API answers, so no figure is ever guessed on the user's behalf. */
-const UNKNOWN = '—';
+function isPreviewResponse(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const payload = value as Record<string, unknown>;
+  const source = String(payload.data_source ?? payload.source ?? payload.mode ?? '').toLowerCase();
+  return payload.is_mock === true || payload.mock === true || payload.preview === true || payload.is_demo === true ||
+    ['mock', 'demo', 'sample', 'preview', 'fallback', 'seeded'].includes(source);
+}
+
+function displayValue(value: unknown): string | null {
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return null;
+}
 
 export default function AccountOverviewPage() {
   const [tenantId] = useState(resolveSessionTenant);
-  const [plan, setPlan] = useState('');
-  const [credits, setCredits] = useState('');
-  const [orders, setOrders] = useState('');
-  const [error, setError] = useState('');
+  const [plan, setPlan] = useState<string | null>(null);
+  const [credits, setCredits] = useState<string | null>(null);
+  const [orders, setOrders] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState<string[]>([]);
+  const [refresh, setRefresh] = useState(0);
 
   useEffect(() => {
     let active = true;
     async function load() {
-      setError('');
-      try {
-        const [usage, profile, orderData] = await Promise.all([
-          apiGet('/billing/usage', tenantId),
-          apiGet('/white-label/profile', tenantId),
-          apiGet('/money-printers/commerce-pro/orders', tenantId),
-        ]);
-        if (!active) return;
-        // Never substitute a plausible-looking plan tier: showing the wrong
-        // one produces billing disputes. Absent data stays absent.
-        const rawPlan = usage.plan_display ?? usage.current_plan;
-        const planText = typeof rawPlan === 'string' && rawPlan.trim() ? rawPlan.trim() : '';
-        const rawCredits = usage.credit_balance;
-        const creditsText =
-          typeof rawCredits === 'number' || typeof rawCredits === 'string' ? String(rawCredits) : '';
-        const rawOrders = orderData.count;
-        const ordersText =
-          typeof rawOrders === 'number' || typeof rawOrders === 'string' ? String(rawOrders) : '';
-        const whiteLabel = profile.white_label as Record<string, unknown> | undefined;
-        const whiteLabelProfile = whiteLabel?.profile as Record<string, unknown> | undefined;
-        const rawStage = whiteLabelProfile?.stage;
-        const stage = typeof rawStage === 'string' && rawStage.trim() ? rawStage.trim() : '';
+      const results = await Promise.allSettled([
+        apiGet('/billing/usage', tenantId),
+        apiGet('/money-printers/commerce-pro/orders', tenantId),
+      ]);
+      if (!active) return;
 
-        setPlan(planText && stage ? `${planText} (${stage})` : planText);
-        setCredits(creditsText);
-        setOrders(ordersText);
-      } catch (ex) {
-        if (!active) return;
-        // Clear the figures too — a stale or blank value must not read as fact.
-        setPlan('');
-        setCredits('');
-        setOrders('');
-        setError(ex instanceof Error ? ex.message : 'Failed to load account overview.');
-      }
+      const failures: string[] = [];
+      const usage = results[0].status === 'fulfilled' && !isPreviewResponse(results[0].value)
+        ? results[0].value
+        : null;
+      const orderData = results[1].status === 'fulfilled' && !isPreviewResponse(results[1].value)
+        ? results[1].value
+        : null;
+      const planValue = usage ? displayValue(usage.plan_display ?? usage.current_plan) : null;
+      const creditsValue = usage ? displayValue(usage.credit_balance) : null;
+      const ordersValue = orderData ? displayValue(orderData.count) : null;
+
+      if (!usage) failures.push('Billing summary');
+      else if (planValue === null || creditsValue === null) failures.push('Plan or credit details');
+      if (!orderData) failures.push('Order activity');
+      else if (ordersValue === null) failures.push('Order count');
+      setPlan(planValue);
+      setCredits(creditsValue);
+      setOrders(ordersValue);
+      setFailed(failures);
+      setLoading(false);
     }
     void load();
     return () => {
       active = false;
     };
-  }, [tenantId]);
+  }, [refresh, tenantId]);
+
+  function retry() {
+    setLoading(true);
+    setFailed([]);
+    setPlan(null);
+    setCredits(null);
+    setOrders(null);
+    setRefresh((value) => value + 1);
+  }
 
   return (
-    <main className="account-shell">
+    <div className="account-shell">
       <AccountNav />
-      <section>
-        <div className="hero">
+      <section aria-labelledby="account-overview-title">
+        <header className="hero">
           <p className="eyebrow">Account</p>
-          <h1>Account Overview</h1>
-          <p>Manage personal details, orders, credits wallet, and platform settings.</p>
-          <label className="auth-form" style={{ maxWidth: 360 }}>
-            <span>Tenant ID</span>
-            <input value={tenantId} readOnly />
-          </label>
-          {error ? <p className="auth-errors">{error}</p> : null}
-        </div>
-        <div className="grid dashboard-kpis">
+          <h1 id="account-overview-title">Account Overview</h1>
+          <p>Review your subscription and recent activity, then continue to the account task you need.</p>
+        </header>
+
+        {failed.length > 0 && !loading ? (
+          <div className="auth-errors" role="status" aria-live="polite" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span>{failed.join(' and ')} {failed.length === 1 ? 'is' : 'are'} unavailable. Other account data remains visible.</span>
+            <Button onClick={retry}>Retry account data</Button>
+          </div>
+        ) : null}
+
+        <div className="grid dashboard-kpis" aria-busy={loading}>
           <article className="card kpi-card">
             <p className="kpi-label">Current Plan</p>
-            <h3>{plan || UNKNOWN}</h3>
+            <h2>{loading ? 'Loading…' : plan ?? '—'}</h2>
+            <Link href="/billing">View billing and plans</Link>
           </article>
           <article className="card kpi-card">
-            <p className="kpi-label">Wallet Credits</p>
-            <h3>{credits || UNKNOWN}</h3>
+            <p className="kpi-label">Available Credits</p>
+            <h2>{loading ? 'Loading…' : credits ?? '—'}</h2>
+            <Link href="/billing">Manage credits</Link>
           </article>
           <article className="card kpi-card">
-            <p className="kpi-label">Open Orders</p>
-            <h3>{orders || UNKNOWN}</h3>
+            <p className="kpi-label">Order Records</p>
+            <h2>{loading ? 'Loading…' : orders ?? '—'}</h2>
+            <Link href="/account/orders">View orders</Link>
           </article>
         </div>
+        {loading ? <p role="status" aria-live="polite" className="muted">Loading account summary…</p> : null}
       </section>
-    </main>
+    </div>
   );
 }

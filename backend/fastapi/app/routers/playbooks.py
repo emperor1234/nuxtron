@@ -2,10 +2,11 @@
 
 """
 Integration Playbooks — Flywheel Module 3.
-10 built-in + custom tenant playbooks. DB-first with in-memory fallback.
+10 built-in + custom tenant playbooks. Memory fallback is restricted to non-production.
 """
 
 import json
+import os
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -107,6 +108,14 @@ def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def _is_production() -> bool:
+    return os.getenv("ENVIRONMENT", "development").strip().lower() in {"prod", "production"}
+
+
+def _persistence_unavailable() -> HTTPException:
+    return HTTPException(status_code=503, detail="Playbook persistence is unavailable.")
+
+
 def _row_to_playbook(r: Any) -> dict[str, Any]:
     return {
         "id": str(r[0]), "tenant_id": str(r[1]), "name": str(r[2]),
@@ -138,8 +147,11 @@ def _find_playbook(
     if ctx.get_db_ready():
         try:
             return _find_playbook_in_db(ctx, playbook_id, tenant_id)
-        except Exception:
-            pass
+        except Exception as exc:
+            if _is_production():
+                raise _persistence_unavailable() from exc
+    elif _is_production():
+        raise _persistence_unavailable()
     return next(
         (p for p in ctx.playbooks_memory if p.get("id") == playbook_id and p.get("tenant_id") == tenant_id),
         None,
@@ -159,9 +171,13 @@ def _handle_list_playbooks(ctx: PlaybooksContext, auth: AuthContext) -> dict[str
                     )
                     rows = cur.fetchall()
             custom = [_row_to_playbook(r) for r in rows]
-        except Exception:
+        except Exception as exc:
+            if _is_production():
+                raise _persistence_unavailable() from exc
             custom = [p for p in ctx.playbooks_memory if p.get("tenant_id") == auth.tenant_id]
     else:
+        if _is_production():
+            raise _persistence_unavailable()
         custom = [p for p in ctx.playbooks_memory if p.get("tenant_id") == auth.tenant_id]
     all_playbooks = [*_BUILTIN_PLAYBOOKS, *custom]
     return {"playbooks": all_playbooks, "total": len(all_playbooks), "built_in": len(_BUILTIN_PLAYBOOKS), "custom": len(custom)}
@@ -205,9 +221,13 @@ def _handle_create_playbook(ctx: PlaybooksContext, body: CreatePlaybookRequest, 
                          body.time_to_value_days, False, record["created_at"]),
                     )
                 conn.commit()
-        except Exception:
+        except Exception as exc:
+            if _is_production():
+                raise _persistence_unavailable() from exc
             ctx.playbooks_memory.append(record)
     else:
+        if _is_production():
+            raise _persistence_unavailable()
         ctx.playbooks_memory.append(record)
     return {"playbook_id": playbook_id, "status": "created"}
 
@@ -217,6 +237,13 @@ def _handle_run_playbook(ctx: PlaybooksContext, body: RunPlaybookRequest, auth: 
     playbook = _find_playbook(ctx, body.playbook_id, auth.tenant_id)
     if playbook is None:
         raise HTTPException(status_code=404, detail="Playbook not found")
+    if not body.dry_run:
+        raise HTTPException(
+            status_code=501,
+            detail="Playbook execution is not configured. No steps were executed.",
+        )
+    if _is_production() and not ctx.get_db_ready():
+        raise _persistence_unavailable()
     run_id = str(uuid.uuid4())
     run: dict[str, Any] = {
         "id": run_id, "tenant_id": auth.tenant_id,
@@ -242,9 +269,13 @@ def _handle_run_playbook(ctx: PlaybooksContext, body: RunPlaybookRequest, auth: 
                          run["steps_total"], 0, run["created_at"]),
                     )
                 conn.commit()
-        except Exception:
+        except Exception as exc:
+            if _is_production():
+                raise _persistence_unavailable() from exc
             ctx.playbook_runs_memory.append(run)
     else:
+        if _is_production():
+            raise _persistence_unavailable()
         ctx.playbook_runs_memory.append(run)
     ctx.audit_log_memory.append({
         "id": str(uuid.uuid4()), "tenant_id": auth.tenant_id,
@@ -276,8 +307,11 @@ def _handle_list_runs(ctx: PlaybooksContext, auth: AuthContext) -> dict[str, Any
                 for r in rows
             ]
             return {"runs": runs, "total": len(runs)}
-        except Exception:
-            pass
+        except Exception as exc:
+            if _is_production():
+                raise _persistence_unavailable() from exc
+    elif _is_production():
+        raise _persistence_unavailable()
     runs = [r for r in ctx.playbook_runs_memory if r.get("tenant_id") == auth.tenant_id]
     return {"runs": runs, "total": len(runs)}
 
@@ -299,7 +333,11 @@ def create_playbooks_router(ctx: PlaybooksContext) -> APIRouter:
     def create_playbook(body: CreatePlaybookRequest, auth: AuthDep) -> dict[str, Any]:
         return _handle_create_playbook(ctx, body, auth)
 
-    @router.post("/run", status_code=201, responses={404: {"description": "Playbook not found"}})
+    @router.post(
+        "/run",
+        status_code=201,
+        responses={404: {"description": "Playbook not found"}, 501: {"description": "Execution is not configured"}},
+    )
     def run_playbook(body: RunPlaybookRequest, auth: AuthDep) -> dict[str, Any]:
         return _handle_run_playbook(ctx, body, auth)
 
@@ -308,4 +346,3 @@ def create_playbooks_router(ctx: PlaybooksContext) -> APIRouter:
         return _handle_list_runs(ctx, auth)
 
     return router
-

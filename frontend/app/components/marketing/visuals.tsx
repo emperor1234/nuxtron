@@ -14,42 +14,26 @@ const CARD =
 const HEADER =
   'flex items-center gap-2 border-b border-line-soft bg-surface px-4 py-2.5';
 
-/* ── SEO rank-tracking visual ── */
+/* ── SEO rank-position review visual ── */
 export function SeoVisual() {
-  const keywords = [
-    { kw: 'marketing automation software', pos: 3, prev: 7, vol: '18.2K' },
-    { kw: 'ai content generator', pos: 1, prev: 4, vol: '32.1K' },
-    { kw: 'social media scheduling', pos: 5, prev: 12, vol: '24.7K' },
-  ];
   return (
     <div className={CARD}>
       <div className={HEADER}>
-        <span className="text-sm font-semibold text-ink">Position Tracking</span>
-        <span className="ml-auto rounded-full bg-line-soft px-2 py-0.5 text-xs font-semibold text-warning-ink">
-          Live
+        <span className="text-sm font-semibold text-ink">Rank Position Review</span>
+        <span className="ml-auto rounded-full bg-line-soft px-2 py-0.5 text-xs font-semibold text-info-ink">
+          Browser-local
         </span>
       </div>
-      <div className="divide-y divide-line-soft">
-        {keywords.map((k) => (
-          <div key={k.kw} className="flex items-center gap-4 px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium text-ink">{k.kw}</div>
-              <div className="text-xs text-info">{k.vol} searches/mo</div>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center justify-end gap-1.5">
-                <span className="text-lg font-bold text-ink">#{k.pos}</span>
-                <span className="flex items-center text-xs font-semibold text-success-ink">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <path d="M7 17L17 7M17 7H8M17 7v9" />
-                  </svg>
-                  {k.prev - k.pos}
-                </span>
-              </div>
-              <div className="text-xs text-info">was #{k.prev}</div>
-            </div>
-          </div>
-        ))}
+      <div className="p-4">
+        <div className="rounded-xl border border-dashed border-line bg-surface p-5 text-center">
+          <p className="text-sm font-semibold text-ink">No export loaded</p>
+          <p className="mt-1 text-xs text-info">Choose a CSV to review source-provided positions. Processing stays in your browser.</p>
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-info">
+          <span>Keyword</span>
+          <span>Position</span>
+          <span>Observed date</span>
+        </div>
       </div>
     </div>
   );

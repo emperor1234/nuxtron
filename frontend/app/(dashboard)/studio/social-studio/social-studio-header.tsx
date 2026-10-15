@@ -14,16 +14,16 @@ export function SocialStudioHeader({
   generatedCount,
   error,
 }: {
-  credits: number;
-  pendingTopups: number;
-  walletUsd: number;
+  credits: number | null;
+  pendingTopups: number | null;
+  walletUsd: number | null;
   generatedCount: number;
   error?: string;
 }) {
   const figures = [
-    { label: "Credits available", value: credits.toLocaleString("en-US"), Icon: Coins },
-    { label: "Top-ups pending", value: pendingTopups.toLocaleString("en-US"), Icon: ReceiptText },
-    { label: "Wallet balance", value: `$${walletUsd.toFixed(2)}`, Icon: Wallet },
+    { label: "Credits available", value: credits?.toLocaleString("en-US") ?? "—", Icon: Coins },
+    { label: "Top-ups pending", value: pendingTopups?.toLocaleString("en-US") ?? "—", Icon: ReceiptText },
+    { label: "Wallet balance", value: walletUsd === null ? "—" : `$${walletUsd.toFixed(2)}`, Icon: Wallet },
     { label: "Created this session", value: generatedCount.toLocaleString("en-US"), Icon: Images },
   ];
   return (

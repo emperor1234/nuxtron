@@ -1142,11 +1142,9 @@ export default function StudioEditorPage() {
   const [suggestionsError, setSuggestionsError] = useState('');
   const [suggestionsActionMessage, setSuggestionsActionMessage] = useState('');
   const [suggestions, setSuggestions] = useState<EditorSuggestionItem[]>([]);
-  const [timerSeconds, setTimerSeconds] = useState(611);
 
   useEffect(() => {
     if (!globalThis.window) return;
-
     try {
       const raw = globalThis.localStorage.getItem(PUBLISH_HISTORY_STORAGE_KEY);
       if (!raw) return;
@@ -1166,16 +1164,9 @@ export default function StudioEditorPage() {
   const [slides, setSlides] = useState<Slide[]>([
     {
       id: 'slide-1',
-      headline: 'ZERO STRESS',
-      subheadline: 'Trade your cryptocurrency and giftcards with us today!',
-      cta: 'Start now',
-      imageUrl: '',
-    },
-    {
-      id: 'slide-2',
-      headline: 'FAST PAYOUTS',
-      subheadline: 'Instant valuation, secure transfer, and same-day settlement.',
-      cta: 'Get quote',
+      headline: '',
+      subheadline: '',
+      cta: '',
       imageUrl: '',
     },
   ]);
@@ -1211,13 +1202,6 @@ export default function StudioEditorPage() {
     },
     [slides.length]
   );
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimerSeconds((s) => (s > 0 ? s - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (!videoAutoAdjustPlatforms) return;
@@ -1266,14 +1250,6 @@ export default function StudioEditorPage() {
       active = false;
     };
   }, [tenantId]);
-
-  function formatTimer(seconds: number) {
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  }
 
   function getCaptionHookLine() {
     if (captionHookStyle === 'Question') return 'Still fixing lip sync in post before you can publish?';
@@ -2662,17 +2638,10 @@ export default function StudioEditorPage() {
           >
             ➤
           </button>
-          <button type="button" className="topbar-promo-btn">
-            Claim Up To 50% Off &nbsp;<span className="topbar-promo-timer">🔴 {formatTimer(timerSeconds)}</span>
-          </button>
         </div>
       </header>
 
       <section className="publish-toolbar">
-        <label>
-          <span>Tenant</span>
-          <input value={tenantId} readOnly placeholder="tenant-demo" />
-        </label>
         <label>
           <span>Prompt</span>
           <input
@@ -7303,25 +7272,6 @@ export default function StudioEditorPage() {
         .topbar-send-btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
-        }
-
-        .topbar-promo-btn {
-          border: 0;
-          border-radius: 10px;
-          background: linear-gradient(120deg, var(--info-ink), var(--info));
-          color: white;
-          font-weight: 800;
-          padding: 9px 14px;
-          cursor: pointer;
-          font-size: 13px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .topbar-promo-timer {
-          font-variant-numeric: tabular-nums;
-          letter-spacing: 0.02em;
         }
 
         /* Captions */

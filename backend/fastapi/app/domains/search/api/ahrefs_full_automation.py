@@ -1,26 +1,35 @@
 """Search HTTP operations beginning with ahrefs full automation."""
 
+from typing import Any
+
+from fastapi import APIRouter
+
 from ..constants import AuthDep
 from ..operations.ahrefs_parity_chart import operation_ahrefs_full_automation
-from ..operations.surfer_parity_chart import operation_surfer_parity_audit
-from ..operations.surfer_parity_chart import operation_surfer_production_gate
-from ..operations.surfer_parity_chart import operation_surfer_provider_probes
-from ..operations.surfer_parity_chart import operation_surfer_setup_playbook
-from ..operations.surfer_parity_chart import operation_surfer_wiring_plan
-from ..operations.surfer_vendor_inventory import operation_surfer_provider_bootstrap
-from ..operations.surfer_vendor_inventory import operation_surfer_provider_checklist
+from ..operations.surfer_parity_chart import (
+    operation_surfer_parity_audit,
+    operation_surfer_production_gate,
+    operation_surfer_provider_probes,
+    operation_surfer_setup_playbook,
+    operation_surfer_wiring_plan,
+)
+from ..operations.surfer_vendor_inventory import (
+    operation_surfer_provider_bootstrap,
+    operation_surfer_provider_checklist,
+)
 from ..runtime import SearchRuntime
-from ..schemas import AhrefsFullAutomationRequest
-from ..schemas import SurferProductionGateRequest
-from ..schemas import SurferProviderBootstrapRequest
-from ..schemas import SurferProviderProbeRequest
-from fastapi import APIRouter
-from typing import Any
+from ..schemas import (
+    AhrefsFullAutomationRequest,
+    SurferProductionGateRequest,
+    SurferProviderBootstrapRequest,
+    SurferProviderProbeRequest,
+)
+from .keyword_unavailable_response import KEYWORD_RESEARCH_501_RESPONSE
 
 
 def register(router: APIRouter, runtime: SearchRuntime):
 
-    @router.post("/ahrefs/full-automation")
+    @router.post("/ahrefs/full-automation", status_code=501, response_model=None, responses={501: KEYWORD_RESEARCH_501_RESPONSE})
     def ahrefs_full_automation(payload: AhrefsFullAutomationRequest, auth: AuthDep) -> dict[str, Any]:
         return operation_ahrefs_full_automation(runtime, payload, auth)
 
@@ -40,7 +49,7 @@ def register(router: APIRouter, runtime: SearchRuntime):
     def surfer_setup_playbook(auth: AuthDep) -> dict[str, Any]:
         return operation_surfer_setup_playbook(runtime, auth)
 
-    @router.post("/surfer/production-gate")
+    @router.post("/surfer/production-gate", status_code=501, response_model=None, responses={501: KEYWORD_RESEARCH_501_RESPONSE})
     def surfer_production_gate(payload: SurferProductionGateRequest, auth: AuthDep) -> dict[str, Any]:
         return operation_surfer_production_gate(runtime, payload, auth)
 

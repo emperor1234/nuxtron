@@ -1,34 +1,40 @@
 """Adobe PDF Services processing adapter."""
 
 from __future__ import annotations
+
 from typing import Any
-import asyncio
+import json
 import os
+import urllib.parse
+
+from .provider_http import provider_request_failed
+from .provider_http import provider_unavailable
+from .provider_http import request_provider_api
+from .provider_http import validate_public_media_source_url
 
 
 async def _dispatch_adobe_pdf(
     storage_key: str, operation: str, params: dict[str, Any], source_url: str | None
 ) -> dict[str, Any]:
-    """
-    Adobe PDF Services API — enterprise document conversion, extraction, OCR.
-    Docs: https://developer.adobe.com/document-services/docs/apis/
-    Env vars: ADOBE_PDF_CLIENT_ID, ADOBE_PDF_CLIENT_SECRET
-    """
-    await asyncio.sleep(0)
+    """Submit document work to Adobe using pinned provider egress and an explicit public source."""
     client_id = os.getenv("ADOBE_PDF_CLIENT_ID", "")
     client_secret = os.getenv("ADOBE_PDF_CLIENT_SECRET", "")
     if not (client_id and client_secret):
-        return {
-            "provider": "adobe_pdf",
-            "status": "dispatched",
-            "mode": "credentials-not-configured",
-            "message": "Set ADOBE_PDF_CLIENT_ID and ADOBE_PDF_CLIENT_SECRET to enable live dispatch.",
-            "would_call": "https://pdf-services.adobe.io/operation/exportpdf",
-            "operation": operation,
-        }
-    import json as _json
-    import urllib.parse
-    import urllib.request
+        return provider_unavailable(
+            "adobe_pdf", "PROVIDER_CREDENTIALS_MISSING", "Adobe PDF credentials are not configured."
+        )
+    if not source_url:
+        return provider_unavailable(
+            "adobe_pdf", "MEDIA_SOURCE_URL_REQUIRED", "A public HTTPS document source URL is required."
+        )
+    try:
+        source_url = await validate_public_media_source_url(source_url)
+    except (TypeError, ValueError):
+        return provider_unavailable(
+            "adobe_pdf",
+            "MEDIA_SOURCE_URL_NOT_ALLOWED",
+            "The media source URL is not a permitted public HTTPS destination.",
+        )
 
     token_payload = urllib.parse.urlencode(
         {
@@ -38,15 +44,35 @@ async def _dispatch_adobe_pdf(
             "scope": "openid,AdobeID,DCAPI",
         }
     ).encode()
-    token_req = urllib.request.Request("https://ims-na1.adobelogin.com/ims/token/v3", data=token_payload, method="POST")
-    token_req.add_header("Content-Type", "application/x-www-form-urlencoded")
     try:
-        with urllib.request.urlopen(token_req, timeout=30) as resp:
-            token_data = _json.loads(resp.read())
-            access_token = token_data.get("access_token", "")
+        token_response = await request_provider_api(
+            "POST",
+            "https://ims-na1.adobelogin.com/ims/token/v3",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            body=token_payload,
+        )
     except Exception as exc:
-        return {"provider": "adobe_pdf", "status": "error", "mode": "live", "error": f"Auth: {exc}"}
-    op_map = {
+        return provider_request_failed("adobe_pdf", exc)
+    if token_response.status_code >= 400:
+        return {
+            "provider": "adobe_pdf",
+            "status": "error",
+            "error_code": "PROVIDER_AUTH_FAILED",
+            "error": "Adobe authentication failed.",
+        }
+    try:
+        access_token = str(token_response.json().get("access_token", ""))
+    except (ValueError, AttributeError):
+        access_token = ""
+    if not access_token:
+        return {
+            "provider": "adobe_pdf",
+            "status": "error",
+            "error_code": "PROVIDER_AUTH_FAILED",
+            "error": "Adobe authentication did not return an access token.",
+        }
+
+    operation_paths = {
         "convert": "exportpdf",
         "extract": "extractpdf",
         "compress": "compresspdf",
@@ -55,26 +81,36 @@ async def _dispatch_adobe_pdf(
         "ocr": "ocr",
         "auto": "exportpdf",
     }
-    op_path = op_map.get(operation, "exportpdf")
-    op_payload = _json.dumps(
-        {"assetID": source_url or f"s3://raw-input/{storage_key}", "targetFormat": params.get("target_format", "docx")}
+    operation_path = operation_paths.get(operation, "exportpdf")
+    operation_payload = json.dumps(
+        {"assetID": source_url, "targetFormat": params.get("target_format", "docx")}
     ).encode()
-    op_req = urllib.request.Request(
-        f"https://pdf-services.adobe.io/operation/{op_path}", data=op_payload, method="POST"
-    )
-    op_req.add_header("Authorization", f"Bearer {access_token}")
-    op_req.add_header("x-api-key", client_id)
-    op_req.add_header("Content-Type", "application/json")
     try:
-        with urllib.request.urlopen(op_req, timeout=30) as resp:
-            result = _json.loads(resp.read())
+        response = await request_provider_api(
+            "POST",
+            f"https://pdf-services.adobe.io/operation/{operation_path}",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "x-api-key": client_id,
+                "Content-Type": "application/json",
+            },
+            body=operation_payload,
+        )
+        if response.status_code >= 400:
             return {
                 "provider": "adobe_pdf",
-                "status": "processing",
-                "mode": "live",
-                "job_id": result.get("jobID"),
-                "location": result.get("location"),
-                "operation": op_path,
+                "status": "error",
+                "error_code": "PROVIDER_REJECTED_REQUEST",
+                "error": "Adobe PDF Services rejected the document request.",
             }
+        result = response.json()
+        return {
+            "provider": "adobe_pdf",
+            "status": "processing",
+            "mode": "live",
+            "job_id": result.get("jobID"),
+            "location": result.get("location"),
+            "operation": operation_path,
+        }
     except Exception as exc:
-        return {"provider": "adobe_pdf", "status": "error", "mode": "live", "error": str(exc)}
+        return provider_request_failed("adobe_pdf", exc)

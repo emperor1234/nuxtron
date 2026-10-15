@@ -252,7 +252,7 @@ class SensitiveRouteTokenMiddleware(BaseHTTPMiddleware):
                     status_code=403,
                     content={
                         "status": "error",
-                        "detail": "Bearer token required. Header API keys are not accepted on sensitive routes. Obtain a JWT token via /auth/login and use Authorization: Bearer <token>.",
+                        "detail": "Bearer token required. Header API keys are not accepted on sensitive routes. Authenticate through the configured Auth0 OIDC flow and use Authorization: Bearer <token>.",
                         "code": "TOKEN_ONLY_POLICY",
                     },
                 )
@@ -265,16 +265,21 @@ class SensitiveRouteTokenMiddleware(BaseHTTPMiddleware):
 def validate_environment() -> dict[str, str]:
     """Validate required environment variables at startup."""
     logger = StructuredLogger("nuxtron.startup")
-    environment = os.getenv("ENVIRONMENT", "development").lower()
+    environment = os.getenv("ENVIRONMENT", "").strip().lower()
+    if environment not in {"development", "test", "production"}:
+        raise RuntimeError("ENVIRONMENT must be explicitly set to development, test, or production.")
     is_production = environment == "production"
+    production_checks_enabled = is_production and not (
+        os.getenv("PYTEST_CURRENT_TEST") and "pytest" in sys.modules
+    )
     required_vars = ["JWT_SIGNING_KEY", "APP_ENC_KEY", "PASSWORD_PEPPER"]
-    if is_production and (not (os.getenv("PYTEST_CURRENT_TEST") and "pytest" in sys.modules)):
+    if production_checks_enabled:
         required_vars.extend(
             [
                 "AUTH0_ISSUER",
                 "AUTH0_AUDIENCE",
+                "FASTAPI_SECRET",
                 "CREDENTIAL_ENCRYPTION_KEY",
-                "DATABASE_URL",
                 "REDIS_URL",
                 "CELERY_BROKER_URL",
                 "CELERY_RESULT_BACKEND",
@@ -303,6 +308,23 @@ def validate_environment() -> dict[str, str]:
                 config[var] = f"dev-{var.lower()}"
         else:
             config[var] = value
+    if production_checks_enabled:
+        database_url = os.getenv("DATABASE_URL", "").strip()
+        postgres_components = (
+            os.getenv("POSTGRES_HOST", "").strip(),
+            os.getenv("POSTGRES_DB", "").strip(),
+            os.getenv("POSTGRES_USER", "").strip(),
+        )
+        if not database_url and not all(postgres_components):
+            missing.append("DATABASE_URL or POSTGRES_HOST/POSTGRES_DB/POSTGRES_USER")
+        media_secret = os.getenv("FASTAPI_SECRET", "").strip().lower()
+        if (
+            len(media_secret) < 32
+            or "replace-with" in media_secret
+            or "change-this" in media_secret
+            or "dev-secret" in media_secret
+        ):
+            missing.append("FASTAPI_SECRET (must be at least 32 non-placeholder characters)")
     for var in optional_vars:
         value = os.getenv(var, "")
         if value:
@@ -315,7 +337,7 @@ def validate_environment() -> dict[str, str]:
             mode="PRODUCTION",
         )
         raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
-    if is_production and (not (os.getenv("PYTEST_CURRENT_TEST") and "pytest" in sys.modules)):
+    if production_checks_enabled:
         issuer = os.getenv("AUTH0_ISSUER", "").strip()
         if not issuer.startswith("https://"):
             raise RuntimeError("AUTH0_ISSUER must use HTTPS in production.")
@@ -323,6 +345,9 @@ def validate_environment() -> dict[str, str]:
             raise RuntimeError("ORG_IDENTITY_MAPPING_REQUIRED=true is required in production.")
         if os.getenv("SECURITY_AUDIT_DURABLE", "").strip().lower() not in {"1", "true", "yes"}:
             raise RuntimeError("SECURITY_AUDIT_DURABLE=true is required in production.")
+        mfa_claim_name = os.getenv("AUTH0_MFA_VERIFIED_CLAIM", "https://nuxtron.com/mfa_verified").strip()
+        if not mfa_claim_name:
+            raise RuntimeError("AUTH0_MFA_VERIFIED_CLAIM must name the Auth0 boolean MFA assertion in production.")
     logger.info(
         "Environment Validation Complete",
         environment=environment,
@@ -354,7 +379,12 @@ def get_health_check_data(db_ready: bool, auth_memory: QueueValues, notification
     """Generate comprehensive health check data."""
     environment = os.getenv("ENVIRONMENT", "development").strip().lower()
     is_production = environment == "production"
-    health_status = "healthy" if db_ready or not is_production else "degraded"
+    redis_ready = True
+    if is_production:
+        from .domains.identity.security_redis import security_redis_ready
+
+        redis_ready = security_redis_ready()
+    health_status = "healthy" if (db_ready and redis_ready) or not is_production else "degraded"
     return {
         "status": health_status,
         "timestamp": datetime.now(UTC).isoformat(),
@@ -362,9 +392,17 @@ def get_health_check_data(db_ready: bool, auth_memory: QueueValues, notification
         "checks": {
             "database": {
                 "status": "ready" if db_ready else "unavailable",
-                "note": "Using memory fallback if unavailable" if not db_ready else "Connected to PostgreSQL",
+                "note": (
+                    "Connected to PostgreSQL"
+                    if db_ready
+                    else "Unavailable; production requests are not ready" if is_production
+                    else "Memory fallback may be active in development"
+                ),
             },
-            "cache": {"status": "ok", "type": "in-memory"},
+            "cache": {
+                "status": ("ready" if redis_ready else "unavailable") if is_production else "optional",
+                "type": "redis" if is_production else "optional Redis cache",
+            },
             "auth": {"status": "ok", "sessions_active": len(auth_memory)},
             "notifications": {"status": "ok", "pending_count": len(notifications_memory)},
         },

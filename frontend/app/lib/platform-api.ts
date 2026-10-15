@@ -1,10 +1,10 @@
-const API_BASE = '/api/fastapi';
-const FALLBACK_TENANT_ID = 'tenant-demo';
+import { DEFAULT_TENANT_ID as CLIENT_DEFAULT_TENANT_ID, resolveSessionTenant } from './api-client';
 
-export const DEFAULT_TENANT_ID = (process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '').trim();
+const API_BASE = '/api/fastapi';
+export const DEFAULT_TENANT_ID = CLIENT_DEFAULT_TENANT_ID;
 const API_TIMEOUT_MS = 45000;
 const RESPONSE_CACHE_TTL_MS = 120000;
-const INFLIGHT_REQUESTS = new Map<string, Promise<any>>();
+const INFLIGHT_REQUESTS = new Map<string, Promise<unknown>>();
 const RESPONSE_CACHE = new Map<string, { expiresAt: number; value: unknown }>();
 const LOCAL_CACHE_PREFIX = 'nuxtron:platform-api:';
 const STORAGE_TOKEN_KEY = 'nuxtron.jwt';
@@ -79,7 +79,10 @@ function readSessionToken(): string {
 function handleUnauthorized(): void {
   if (!globalThis.window) return;
   globalThis.localStorage?.removeItem(STORAGE_TOKEN_KEY);
-  void fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
+  void fetch('/api/auth/session', { method: 'DELETE' }).catch((error: unknown) => {
+    // Server-side revocation is best-effort; local credentials are cleared above.
+    void error;
+  });
   if (globalThis.window.location.pathname !== '/login') {
     globalThis.window.location.href = '/login';
   }
@@ -169,18 +172,33 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit): Pr
 
 function dedupeInFlight<T>(key: string, run: () => Promise<T>): Promise<T> {
   const existing = INFLIGHT_REQUESTS.get(key);
-  if (existing !== undefined) return existing;
+  if (existing !== undefined) return existing as Promise<T>;
   const task = run().finally(() => INFLIGHT_REQUESTS.delete(key));
   INFLIGHT_REQUESTS.set(key, task);
   return task;
 }
 
-export async function apiGet<T>(path: string, tenantId = DEFAULT_TENANT_ID): Promise<T> {
-  const resolvedTenantId = tenantId.trim() || DEFAULT_TENANT_ID || FALLBACK_TENANT_ID;
+function resolveTenantId(tenantId: string): string {
+  const resolved = tenantId.trim() || resolveSessionTenant();
+  if (!resolved) {
+    throw new Error('Workspace context is required. Sign in or select a workspace before making this request.');
+  }
+  return resolved;
+}
+
+export async function apiGet<T>(
+  path: string,
+  tenantId = DEFAULT_TENANT_ID,
+  options: { cache?: boolean } = {}
+): Promise<T> {
+  const resolvedTenantId = resolveTenantId(tenantId);
+  const shouldCache = options.cache !== false;
 
   const key = inflightKey('GET', path, resolvedTenantId);
-  const cached = getCachedResponse<T>(key);
-  if (cached !== null) return cached;
+  if (shouldCache) {
+    const cached = getCachedResponse<T>(key);
+    if (cached !== null) return cached;
+  }
 
   return dedupeInFlight<T>(key, async () => {
     const token = readSessionToken();
@@ -201,7 +219,7 @@ export async function apiGet<T>(path: string, tenantId = DEFAULT_TENANT_ID): Pro
     if (res.status === 401) handleUnauthorized();
     if (!res.ok) throw new Error(detail);
     const typed = data as T;
-    setCachedResponse(key, typed);
+    if (shouldCache) setCachedResponse(key, typed);
     return typed;
   });
 }
@@ -210,14 +228,16 @@ export async function apiSend<T>(
   path: string,
   method: 'POST' | 'PATCH' | 'PUT' | 'DELETE',
   payload?: unknown,
-  tenantId = DEFAULT_TENANT_ID
+  tenantId = DEFAULT_TENANT_ID,
+  options: { cache?: boolean } = {}
 ): Promise<T> {
-  const resolvedTenantId = tenantId.trim() || DEFAULT_TENANT_ID || FALLBACK_TENANT_ID;
+  const resolvedTenantId = resolveTenantId(tenantId);
 
   const cacheKey = inflightKey(method, path, resolvedTenantId, payload);
-  const shouldCachePost =
+  const isCacheablePost =
     method === 'POST' && path.startsWith('/seo-platform/') && path !== '/seo-platform/performance/rum/ingest';
-  if (shouldCachePost) {
+  const shouldUseResponseCache = isCacheablePost && options.cache !== false;
+  if (shouldUseResponseCache) {
     const cached = getCachedResponse<T>(cacheKey);
     if (cached !== null) return cached;
   }
@@ -240,12 +260,12 @@ export async function apiSend<T>(
     if (!res.ok) throw new Error(detail);
     const typed = data as T;
     invalidateTenantGetCache(resolvedTenantId);
-    if (shouldCachePost) setCachedResponse(cacheKey, typed);
+    if (shouldUseResponseCache) setCachedResponse(cacheKey, typed);
     return typed;
   };
 
   // Most SEO calls are idempotent analyses; in-flight dedupe prevents duplicate compute work.
-  if (shouldCachePost) {
+  if (isCacheablePost) {
     return dedupeInFlight<T>(cacheKey, run);
   }
   return run();

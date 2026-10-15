@@ -136,6 +136,15 @@ class TestEnforceTransportSecurity:
                 _enforce_transport_security("http", "")
             assert exc_info.value.status_code == 400
 
+    def test_https_enforced_rejects_missing_forwarded_proto(self) -> None:
+        from backend.fastapi.app.deps import _enforce_transport_security
+        from fastapi import HTTPException
+
+        with patch.dict(os.environ, {"ENFORCE_HTTPS_HEADER": "true"}):
+            with pytest.raises(HTTPException) as exc_info:
+                _enforce_transport_security("", "")
+        assert exc_info.value.status_code == 400
+
     def test_https_passes(self) -> None:
         from backend.fastapi.app.deps import _enforce_transport_security
         with patch.dict(os.environ, {"ENFORCE_HTTPS_HEADER": "true"}):

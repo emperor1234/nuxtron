@@ -23,6 +23,7 @@ from cryptography.hazmat.primitives.hashes import SHA256
 _logger = logging.getLogger("nuxtron.security.oidc")
 _ALLOWED_ALGORITHMS = frozenset({"RS256"})
 _DEFAULT_JWKS_TTL_SECONDS = 300
+_DEFAULT_MFA_VERIFIED_CLAIM = "https://nuxtron.com/mfa_verified"
 
 
 class OIDCVerificationError(ValueError):
@@ -142,6 +143,10 @@ def _validate_claims(claims: dict[str, Any], settings: OIDCSettings, now: int) -
     organization_id = claims.get("organization_id") or claims.get("org_id") or claims.get("tenant_id")
     if not isinstance(organization_id, str) or not organization_id.strip():
         raise OIDCVerificationError("Token organization claim is required.")
+    if os.getenv("ENVIRONMENT", "development").strip().lower() in {"prod", "production"}:
+        claim_name = os.getenv("AUTH0_MFA_VERIFIED_CLAIM", _DEFAULT_MFA_VERIFIED_CLAIM).strip()
+        if not claim_name or claims.get(claim_name) is not True:
+            raise OIDCVerificationError("A verified multi-factor authentication claim is required.")
 
 
 async def verify_oidc_jwt(token: str, settings: OIDCSettings | None = None) -> dict[str, Any]:

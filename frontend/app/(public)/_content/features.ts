@@ -33,7 +33,7 @@ export const FEATURE_JOBS: readonly {
     id: "research",
     title: "Research",
     summary:
-      "Find the opportunity: keywords, competitors, prompts and markets.",
+      "Review supplied keyword exports, manual competitor observations, prompts and market context.",
     icon: "search",
   },
   {
@@ -47,7 +47,7 @@ export const FEATURE_JOBS: readonly {
     id: "track",
     title: "Track",
     summary:
-      "Rankings, AI visibility and channel performance, measured over time.",
+      "Review rank exports and other supplied results. Live position and performance monitoring are unavailable.",
     icon: "chart",
   },
   {
@@ -71,34 +71,16 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
   },
   {
     id: "organic-research",
-    name: "Organic Research",
+    name: "Keyword Data Review",
     product: "seo",
     job: "research",
     icon: "search",
     description:
-      "See the keywords and pages that bring a domain its organic traffic.",
-  },
-  {
-    id: "keyword-gap",
-    name: "Keyword Gap",
-    product: "seo",
-    job: "research",
-    icon: "link",
-    description:
-      "Compare keyword profiles and find the terms competitors rank for and you don't.",
-  },
-  {
-    id: "keyword-strategy",
-    name: "Keyword Strategy Builder",
-    product: "seo",
-    job: "research",
-    icon: "workflow",
-    description:
-      "Group keywords into topics and plan the pages that should target them.",
+      "Review keyword rows and metrics from a CSV export you provide, locally in your browser.",
   },
   {
     id: "backlinks",
-    name: "Backlinks",
+    name: "Backlink Intelligence",
     product: "seo",
     job: "research",
     icon: "link",
@@ -137,16 +119,7 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
     job: "research",
     icon: "chart",
     description:
-      "Estimate a competitor's traffic and the channels it comes from.",
-  },
-  {
-    id: "audience-intelligence",
-    name: "Audience Intelligence",
-    product: "seo",
-    job: "research",
-    icon: "users",
-    description:
-      "Build a picture of the audience behind the searches you care about.",
+      "Compare search KPIs across two periods using values you provide.",
   },
   {
     id: "social-trends",
@@ -158,15 +131,6 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
   },
 
   // Create & optimize
-  {
-    id: "site-audit",
-    name: "Site Audit",
-    product: "seo",
-    job: "create",
-    icon: "shield",
-    description:
-      "Crawl a site, rank its technical issues and confirm the fixes.",
-  },
   {
     id: "log-file-analyzer",
     name: "Log File Analyzer",
@@ -195,7 +159,7 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
   },
   {
     id: "ai-content-generator",
-    name: "AI Content Generator",
+    name: "Content Generator",
     product: "both",
     job: "create",
     icon: "sparkles",
@@ -211,24 +175,8 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
       "Write platform-ready captions for each network, scored before you post.",
   },
   {
-    id: "on-page-checker",
-    name: "On-Page Checker",
-    product: "marketing",
-    job: "create",
-    icon: "shield",
-    description: "Check a page's on-page essentials before it goes live.",
-  },
-  {
-    id: "readability-score",
-    name: "Readability Score",
-    product: "marketing",
-    job: "create",
-    icon: "file-text",
-    description: "See how easy a draft is to read, and where to simplify it.",
-  },
-  {
     id: "ai-image-studio",
-    name: "AI Image Studio",
+    name: "Image Studio",
     product: "marketing",
     job: "create",
     icon: "sparkles",
@@ -244,7 +192,7 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
   },
   {
     id: "content-repurposer",
-    name: "Content Repurposer",
+    name: "Repurpose Content",
     product: "marketing",
     job: "create",
     icon: "workflow",
@@ -260,7 +208,7 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
   },
   {
     id: "brand-voice-dna",
-    name: "Brand Voice DNA",
+    name: "Brand Voice",
     product: "marketing",
     job: "create",
     icon: "megaphone",
@@ -278,15 +226,15 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
   // Track
   {
     id: "position-tracking",
-    name: "Position Tracking",
+    name: "Rank Position Review",
     product: "seo",
     job: "track",
     icon: "chart",
-    description: "Daily rankings for your keywords by device and location.",
+    description: "Review positions from a CSV you provide. Values stay in your browser; live monitoring and forecasts are unavailable.",
   },
   {
     id: "ai-visibility-overview",
-    name: "AI Visibility Overview",
+    name: "AI Visibility",
     product: "seo",
     job: "track",
     icon: "sparkles",
@@ -301,22 +249,6 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
     description: "Measure your share of AI answers against competitors.",
   },
   {
-    id: "map-rank-tracker",
-    name: "Map Rank Tracker",
-    product: "seo",
-    job: "track",
-    icon: "map-pin",
-    description: "Track local map rankings across your service area.",
-  },
-  {
-    id: "local-heatmap",
-    name: "Local Heatmap",
-    product: "seo",
-    job: "track",
-    icon: "map-pin",
-    description: "See how your local ranking changes street by street.",
-  },
-  {
     id: "industry-benchmarks",
     name: "Industry Benchmarks",
     product: "seo",
@@ -325,16 +257,8 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
     description: "Compare your numbers with your industry's.",
   },
   {
-    id: "auto-reports",
-    name: "Auto Reports",
-    product: "seo",
-    job: "track",
-    icon: "inbox",
-    description: "Schedule reports so the numbers arrive on their own.",
-  },
-  {
     id: "platform-analytics",
-    name: "Platform Analytics",
+    name: "Social Analytics",
     product: "marketing",
     job: "track",
     icon: "chart",
@@ -393,22 +317,6 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
       "Reply to comments and messages from every channel in one queue.",
   },
   {
-    id: "review-management",
-    name: "Review Management",
-    product: "both",
-    job: "engage",
-    icon: "users",
-    description: "Monitor reviews and respond from one place.",
-  },
-  {
-    id: "listing-management",
-    name: "Listing Management",
-    product: "seo",
-    job: "engage",
-    icon: "map-pin",
-    description: "Keep your business listings accurate everywhere they appear.",
-  },
-  {
     id: "publishing-queue",
     name: "Publishing Queue",
     product: "marketing",
@@ -426,19 +334,11 @@ export const FEATURE_TOOLS: readonly FeatureTool[] = [
   },
   {
     id: "link-in-bio",
-    name: "Link In Bio",
+    name: "Link in Bio",
     product: "marketing",
     job: "engage",
     icon: "link",
     description: "One link that sends your audience wherever you need them.",
-  },
-  {
-    id: "ugc-management",
-    name: "UGC Management",
-    product: "marketing",
-    job: "engage",
-    icon: "users",
-    description: "Collect and use content your customers create.",
   },
   {
     id: "content-approvals",

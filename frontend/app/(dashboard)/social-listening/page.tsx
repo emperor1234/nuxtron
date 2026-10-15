@@ -1,1139 +1,542 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
-import { ProviderMark } from '@/app/(dashboard)/_ui/provider-mark';
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { apiGet, apiSend } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
+import { Badge, Button, Card, CardTitle, FieldSelect, Page, PageHeader, Stat } from '../_ui/kit';
+import {
+  parseListeningAlerts,
+  parseListeningMentionResponse,
+  parseListeningMentions,
+  parseListeningRules,
+  parseListeningSummary,
+  type ListeningAlert,
+  type ListeningMention,
+  type ListeningRule,
+  type ListeningSummary,
+  type SocialPlatform,
+} from './social-listening-model';
+import styles from './social-listening.module.css';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type Sentiment = 'positive' | 'neutral' | 'negative';
-type Platform = 'linkedin' | 'x' | 'instagram' | 'facebook' | 'reddit' | 'youtube' | 'news';
-type CrisisLevel = 'none' | 'watch' | 'high' | 'critical';
-
-interface Mention {
-  id: number;
+type Tab = 'overview' | 'mentions' | 'alerts' | 'rules' | 'capture';
+type Resource<T> = {
+  status: 'loading' | 'refreshing' | 'ready' | 'error' | 'stale' | 'unavailable';
+  data: T | null;
+  error: string | null;
+};
+type ResourceKey = 'summary' | 'mentions' | 'alerts' | 'rules';
+type ResourceSet = {
+  summary: Resource<ListeningSummary>;
+  mentions: Resource<ListeningMention[]>;
+  alerts: Resource<ListeningAlert[]>;
+  rules: Resource<ListeningRule[]>;
+};
+type MentionDraft = {
   platform: string;
   query: string;
-  author_handle: string;
+  authorHandle: string;
   text: string;
-  sentiment: Sentiment;
-  engagement_count: number;
-  created_at: string;
-}
-
-interface AlertRule {
-  id: number;
+  sentiment: string;
+  engagementCount: string;
+};
+type RuleDraft = {
   name: string;
-  query: string | null;
-  platform: string | null;
-  min_engagement: number;
-  negative_only: boolean;
-  enabled: boolean;
-  created_at: string;
-}
-
-interface Alert {
-  id: number;
-  rule_name: string;
-  mention_id: number;
-  severity: 'medium' | 'high';
-  status: 'open' | 'closed';
-  created_at: string;
-}
-
-interface Cluster {
   query: string;
   platform: string;
-  sentiment: Sentiment;
-  mentions: number;
-}
-
-interface Summary {
-  total_mentions: number;
-  sentiment: { positive: number; neutral: number; negative: number };
-  platforms: Record<string, number>;
-  top_queries: { query: string; mentions: number }[];
-  avg_engagement: number;
-  clusters: { cluster: string; query: string; platform: string; mentions: number }[];
-  alerts_open: number;
-  crisis: {
-    triggered: boolean;
-    level: CrisisLevel;
-    negative_ratio: number;
-    high_negative_mentions: number;
-  };
-}
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const API_BASE = '/api/fastapi';
-// Falls back to a dev tenant when NEXT_PUBLIC_DEFAULT_TENANT_ID is unset so the
-// app runs locally without crashing.
-const DEFAULT_TENANT = (process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || 'default').trim();
-
-const SENTIMENT_COLORS: Record<Sentiment, string> = {
-  positive: 'var(--success)',
-  neutral: 'var(--info)',
-  negative: 'var(--danger)',
+  minEngagement: string;
+  negativeOnly: boolean;
 };
+type FieldErrors = Record<string, string>;
 
-const CRISIS_COLORS: Record<CrisisLevel, string> = {
-  none: 'var(--success)',
-  watch: 'var(--warning)',
-  high: 'var(--warning)',
-  critical: 'var(--danger)',
+type SettledResource<T> = { data: T | null; error: string | null };
+
+const TABS: Array<{ id: Tab; label: string }> = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'mentions', label: 'Mentions' },
+  { id: 'alerts', label: 'Alerts' },
+  { id: 'rules', label: 'Alert rules' },
+  { id: 'capture', label: 'Manual capture' },
+];
+
+const PLATFORMS: Array<{ value: SocialPlatform; label: string }> = [
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'x', label: 'X' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'reddit', label: 'Reddit' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'news', label: 'News' },
+];
+
+const EMPTY_MENTION: MentionDraft = {
+  platform: '', query: '', authorHandle: '', text: '', sentiment: '', engagementCount: '',
 };
-
-const PLATFORM_LABELS: Record<Platform, string> = {
-  linkedin: 'LinkedIn',
-  x: 'X',
-  instagram: 'Instagram',
-  facebook: 'Facebook',
-  reddit: 'Reddit',
-  youtube: 'YouTube',
-  news: 'News',
+const EMPTY_RULE: RuleDraft = {
+  name: '', query: '', platform: '', minEngagement: '', negativeOnly: false,
 };
+const EMPTY_RESOURCE = <T,>(): Resource<T> => ({ status: 'loading', data: null, error: null });
+const EMPTY_RESOURCES: ResourceSet = {
+  summary: EMPTY_RESOURCE(), mentions: EMPTY_RESOURCE(), alerts: EMPTY_RESOURCE(), rules: EMPTY_RESOURCE(),
+};
+const NO_MENTIONS: ListeningMention[] = [];
+const NO_ALERTS: ListeningAlert[] = [];
+const NO_RULES: ListeningRule[] = [];
 
-function platformLabel(platform: string) {
-  return PLATFORM_LABELS[platform.toLowerCase() as Platform] ?? platform;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-async function apiFetch(path: string, tenantId: string, opts?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': tenantId,
-      ...(opts?.headers ?? {}),
-    },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error((data?.detail as string) ?? `HTTP ${res.status}`);
-  return data;
-}
-
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60_000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function Card({ children, style }: Readonly<{ children: React.ReactNode; style?: React.CSSProperties }>) {
-  return (
-    <div
-      style={{
-        background: 'var(--bg-soft)',
-        border: '1px solid var(--line)',
-        borderRadius: 12,
-        padding: '20px 24px',
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function SectionTitle({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <h2
-      style={{
-        margin: '0 0 16px',
-        fontSize: 15,
-        fontWeight: 600,
-        color: 'var(--brand)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.07em',
-      }}
-    >
-      {children}
-    </h2>
-  );
-}
-
-function Pill({ label, color, small }: Readonly<{ label: string; color: string; small?: boolean }>) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: small ? '2px 8px' : '4px 10px',
-        borderRadius: 99,
-        fontSize: small ? 11 : 12,
-        fontWeight: 600,
-        background: `${color}22`,
-        color,
-        border: `1px solid ${color}55`,
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  sub,
-  accent,
-}: Readonly<{ label: string; value: string | number; sub?: string; accent?: string }>) {
-  return (
-    <Card>
-      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>{label}</div>
-      <div
-        style={{
-          fontSize: 28,
-          fontWeight: 700,
-          color: accent ?? 'var(--text)',
-          lineHeight: 1,
-        }}
-      >
-        {value}
-      </div>
-      {sub && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{sub}</div>}
-    </Card>
-  );
-}
-
-function SentimentDonut({ sentiment }: Readonly<{ sentiment: Summary['sentiment'] }>) {
-  const total = sentiment.positive + sentiment.neutral + sentiment.negative;
-  if (total === 0)
-    return (
-      <svg viewBox="0 0 120 120" width={120} height={120}>
-        <circle cx={60} cy={60} r={50} fill="none" stroke="var(--line)" strokeWidth={20} />
-        <text x={60} y={66} textAnchor="middle" fontSize={14} fill="var(--muted)">
-          No data
-        </text>
-      </svg>
-    );
-
-  const R = 50;
-  const cx = 60;
-  const cy = 60;
-  const gap = 4;
-  const segments: { key: Sentiment; count: number }[] = [
-    { key: 'positive', count: sentiment.positive },
-    { key: 'neutral', count: sentiment.neutral },
-    { key: 'negative', count: sentiment.negative },
-  ];
-
-  let startAngle = -Math.PI / 2;
-  const paths: React.ReactNode[] = [];
-
-  for (const seg of segments) {
-    if (seg.count === 0) continue;
-    const frac = seg.count / total;
-    const sweep = frac * 2 * Math.PI - (gap * Math.PI) / 180;
-    const endAngle = startAngle + sweep;
-    const x1 = cx + R * Math.cos(startAngle);
-    const y1 = cy + R * Math.sin(startAngle);
-    const x2 = cx + R * Math.cos(endAngle);
-    const y2 = cy + R * Math.sin(endAngle);
-    const largeArc = sweep > Math.PI ? 1 : 0;
-    paths.push(
-      <path
-        key={seg.key}
-        d={`M ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2}`}
-        fill="none"
-        stroke={SENTIMENT_COLORS[seg.key]}
-        strokeWidth={20}
-        strokeLinecap="round"
-      />
-    );
-    startAngle = endAngle + (gap * Math.PI) / 180;
+function settled<T>(
+  outcome: PromiseSettledResult<unknown>,
+  parse: (value: unknown) => T | null,
+  label: string,
+): SettledResource<T> {
+  if (outcome.status === 'rejected') {
+    return { data: null, error: outcome.reason instanceof Error ? outcome.reason.message : `${label} could not be loaded.` };
   }
-
-  const negPct = total > 0 ? Math.round((sentiment.negative / total) * 100) : 0;
-
-  return (
-    <svg viewBox="0 0 120 120" width={120} height={120}>
-      {paths}
-      <text x={60} y={57} textAnchor="middle" fontSize={18} fontWeight="700" fill="var(--text)">
-        {negPct}%
-      </text>
-      <text x={60} y={72} textAnchor="middle" fontSize={10} fill="var(--muted)">
-        negative
-      </text>
-    </svg>
-  );
+  const data = parse(outcome.value);
+  return data === null ? { data: null, error: `${label} service returned an incomplete response.` } : { data, error: null };
 }
 
-function CrisisBadge({ level }: Readonly<{ level: CrisisLevel }>) {
-  const labels: Record<CrisisLevel, string> = {
-    none: '✅ No Crisis',
-    watch: '⚠️ Watch',
-    high: '🔥 High Risk',
-    critical: '🚨 CRITICAL',
-  };
-  return (
-    <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '6px 14px',
-        borderRadius: 99,
-        fontWeight: 700,
-        fontSize: 13,
-        color: CRISIS_COLORS[level],
-        background: `${CRISIS_COLORS[level]}18`,
-        border: `1.5px solid ${CRISIS_COLORS[level]}55`,
-      }}
-    >
-      {labels[level]}
-    </div>
-  );
+function applySettled<T>(current: Resource<T>, result: SettledResource<T>): Resource<T> {
+  if (result.error) {
+    return current.data === null
+      ? { status: 'error', data: null, error: result.error }
+      : { status: 'stale', data: current.data, error: result.error };
+  }
+  return { status: 'ready', data: result.data, error: null };
 }
 
-function BarRow({
-  label,
-  value,
-  max,
-  color,
-  extra,
-}: Readonly<{ label: ReactNode; value: number; max: number; color: string; extra?: string }>) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  return (
-    <div style={{ marginBottom: 10 }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontSize: 12,
-          color: 'var(--muted)',
-          marginBottom: 4,
-        }}
-      >
-        <span>{label}</span>
-        <span>
-          {value} {extra}
-        </span>
-      </div>
-      <div
-        style={{
-          height: 6,
-          borderRadius: 3,
-          background: 'var(--line)',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            height: '100%',
-            width: `${pct}%`,
-            background: color,
-            borderRadius: 3,
-            transition: 'width 0.4s',
-          }}
-        />
-      </div>
-    </div>
-  );
+function emptyDraftErrors(): FieldErrors {
+  return {};
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+function formatTimestamp(value: string): string {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime())
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+    : 'Time unavailable';
+}
+
+function ResourceFeedback({ resource, label }: { resource: Resource<unknown>; label: string }) {
+  if (resource.status === 'loading' || resource.status === 'refreshing') {
+    return <p className={styles.status} role="status">{resource.status === 'refreshing' ? `Refreshing ${label.toLowerCase()}…` : `Loading ${label.toLowerCase()}…`}</p>;
+  }
+  if (resource.status === 'error' || resource.status === 'stale') {
+    return <p className={styles.error} role="alert">{resource.status === 'stale' ? `Refresh failed; showing the last loaded ${label.toLowerCase()}. ` : ''}{resource.error}</p>;
+  }
+  if (resource.status === 'unavailable') return <p className={styles.error} role="alert">{resource.error}</p>;
+  return null;
+}
+
+function statusTone(status: string): 'success' | 'danger' | 'neutral' {
+  if (status === 'open') return 'danger';
+  if (status === 'closed') return 'success';
+  return 'neutral';
+}
 
 export default function SocialListeningPage() {
-  const [tenantId] = useState(DEFAULT_TENANT);
+  const [tenantId] = useState(resolveSessionTenant);
+  const [resources, setResources] = useState<ResourceSet>(EMPTY_RESOURCES);
+  const [refreshing, setRefreshing] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [platformFilter, setPlatformFilter] = useState('all');
+  const [sentimentFilter, setSentimentFilter] = useState('all');
+  const [targetMentionId, setTargetMentionId] = useState<number | null>(null);
+  const [mentionDraft, setMentionDraft] = useState<MentionDraft>({ ...EMPTY_MENTION });
+  const [ruleDraft, setRuleDraft] = useState<RuleDraft>({ ...EMPTY_RULE });
+  const [mentionErrors, setMentionErrors] = useState<FieldErrors>({});
+  const [ruleErrors, setRuleErrors] = useState<FieldErrors>({});
+  const [busyAction, setBusyAction] = useState<'capture' | 'rule' | null>(null);
+  const [actionMessage, setActionMessage] = useState('');
+  const [actionError, setActionError] = useState('');
 
-  // Data state
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [mentions, setMentions] = useState<Mention[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [clusters, setClusters] = useState<Cluster[]>([]);
-  const [rules, setRules] = useState<AlertRule[]>([]);
-
-  // UI state
-  const [tab, setTab] = useState<'overview' | 'mentions' | 'alerts' | 'rules' | 'ingest'>('overview');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
-  // Ingest form
-  const [ingestPlatform, setIngestPlatform] = useState<Platform>('linkedin');
-  const [ingestQuery, setIngestQuery] = useState('brand reputation');
-  const [ingestHandle, setIngestHandle] = useState('@user');
-  const [ingestText, setIngestText] = useState('');
-  const [ingestSentiment, setIngestSentiment] = useState<Sentiment>('neutral');
-  const [ingestEngagement, setIngestEngagement] = useState('0');
-
-  // Alert rule form
-  const [ruleName, setRuleName] = useState('');
-  const [ruleQuery, setRuleQuery] = useState('');
-  const [rulePlatform, setRulePlatform] = useState('');
-  const [ruleMinEngagement, setRuleMinEngagement] = useState('20');
-  const [ruleNegOnly, setRuleNegOnly] = useState(true);
-
-  const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const loadAll = useCallback(async () => {
-    try {
-      const [sumRes, mentRes, alertRes, clusterRes] = await Promise.all([
-        apiFetch('/social/listening/summary', tenantId),
-        apiFetch('/social/listening/mentions', tenantId),
-        apiFetch('/social/listening/alerts', tenantId),
-        apiFetch('/social/listening/clusters', tenantId),
-      ]);
-      setSummary(sumRes.summary as Summary);
-      setMentions((mentRes.mentions as Mention[]) ?? []);
-      setAlerts((alertRes.alerts as Alert[]) ?? []);
-      setClusters((clusterRes.clusters as Cluster[]) ?? []);
-    } catch {
-      // silently ignore background refresh errors
+  const loadData = useCallback(async () => {
+    if (!tenantId) {
+      const unavailable = <T,>(): Resource<T> => ({ status: 'unavailable', data: null, error: 'Sign in to a workspace to load Social Listening data.' });
+      setResources({ summary: unavailable(), mentions: unavailable(), alerts: unavailable(), rules: unavailable() });
+      setRefreshing(false);
+      return;
     }
+
+    setRefreshing(true);
+    setResources((current) => ({
+      summary: { ...current.summary, status: current.summary.data ? 'refreshing' : 'loading', error: null },
+      mentions: { ...current.mentions, status: current.mentions.data ? 'refreshing' : 'loading', error: null },
+      alerts: { ...current.alerts, status: current.alerts.data ? 'refreshing' : 'loading', error: null },
+      rules: { ...current.rules, status: current.rules.data ? 'refreshing' : 'loading', error: null },
+    }));
+
+    const results = await Promise.allSettled([
+      apiGet<unknown>('/social/listening/summary', tenantId),
+      apiGet<unknown>('/social/listening/mentions', tenantId),
+      apiGet<unknown>('/social/listening/alerts', tenantId),
+      apiGet<unknown>('/social/listening/rules', tenantId),
+    ]);
+    const [summaryResult, mentionsResult, alertsResult, rulesResult] = results;
+    setResources((current) => ({
+      summary: applySettled(current.summary, settled(summaryResult, parseListeningSummary, 'Summary')),
+      mentions: applySettled(current.mentions, settled(mentionsResult, parseListeningMentions, 'Mentions')),
+      alerts: applySettled(current.alerts, settled(alertsResult, parseListeningAlerts, 'Alerts')),
+      rules: applySettled(current.rules, settled(rulesResult, parseListeningRules, 'Alert rules')),
+    }));
+    setLastRefreshedAt(new Date().toISOString());
+    setRefreshing(false);
   }, [tenantId]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadAll();
-    refreshTimer.current = setInterval(loadAll, 30_000);
-    return () => {
-      if (refreshTimer.current) clearInterval(refreshTimer.current);
-    };
-  }, [loadAll]);
+    const timer = window.setTimeout(() => { void loadData(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadData]);
 
-  const notify = (msg: string, isError = false) => {
-    if (isError) {
-      setError(msg);
-      setSuccess('');
-    } else {
-      setSuccess(msg);
-      setError('');
-    }
-    setTimeout(() => {
-      setError('');
-      setSuccess('');
-    }, 4000);
-  };
+  const mentions = resources.mentions.data ?? NO_MENTIONS;
+  const alerts = resources.alerts.data ?? NO_ALERTS;
+  const rules = resources.rules.data ?? NO_RULES;
+  const summary = resources.summary.data;
+  const openAlerts = useMemo(() => alerts.filter((alert) => alert.status === 'open'), [alerts]);
+  const visibleMentions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return mentions.filter((mention) => {
+      const matchesText = !normalizedQuery || [mention.text, mention.query, mention.authorHandle].some((value) => value.toLowerCase().includes(normalizedQuery));
+      const matchesPlatform = platformFilter === 'all' || mention.platform === platformFilter;
+      const matchesSentiment = sentimentFilter === 'all' || mention.sentiment === sentimentFilter;
+      return matchesText && matchesPlatform && matchesSentiment;
+    });
+  }, [mentions, platformFilter, query, sentimentFilter]);
 
-  async function handleIngest() {
-    if (!ingestText.trim()) {
-      notify('Mention text is required.', true);
-      return;
-    }
-    setLoading(true);
+  function openMention(mentionId: number) {
+    setTargetMentionId(mentionId);
+    setActiveTab('mentions');
+  }
+
+  function handleTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const current = TABS.findIndex((tab) => tab.id === activeTab);
+    let next = current;
+    if (event.key === 'ArrowRight') next = (current + 1) % TABS.length;
+    else if (event.key === 'ArrowLeft') next = (current - 1 + TABS.length) % TABS.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = TABS.length - 1;
+    else return;
+    event.preventDefault();
+    const tab = TABS[next];
+    setActiveTab(tab.id);
+    document.getElementById(`social-listening-tab-${tab.id}`)?.focus();
+  }
+
+  function updateMentionDraft(key: keyof MentionDraft, value: string) {
+    setMentionDraft((current) => ({ ...current, [key]: value }));
+    setMentionErrors((current) => { const next = { ...current }; delete next[key]; return next; });
+  }
+
+  function updateRuleDraft(key: keyof RuleDraft, value: string | boolean) {
+    setRuleDraft((current) => ({ ...current, [key]: value }));
+    setRuleErrors((current) => { const next = { ...current }; delete next[key]; return next; });
+  }
+
+  async function submitMention(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setActionMessage('');
+    setActionError('');
+    const engagement = Number(mentionDraft.engagementCount);
+    const errors: FieldErrors = {};
+    if (!PLATFORMS.some((item) => item.value === mentionDraft.platform)) errors.platform = 'Choose the source platform.';
+    if (mentionDraft.query.trim().length < 2) errors.query = 'Enter the tracked query (at least 2 characters).';
+    if (mentionDraft.authorHandle.trim().length < 1) errors.authorHandle = 'Enter the public author handle.';
+    if (mentionDraft.text.trim().length < 3) errors.text = 'Enter at least 3 characters of mention text.';
+    if (!['positive', 'neutral', 'negative'].includes(mentionDraft.sentiment)) errors.sentiment = 'Choose the observed sentiment.';
+    if (!mentionDraft.engagementCount.trim() || !Number.isInteger(engagement) || engagement < 0 || engagement > 1_000_000) errors.engagementCount = 'Enter an observed whole-number count from 0 to 1,000,000.';
+    setMentionErrors(errors);
+    if (Object.keys(errors).length > 0 || !tenantId) return;
+
+    setBusyAction('capture');
     try {
-      await apiFetch('/social/listening/ingest', tenantId, {
-        method: 'POST',
-        body: JSON.stringify({
-          platform: ingestPlatform,
-          query: ingestQuery,
-          author_handle: ingestHandle,
-          text: ingestText,
-          sentiment: ingestSentiment,
-          engagement_count: Math.max(0, Number.parseInt(ingestEngagement, 10) || 0),
-        }),
-      });
-      setIngestText('');
-      notify('Mention ingested successfully.');
-      await loadAll();
-    } catch (e: unknown) {
-      notify((e as Error).message, true);
+      const response = await apiSend<unknown>('/social/listening/ingest', 'POST', {
+        platform: mentionDraft.platform,
+        query: mentionDraft.query.trim(),
+        author_handle: mentionDraft.authorHandle.trim(),
+        text: mentionDraft.text.trim(),
+        sentiment: mentionDraft.sentiment,
+        engagement_count: engagement,
+      }, tenantId);
+      const created = parseListeningMentionResponse(response);
+      if (!created) throw new Error('The service did not confirm a valid mention record.');
+      setMentionDraft({ ...EMPTY_MENTION });
+      setActionMessage('Mention recorded in temporary service memory. It may be lost when the service restarts.');
+      await loadData();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'The mention could not be recorded.');
     } finally {
-      setLoading(false);
+      setBusyAction(null);
     }
   }
 
-  async function handleCreateRule() {
-    if (!ruleName.trim()) {
-      notify('Rule name is required.', true);
-      return;
-    }
-    setLoading(true);
+  async function submitRule(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setActionMessage('');
+    setActionError('');
+    const minimum = Number(ruleDraft.minEngagement);
+    const errors: FieldErrors = {};
+    if (ruleDraft.name.trim().length < 2) errors.name = 'Enter a rule name with at least 2 characters.';
+    if (!ruleDraft.minEngagement.trim() || !Number.isInteger(minimum) || minimum < 0 || minimum > 1_000_000) errors.minEngagement = 'Enter an observed threshold from 0 to 1,000,000.';
+    if (ruleDraft.query.trim().length > 120) errors.query = 'Keep the query to 120 characters or fewer.';
+    setRuleErrors(errors);
+    if (Object.keys(errors).length > 0 || !tenantId) return;
+
+    setBusyAction('rule');
     try {
-      const res = await apiFetch('/social/listening/rules', tenantId, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: ruleName,
-          query: ruleQuery || null,
-          platform: rulePlatform || null,
-          min_engagement: Math.max(0, Number.parseInt(ruleMinEngagement, 10) || 0),
-          negative_only: ruleNegOnly,
-        }),
-      });
-      setRules((prev) => [res.rule as AlertRule, ...prev]);
-      setRuleName('');
-      setRuleQuery('');
-      setRulePlatform('');
-      notify('Alert rule created.');
-    } catch (e: unknown) {
-      notify((e as Error).message, true);
+      const response = await apiSend<unknown>('/social/listening/rules', 'POST', {
+        name: ruleDraft.name.trim(),
+        query: ruleDraft.query.trim() || null,
+        platform: ruleDraft.platform || null,
+        min_engagement: minimum,
+        negative_only: ruleDraft.negativeOnly,
+      }, tenantId);
+      if (!parseListeningRules({ status: 'ok', rules: [isRecord(response) ? response.rule : null] })) {
+        throw new Error('The service did not confirm a valid alert rule.');
+      }
+      setRuleDraft({ ...EMPTY_RULE });
+      setActionMessage('Alert rule recorded in temporary service memory. It may be lost when the service restarts.');
+      await loadData();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'The alert rule could not be recorded.');
     } finally {
-      setLoading(false);
+      setBusyAction(null);
     }
   }
 
-  // ── Styles ────────────────────────────────────────────────────────────────
-
-  const page: React.CSSProperties = {
-    minHeight: '100vh',
-    background: 'var(--bg)',
-    color: 'var(--text)',
-    padding: '32px 24px',
-    fontFamily: 'var(--font-geist-sans, system-ui, sans-serif)',
-  };
-
-  const container: React.CSSProperties = {
-    maxWidth: 1080,
-    margin: '0 auto',
-  };
-
-  const tabBar: React.CSSProperties = {
-    display: 'flex',
-    gap: 4,
-    marginBottom: 28,
-    borderBottom: '1px solid var(--line)',
-    paddingBottom: 0,
-  };
-
-  const tabBtn = (active: boolean): React.CSSProperties => ({
-    padding: '8px 18px',
-    borderRadius: '8px 8px 0 0',
-    border: 'none',
-    background: active ? 'var(--brand)' : 'transparent',
-    color: active ? 'var(--on-brand)' : 'var(--muted)',
-    fontWeight: active ? 700 : 500,
-    fontSize: 13,
-    cursor: 'pointer',
-    transition: 'background-color 150ms ease, color 150ms ease',
-  });
-
-  const input: React.CSSProperties = {
-    width: '100%',
-    padding: '8px 12px',
-    borderRadius: 8,
-    border: '1px solid var(--line)',
-    background: 'var(--bg)',
-    color: 'var(--text)',
-    fontSize: 13,
-    marginBottom: 10,
-    boxSizing: 'border-box',
-  };
-
-  const select: React.CSSProperties = { ...input };
-
-  const btn: React.CSSProperties = {
-    padding: '9px 20px',
-    borderRadius: 8,
-    border: 'none',
-    background: 'var(--brand)',
-    color: 'var(--on-brand)',
-    fontWeight: 700,
-    fontSize: 13,
-    cursor: loading ? 'not-allowed' : 'pointer',
-    opacity: loading ? 0.6 : 1,
-  };
-
-  const grid2: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
-    gap: 16,
-    marginBottom: 20,
-  };
-
-  const grid4: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 170px), 1fr))',
-    gap: 16,
-    marginBottom: 20,
-  };
-
-  // ── Tab content ───────────────────────────────────────────────────────────
-
-  const openAlerts = alerts.filter((a) => a.status === 'open');
-  const criticalAlerts = openAlerts.filter((a) => a.severity === 'high');
-
-  const platformMax = summary ? Math.max(...Object.values(summary.platforms), 1) : 1;
+  const renderResourceFeedback = (key: ResourceKey, label: string) => <ResourceFeedback resource={resources[key]} label={label} />;
+  const tabId = `social-listening-tab-${activeTab}`;
+  const panelId = `social-listening-panel-${activeTab}`;
 
   return (
-    <div style={page}>
-      <div style={container}>
-        {/* Header */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, var(--info), var(--success))',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 20,
-              }}
-            >
-              📡
-            </div>
-            <div>
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: 24,
-                  fontWeight: 800,
-                  background: 'linear-gradient(90deg, var(--brand), var(--brand-2))',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                Social Listening
-              </h1>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)' }}>
-                Real-time brand monitoring · Sentiment analysis · Crisis detection · Alert rules
-              </p>
-            </div>
-            {summary && (
-              <div style={{ marginLeft: 'auto' }}>
-                <CrisisBadge level={summary.crisis.level} />
-              </div>
-            )}
-          </div>
-        </div>
+    <Page>
+      <PageHeader
+        title="Social Listening"
+        subtitle="Review and organize manually captured social mentions and alert rules for this workspace."
+        actions={<Button type="button" onClick={() => void loadData()} disabled={refreshing || busyAction !== null}>Refresh data</Button>}
+      />
 
-        {/* Toast */}
-        {(error || success) && (
-          <div
-            style={{
-              padding: '10px 16px',
-              borderRadius: 8,
-              marginBottom: 16,
-              background: error ? 'color-mix(in oklab, var(--danger) 13%, transparent)' : 'color-mix(in oklab, var(--success) 13%, transparent)',
-              border: `1px solid ${error ? 'var(--danger)' : 'var(--success)'}55`,
-              color: error ? 'var(--danger)' : 'var(--success)',
-              fontSize: 13,
-            }}
-          >
-            {error || success}
-          </div>
-        )}
-
-        {/* Stat bar */}
-        <div style={grid4}>
-          <StatCard
-            label="Total Mentions"
-            value={summary?.total_mentions ?? '—'}
-            sub={summary ? `${summary.alerts_open} open alerts` : undefined}
-          />
-          <StatCard
-            label="Negative Ratio"
-            value={summary ? `${Math.round(summary.crisis.negative_ratio * 100)}%` : '—'}
-            sub="sentiment score"
-            accent={summary ? CRISIS_COLORS[summary.crisis.level] : 'var(--text)'}
-          />
-          <StatCard
-            label="Avg Engagement"
-            value={summary?.avg_engagement ?? '—'}
-            sub="per mention"
-            accent="var(--brand)"
-          />
-          <StatCard
-            label="Critical Alerts"
-            value={criticalAlerts.length}
-            sub={`${openAlerts.length} total open`}
-            accent={criticalAlerts.length > 0 ? 'var(--danger)' : 'var(--brand-2)'}
-          />
-        </div>
-
-        {/* Tab bar */}
-        <div style={tabBar}>
-          {(['overview', 'mentions', 'alerts', 'rules', 'ingest'] as const).map((t) => (
-            <button key={t} style={tabBtn(tab === t)} onClick={() => setTab(t)}>
-              {t === 'overview' && '📊 '}
-              {t === 'mentions' && '💬 '}
-              {t === 'alerts' && '🔔 '}
-              {t === 'rules' && '⚙️ '}
-              {t === 'ingest' && '➕ '}
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-              {t === 'alerts' && openAlerts.length > 0 && (
-                <span
-                  style={{
-                    marginLeft: 6,
-                    background: 'var(--danger)',
-                    color: 'var(--on-status)',
-                    borderRadius: 99,
-                    fontSize: 10,
-                    padding: '1px 5px',
-                  }}
-                >
-                  {openAlerts.length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Overview tab ─────────────────────────────────────────────────── */}
-        {tab === 'overview' && (
-          <div>
-            <div style={grid2}>
-              {/* Sentiment donut */}
-              <Card>
-                <SectionTitle>Sentiment Breakdown</SectionTitle>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                  <SentimentDonut sentiment={summary?.sentiment ?? { positive: 0, neutral: 0, negative: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    {(['positive', 'neutral', 'negative'] as Sentiment[]).map((s) => (
-                      <div
-                        key={s}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontSize: 13,
-                          marginBottom: 8,
-                        }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span
-                            style={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: '50%',
-                              background: SENTIMENT_COLORS[s],
-                              display: 'inline-block',
-                            }}
-                          />
-                          {s.charAt(0).toUpperCase() + s.slice(1)}
-                        </span>
-                        <span style={{ fontWeight: 600 }}>{summary?.sentiment[s] ?? 0}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-
-              {/* Platform breakdown */}
-              <Card>
-                <SectionTitle>Platform Breakdown</SectionTitle>
-                {summary && Object.keys(summary.platforms).length === 0 && (
-                  <p style={{ color: 'var(--muted)', fontSize: 13 }}>No mentions yet.</p>
-                )}
-                {summary &&
-                  Object.entries(summary.platforms)
-                    .sort(([, a], [, b]) => b - a)
-                    .map(([platform, count]) => (
-                      <BarRow
-                        key={platform}
-                        label={(
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                            <ProviderMark name={platform} size={15} decorative />
-                            {platformLabel(platform)}
-                          </span>
-                        )}
-                        value={count}
-                        max={platformMax}
-                        color="var(--brand)"
-                        extra="mentions"
-                      />
-                    ))}
-              </Card>
-            </div>
-
-            {/* Top queries */}
-            <Card style={{ marginBottom: 16 }}>
-              <SectionTitle>Top Tracked Queries</SectionTitle>
-              {!summary || summary.top_queries.length === 0 ? (
-                <p style={{ color: 'var(--muted)', fontSize: 13 }}>No queries tracked yet.</p>
-              ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                  {summary.top_queries.map((q, i) => (
-                    <div
-                      key={`item-${i}`}
-                      style={{
-                        padding: '8px 14px',
-                        borderRadius: 8,
-                        background: 'var(--bg)',
-                        border: '1px solid var(--line)',
-                        fontSize: 13,
-                      }}
-                    >
-                      <span style={{ fontWeight: 600 }}>{q.query}</span>
-                      <span
-                        style={{
-                          marginLeft: 8,
-                          color: 'var(--brand)',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {q.mentions}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-
-            {/* Clusters */}
-            <Card>
-              <SectionTitle>Mention Clusters</SectionTitle>
-              {clusters.length === 0 ? (
-                <p style={{ color: 'var(--muted)', fontSize: 13 }}>
-                  No clusters yet — ingest mentions to see patterns.
-                </p>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                    <thead>
-                      <tr style={{ color: 'var(--muted)', textAlign: 'left' }}>
-                        {['Query', 'Platform', 'Sentiment', 'Mentions'].map((h) => (
-                          <th
-                            key={h}
-                            style={{ padding: '6px 12px', borderBottom: '1px solid var(--line)', fontWeight: 600 }}
-                          >
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {clusters.slice(0, 20).map((c, i) => (
-                        <tr key={`item-${i}`} style={{ borderBottom: '1px solid var(--line)' }}>
-                          <td style={{ padding: '8px 12px' }}>{c.query}</td>
-                          <td style={{ padding: '8px 12px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                              <ProviderMark name={c.platform} size={15} decorative />
-                              {platformLabel(c.platform)}
-                            </span>
-                          </td>
-                          <td style={{ padding: '8px 12px' }}>
-                            <Pill
-                              label={c.sentiment}
-                              color={SENTIMENT_COLORS[c.sentiment as Sentiment] ?? 'var(--muted)'}
-                              small
-                            />
-                          </td>
-                          <td style={{ padding: '8px 12px', fontWeight: 700 }}>{c.mentions}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Card>
-          </div>
-        )}
-
-        {/* ── Mentions tab ─────────────────────────────────────────────────── */}
-        {tab === 'mentions' && (
-          <Card>
-            <SectionTitle>Live Mentions Feed ({mentions.length})</SectionTitle>
-            {mentions.length === 0 ? (
-              <p style={{ color: 'var(--muted)', fontSize: 13 }}>
-                No mentions yet. Use the Ingest tab or a webhook to stream mentions.
-              </p>
-            ) : (
-              <div>
-                {mentions.map((m) => (
-                  <div
-                    key={m.id}
-                    style={{
-                      padding: '12px 0',
-                      borderBottom: '1px solid var(--line)',
-                      display: 'grid',
-                      gridTemplateColumns: '1fr auto',
-                      gap: 12,
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          marginBottom: 4,
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <span style={{ fontWeight: 600, fontSize: 13 }}>{m.author_handle}</span>
-                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                            <ProviderMark name={m.platform} size={14} decorative />
-                            {platformLabel(m.platform)}
-                          </span>
-                        </span>
-                        <Pill label={m.sentiment} color={SENTIMENT_COLORS[m.sentiment]} small />
-                        {m.engagement_count > 0 && (
-                          <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-                            ❤️ {m.engagement_count.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>{m.text}</div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-                        Query: <strong>{m.query}</strong> · {timeAgo(m.created_at)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        )}
-
-        {/* ── Alerts tab ───────────────────────────────────────────────────── */}
-        {tab === 'alerts' && (
-          <Card>
-            <SectionTitle>Active Alerts ({openAlerts.length} open)</SectionTitle>
-            {alerts.length === 0 ? (
-              <p style={{ color: 'var(--muted)', fontSize: 13 }}>
-                No alerts fired yet. Create alert rules and ingest negative high-engagement mentions to trigger them.
-              </p>
-            ) : (
-              alerts.map((a) => (
-                <div
-                  key={a.id}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 8,
-                    marginBottom: 10,
-                    background: a.severity === 'high' ? 'color-mix(in oklab, var(--danger) 7%, transparent)' : 'color-mix(in oklab, var(--warning) 7%, transparent)',
-                    border: `1px solid ${a.severity === 'high' ? 'color-mix(in oklab, var(--danger) 27%, transparent)' : 'color-mix(in oklab, var(--warning) 27%, transparent)'}`,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    gap: 12,
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: 13,
-                        color: a.severity === 'high' ? 'var(--danger)' : 'var(--warning)',
-                        marginBottom: 2,
-                      }}
-                    >
-                      {a.severity === 'high' ? '🔴 HIGH' : '🟡 MEDIUM'} — {a.rule_name}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                      Mention #{a.mention_id} · {timeAgo(a.created_at)}
-                    </div>
-                  </div>
-                  <Pill label={a.status} color={a.status === 'open' ? 'var(--danger)' : 'var(--success)'} small />
-                </div>
-              ))
-            )}
-          </Card>
-        )}
-
-        {/* ── Rules tab ────────────────────────────────────────────────────── */}
-        {tab === 'rules' && (
-          <div style={grid2}>
-            {/* Create rule form */}
-            <Card>
-              <SectionTitle>Create Alert Rule</SectionTitle>
-              <label style={{ fontSize: 12, color: 'var(--muted)' }}>Rule Name *</label>
-              <input
-                style={input}
-                placeholder="e.g. Brand crisis monitor"
-                value={ruleName}
-                onChange={(e) => setRuleName(e.target.value)}
-              />
-              <label style={{ fontSize: 12, color: 'var(--muted)' }}>Track Query (optional)</label>
-              <input
-                style={input}
-                placeholder="e.g. brand name, product name"
-                value={ruleQuery}
-                onChange={(e) => setRuleQuery(e.target.value)}
-              />
-              <label style={{ fontSize: 12, color: 'var(--muted)' }}>Platform filter (optional)</label>
-              <select style={select} value={rulePlatform} onChange={(e) => setRulePlatform(e.target.value)}>
-                <option value="">All platforms</option>
-                {(['linkedin', 'x', 'instagram', 'facebook', 'reddit', 'youtube', 'news'] as Platform[]).map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-              <label style={{ fontSize: 12, color: 'var(--muted)' }}>Min Engagement</label>
-              <input
-                style={input}
-                type="number"
-                value={ruleMinEngagement}
-                onChange={(e) => setRuleMinEngagement(e.target.value)}
-              />
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 14,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  id="negOnly"
-                  checked={ruleNegOnly}
-                  onChange={(e) => setRuleNegOnly(e.target.checked)}
-                />
-                <label htmlFor="negOnly" style={{ fontSize: 13 }}>
-                  Negative mentions only
-                </label>
-              </div>
-              <button style={btn} disabled={loading} onClick={handleCreateRule}>
-                {loading ? 'Creating…' : 'Create Alert Rule'}
-              </button>
-            </Card>
-
-            {/* Existing rules */}
-            <Card>
-              <SectionTitle>Existing Rules ({rules.length})</SectionTitle>
-              {rules.length === 0 ? (
-                <p style={{ color: 'var(--muted)', fontSize: 13 }}>No rules yet.</p>
-              ) : (
-                rules.map((r) => (
-                  <div
-                    key={r.id}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: 8,
-                      marginBottom: 8,
-                      background: 'var(--bg)',
-                      border: '1px solid var(--line)',
-                    }}
-                  >
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{r.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                      {r.query ? `Query: ${r.query} · ` : ''}
-                      {r.platform ? `Platform: ${r.platform} · ` : ''}
-                      Min engagement: {r.min_engagement} ·{r.negative_only ? ' Negative only' : ' All sentiment'}
-                    </div>
-                    <div style={{ marginTop: 4 }}>
-                      <Pill
-                        label={r.enabled ? 'Active' : 'Disabled'}
-                        color={r.enabled ? 'var(--success)' : 'var(--muted)'}
-                        small
-                      />
-                    </div>
-                  </div>
-                ))
-              )}
-            </Card>
-          </div>
-        )}
-
-        {/* ── Ingest tab ───────────────────────────────────────────────────── */}
-        {tab === 'ingest' && (
-          <Card style={{ maxWidth: 560 }}>
-            <SectionTitle>Ingest Mention</SectionTitle>
-            <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14 }}>
-              Manually add a mention or use this as a webhook target for live platform data.
-            </p>
-
-            <label style={{ fontSize: 12, color: 'var(--muted)' }}>Platform</label>
-            <select
-              style={select}
-              value={ingestPlatform}
-              onChange={(e) => setIngestPlatform(e.target.value as Platform)}
-            >
-              {(['linkedin', 'x', 'instagram', 'facebook', 'reddit', 'youtube', 'news'] as Platform[]).map((p) => (
-                <option key={p} value={p}>
-                  {platformLabel(p)}
-                </option>
-              ))}
-            </select>
-
-            <label style={{ fontSize: 12, color: 'var(--muted)' }}>Tracked Query</label>
-            <input
-              style={input}
-              placeholder="e.g. brand name"
-              value={ingestQuery}
-              onChange={(e) => setIngestQuery(e.target.value)}
-            />
-
-            <label style={{ fontSize: 12, color: 'var(--muted)' }}>Author Handle</label>
-            <input
-              style={input}
-              placeholder="@user"
-              value={ingestHandle}
-              onChange={(e) => setIngestHandle(e.target.value)}
-            />
-
-            <label style={{ fontSize: 12, color: 'var(--muted)' }}>Mention Text *</label>
-            <textarea
-              style={{ ...input, height: 80, resize: 'vertical' }}
-              placeholder="Paste the mention content here…"
-              value={ingestText}
-              onChange={(e) => setIngestText(e.target.value)}
-            />
-
-            <label style={{ fontSize: 12, color: 'var(--muted)' }}>Sentiment</label>
-            <select
-              style={select}
-              value={ingestSentiment}
-              onChange={(e) => setIngestSentiment(e.target.value as Sentiment)}
-            >
-              <option value="positive">😊 Positive</option>
-              <option value="neutral">😐 Neutral</option>
-              <option value="negative">😠 Negative</option>
-            </select>
-
-            <label style={{ fontSize: 12, color: 'var(--muted)' }}>Engagement Count</label>
-            <input
-              style={input}
-              type="number"
-              value={ingestEngagement}
-              onChange={(e) => setIngestEngagement(e.target.value)}
-              placeholder="0"
-            />
-
-            <button style={btn} disabled={loading} onClick={handleIngest}>
-              {loading ? 'Ingesting…' : 'Ingest Mention'}
-            </button>
-
-            <div
-              style={{
-                marginTop: 20,
-                padding: '12px 14px',
-                borderRadius: 8,
-                background: 'var(--bg)',
-                border: '1px solid var(--line)',
-                fontSize: 12,
-              }}
-            >
-              <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--brand)' }}>Webhook / API Endpoint</div>
-              <code style={{ color: 'var(--muted)', wordBreak: 'break-all' }}>
-                POST {API_BASE}/social/listening/ingest
-              </code>
-              <pre
-                style={{
-                  marginTop: 8,
-                  fontSize: 11,
-                  color: 'var(--muted)',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
-                }}
-              >{`{
-  "platform": "linkedin",
-  "query": "brand name",
-  "author_handle": "@user",
-  "text": "mention content",
-  "sentiment": "negative",
-  "engagement_count": 150
-}`}</pre>
-            </div>
-          </Card>
-        )}
-
-        {/* Auto-refresh indicator */}
-        <div
-          style={{
-            marginTop: 24,
-            textAlign: 'center',
-            fontSize: 11,
-            color: 'var(--muted)',
-          }}
-        >
-          Auto-refreshes every 30s · {summary ? `${summary.total_mentions} total mentions tracked` : 'Loading…'}
-        </div>
+      <div className={styles.notice} role="note">
+        <strong>Manual capture only · temporary retention.</strong> This service does not monitor social networks or ingest provider feeds. Mentions, alerts, and rules use process memory and may be lost when the service restarts; do not rely on this page for permanent records or time-critical crisis monitoring.
       </div>
-    </div>
+
+      {!tenantId ? <p className={styles.error} role="alert">Sign in to a workspace before using Social Listening.</p> : null}
+      {actionMessage ? <p className={styles.status} role="status">{actionMessage}</p> : null}
+      {actionError ? <p className={styles.error} role="alert">{actionError}</p> : null}
+
+      <section className={styles.metricGrid} aria-label="Social Listening workspace summary">
+        <Card><Stat label="Captured mentions" value={summary ? summary.totalMentions.toLocaleString() : '—'} /></Card>
+        <Card><Stat label="Open alerts" value={summary ? summary.openAlerts.toLocaleString() : '—'} /></Card>
+        <Card><Stat label="Alert rules" value={summary ? summary.ruleCount.toLocaleString() : '—'} /></Card>
+        <Card><Stat label="Negative mentions" value={summary ? summary.sentiment.negative.toLocaleString() : '—'} /></Card>
+      </section>
+      {renderResourceFeedback('summary', 'Summary')}
+      {lastRefreshedAt ? <p className={styles.status}>Latest refresh attempt {formatTimestamp(lastRefreshedAt)}{refreshing ? ' · refresh in progress' : ''}</p> : null}
+
+      <div className={styles.tabs} role="tablist" aria-label="Social Listening sections" onKeyDown={handleTabKeyDown}>
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            id={`social-listening-tab-${tab.id}`}
+            className={styles.tab}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            aria-controls={`social-listening-panel-${tab.id}`}
+            tabIndex={activeTab === tab.id ? 0 : -1}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}{tab.id === 'alerts' && openAlerts.length ? ` (${openAlerts.length})` : ''}
+          </button>
+        ))}
+      </div>
+
+      {TABS.filter((tab) => tab.id !== activeTab).map((tab) => (
+        <section key={tab.id} id={`social-listening-panel-${tab.id}`} role="tabpanel" aria-labelledby={`social-listening-tab-${tab.id}`} hidden />
+      ))}
+      <section id={panelId} role="tabpanel" aria-labelledby={tabId} tabIndex={0} className={styles.panel}>
+        {activeTab === 'overview' ? (
+          <>
+            <Card>
+              <CardTitle>Open alerts requiring review</CardTitle>
+              {renderResourceFeedback('alerts', 'Alerts')}
+              {resources.alerts.data !== null && openAlerts.length === 0 ? <p className={styles.status}>No open alerts are recorded in this workspace.</p> : null}
+              {openAlerts.slice(0, 5).map((alert) => {
+                const related = mentions.find((mention) => mention.id === alert.mentionId);
+                return (
+                  <article key={alert.id} className={`${styles.row} ${alert.severity === 'high' ? styles.alertHigh : styles.alertMedium}`}>
+                    <div className={styles.actions}>
+                      <strong>{alert.ruleName}</strong>
+                      <Badge tone={alert.severity === 'high' ? 'danger' : 'neutral'}>{alert.severity === 'high' ? 'High' : 'Medium'}</Badge>
+                    </div>
+                    <p className={styles.meta}>Created {formatTimestamp(alert.createdAt)} · mention {alert.mentionId}</p>
+                    {related ? <p>{related.text}</p> : <p className={styles.status}>The related mention is not available in the current feed response.</p>}
+                    {related ? <Button type="button" className={styles.action} onClick={() => openMention(related.id)}>View mention</Button> : null}
+                  </article>
+                );
+              })}
+            </Card>
+            <Card>
+              <CardTitle>Recent manual mentions</CardTitle>
+              {renderResourceFeedback('mentions', 'Mentions')}
+              {resources.mentions.data !== null && mentions.length === 0 ? <p className={styles.status}>No mentions have been captured in this workspace.</p> : null}
+              <div className={styles.list}>
+                {mentions.slice(0, 5).map((mention) => (
+                  <article key={mention.id} className={styles.row}>
+                    <div className={styles.actions}><strong>{mention.authorHandle}</strong><Badge tone={mention.sentiment === 'negative' ? 'danger' : mention.sentiment === 'positive' ? 'success' : 'neutral'}>{mention.sentiment}</Badge></div>
+                    <p>{mention.text}</p>
+                    <p className={styles.meta}>{mention.query} · {PLATFORMS.find((item) => item.value === mention.platform)?.label} · {formatTimestamp(mention.createdAt)}</p>
+                  </article>
+                ))}
+              </div>
+            </Card>
+          </>
+        ) : null}
+
+        {activeTab === 'mentions' ? (
+          <Card>
+            <CardTitle sub="Only manually captured records are listed; no provider feed is connected here.">Mention log</CardTitle>
+            {renderResourceFeedback('mentions', 'Mentions')}
+            <div className={styles.formGrid} style={{ margin: '14px 0' }}>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="mention-search">Search mentions</label>
+                <input id="mention-search" className={styles.input} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search text, query, or author" />
+              </div>
+              <FieldSelect id="mention-platform-filter" label="Platform" value={platformFilter} onChange={(event) => setPlatformFilter(event.target.value)}>
+                <option value="all">All platforms</option>
+                {PLATFORMS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </FieldSelect>
+              <FieldSelect id="mention-sentiment-filter" label="Sentiment" value={sentimentFilter} onChange={(event) => setSentimentFilter(event.target.value)}>
+                <option value="all">All sentiment</option>
+                <option value="positive">Positive</option><option value="neutral">Neutral</option><option value="negative">Negative</option>
+              </FieldSelect>
+            </div>
+            {resources.mentions.data !== null && mentions.length === 0 ? <p className={styles.status}>No mentions have been captured in this workspace.</p> : null}
+            {resources.mentions.data !== null && mentions.length > 0 && visibleMentions.length === 0 ? <p className={styles.status}>No captured mentions match these filters.</p> : null}
+            <div className={styles.list}>
+              {visibleMentions.map((mention) => (
+                <article id={`mention-${mention.id}`} key={mention.id} className={`${styles.row} ${targetMentionId === mention.id ? styles.rowTarget : ''}`}>
+                  <div className={styles.actions}><strong>{mention.authorHandle}</strong><Badge tone={mention.sentiment === 'negative' ? 'danger' : mention.sentiment === 'positive' ? 'success' : 'neutral'}>{mention.sentiment}</Badge></div>
+                  <p>{mention.text}</p>
+                  <p className={styles.meta}>{mention.query} · {PLATFORMS.find((item) => item.value === mention.platform)?.label} · {mention.engagementCount.toLocaleString()} engagements · {formatTimestamp(mention.createdAt)}</p>
+                </article>
+              ))}
+            </div>
+          </Card>
+        ) : null}
+
+        {activeTab === 'alerts' ? (
+          <Card>
+            <CardTitle sub="Alerts are derived from manually captured mentions and the configured rules; this service does not monitor providers.">Alert review</CardTitle>
+            {renderResourceFeedback('alerts', 'Alerts')}
+            {resources.alerts.data !== null && alerts.length === 0 ? <p className={styles.status}>No alerts have been recorded in this workspace.</p> : null}
+            <div className={styles.list}>
+              {alerts.map((alert) => {
+                const related = mentions.find((mention) => mention.id === alert.mentionId);
+                return (
+                  <article key={alert.id} className={`${styles.row} ${alert.severity === 'high' ? styles.alertHigh : styles.alertMedium}`}>
+                    <div className={styles.actions}><strong>{alert.ruleName}</strong><Badge tone={alert.severity === 'high' ? 'danger' : 'neutral'}>{alert.severity === 'high' ? 'High' : 'Medium'}</Badge><Badge tone={statusTone(alert.status)}>{alert.status}</Badge></div>
+                    <p className={styles.meta}>Created {formatTimestamp(alert.createdAt)} · mention {alert.mentionId}</p>
+                    {related ? <p>{related.text}</p> : <p className={styles.status}>The related mention is not available in the current feed response.</p>}
+                    {related ? <Button type="button" className={styles.action} onClick={() => openMention(related.id)}>View mention</Button> : null}
+                  </article>
+                );
+              })}
+            </div>
+          </Card>
+        ) : null}
+
+        {activeTab === 'rules' ? (
+          <>
+            <Card>
+              <CardTitle sub="Rules run only when a mention is manually captured. They are kept in temporary service memory.">Create an alert rule</CardTitle>
+              <form noValidate onSubmit={(event) => void submitRule(event)} className={styles.formGrid} style={{ marginTop: 14 }}>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="rule-name">Rule name</label>
+                  <input id="rule-name" className={styles.input} required maxLength={120} value={ruleDraft.name} onChange={(event) => updateRuleDraft('name', event.target.value)} aria-invalid={Boolean(ruleErrors.name)} aria-describedby={ruleErrors.name ? 'rule-name-error' : undefined} />
+                  {ruleErrors.name ? <p id="rule-name-error" className={styles.error}>{ruleErrors.name}</p> : null}
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="rule-query">Tracked query (optional)</label>
+                  <input id="rule-query" className={styles.input} maxLength={120} value={ruleDraft.query} onChange={(event) => updateRuleDraft('query', event.target.value)} aria-invalid={Boolean(ruleErrors.query)} aria-describedby={ruleErrors.query ? 'rule-query-error' : undefined} />
+                  {ruleErrors.query ? <p id="rule-query-error" className={styles.error}>{ruleErrors.query}</p> : null}
+                </div>
+                <FieldSelect id="rule-platform" label="Platform filter (optional)" value={ruleDraft.platform} onChange={(event) => updateRuleDraft('platform', event.target.value)}>
+                  <option value="">All platforms</option>{PLATFORMS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </FieldSelect>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="rule-threshold">Minimum engagement (enter 0 if none)</label>
+                  <input id="rule-threshold" className={styles.input} type="number" min={0} max={1_000_000} step={1} required value={ruleDraft.minEngagement} onChange={(event) => updateRuleDraft('minEngagement', event.target.value)} aria-invalid={Boolean(ruleErrors.minEngagement)} aria-describedby={ruleErrors.minEngagement ? 'rule-threshold-error' : undefined} />
+                  {ruleErrors.minEngagement ? <p id="rule-threshold-error" className={styles.error}>{ruleErrors.minEngagement}</p> : null}
+                </div>
+                <div className={`${styles.field} ${styles.fieldFull}`}>
+                  <label className={styles.actions} htmlFor="rule-negative-only"><input id="rule-negative-only" type="checkbox" checked={ruleDraft.negativeOnly} onChange={(event) => updateRuleDraft('negativeOnly', event.target.checked)} /> Negative sentiment only</label>
+                  <p className={styles.help}>Leave unchecked to allow every sentiment to meet this rule.</p>
+                </div>
+                <div className={`${styles.actions} ${styles.fieldFull}`}>
+                  <Button type="submit" variant="primary" disabled={!tenantId || busyAction !== null}>{busyAction === 'rule' ? 'Saving rule…' : 'Create alert rule'}</Button>
+                </div>
+              </form>
+            </Card>
+            <Card>
+              <CardTitle>Existing rules</CardTitle>
+              {renderResourceFeedback('rules', 'Alert rules')}
+              {resources.rules.data !== null && rules.length === 0 ? <p className={styles.status}>No alert rules are configured in this workspace.</p> : null}
+              <div className={styles.list}>
+                {rules.map((rule) => (
+                  <article key={rule.id} className={styles.row}>
+                    <div className={styles.actions}><strong>{rule.name}</strong><Badge tone={rule.enabled ? 'success' : 'neutral'}>{rule.enabled ? 'Enabled' : 'Disabled'}</Badge></div>
+                    <p className={styles.meta}>{rule.query ? `Query: ${rule.query} · ` : ''}{rule.platform ? `Platform: ${PLATFORMS.find((item) => item.value === rule.platform)?.label} · ` : ''}At least {rule.minEngagement.toLocaleString()} engagements · {rule.negativeOnly ? 'Negative sentiment only' : 'All sentiments'}</p>
+                  </article>
+                ))}
+              </div>
+            </Card>
+          </>
+        ) : null}
+
+        {activeTab === 'capture' ? (
+          <Card>
+            <CardTitle sub="Enter values observed by your team. This form does not collect or fetch posts from social networks.">Capture a mention manually</CardTitle>
+            <form noValidate onSubmit={(event) => void submitMention(event)} className={styles.formGrid} style={{ marginTop: 14 }}>
+              <FieldSelect id="mention-platform" label="Source platform" value={mentionDraft.platform} onChange={(event) => updateMentionDraft('platform', event.target.value)} aria-invalid={Boolean(mentionErrors.platform)} aria-describedby={mentionErrors.platform ? 'mention-platform-error' : undefined}>
+                <option value="">Choose a platform</option>{PLATFORMS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </FieldSelect>
+              {mentionErrors.platform ? <p id="mention-platform-error" className={styles.error}>{mentionErrors.platform}</p> : null}
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="mention-query">Tracked query</label>
+                <input id="mention-query" className={styles.input} required minLength={2} maxLength={120} value={mentionDraft.query} onChange={(event) => updateMentionDraft('query', event.target.value)} aria-invalid={Boolean(mentionErrors.query)} aria-describedby={mentionErrors.query ? 'mention-query-error' : undefined} />
+                {mentionErrors.query ? <p id="mention-query-error" className={styles.error}>{mentionErrors.query}</p> : null}
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="mention-author">Public author handle</label>
+                <input id="mention-author" className={styles.input} required maxLength={120} value={mentionDraft.authorHandle} onChange={(event) => updateMentionDraft('authorHandle', event.target.value)} aria-invalid={Boolean(mentionErrors.authorHandle)} aria-describedby={mentionErrors.authorHandle ? 'mention-author-error' : undefined} />
+                {mentionErrors.authorHandle ? <p id="mention-author-error" className={styles.error}>{mentionErrors.authorHandle}</p> : null}
+              </div>
+              <FieldSelect id="mention-sentiment" label="Observed sentiment" value={mentionDraft.sentiment} onChange={(event) => updateMentionDraft('sentiment', event.target.value)} aria-invalid={Boolean(mentionErrors.sentiment)} aria-describedby={mentionErrors.sentiment ? 'mention-sentiment-error' : undefined}>
+                <option value="">Choose sentiment</option><option value="positive">Positive</option><option value="neutral">Neutral</option><option value="negative">Negative</option>
+              </FieldSelect>
+              {mentionErrors.sentiment ? <p id="mention-sentiment-error" className={styles.error}>{mentionErrors.sentiment}</p> : null}
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="mention-engagement">Observed engagement count (enter 0 if none)</label>
+                <input id="mention-engagement" className={styles.input} type="number" min={0} max={1_000_000} step={1} required value={mentionDraft.engagementCount} onChange={(event) => updateMentionDraft('engagementCount', event.target.value)} aria-invalid={Boolean(mentionErrors.engagementCount)} aria-describedby={mentionErrors.engagementCount ? 'mention-engagement-error' : undefined} />
+                {mentionErrors.engagementCount ? <p id="mention-engagement-error" className={styles.error}>{mentionErrors.engagementCount}</p> : null}
+              </div>
+              <div className={`${styles.field} ${styles.fieldFull}`}>
+                <label className={styles.label} htmlFor="mention-text">Mention text</label>
+                <textarea id="mention-text" className={styles.textArea} required minLength={3} maxLength={4000} value={mentionDraft.text} onChange={(event) => updateMentionDraft('text', event.target.value)} aria-invalid={Boolean(mentionErrors.text)} aria-describedby={mentionErrors.text ? 'mention-text-error' : 'mention-text-help'} />
+                <p id="mention-text-help" className={styles.help}>{mentionDraft.text.length.toLocaleString()} / 4,000 characters. Avoid entering private or sensitive information.</p>
+                {mentionErrors.text ? <p id="mention-text-error" className={styles.error}>{mentionErrors.text}</p> : null}
+              </div>
+              <div className={`${styles.actions} ${styles.fieldFull}`}>
+                <Button type="submit" variant="primary" disabled={!tenantId || busyAction !== null}>{busyAction === 'capture' ? 'Recording…' : 'Record mention'}</Button>
+                <Button type="button" disabled={busyAction !== null} onClick={() => { setMentionDraft({ ...EMPTY_MENTION }); setMentionErrors(emptyDraftErrors()); }}>Clear fields</Button>
+              </div>
+            </form>
+          </Card>
+        ) : null}
+      </section>
+    </Page>
   );
 }

@@ -4,17 +4,23 @@ from __future__ import annotations
 from ..constants import AuthDep
 from ..constants import JOB_NOT_FOUND
 from ..runtime import ContextRuntime
+from ..runtime import require_durable_media_jobs
 from .append_audit import helper_append_audit
 from ...storage import delete_minio_object
 from fastapi import HTTPException
+from fastapi import Request
 from fastapi import Query
 from typing import Annotated
 from typing import Any
+import hashlib
 import os
 
 
 def execute_purge_raw_input(
-    runtime: ContextRuntime, storage_key: Annotated[str, Query(min_length=1, max_length=1024)], auth: AuthDep
+    runtime: ContextRuntime,
+    storage_key: Annotated[str, Query(min_length=1, max_length=1024)],
+    auth: AuthDep,
+    request: Request | None = None,
 ) -> dict[str, Any]:
     """Delete a tenant-owned raw-input object through configured MinIO storage.
 
@@ -30,8 +36,28 @@ def execute_purge_raw_input(
     if "\\" in storage_key or any(segment in {"", ".", ".."} for segment in storage_key.split("/")):
         raise HTTPException(status_code=400, detail="storage_key contains an invalid path segment.")
     bucket = os.getenv("MINIO_RAW_INPUT_BUCKET", "raw-input")
+    production = os.getenv("ENVIRONMENT", "development").strip().lower() in {"prod", "production"}
+    if production:
+        from ....identity.security_audit import durable_audit_enabled, record_security_event
+
+        if not durable_audit_enabled():
+            raise HTTPException(status_code=503, detail="Durable security audit is unavailable.")
+        peer = request.client.host if request is not None and request.client is not None else ""
+        record_security_event(
+            tenant_id=auth.tenant_id,
+            event_type="media_raw_input_delete_requested",
+            principal_id=auth.subject,
+            auth_mode=auth.auth_mode,
+            method="DELETE",
+            path=request.url.path if request is not None else "/media/raw-input",
+            request_id=str(getattr(request.state, "request_id", "")) if request is not None else "",
+            client_ip=peer,
+            user_agent=request.headers.get("user-agent", "") if request is not None else "",
+            metadata={"bucket": bucket, "storage_key_sha256": hashlib.sha256(storage_key.encode()).hexdigest()},
+        )
     delete_minio_object(bucket, storage_key)
-    helper_append_audit(runtime, auth.tenant_id, f"media_raw_purged:{storage_key[:80]}")
+    if not production:
+        helper_append_audit(runtime, auth.tenant_id, f"media_raw_purged:{storage_key[:80]}")
     return {
         "status": "ok",
         "tenant_id": auth.tenant_id,
@@ -46,6 +72,7 @@ def execute_job_audit_trail(runtime: ContextRuntime, job_id: int, auth: AuthDep)
     NEW: Full audit trail for a specific job — all state transitions,
     timestamps, DLQ history, and provider dispatch events.
     """
+    require_durable_media_jobs()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:media:audit", 120, 60)
     with runtime._lock:
         job = next(

@@ -294,37 +294,6 @@ class TestExtractConversion:
         assert isinstance(touchpoints, list)
 
 
-class TestResolveTenantId:
-    def _fn(self):
-        from backend.fastapi.app.routers.revenue_attribution import _resolve_tenant_id
-        return _resolve_tenant_id
-
-    def test_header_takes_priority(self) -> None:
-        fn = self._fn()
-        result = fn("header-tenant", {"tenant_id": "payload-tenant"})
-        assert result == "header-tenant"
-
-    def test_falls_back_to_payload(self) -> None:
-        fn = self._fn()
-        result = fn(None, {"tenant_id": "payload-tenant"})
-        assert result == "payload-tenant"
-
-    def test_falls_back_to_metadata(self) -> None:
-        fn = self._fn()
-        result = fn(None, {"metadata": {"tenant_id": "meta-tenant"}})
-        assert result == "meta-tenant"
-
-    def test_default_when_nothing(self) -> None:
-        fn = self._fn()
-        result = fn(None, {})
-        assert result == "tenant-demo"
-
-    def test_empty_header_string(self) -> None:
-        fn = self._fn()
-        result = fn("   ", {"tenant_id": "payload-tenant"})
-        assert result == "payload-tenant"
-
-
 class TestShapleyContributions:
     def _fn(self):
         from backend.fastapi.app.routers.revenue_attribution import _shapley_contributions
@@ -414,11 +383,13 @@ class TestRevenueAttributionRoutes:
             **H,
             "Content-Type": "application/json",
         }, content=b'{"type":"test"}')
-        assert r.status_code in VALID
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_shopify_webhook(self, client: TestClient) -> None:
         r = client.post("/analytics/revenue-attribution/webhooks/shopify", headers={
             **H,
             "Content-Type": "application/json",
         }, content=b'{"id":123}')
-        assert r.status_code in VALID
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"

@@ -1,22 +1,29 @@
 """Search HTTP operations beginning with airanklab wiring required keys."""
 
+from typing import Any
+
+from fastapi import APIRouter
+
 from ..constants import AuthDep
 from ..operations.platform_airanklab_completion_chart import operation_airanklab_wiring_apply
 from ..operations.platform_run_provider_probes import operation_airanklab_wiring_required_keys
-from ..operations.semrush_list_projects import operation_semrush_env_template
-from ..operations.semrush_list_projects import operation_semrush_parity_audit
-from ..operations.semrush_list_projects import operation_semrush_provider_bootstrap
-from ..operations.semrush_list_projects import operation_semrush_provider_checklist
-from ..operations.semrush_list_projects import operation_semrush_provider_probes
+from ..operations.semrush_list_projects import (
+    operation_semrush_env_template,
+    operation_semrush_parity_audit,
+    operation_semrush_provider_bootstrap,
+    operation_semrush_provider_checklist,
+    operation_semrush_provider_probes,
+)
 from ..operations.semrush_production_gate import operation_semrush_production_gate
 from ..runtime import SearchRuntime
-from ..schemas import AiranklabWiringApplyRequest
-from ..schemas import SemrushEnvTemplateRequest
-from ..schemas import SemrushProductionGateRequest
-from ..schemas import SemrushProviderBootstrapRequest
-from ..schemas import SemrushProviderProbeRequest
-from fastapi import APIRouter
-from typing import Any
+from ..schemas import (
+    AiranklabWiringApplyRequest,
+    SemrushEnvTemplateRequest,
+    SemrushProductionGateRequest,
+    SemrushProviderBootstrapRequest,
+    SemrushProviderProbeRequest,
+)
+from .keyword_unavailable_response import KEYWORD_RESEARCH_501_RESPONSE
 
 
 def register(router: APIRouter, runtime: SearchRuntime):
@@ -37,7 +44,7 @@ def register(router: APIRouter, runtime: SearchRuntime):
     def semrush_provider_checklist(auth: AuthDep) -> dict[str, Any]:
         return operation_semrush_provider_checklist(runtime, auth)
 
-    @router.post("/semrush/production-gate")
+    @router.post("/semrush/production-gate", status_code=501, response_model=None, responses={501: KEYWORD_RESEARCH_501_RESPONSE})
     def semrush_production_gate(payload: SemrushProductionGateRequest, auth: AuthDep) -> dict[str, Any]:
         return operation_semrush_production_gate(runtime, payload, auth)
 

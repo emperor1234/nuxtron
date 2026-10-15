@@ -309,6 +309,7 @@ class TestSecurityAlertHelperFunctions:
         assert cost > 0
         assert value > 0
 
+
     def test_compute_roi_zero_cost(self) -> None:
         """Lines 2285-2288: zero cost returns 0 roi."""
         import backend.fastapi.app.legacy_main as lm
@@ -820,3 +821,54 @@ class TestAiSecurityUsageHelpers:
         item = lm._ai_queued_item(TENANT, "openai", "gpt-4o-mini", "test prompt", "no api key", "2025-01-01T00:00:00Z")
         assert item["provider"] == "openai"
         assert "queued" in item["status"]
+
+
+class TestStartupDatabaseReadiness:
+    def test_legacy_initializer_uses_canonical_db_init_and_syncs_readiness(self, monkeypatch):
+        import backend.fastapi.app.legacy_main as lm
+
+        monkeypatch.setenv("ENVIRONMENT", "development")
+        monkeypatch.setenv("NUXTRON_SKIP_STARTUP_DB_INIT", "0")
+        monkeypatch.setattr(lm, "_db_ready", False)
+        monkeypatch.setattr(lm, "_db_init_attempted", False)
+        monkeypatch.setattr(lm._database_initializer, "init_db_tables", lambda: None)
+        monkeypatch.setattr(lm._database_initializer, "is_db_ready", lambda: True)
+
+        lm._init_db_tables()
+
+        assert lm._db_ready is True
+        assert lm._db_init_attempted is True
+
+    def test_production_initializer_fails_closed_when_supplemental_db_is_unavailable(self, monkeypatch):
+        import backend.fastapi.app.legacy_main as lm
+
+        monkeypatch.setenv("ENVIRONMENT", "production")
+        monkeypatch.setenv("NUXTRON_SKIP_STARTUP_DB_INIT", "0")
+        monkeypatch.setattr(lm, "_db_ready", False)
+        monkeypatch.setattr(lm, "_db_init_attempted", False)
+        monkeypatch.setattr(lm._database_initializer, "init_db_tables", lambda: None)
+        monkeypatch.setattr(lm._database_initializer, "is_db_ready", lambda: False)
+        monkeypatch.setattr(lm._database_initializer, "set_db_ready", lambda _ready: None)
+        monkeypatch.setattr(lm._database_initializer, "set_db_init_attempted", lambda _attempted: None)
+
+        with pytest.raises(RuntimeError, match="Supplemental database initialization failed"):
+            lm._init_db_tables()
+
+        assert lm._db_ready is False
+        assert lm._db_init_attempted is True
+
+    def test_production_orm_failure_aborts_before_supplemental_initialization(self, monkeypatch):
+        import asyncio
+
+        import backend.fastapi.app.legacy_main as lm
+
+        monkeypatch.setenv("ENVIRONMENT", "production")
+
+        def fail_orm_initialization():
+            raise RuntimeError("database credentials must not be logged")
+
+        monkeypatch.setattr(lm, "init_db", fail_orm_initialization)
+        monkeypatch.setattr(lm, "_init_db_tables", lambda: pytest.fail("fallback initializer must not run"))
+
+        with pytest.raises(RuntimeError, match="ORM database initialization failed; startup aborted"):
+            asyncio.run(lm._initialize_database_state(lm.StructuredLogger("test.startup")))

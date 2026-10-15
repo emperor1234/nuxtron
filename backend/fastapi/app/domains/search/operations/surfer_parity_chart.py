@@ -1,25 +1,34 @@
 """Search use cases: surfer parity chart."""
 
+from typing import Any
+
+from fastapi import HTTPException
+
 from ....deps import AuthContext
+from ....domains.seo.services.seo_keyword_research_service import raise_keyword_research_unavailable
 from ....routers import backlink_intelligence as backlink_intel_router
 from ....routers import rank_tracker as rank_tracker_router
 from ..constants import AuthDep
 from ..runtime import SearchRuntime
-from ..schemas import SurferEnvTemplateRequest
-from ..schemas import SurferFullAutomationRequest
-from ..schemas import SurferProductionGateRequest
-from ..schemas import SurferProviderProbeRequest
+from ..schemas import (
+    SurferEnvTemplateRequest,
+    SurferFullAutomationRequest,
+    SurferProductionGateRequest,
+    SurferProviderProbeRequest,
+)
 from .platform_now_iso import helper_now_iso
-from .surfer_provider_probe_payload import helper_surfer_provider_preflight_commands
-from .surfer_provider_probe_payload import helper_surfer_provider_requirements
-from .surfer_provider_probe_payload import helper_surfer_provider_setup_notes
-from .surfer_provider_probe_payload import helper_surfer_provider_verify_endpoints
-from .surfer_vendor_inventory import helper_surfer_env_template
-from .surfer_vendor_inventory import helper_surfer_run_provider_probes
-from .surfer_vendor_inventory import helper_surfer_vendor_inventory
-from .surfer_vendor_inventory import helper_surfer_wiring_plan
-from fastapi import HTTPException
-from typing import Any
+from .surfer_provider_probe_payload import (
+    helper_surfer_provider_preflight_commands,
+    helper_surfer_provider_requirements,
+    helper_surfer_provider_setup_notes,
+    helper_surfer_provider_verify_endpoints,
+)
+from .surfer_vendor_inventory import (
+    helper_surfer_env_template,
+    helper_surfer_run_provider_probes,
+    helper_surfer_vendor_inventory,
+    helper_surfer_wiring_plan,
+)
 
 
 def helper_surfer_parity_chart(runtime: SearchRuntime, auth: AuthContext) -> dict[str, Any]:
@@ -78,10 +87,10 @@ def helper_surfer_parity_chart(runtime: SearchRuntime, auth: AuthContext) -> dic
         },
     ]
     checklist = helper_surfer_provider_requirements(runtime, auth)
-    configured = sum((1 for item in checklist if item["configured"]))
+    configured = sum(1 for item in checklist if item["configured"])
     total = len(checklist)
     implementation_pct = round(
-        sum((1 for module in modules if module["implemented"])) / max(len(modules), 1) * 100.0, 1
+        sum(1 for module in modules if module["implemented"]) / max(len(modules), 1) * 100.0, 1
     )
     integration_pct = round(configured / max(total, 1) * 100.0, 1)
     return {
@@ -90,7 +99,7 @@ def helper_surfer_parity_chart(runtime: SearchRuntime, auth: AuthContext) -> dic
         "surfer_parity_chart": modules,
         "summary": {
             "modules_total": len(modules),
-            "modules_implemented": sum((1 for module in modules if module["implemented"])),
+            "modules_implemented": sum(1 for module in modules if module["implemented"]),
             "implementation_pct": implementation_pct,
             "integration_configured_units": configured,
             "integration_total_units": total,
@@ -221,6 +230,7 @@ def operation_surfer_setup_playbook(runtime: SearchRuntime, auth: AuthDep) -> di
 def operation_surfer_full_automation(
     runtime: SearchRuntime, payload: SurferFullAutomationRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    raise_keyword_research_unavailable()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:surfer:full-automation", 30, 60)
     discover_payload = rank_tracker_router.KeywordResearchRequest(
         seed_keyword=payload.seed_keyword,
@@ -320,6 +330,7 @@ def helper_surfer_strict_live_probe(
 def operation_surfer_production_gate(
     runtime: SearchRuntime, payload: SurferProductionGateRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    raise_keyword_research_unavailable()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:surfer:production-gate", 30, 60)
     parity = helper_surfer_parity_chart(runtime, auth)
     checklist = helper_surfer_provider_requirements(runtime, auth)
@@ -353,7 +364,7 @@ def operation_surfer_production_gate(
         "parity_summary": parity.get("summary", {}),
         "strict_live_probe": strict_probe,
         "provider_checklist_summary": {
-            "configured": sum((1 for item in checklist if item["configured"])),
+            "configured": sum(1 for item in checklist if item["configured"]),
             "total": len(checklist),
             "missing_requirements": missing_requirements,
         },

@@ -50,9 +50,6 @@ from .services.brand import _normalize_avatar_profile as _normalize_avatar_profi
 from .services.brand import _normalize_voiceover_engine as _normalize_voiceover_engine
 from .services.brand import _normalize_ugc_template_profile as _normalize_ugc_template_profile
 from .services.brand import _sw_profile_defaults as _sw_profile_defaults
-from .services.brand import _ugc_http_json_request as _ugc_http_json_request
-from .services.brand import _fetch_ugc_assets as _fetch_ugc_assets
-from .services.brand import _sw_seed_ugc as _sw_seed_ugc
 from .services.brand import _sw_avatar_catalog as _sw_avatar_catalog
 from .services.brand import _sw_voiceover_catalog as _sw_voiceover_catalog
 from .services.brand import _sw_build_brand_fields as _sw_build_brand_fields

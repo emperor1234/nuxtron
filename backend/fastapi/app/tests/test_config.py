@@ -33,23 +33,26 @@ class TestRequiredSecurityVarsPresent:
             "FASTAPI_API_KEY": "key1",
             "PASSWORD_PEPPER": "pepper",
             "APP_ENC_KEY": "enckey",
+            "JWT_SIGNING_KEY": "jwt-key",
         }):
             assert required_security_vars_present() == []
 
     def test_missing_returns_names(self):
         with patch.dict(os.environ, {}, clear=False):
-            for k in ("FASTAPI_API_KEY", "PASSWORD_PEPPER", "APP_ENC_KEY"):
-                os.environ.pop(k, None)
+            for key in ("FASTAPI_API_KEY", "PASSWORD_PEPPER", "APP_ENC_KEY", "JWT_SIGNING_KEY"):
+                os.environ.pop(key, None)
             missing = required_security_vars_present()
         assert "FASTAPI_API_KEY" in missing
         assert "PASSWORD_PEPPER" in missing
         assert "APP_ENC_KEY" in missing
+        assert "JWT_SIGNING_KEY" in missing
 
     def test_partial_missing(self):
         with patch.dict(os.environ, {
             "FASTAPI_API_KEY": "key",
             "PASSWORD_PEPPER": "",
             "APP_ENC_KEY": "enc",
+            "JWT_SIGNING_KEY": "jwt-key",
         }):
             missing = required_security_vars_present()
         assert "PASSWORD_PEPPER" in missing
@@ -68,6 +71,7 @@ class TestValidateStartupSecurity:
             "FASTAPI_API_KEY": "",
             "PASSWORD_PEPPER": "",
             "APP_ENC_KEY": "",
+            "JWT_SIGNING_KEY": "",
         }
         with patch.dict(os.environ, env, clear=False):
             with pytest.raises(RuntimeError, match="required vars are missing"):
@@ -79,6 +83,7 @@ class TestValidateStartupSecurity:
             "FASTAPI_API_KEY": "change-this-fastapi-key",
             "PASSWORD_PEPPER": "pepper",
             "APP_ENC_KEY": "enckey",
+            "JWT_SIGNING_KEY": "jwt-key",
         }
         with patch.dict(os.environ, env):
             with pytest.raises(RuntimeError, match="must be changed"):
@@ -91,6 +96,7 @@ class TestValidateStartupSecurity:
             "FASTAPI_API_KEY": "",
             "PASSWORD_PEPPER": "",
             "APP_ENC_KEY": "",
+            "JWT_SIGNING_KEY": "",
         }
         with patch.dict(os.environ, env, clear=False):
             with pytest.raises(RuntimeError):

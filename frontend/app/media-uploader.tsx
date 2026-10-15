@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useRef, useState, type ChangeEvent } from 'react';
+import { resolveSessionTenant } from '@/app/lib/api-client';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -52,9 +53,6 @@ type UploaderState = {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const FASTAPI_PROXY_URL = '/api/fastapi';
-// Falls back to a dev tenant when NEXT_PUBLIC_DEFAULT_TENANT_ID is unset so the
-// app runs locally without crashing.
-const TENANT_ID = (process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || 'default').trim();
 
 // Supported MIME types with their input-accept strings
 const SUPPORTED_MEDIA: Record<string, string> = {
@@ -89,9 +87,11 @@ function formatBytes(bytes: number): string {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function authHeaders() {
+  const tenantId = resolveSessionTenant();
+  if (!tenantId) throw new Error('Sign in and select a workspace before uploading media.');
   return {
     'Content-Type': 'application/json',
-    'X-Tenant-Id': TENANT_ID,
+    'X-Tenant-Id': tenantId,
   };
 }
 
@@ -132,7 +132,7 @@ async function apiGet<T>(path: string): Promise<T> {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function MediaUploader() {
+export default function MediaUploader({ onComplete }: { onComplete?: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<UploaderState>({
     phase: 'idle',
@@ -153,6 +153,21 @@ export default function MediaUploader() {
     setState((prev) => ({ ...prev, phase: 'failed', errorMessage: message }));
   }, []);
 
+  const fetchOutputUrl = useCallback(async (jobId: number) => {
+    try {
+      const result = await apiPost<{ signed_url: string; expires_at: number }>(`/media/jobs/${jobId}/output-url`, {
+        expires_seconds: 900,
+      });
+      setState((prev) => ({
+        ...prev,
+        outputUrl: result.signed_url,
+        phase: 'complete',
+      }));
+    } catch {
+      // Output URL failure is non-fatal — job is still complete.
+    }
+  }, []);
+
   // ── Main upload pipeline ──────────────────────────────────────────────────
 
   const handleFileChange = useCallback(
@@ -170,6 +185,9 @@ export default function MediaUploader() {
       });
 
       try {
+        const tenantId = resolveSessionTenant();
+        if (!tenantId) throw new Error('Sign in and select a workspace before uploading media.');
+
         // ── Step 1: Detect MIME from browser File object ──────────────────────
         const mime = file.type || 'application/octet-stream';
         const mediaType = SUPPORTED_MEDIA[mime];
@@ -196,7 +214,7 @@ export default function MediaUploader() {
 
         // ── Step 3: Request presigned upload URL (Rule 1 — direct upload) ────
         setPhase('presigning', { progress: 15 });
-        const storageKey = `raw-input/${TENANT_ID}/${Date.now()}-${file.name.replaceAll(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const storageKey = `raw-input/${tenantId}/${Date.now()}-${file.name.replaceAll(/[^a-zA-Z0-9._-]/g, '_')}`;
         const presignResult = await apiPost<{ result: { presigned_url: string | null } }>('/storage/presign', {
           bucket: 'raw-input',
           object_key: storageKey,
@@ -205,23 +223,21 @@ export default function MediaUploader() {
         });
 
         const presignedUrl = presignResult.result?.presigned_url;
+        if (!presignedUrl) {
+          throw new Error('Media storage is not configured for this workspace. Contact your administrator before retrying.');
+        }
 
         // ── Step 4: Upload directly to storage (API never sees bytes) ─────────
         setPhase('uploading', { progress: 25 });
 
-        if (presignedUrl) {
-          // Real presigned upload — browser sends bytes directly to MinIO/S3
-          const uploadRes = await fetch(presignedUrl, {
-            method: 'PUT',
-            body: file,
-            headers: { 'Content-Type': mime },
-          });
-          if (!uploadRes.ok) {
-            throw new Error(`Storage upload failed: ${uploadRes.status}`);
-          }
+        const uploadRes = await fetch(presignedUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': mime },
+        });
+        if (!uploadRes.ok) {
+          throw new Error(`Storage upload failed: ${uploadRes.status}`);
         }
-        // If no presigned URL (dev/memory-fallback mode), skip direct upload and
-        // proceed with job creation using the storage key as metadata reference.
 
         // ── Step 5: Queue processing job (metadata only, not bytes) ──────────
         setPhase('queued', { progress: 40 });
@@ -237,7 +253,7 @@ export default function MediaUploader() {
 
         // ── Step 6: SSE stream for real-time progress ─────────────────────────
         const streamUrl = new URL(`${FASTAPI_PROXY_URL}/media/jobs/${job.id}/stream`, globalThis.location.origin);
-        streamUrl.searchParams.set('tenant_id', TENANT_ID);
+        streamUrl.searchParams.set('tenant_id', tenantId);
 
         const eventSource = new EventSource(streamUrl);
 
@@ -269,7 +285,7 @@ export default function MediaUploader() {
             if (clean.status === 'complete') {
               eventSource.close();
               // Fetch signed output URL
-              void fetchOutputUrl(job.id);
+              void fetchOutputUrl(job.id).finally(() => onComplete?.());
             } else if (clean.status === 'failed' || clean.status === 'cancelled') {
               eventSource.close();
             }
@@ -288,25 +304,8 @@ export default function MediaUploader() {
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
     },
-    [setPhase, handleError]
+    [setPhase, handleError, onComplete, fetchOutputUrl]
   );
-
-  // ── Fetch signed output URL after completion ──────────────────────────────
-
-  async function fetchOutputUrl(jobId: number) {
-    try {
-      const result = await apiPost<{ signed_url: string; expires_at: number }>(`/media/jobs/${jobId}/output-url`, {
-        expires_seconds: 900,
-      });
-      setState((prev) => ({
-        ...prev,
-        outputUrl: result.signed_url,
-        phase: 'complete',
-      }));
-    } catch {
-      // Output URL failure is non-fatal — job is still complete
-    }
-  }
 
   // ── Cancel job ────────────────────────────────────────────────────────────
 
@@ -380,11 +379,11 @@ export default function MediaUploader() {
 
   const phaseLabel: Record<JobStatus, string> = {
     idle: 'Select a file to begin',
-    validating: 'Validating file type (magic-byte check)…',
-    presigning: 'Requesting secure upload URL…',
-    uploading: 'Uploading directly to storage…',
-    queued: 'Job queued — awaiting sandbox…',
-    processing: 'Sandbox processing in progress…',
+    validating: 'Validating file type…',
+    presigning: 'Preparing upload…',
+    uploading: 'Uploading file…',
+    queued: 'Queued for processing',
+    processing: 'Processing in progress…',
     complete: 'Processing complete',
     failed: 'Processing failed',
     cancelled: 'Job cancelled',
@@ -394,8 +393,8 @@ export default function MediaUploader() {
     <section className="media-uploader-shell">
       <div className="media-uploader-card">
         <div className="media-uploader-header">
-          <h3>Sandboxed Media Processor</h3>
-          <p className="muted">Files are uploaded directly to storage — this server never reads your bytes.</p>
+          <h3>Media upload</h3>
+          <p className="muted">Upload an image, video, audio file, or document and track its processing status.</p>
         </div>
 
         {/* Drop zone / file picker */}
@@ -420,6 +419,7 @@ export default function MediaUploader() {
             id="mediaFileInput"
             ref={fileInputRef}
             type="file"
+            accept={ACCEPT_STRING}
             className="media-file-input"
             onChange={handleFileChange}
             disabled={isActive && !isTerminal}
@@ -529,7 +529,6 @@ export default function MediaUploader() {
             ) : (
               <ul className="media-dlq-list">
                 {dlqItems.map((item, i) => (
-                  // eslint-disable-next-line react/no-array-index-key
                   <li key={i} className="media-dlq-item">
                     <pre>{JSON.stringify(item, null, 2)}</pre>
                   </li>

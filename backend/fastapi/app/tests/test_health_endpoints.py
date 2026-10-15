@@ -10,6 +10,8 @@ Tests cover:
 # pyright: reportUnknownVariableType=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
 
 import os
+from contextlib import nullcontext
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -119,3 +121,58 @@ class TestHealthEndpointStructure:
         if schema_block.get('ready'):
             # If schema is ready, readiness probe should also be ready
             assert readiness_resp.status_code == 200
+
+
+class TestProductionRedisReadiness:
+    @staticmethod
+    def _client() -> TestClient:
+        from fastapi import FastAPI
+        from backend.fastapi.app.rate_limiter import RateLimitMetrics
+        from backend.fastapi.app.routers.health import create_health_router
+
+        app = FastAPI()
+        app.include_router(
+            create_health_router(
+                get_db_ready=lambda: True,
+                auth_security_memory=[],
+                notifications_memory=[],
+                all_stores_fn=lambda: {},
+                rate_metrics_snapshot=lambda: RateLimitMetrics(0, 0, {}),
+            )
+        )
+        return TestClient(app)
+
+    def test_production_readiness_fails_when_security_redis_is_unavailable(self, monkeypatch) -> None:
+        from backend.fastapi.app import database
+        from backend.fastapi.app.domains.identity import security_redis
+
+        session = MagicMock()
+        monkeypatch.setattr(database, "get_db_session", lambda: nullcontext(session))
+        monkeypatch.setattr(security_redis, "security_redis_ready", lambda: False)
+        monkeypatch.setenv("ENVIRONMENT", "production")
+
+        with self._client() as client:
+            response = client.get("/health/ready")
+            health = client.get("/health")
+
+        assert response.status_code == 503
+        assert response.json()["reason"] == "Shared security counter store is unavailable"
+        assert health.json()["status"] == "degraded"
+        assert health.json()["checks"]["cache"]["status"] == "unavailable"
+
+    def test_development_readiness_keeps_redis_optional(self, monkeypatch) -> None:
+        from backend.fastapi.app import database
+        from backend.fastapi.app.domains.identity import security_redis
+
+        session = MagicMock()
+        monkeypatch.setattr(database, "get_db_session", lambda: nullcontext(session))
+        monkeypatch.setattr(security_redis, "security_redis_ready", lambda: False)
+        monkeypatch.setenv("ENVIRONMENT", "development")
+
+        with self._client() as client:
+            response = client.get("/health/ready")
+            health = client.get("/health")
+
+        assert response.status_code == 200
+        assert health.json()["status"] == "healthy"
+        assert health.json()["checks"]["cache"]["status"] == "optional"

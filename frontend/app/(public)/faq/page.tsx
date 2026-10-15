@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import FaqClient from './FaqClient';
 
 export const metadata: Metadata = {
@@ -16,7 +14,7 @@ const FAQ_JSON_LD = {
     {
       '@type': 'Question',
       name: 'What is Nuxtron, exactly?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Nuxtron is a single workspace that combines CRM, SEO & AI-visibility tracking, social media operations, review management, and security monitoring — with AI agents that can act across all of it, not just report on it.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'Nuxtron is a workspace for CRM, SEO and AI-visibility workflows, social media operations, and security monitoring. Provider-backed review management and local rank tracking are not currently available.' },
     },
     {
       '@type': 'Question',

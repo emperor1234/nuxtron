@@ -156,7 +156,7 @@ export default function ReelsFactoryPage() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link href="/studio/faceless-video-engine" style={{ background: 'var(--card)', color: 'var(--text)', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', fontSize: 13 }}>UGC Avatar Videos →</Link>
-          <Link href="/studio/social-studio/ads" style={{ background: "var(--brand)", color: 'var(--on-brand)', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', fontSize: 13 }}>Video Ads →</Link>
+          <Link href="/studio/social-studio" style={{ background: "var(--brand)", color: 'var(--on-brand)', padding: '8px 16px', borderRadius: 8, textDecoration: 'none', fontSize: 13 }}>Social Studio →</Link>
         </div>
       </div>
 

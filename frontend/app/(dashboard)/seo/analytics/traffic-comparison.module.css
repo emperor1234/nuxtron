@@ -1,0 +1,128 @@
+.scopeNotice {
+  color: var(--nx-ink-2);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 12px 0 0;
+}
+
+.form,
+.group,
+.metricGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.form {
+  margin-top: 18px;
+}
+
+.metaGrid,
+.valueGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.group {
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  min-width: 0;
+  padding: 14px;
+}
+
+.group legend {
+  font-size: 14px;
+  font-weight: 680;
+  padding: 0 6px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field span {
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.field input {
+  background: var(--nx-bg);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  color: var(--nx-ink);
+  font: inherit;
+  font-size: 13px;
+  min-width: 0;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.field input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--nx-brand) 30%, transparent);
+  outline-offset: 2px;
+}
+
+.groupHint,
+.help,
+.metricNote,
+.comparisonContext {
+  color: var(--nx-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.groupHint {
+  margin-bottom: 2px;
+}
+
+.error {
+  color: var(--nx-danger);
+  font-size: 13px;
+  margin: 0;
+}
+
+.metricGrid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  margin-top: 14px;
+}
+
+.metric {
+  background: var(--nx-bg);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.metric h3 {
+  font-size: 14px;
+  margin: 0;
+}
+
+.values {
+  font-size: 14px;
+  font-weight: 670;
+  line-height: 1.4;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.metricNote {
+  color: var(--nx-ink-2);
+}
+
+.comparisonContext {
+  margin-top: 10px;
+}
+
+@media (max-width: 640px) {
+  .metaGrid,
+  .valueGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

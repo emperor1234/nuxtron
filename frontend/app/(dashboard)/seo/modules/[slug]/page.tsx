@@ -108,14 +108,42 @@ export default function SeoModuleDetailPage({ params }: Readonly<{ params: Promi
           'news-seo-google-discover': '/seo/news-discover',
           'analytics-reporting-intelligence': '/seo/history',
           'agency-multi-tenant-platform': '/seo/agency-platform',
+          eyeon: '/seo/competitor-monitoring',
+          'competitor-activity-monitor': '/seo/competitor-monitoring',
           'international-multilingual-seo': '/seo/international-multilingual',
           'site-migration-seo-manager': '/seo/site-migration',
           cxao: '/seo/cxao',
           'seo-ab-testing': '/seo/seo-ab-testing',
           'revenue-attribution-intelligence': '/seo/revenue-attribution',
           'growth-playbooks-automation': '/seo/growth-playbooks',
+          'retail-media-app-growth-hub': '/seo',
+          'unified-ads-control-tower': '/seo',
+          'ai-creative-keyword-lab': '/seo',
+          'attribution-conversion-intelligence': '/seo',
+          'budget-pacing-bid-engine': '/seo',
+          'cross-network-campaign-orchestrator': '/seo',
           'trust-risk-governance': '/seo/trust-risk-governance',
           'multi-channel-activation-loop': '/seo/multi-channel-activation',
+          'performance-audit': '/seo',
+          'gtmetrix-style-performance-audit': '/seo',
+          'ahrefs-brand-radar': '/seo/realtime-monitoring',
+          'ahrefs-custom-prompts': '/seo/planner',
+          'ahrefs-dashboard': '/dashboard',
+          'ahrefs-site-explorer': '/seo/domain-overview',
+          'ahrefs-keywords-explorer': '/seo/keywords',
+          'ahrefs-site-audit': '/seo/technical',
+          'ahrefs-rank-tracker': '/seo/rank-tracking',
+          'ahrefs-gsc-insights': '/seo/history',
+          'ahrefs-content-explorer': '/seo/content-creation-blogging',
+          'ahrefs-web-analytics': '/seo/analytics',
+          'ahrefs-bot-analytics': '/seo/realtime-monitoring',
+          'ahrefs-gbp-monitor': '/seo',
+          'ahrefs-social-media-manager': '/studio/social-studio',
+          'ahrefs-portfolios': '/seo/agency-platform',
+          'ahrefs-report-builder': '/seo',
+          'ahrefs-ai-content-helper': '/seo/content-creation-blogging',
+          'ahrefs-ai-content-grader': '/seo/content-auditor',
+          'ahrefs-patches': '/seo/technical',
         };
         const redirectPath = legacyRouteOverrides[resolved.slug];
         if (redirectPath) {
@@ -292,7 +320,7 @@ export default function SeoModuleDetailPage({ params }: Readonly<{ params: Promi
               </div>
               <div style={{ ...card, borderRadius: 12 }}>
                 <div style={{ fontSize: 11, color: 'var(--muted)' }}>Database</div>
-                <div style={{ fontWeight: 700 }}>{moduleDetail.database_ready ? 'Seeded' : 'Pending'}</div>
+                <div style={{ fontWeight: 700 }}>{moduleDetail.database_ready ? 'Ready' : 'Not ready'}</div>
               </div>
             </div>
           )}

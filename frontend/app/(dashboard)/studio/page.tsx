@@ -52,8 +52,6 @@ const SECTIONS: readonly { title: string; blurb: string; routes: readonly string
     title: 'Grow',
     blurb: 'Rank higher, earn links and win answer engines.',
     routes: [
-      '/studio/growth-suite',
-      '/studio/seo-suite',
       '/studio/rank-tracker',
       '/studio/backlink-intelligence',
       '/studio/answer-engine',
@@ -63,7 +61,7 @@ const SECTIONS: readonly { title: string; blurb: string; routes: readonly string
   {
     title: 'Advertise',
     blurb: 'Test creative and stretch budget further.',
-    routes: ['/studio/ads-engine', '/studio/multilingual-ads', '/studio/content-hub/ab-testing'],
+    routes: ['/ads-generation', '/studio/multilingual-ads', '/studio/content-hub/ab-testing'],
   },
   {
     title: 'Measure',
@@ -79,7 +77,7 @@ const SECTIONS: readonly { title: string; blurb: string; routes: readonly string
   {
     title: 'Operate',
     blurb: 'Coordinate people, approvals and automation.',
-    routes: ['/studio/workspace', '/studio/workflow-orchestrator', '/studio/team', '/studio/cdn-analytics'],
+    routes: ['/studio/workspace', '/studio/team', '/studio/cdn-analytics'],
   },
 ];
 

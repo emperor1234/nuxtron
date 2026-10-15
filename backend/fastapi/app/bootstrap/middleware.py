@@ -16,6 +16,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from ..config import env_bool
+from ..middleware.trusted_proxy import TrustedProxyMiddleware
 from ..production_middleware import (
     GlobalExceptionHandler,
     RequestTracingMiddleware,
@@ -78,6 +80,11 @@ def configure_middleware(app: FastAPI) -> None:
         allow_credentials=not wildcard_origin,
         allow_methods=CORS_ALLOWED_METHODS,
         allow_headers=CORS_ALLOWED_HEADERS,
+    )
+    app.add_middleware(
+        TrustedProxyMiddleware,
+        require_mtls=env_bool('REQUIRE_MTLS', False),
+        enforce_https_header=env_bool('ENFORCE_HTTPS_HEADER', False),
     )
 
 

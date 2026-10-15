@@ -1,53 +1,55 @@
 """Seo/Platform use cases: save analysis."""
 
-from ..services import extract_waterfall as provider_ollama_json
-from functools import partial
-from .....deps import AuthContext
-from .....deps import require_auth
-from .....domains.seo.seo_module_registry import SEO_MODULE_MAP
-from .....domains.seo.seo_module_registry import SEO_MODULE_REGISTRY
-from .....domains.seo.seo_module_registry import audit_seo_module_registry
-from .....domains.seo.seo_module_registry import grouped_seo_modules
-from .....domains.seo.services.seo_keyword_research_service import research_keywords
-from .....domains.seo.services.seo_on_page_service import analyze_on_page
-from .....domains.seo.services.seo_schema_service import generate_schema_markup
-from .....domains.seo.services.seo_technical_audit_service import analyze_technical_audit
-from ..constants import OLLAMA_BASE_URL
-from ..constants import SEO_ANALYSIS_CACHE_TTL_SEC
-from ..constants import SEO_DEFAULT_MODEL
-from ..constants import SEO_MODULE_COUNT
-from ..constants import _KEYWORD_SYS
-from ..constants import _ONPAGE_SYS
-from ..constants import _SCHEMA_SYS
-from ..constants import _TECHNICAL_SYS
-from ..constants import logger
-from ..runtime import ContextRuntime
-from ..schemas import KeywordResearchReq
-from ..schemas import OnPageReq
-from ..schemas import SchemaGenReq
-from ..schemas import TechnicalAuditReq
-from ..services.get_shared_job_store import _clean
-from ..services.get_shared_job_store import _seo_analysis_cache_key
-from ..services.get_shared_job_store import _seo_analysis_dist_cache_enabled
-from ..services.get_shared_job_store import _upstash_command
-from .sync_job_store import helper_db_available
-from .sync_job_store import helper_enrich_response
-from .sync_job_store import helper_ensure_db_tables
-from .sync_job_store import helper_log
-from .sync_job_store import helper_payload_hash
-from datetime import UTC
-from datetime import datetime
-from fastapi import Depends
-from fastapi import HTTPException
-from starlette.concurrency import run_in_threadpool
-from typing import Annotated
-from typing import Any
 import base64
-import httpx
 import json
 import os
-import psycopg
 import uuid
+from datetime import UTC, datetime
+from functools import partial
+from typing import Annotated, Any
+
+import httpx
+import psycopg
+from fastapi import Depends, HTTPException
+from starlette.concurrency import run_in_threadpool
+
+from .....deps import AuthContext, require_auth
+from .....domains.seo.seo_module_registry import (
+    SEO_MODULE_MAP,
+    SEO_MODULE_REGISTRY,
+    audit_seo_module_registry,
+    grouped_seo_modules,
+)
+from .....domains.seo.services.seo_on_page_service import analyze_on_page
+from .....domains.seo.services.seo_performance_service import raise_performance_unavailable
+from .....domains.seo.services.seo_schema_service import generate_schema_markup
+from .....domains.seo.services.seo_technical_audit_service import analyze_technical_audit
+from ..constants import (
+    _ONPAGE_SYS,
+    _SCHEMA_SYS,
+    _TECHNICAL_SYS,
+    OLLAMA_BASE_URL,
+    SEO_ANALYSIS_CACHE_TTL_SEC,
+    SEO_DEFAULT_MODEL,
+    SEO_MODULE_COUNT,
+    logger,
+)
+from ..runtime import ContextRuntime
+from ..schemas import OnPageReq, SchemaGenReq, TechnicalAuditReq
+from ..services import extract_waterfall as provider_ollama_json
+from ..services.get_shared_job_store import (
+    _clean,
+    _seo_analysis_cache_key,
+    _seo_analysis_dist_cache_enabled,
+    _upstash_command,
+)
+from .sync_job_store import (
+    helper_db_available,
+    helper_enrich_response,
+    helper_ensure_db_tables,
+    helper_log,
+    helper_payload_hash,
+)
 
 
 def helper_save_analysis(
@@ -143,6 +145,66 @@ def helper_list_analyses(
     return items[:cap]
 
 
+_CUSTOMER_EXCLUDED_MODULE_KEYS = frozenset(
+    {
+        "client-portal",
+        "eyeon",
+        "one2target",
+        "contentshake",
+        "local-seo-suite",
+        "map-rank-tracker",
+        "local-heatmap",
+        "review-reputation-engine",
+        "performance-audit",
+        "retail-media-app-growth-hub",
+        "unified-ads-control-tower",
+        "cross-network-campaign-orchestrator",
+        "budget-pacing-bid-engine",
+        "attribution-conversion-intelligence",
+        "ai-creative-keyword-lab",
+    }
+)
+_CUSTOMER_EXCLUDED_MODULE_PREFIXES = ("ahrefs-",)
+_CUSTOMER_GROUP_OVERRIDES = {
+    "domain-overview": "Search Intelligence",
+    "market-explorer": "Market Intelligence",
+    "map-rank-tracker": "Local Search",
+    "local-heatmap": "Local Search",
+    "pla-research": "Paid Search Intelligence",
+    "competitor-activity-monitor": "Search Intelligence",
+}
+_CUSTOMER_ROUTE_OVERRIDES = {
+    "competitor-activity-monitor": "/seo/competitor-monitoring",
+}
+_VENDOR_LABELS = ("ahrefs", "semrush", "one2target", "contentshake", "eyeon")
+
+
+def _customer_visible_modules(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    visible: list[dict[str, Any]] = []
+    for item in items:
+        key = str(item.get("key", "")).strip().lower()
+        if key in _CUSTOMER_EXCLUDED_MODULE_KEYS or key.startswith(_CUSTOMER_EXCLUDED_MODULE_PREFIXES):
+            continue
+
+        module = dict(item)
+        group = str(module.get("group", ""))
+        if key in _CUSTOMER_GROUP_OVERRIDES:
+            module["group"] = _CUSTOMER_GROUP_OVERRIDES[key]
+        elif any(label in group.lower() for label in _VENDOR_LABELS) or "parity" in group.lower():
+            continue
+
+        if key in _CUSTOMER_ROUTE_OVERRIDES:
+            module["route_path"] = _CUSTOMER_ROUTE_OVERRIDES[key]
+        metadata = " ".join(
+            str(module.get(field, ""))
+            for field in ("key", "display_name", "group", "description", "route_path")
+        ).lower()
+        if any(label in metadata for label in _VENDOR_LABELS):
+            continue
+        visible.append(module)
+    return visible
+
+
 def helper_list_modules(runtime: ContextRuntime) -> list[dict[str, Any]]:
     if helper_db_available(runtime):
         helper_ensure_db_tables(runtime)
@@ -169,10 +231,10 @@ def helper_list_modules(runtime: ContextRuntime) -> list[dict[str, Any]]:
                 }
                 registry_module = SEO_MODULE_MAP.get(str(row[0]), {})
                 modules.append({**registry_module, **db_module})
-            return modules
+            return _customer_visible_modules(modules)
         except Exception as exc:
             logger.warning("SEO platform module registry DB read failed; using fallback: %s", exc)
-    return [dict(item) for item in SEO_MODULE_REGISTRY]
+    return _customer_visible_modules([dict(item) for item in SEO_MODULE_REGISTRY])
 
 
 def helper_get_module(runtime: ContextRuntime, module_key: str) -> dict[str, Any] | None:
@@ -236,47 +298,6 @@ async def helper_run_technical_audit_job(
     except Exception as exc:
         helper_job_update(runtime, job_id, status="failed", error=str(exc), completed_at=datetime.now(UTC).isoformat())
         helper_log(runtime, tenant_id, "technical_audit_async", {"url": req.url, "job_id": job_id, "error": str(exc)})
-
-
-async def helper_run_keyword_research_shared(req: KeywordResearchReq) -> dict[str, Any]:
-    return await research_keywords(
-        seed_keyword=req.seed_keyword,
-        domain=req.domain,
-        country=req.country,
-        count=req.count,
-        ollama_json_fn=provider_ollama_json._ollama_json,
-        system_prompt=_KEYWORD_SYS,
-        clean_text_fn=_clean,
-    )
-
-
-async def helper_run_keyword_research_job(
-    runtime: ContextRuntime, job_id: str, tenant_id: str, req: KeywordResearchReq, payload: dict[str, Any]
-) -> None:
-    helper_job_update(runtime, job_id, status="running", started_at=datetime.now(UTC).isoformat())
-    try:
-        result = await helper_run_keyword_research_shared(req)
-        analysis_id = await run_in_threadpool(
-            partial(helper_save_analysis, runtime), tenant_id, "keyword_research", payload, result
-        )
-        response = {"analysis_id": analysis_id, "cached": False, **result}
-        helper_job_update(
-            runtime, job_id, status="completed", result=response, completed_at=datetime.now(UTC).isoformat(), error=None
-        )
-        helper_log(
-            runtime,
-            tenant_id,
-            "keyword_research_async",
-            {"keyword": req.seed_keyword, "analysis_id": analysis_id, "job_id": job_id},
-        )
-    except Exception as exc:
-        helper_job_update(runtime, job_id, status="failed", error=str(exc), completed_at=datetime.now(UTC).isoformat())
-        helper_log(
-            runtime,
-            tenant_id,
-            "keyword_research_async",
-            {"keyword": req.seed_keyword, "job_id": job_id, "error": str(exc)},
-        )
 
 
 async def helper_run_on_page_shared(req: OnPageReq) -> dict[str, Any]:
@@ -366,18 +387,13 @@ async def execute_list_modules(runtime: ContextRuntime, auth: Annotated[AuthCont
     """List all SEO modules shown in the SEO hub."""
     modules = helper_list_modules(runtime)
     audit = audit_seo_module_registry(modules)
-    groups = grouped_seo_modules()
-    grouped_items = []
-    for group in groups:
-        group_name = str(group.get("group", ""))
-        items = [module for module in modules if str(module.get("group", "")) == group_name]
-        grouped_items.append({"group": group_name, "items": items})
+    grouped_items = grouped_seo_modules(modules)
     return {
         "status": "ok",
         "tenant_id": auth.tenant_id,
         "source": "database" if helper_db_available(runtime) else "fallback",
         "total": len(modules),
-        "implemented": sum((1 for module in modules if bool(module.get("implemented")))),
+        "implemented": sum(1 for module in modules if bool(module.get("implemented"))),
         "readiness": audit.get("summary", {}),
         "groups": grouped_items,
         "modules": modules,
@@ -397,5 +413,4 @@ async def execute_audit_modules(runtime: ContextRuntime, auth: Annotated[AuthCon
 async def execute_performance_test_locations(
     runtime: ContextRuntime, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:perf-locations", limit=120, window_seconds=60)
-    return {"count": len(runtime._PERF_TEST_LOCATIONS), "locations": runtime._PERF_TEST_LOCATIONS}
+    raise_performance_unavailable()

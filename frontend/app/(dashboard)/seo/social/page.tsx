@@ -1,234 +1,160 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import type { Route } from 'next';
-import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { useState, type FormEvent } from 'react';
+import { Badge, Button, Card, CardTitle, Page, PageHeader } from '../../_ui/kit';
+import { buildSocialShareReport, SHARE_CHANNELS, shareChannelLabel, type ShareChannel, type SocialShareInput, type SocialShareReport } from './social-share-model';
+import styles from './social-share.module.css';
 
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
-
-type SocialSeoAuditResponse = {
-  analysis_id: string;
-  url: string;
-  social_seo_score: number;
-  open_graph: { title: string; description: string; image: string; type: string; issues: string[] };
-  twitter_card: { card_type: string; title: string; description: string; image: string; issues: string[] };
-  linkedin: { article_snippet: string; issues: string[] };
-  canonical_alignment: { canonical_url: string; matches_og_url: boolean };
-  distribution_opportunities: string[];
-  quick_wins: string[];
-  recommended_tools: string[];
-  cached?: boolean;
-  analysis_mode?: 'llm' | 'heuristic';
-  fallback?: boolean;
+const INITIAL_INPUT: SocialShareInput = {
+  channels: [],
+  openGraphTitle: '',
+  openGraphDescription: '',
+  canonicalUrl: '',
+  openGraphUrl: '',
+  openGraphImage: '',
+  twitterTitle: '',
+  twitterDescription: '',
+  twitterImage: '',
+  twitterCardType: '',
 };
 
-const PLATFORMS = ['twitter', 'facebook', 'linkedin', 'pinterest'];
-
-export default function SocialSeoPage() {
-  const [url, setUrl] = useState('https://example.com');
-  const [platforms, setPlatforms] = useState<string[]>(['twitter', 'facebook', 'linkedin']);
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function SocialSharePreviewPage() {
+  const [input, setInput] = useState<SocialShareInput>(INITIAL_INPUT);
+  const [report, setReport] = useState<SocialShareReport | null>(null);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<SocialSeoAuditResponse | null>(null);
+  const [announcement, setAnnouncement] = useState('');
 
-  const card = {
-    background: 'var(--bg-soft)',
-    border: '1px solid var(--line)',
-    borderRadius: 12,
-    padding: 16,
-  };
-
-  const input = {
-    width: '100%',
-    padding: '8px 10px',
-    borderRadius: 8,
-    border: '1px solid var(--line)',
-    background: 'var(--bg)',
-    color: 'var(--text)',
-    boxSizing: 'border-box' as const,
-  };
-
-  function togglePlatform(p: string) {
-    setPlatforms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
+  function updateField<Key extends keyof SocialShareInput>(key: Key, value: SocialShareInput[Key]) {
+    setInput((current) => ({ ...current, [key]: value }));
+    setReport(null);
+    setError('');
+    setAnnouncement('');
   }
 
-  async function runAudit() {
-    setLoading(true);
+  function toggleChannel(channel: ShareChannel, checked: boolean) {
+    const channels = checked
+      ? [...input.channels, channel]
+      : input.channels.filter((item) => item !== channel);
+    updateField('channels', channels);
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError('');
     try {
-      const response = await apiSend<SocialSeoAuditResponse>(
-        '/seo-platform/social/audit',
-        'POST',
-        { url: url.trim(), platforms, notes: notes.trim() },
-        DEFAULT_TENANT_ID
-      );
-      if (response?.fallback === true && response?.analysis_mode !== 'heuristic') {
-        throw new Error(
-          IS_STRICT_NO_MOCK_MODE
-            ? 'Live LLM backend is unavailable in strict no-mock mode.'
-            : 'Live LLM backend is unavailable in fail-closed mode.'
-        );
-      }
-      setResult(response);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Social SEO audit failed.');
-      setResult(null);
-    } finally {
-      setLoading(false);
+      const nextReport = buildSocialShareReport(input);
+      setReport(nextReport);
+      setAnnouncement('Preview built locally from the metadata you supplied.');
+    } catch (reason) {
+      setReport(null);
+      setError(reason instanceof Error ? reason.message : 'Could not build this share preview.');
     }
   }
 
-  return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
-      <div style={{ maxWidth: 980, margin: '0 auto' }}>
-        <Link href={'/seo' as Route} style={{ color: 'var(--brand)', textDecoration: 'none', fontSize: 13 }}>
-          ← Back to SEO Platform
-        </Link>
-        <h1 style={{ marginTop: 12, marginBottom: 6 }}>Social SEO & Distribution</h1>
-        <p style={{ color: 'var(--muted)', marginTop: 0, marginBottom: 18 }}>
-          Audit Open Graph tags, Twitter Cards, LinkedIn snippets, and multi-surface social distribution signals.
-        </p>
+  const canonicalStatus = report?.canonicalAlignment === 'match'
+    ? 'Open Graph URL matches the supplied canonical URL.'
+    : report?.canonicalAlignment === 'mismatch'
+      ? 'Open Graph URL differs from the supplied canonical URL; review both values.'
+      : 'Open Graph URL was not supplied; alignment is unknown.';
 
-        <section style={{ ...card, marginBottom: 14, display: 'grid', gap: 10 }}>
-          <div>
-            <label htmlFor="social-url" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              URL
-            </label>
-            <input id="social-url" value={url} onChange={(e) => setUrl(e.target.value)} style={input} />
-          </div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Platforms</div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {PLATFORMS.map((p) => (
-                <label
-                  key={p}
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, cursor: 'pointer' }}
-                >
-                  <input type="checkbox" checked={platforms.includes(p)} onChange={() => togglePlatform(p)} />
-                  {p.charAt(0).toUpperCase() + p.slice(1)}
+  return (
+    <Page>
+      <PageHeader title="Social Share Preview" subtitle="Draft channel-specific share cards from metadata you provide before distributing a page." />
+      <Card>
+        <Badge tone="neutral">Local preview · no crawl</Badge>
+        <p className={styles.scopeNotice}>No page is fetched, and no platform preview service is contacted. The cards below are text previews calculated from these fields only; image URLs are shown as references and are not loaded. They do not guarantee how a third-party app will render the page.</p>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <fieldset className={styles.channels}>
+            <legend>Preview channels <span>(select at least one)</span></legend>
+            <div className={styles.channelOptions}>
+              {SHARE_CHANNELS.map((channel) => (
+                <label className={styles.channelOption} key={channel}>
+                  <input type="checkbox" checked={input.channels.includes(channel)} onChange={(event) => toggleChannel(channel, event.target.checked)} />
+                  {shareChannelLabel(channel)}
                 </label>
               ))}
             </div>
-          </div>
-          <div>
-            <label htmlFor="social-notes" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              Notes (optional)
+          </fieldset>
+
+          <div className={styles.fields}>
+            <label className={styles.field} htmlFor="og-title">
+              <span>Open Graph title <b>Required</b></span>
+              <input id="og-title" value={input.openGraphTitle} maxLength={300} onChange={(event) => updateField('openGraphTitle', event.target.value)} required />
             </label>
-            <input
-              id="social-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              style={input}
-              placeholder="Campaign context..."
-            />
+            <label className={styles.field} htmlFor="canonical-url">
+              <span>Canonical URL <b>Required</b></span>
+              <input id="canonical-url" type="url" value={input.canonicalUrl} onChange={(event) => updateField('canonicalUrl', event.target.value)} required />
+            </label>
+            <label className={styles.field} htmlFor="og-description">
+              <span>Open Graph description <b>Required</b></span>
+              <textarea id="og-description" rows={3} maxLength={1000} value={input.openGraphDescription} onChange={(event) => updateField('openGraphDescription', event.target.value)} required />
+            </label>
+            <label className={styles.field} htmlFor="og-url">
+              <span>Open Graph URL <small>(optional)</small></span>
+              <input id="og-url" type="url" value={input.openGraphUrl} onChange={(event) => updateField('openGraphUrl', event.target.value)} />
+            </label>
+            <label className={styles.field} htmlFor="og-image">
+              <span>Open Graph image URL <small>(optional, not fetched)</small></span>
+              <input id="og-image" type="url" value={input.openGraphImage} onChange={(event) => updateField('openGraphImage', event.target.value)} />
+            </label>
+            <label className={styles.field} htmlFor="twitter-title">
+              <span>X (Twitter) title override <small>(optional)</small></span>
+              <input id="twitter-title" value={input.twitterTitle} maxLength={300} onChange={(event) => updateField('twitterTitle', event.target.value)} />
+            </label>
+            <label className={styles.field} htmlFor="twitter-description">
+              <span>X (Twitter) description override <small>(optional)</small></span>
+              <textarea id="twitter-description" rows={3} maxLength={1000} value={input.twitterDescription} onChange={(event) => updateField('twitterDescription', event.target.value)} />
+            </label>
+            <label className={styles.field} htmlFor="twitter-image">
+              <span>X (Twitter) image URL override <small>(optional, not fetched)</small></span>
+              <input id="twitter-image" type="url" value={input.twitterImage} onChange={(event) => updateField('twitterImage', event.target.value)} />
+            </label>
+            <label className={styles.field} htmlFor="twitter-card-type">
+              <span>X (Twitter) card type <small>(required when X is selected)</small></span>
+              <select id="twitter-card-type" value={input.twitterCardType} onChange={(event) => updateField('twitterCardType', event.target.value)}>
+                <option value="">Choose a card type…</option>
+                <option value="summary">Summary</option>
+                <option value="summary_large_image">Summary with large image</option>
+              </select>
+            </label>
           </div>
-          <button
-            onClick={runAudit}
-            disabled={loading}
-            style={{
-              padding: '10px 20px',
-              borderRadius: 8,
-              background: 'var(--brand)',
-              color: 'var(--on-brand)',
-              fontWeight: 700,
-              border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? 'Auditing…' : 'Run Social SEO Audit'}
-          </button>
-          {error && <div style={{ color: 'var(--danger-line)', fontSize: 13 }}>{error}</div>}
-        </section>
+          {error && <p className={styles.error} role="alert">{error}</p>}
+          <Button type="submit" variant="primary">Build local preview</Button>
+        </form>
+      </Card>
 
-        {result && (
-          <>
-            {(result.analysis_mode || result.cached) && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
-                    {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
-                  </span>
-                )}
-                {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
-                )}
-              </div>
-            )}
-            <section style={{ ...card, marginBottom: 14 }}>
-              <h2 style={{ marginTop: 0, marginBottom: 10, fontSize: 15 }}>
-                Social SEO Score: {result.social_seo_score}/100
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: 10 }}>
-                {[
-                  { label: 'Open Graph', data: result.open_graph },
-                  { label: 'Twitter Card', data: result.twitter_card },
-                ].map(({ label, data }) => (
-                  <div key={label} style={card}>
-                    <div style={{ fontWeight: 700, marginBottom: 8 }}>{label}</div>
-                    {(['title', 'description', 'image'] as const).map((field) => (
-                      <div key={field} style={{ marginBottom: 4 }}>
-                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>{field}: </span>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            color:
-                              (data as Record<string, string | string[]>)[field] === 'Missing'
-                                ? 'var(--danger-line)'
-                                : 'var(--text)',
-                          }}
-                        >
-                          {(data as Record<string, string | string[]>)[field]}
-                        </span>
-                      </div>
-                    ))}
-                    {data.issues.length > 0 && (
-                      <ul style={{ margin: '8px 0 0', paddingLeft: 16 }}>
-                        {data.issues.map((issue, i) => (
-                          <li key={`item-${i}`} style={{ fontSize: 11, color: 'var(--danger-line)', marginBottom: 2 }}>
-                            {issue}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+      <p className={styles.status} role="status" aria-live="polite">{announcement}</p>
+
+      {report && (
+        <section aria-label="Social share previews">
+          <Card>
+            <CardTitle sub="This comparison uses only the canonical and Open Graph URLs entered above; neither page was opened.">Canonical alignment</CardTitle>
+            <p className={styles.alignment}>{canonicalStatus}</p>
+            <p className={styles.previewUrl}>Canonical URL: {report.canonicalUrl}</p>
+            <p className={styles.previewUrl}>Open Graph URL: {report.openGraphUrl ?? 'not supplied'}</p>
+          </Card>
+          <Card>
+            <CardTitle sub="Text-only previews; external images are not loaded and rendering can vary by platform.">Selected channel previews</CardTitle>
+            <div className={styles.previews}>
+              {report.previews.map((preview) => (
+                <article className={styles.preview} key={preview.channel}>
+                  <div className={styles.checkTop}>
+                    <h3>{shareChannelLabel(preview.channel)}</h3>
+                    <Badge tone="neutral">User-entered metadata</Badge>
                   </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={{ ...card, marginBottom: 14 }}>
-              <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>Canonical Alignment</h2>
-              <div style={{ fontSize: 13 }}>
-                <span style={{ color: 'var(--muted)' }}>Canonical URL: </span>
-                {result.canonical_alignment.canonical_url}
-                {' — '}
-                <span style={{ color: result.canonical_alignment.matches_og_url ? 'var(--success)' : 'var(--danger-line)' }}>
-                  {result.canonical_alignment.matches_og_url ? '✓ Matches og:url' : '✗ Mismatches og:url'}
-                </span>
-              </div>
-            </section>
-
-            {result.quick_wins.length > 0 && (
-              <section style={{ ...card, marginBottom: 14 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>Quick Wins</h2>
-                <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  {result.quick_wins.map((w, i) => (
-                    <li key={`item-${i}`} style={{ fontSize: 13, marginBottom: 4 }}>
-                      {w}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+                  {preview.cardType && <p className={styles.previewUrl}>Card type: {preview.cardType === 'summary_large_image' ? 'Summary with large image' : 'Summary'}</p>}
+                  <p className={styles.previewTitle}>{preview.title}</p>
+                  <p className={styles.previewDescription}>{preview.description}</p>
+                  <p className={styles.previewUrl}>{preview.pageUrl}</p>
+                  <p className={styles.sourceLabel}>Title source: {preview.titleSource} · Description source: {preview.descriptionSource}</p>
+                  <p className={styles.imageReference}>{preview.imageUrl ? `Image URL reference (not fetched): ${preview.imageUrl}` : 'No image URL supplied.'}</p>
+                  <p className={styles.sourceLabel}>Image source: {preview.imageSource}</p>
+                </article>
+              ))}
+            </div>
+          </Card>
+        </section>
+      )}
+    </Page>
   );
 }

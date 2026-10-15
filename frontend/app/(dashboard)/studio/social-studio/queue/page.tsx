@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiGet, apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { apiGet, apiSend } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
 
 type QueuePost = {
   id: string | number;
@@ -71,7 +72,7 @@ function approvalTone(status: string): { background: string; color: string } {
 }
 
 export default function PublishingQueuePage() {
-  const [tenantId] = useState(DEFAULT_TENANT_ID || 'tenant-demo');
+  const [tenantId] = useState(resolveSessionTenant);
   const [tab, setTab] = useState<'queue' | 'drafts' | 'approvals' | 'sent' | 'calendar' | 'schedules'>('queue');
   const [posts, setPosts] = useState<QueuePost[]>([]);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);

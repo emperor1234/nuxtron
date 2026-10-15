@@ -14,10 +14,6 @@ import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const INTERNAL_CONSOLE_PATHS = new Set(
-  JSON.parse(readFileSync(new URL('../app/lib/internal-consoles.json', import.meta.url), 'utf8')).paths,
-);
-
 const HERE = dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = resolve(HERE, '..', 'app');
 const DASHBOARD_ROOT = join(APP_ROOT, '(dashboard)');
@@ -28,10 +24,8 @@ const SECTION_BY_PREFIX = [
   ['/studio/social-studio', 'social'],
   ['/studio', 'studio'],
   ['/seo', 'seo'],
-  ['/platform', 'apps'],
   ['/account', 'settings'],
   ['/billing', 'settings'],
-  ['/ira', 'ai'],
   ['/dashboard', 'dashboard'],
 ];
 
@@ -204,10 +198,6 @@ for (const file of walk(DASHBOARD_ROOT).sort()) {
   // base path: the lead-gen calculators call the same API but show the customer
   // their own numbers, so they must stay discoverable.
   if (/production-gate|Production Gate|implementation_pct|parity_pct|parity-audit/.test(source)) {
-    entry.internal = true;
-  }
-  // Admin-only vendor-integration consoles (app/lib/internal-consoles.json).
-  if (INTERNAL_CONSOLE_PATHS.has(route)) {
     entry.internal = true;
   }
   pages.push(entry);

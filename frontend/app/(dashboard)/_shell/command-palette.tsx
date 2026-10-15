@@ -95,7 +95,7 @@ function pushRecent(href: string) {
 
 /**
  * Lower is better. Ranking matters far more at 240 entries than at 57: a bare
- * `includes` filter buried "Keyword Research" under every route whose path
+ * `includes` filter buried "Keyword Data Review" under every route whose path
  * merely contains "keyword".
  */
 function score(item: PaletteItem, query: string): number {

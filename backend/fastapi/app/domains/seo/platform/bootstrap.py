@@ -1,274 +1,203 @@
-import psycopg
-import httpx
-import asyncio
-import subprocess
 
 """Seo/Platform HTTP composition and legacy import exports."""
 
-from .constants import _shared_job_store
-from .runtime import ContextRuntime
-from collections.abc import Callable
-from fastapi import APIRouter
-from typing import Any
+import asyncio  # noqa: F401
+import subprocess  # noqa: F401
 import threading
+from collections.abc import Callable
+from typing import Any
+
+import httpx  # noqa: F401
+import psycopg  # noqa: F401
+from fastapi import APIRouter
+
 from .api import (
-    health,
-    on_page_analyze,
-    linkbuilding_analyze,
-    vso_optimize,
-    local_seo_optimize,
-    cxao_analyze,
-    performance_audit,
-    performance_alert_events,
-    agent_run,
-    competitor_analyze,
     agency_platform_analyze,
+    agent_run,
     backlink_intelligence_analyze,
+    competitor_analyze,
+    cxao_analyze,
+    health,
+    linkbuilding_analyze,
+    local_seo_optimize,
+    on_page_analyze,
+    performance_alert_events,
+    performance_audit,
+    planner,
+    vso_optimize,
 )
-from .services.get_shared_job_store import get_shared_job_store as get_shared_job_store
+from .constants import _ACCESSIBILITY_SYS as _ACCESSIBILITY_SYS
+from .constants import _AEO_SYS as _AEO_SYS
+from .constants import _AGENCY_PLATFORM_SYS as _AGENCY_PLATFORM_SYS
+from .constants import _AGENT_SYS as _AGENT_SYS
+from .constants import _AIO_SYS as _AIO_SYS
+from .constants import _ANALYTICS_REPORTING_SYS as _ANALYTICS_REPORTING_SYS
+from .constants import _BACKLINK_INTELLIGENCE_SYS as _BACKLINK_INTELLIGENCE_SYS
+from .constants import _BLOCKED as _BLOCKED
+from .constants import _BRAND_VOICE_SYS as _BRAND_VOICE_SYS
+from .constants import _BRIEF_SYS as _BRIEF_SYS
+from .constants import _COMPETITOR_INTEL_SYS as _COMPETITOR_INTEL_SYS
+from .constants import _CONTENT_AUDITOR_SYS as _CONTENT_AUDITOR_SYS
+from .constants import _CONTENT_CREATION_BLOGGING_SYS as _CONTENT_CREATION_BLOGGING_SYS
+from .constants import _CRAWL_BUDGET_SYS as _CRAWL_BUDGET_SYS
+from .constants import _CXAO_SYS as _CXAO_SYS
+from .constants import _DAEO_SYS as _DAEO_SYS
+from .constants import _ECOMMERCE_SYS as _ECOMMERCE_SYS
+from .constants import _EEAT_SYS as _EEAT_SYS
+from .constants import _ENTITY_SYS as _ENTITY_SYS
+from .constants import _GEO_SYS as _GEO_SYS
+from .constants import _GROWTH_PLAYBOOKS_SYS as _GROWTH_PLAYBOOKS_SYS
+from .constants import _GXO_SYS as _GXO_SYS
+from .constants import _INTEGRATIONS_AUTOMATION_SYS as _INTEGRATIONS_AUTOMATION_SYS
+from .constants import _INTERNAL_LINKING_SYS as _INTERNAL_LINKING_SYS
+from .constants import _KNOWLEDGE_GRAPH_SYS as _KNOWLEDGE_GRAPH_SYS
+from .constants import _LANDING_SYS as _LANDING_SYS
+from .constants import _LINKBUILDING_SYS as _LINKBUILDING_SYS
+from .constants import _LLMO_SYS as _LLMO_SYS
+from .constants import _LOCAL_SYS as _LOCAL_SYS
+from .constants import _LOG_FILE_SYS as _LOG_FILE_SYS
+from .constants import _MEDIA_SEO_SYS as _MEDIA_SEO_SYS
+from .constants import _MSVO_SYS as _MSVO_SYS
+from .constants import _MULTI_CHANNEL_ACTIVATION_SYS as _MULTI_CHANNEL_ACTIVATION_SYS
+from .constants import _NEWS_DISCOVER_SYS as _NEWS_DISCOVER_SYS
+from .constants import _OLLAMA_CACHE as _OLLAMA_CACHE
+from .constants import _OLLAMA_CACHE_LOCK as _OLLAMA_CACHE_LOCK
+from .constants import _OLLAMA_INFLIGHT as _OLLAMA_INFLIGHT
+from .constants import _ONPAGE_SYS as _ONPAGE_SYS
+from .constants import _PEAO_SYS as _PEAO_SYS
+from .constants import _PERFORMANCE_SYS as _PERFORMANCE_SYS
+from .constants import _RANK_TRACKING_SYS as _RANK_TRACKING_SYS
+from .constants import _REALTIME_MONITORING_SYS as _REALTIME_MONITORING_SYS
+from .constants import _REVENUE_ATTRIBUTION_SYS as _REVENUE_ATTRIBUTION_SYS
+from .constants import _REVIEW_REPUTATION_SYS as _REVIEW_REPUTATION_SYS
+from .constants import _SAGEO_SYS as _SAGEO_SYS
+from .constants import _SCHEMA_SYS as _SCHEMA_SYS
+from .constants import _SECURITY_SEO_SYS as _SECURITY_SEO_SYS
+from .constants import _SEO_AB_TESTING_SYS as _SEO_AB_TESTING_SYS
+from .constants import _SEO_AI_CORE_SYS as _SEO_AI_CORE_SYS
+from .constants import _SITE_MIGRATION_SYS as _SITE_MIGRATION_SYS
+from .constants import _SOCIAL_SEO_SYS as _SOCIAL_SEO_SYS
+from .constants import _STRICT_NO_MOCK_FALSY as _STRICT_NO_MOCK_FALSY
+from .constants import _SXO_SYS as _SXO_SYS
+from .constants import _TECHNICAL_SYS as _TECHNICAL_SYS
+from .constants import _TOPICAL_MAP_SYS as _TOPICAL_MAP_SYS
+from .constants import _TRUST_RISK_GOVERNANCE_SYS as _TRUST_RISK_GOVERNANCE_SYS
+from .constants import _UX_CONVERSION_SYS as _UX_CONVERSION_SYS
+from .constants import _VIDEO_SYS as _VIDEO_SYS
+from .constants import _VSO_SYS as _VSO_SYS
+from .constants import _WRITER_SYS as _WRITER_SYS
+from .constants import OLLAMA_BASE_URL as OLLAMA_BASE_URL
+from .constants import OLLAMA_TIMEOUT as OLLAMA_TIMEOUT
+from .constants import SEO_ANALYSIS_CACHE_TTL_SEC as SEO_ANALYSIS_CACHE_TTL_SEC
+from .constants import SEO_DEFAULT_MODEL as SEO_DEFAULT_MODEL
+from .constants import SEO_MODULE_COUNT as SEO_MODULE_COUNT
+from .constants import SEO_OLLAMA_CACHE_MAX_ENTRIES as SEO_OLLAMA_CACHE_MAX_ENTRIES
+from .constants import SEO_OLLAMA_CACHE_TTL_SEC as SEO_OLLAMA_CACHE_TTL_SEC
+from .constants import SEO_PERF_CHROME_PATH as SEO_PERF_CHROME_PATH
+from .constants import SEO_PERF_CRUX_API_KEY as SEO_PERF_CRUX_API_KEY
+from .constants import SEO_PERF_FREE_TIMEOUT_SEC as SEO_PERF_FREE_TIMEOUT_SEC
+from .constants import SEO_PERF_LIGHTHOUSE_PATH as SEO_PERF_LIGHTHOUSE_PATH
+from .constants import SEO_PERF_PSI_API_KEY as SEO_PERF_PSI_API_KEY
+from .constants import SEO_PERF_WEBPAGETEST_API_KEY as SEO_PERF_WEBPAGETEST_API_KEY
+from .constants import SEO_UPSTASH_TIMEOUT_SEC as SEO_UPSTASH_TIMEOUT_SEC
+from .constants import _shared_job_store
+from .constants import logger as logger
+from .runtime import ContextRuntime
+from .schemas import AccessibilityAuditReq as AccessibilityAuditReq
+from .schemas import AEOReq as AEOReq
+from .schemas import AgencyPlatformReq as AgencyPlatformReq
+from .schemas import AgentRunReq as AgentRunReq
+from .schemas import AIOReq as AIOReq
+from .schemas import AIWriterReq as AIWriterReq
+from .schemas import BacklinkIntelligenceReq as BacklinkIntelligenceReq
+from .schemas import BrandVoiceReq as BrandVoiceReq
+from .schemas import CompetitorIntelReq as CompetitorIntelReq
+from .schemas import ContentAuditorReq as ContentAuditorReq
+from .schemas import ContentBriefReq as ContentBriefReq
+from .schemas import ContentCreationBloggingReq as ContentCreationBloggingReq
+from .schemas import CrawlBudgetReq as CrawlBudgetReq
+from .schemas import CxaoReq as CxaoReq
+from .schemas import DaeoReq as DaeoReq
+from .schemas import EcommerceSEOReq as EcommerceSEOReq
+from .schemas import EEATReq as EEATReq
+from .schemas import EntityReq as EntityReq
+from .schemas import GEOReq as GEOReq
+from .schemas import GrowthPlaybooksReq as GrowthPlaybooksReq
+from .schemas import GXOReq as GXOReq
+from .schemas import IntegrationsAutomationReq as IntegrationsAutomationReq
+from .schemas import InternalLinkingReq as InternalLinkingReq
+from .schemas import InternationalMultilingualReq as InternationalMultilingualReq
+from .schemas import KeywordResearchReq as KeywordResearchReq
+from .schemas import KnowledgeGraphReq as KnowledgeGraphReq
+from .schemas import LandingPageGenerateReq as LandingPageGenerateReq
+from .schemas import LinkBuildingReq as LinkBuildingReq
+from .schemas import LLMOReq as LLMOReq
+from .schemas import LocalSEOReq as LocalSEOReq
+from .schemas import LogFileAnalysisReq as LogFileAnalysisReq
+from .schemas import MediaSeoAuditReq as MediaSeoAuditReq
+from .schemas import MsvoReq as MsvoReq
+from .schemas import MultiChannelActivationReq as MultiChannelActivationReq
+from .schemas import NewsDiscoverReq as NewsDiscoverReq
+from .schemas import OnPageReq as OnPageReq
+from .schemas import PeaoReq as PeaoReq
+from .schemas import PerformanceAuditReq as PerformanceAuditReq
+from .schemas import PerformanceAutoFixReq as PerformanceAutoFixReq
+from .schemas import PerformanceCompareReq as PerformanceCompareReq
+from .schemas import PerformanceMonitorCreateReq as PerformanceMonitorCreateReq
+from .schemas import PerformanceReportShareReq as PerformanceReportShareReq
+from .schemas import PerformanceRumIngestReq as PerformanceRumIngestReq
+from .schemas import PlannerExecuteAllReq as PlannerExecuteAllReq
+from .schemas import PlannerExecuteReq as PlannerExecuteReq
+from .schemas import ProgrammaticSEOReq as ProgrammaticSEOReq
+from .schemas import RagSearchReq as RagSearchReq
+from .schemas import RankTrackingReq as RankTrackingReq
+from .schemas import RealtimeMonitoringReq as RealtimeMonitoringReq
+from .schemas import RevenueAttributionReq as RevenueAttributionReq
+from .schemas import ReviewReputationReq as ReviewReputationReq
+from .schemas import SageoReq as SageoReq
+from .schemas import SchemaGenReq as SchemaGenReq
+from .schemas import SecuritySeoAuditReq as SecuritySeoAuditReq
+from .schemas import SeoAbTestingReq as SeoAbTestingReq
+from .schemas import SeoAiCoreReq as SeoAiCoreReq
+from .schemas import SiteMigrationReq as SiteMigrationReq
+from .schemas import SocialSeoAuditReq as SocialSeoAuditReq
+from .schemas import SXOReq as SXOReq
+from .schemas import TechnicalAuditReq as TechnicalAuditReq
+from .schemas import TopicalMapReq as TopicalMapReq
+from .schemas import TrustRiskGovernanceReq as TrustRiskGovernanceReq
+from .schemas import UxConversionReq as UxConversionReq
+from .schemas import VideoSEOReq as VideoSEOReq
+from .schemas import VSOReq as VSOReq
+from .services.extract_waterfall import _extract_crux_field as _extract_crux_field
+from .services.extract_waterfall import _extract_filmstrip as _extract_filmstrip
+from .services.extract_waterfall import _extract_waterfall as _extract_waterfall
+from .services.extract_waterfall import _ollama_json as _ollama_json
+from .services.extract_waterfall import _run_free_performance_stack as _run_free_performance_stack
+from .services.get_shared_job_store import _clean as _clean
+from .services.get_shared_job_store import _extract_core_vitals as _extract_core_vitals
+from .services.get_shared_job_store import _extract_scores as _extract_scores
+from .services.get_shared_job_store import _lighthouse_command_candidates as _lighthouse_command_candidates
+from .services.get_shared_job_store import _normalize_perf_metric_name as _normalize_perf_metric_name
+from .services.get_shared_job_store import _perf_float as _perf_float
+from .services.get_shared_job_store import _perf_int as _perf_int
+from .services.get_shared_job_store import _perf_percentile as _perf_percentile
+from .services.get_shared_job_store import _performance_score_from_field as _performance_score_from_field
+from .services.get_shared_job_store import _run_crux as _run_crux
+from .services.get_shared_job_store import _run_http_probe as _run_http_probe
+from .services.get_shared_job_store import _run_lighthouse as _run_lighthouse
+from .services.get_shared_job_store import _run_lighthouse_sync as _run_lighthouse_sync
+from .services.get_shared_job_store import _run_network_probe as _run_network_probe
+from .services.get_shared_job_store import _run_network_probe_sync as _run_network_probe_sync
+from .services.get_shared_job_store import _run_pagespeed as _run_pagespeed
+from .services.get_shared_job_store import _run_webpagetest as _run_webpagetest
+from .services.get_shared_job_store import _seo_analysis_cache_key as _seo_analysis_cache_key
+from .services.get_shared_job_store import _seo_analysis_dist_cache_enabled as _seo_analysis_dist_cache_enabled
 from .services.get_shared_job_store import _strict_no_mock_mode as _strict_no_mock_mode
+from .services.get_shared_job_store import _upstash_command as _upstash_command
 from .services.get_shared_job_store import _upstash_rest_base_url as _upstash_rest_base_url
 from .services.get_shared_job_store import _upstash_rest_token as _upstash_rest_token
-from .services.get_shared_job_store import _seo_analysis_dist_cache_enabled as _seo_analysis_dist_cache_enabled
-from .services.get_shared_job_store import _upstash_command as _upstash_command
-from .services.get_shared_job_store import _seo_analysis_cache_key as _seo_analysis_cache_key
-from .services.get_shared_job_store import _perf_int as _perf_int
-from .services.get_shared_job_store import _perf_float as _perf_float
-from .services.get_shared_job_store import _perf_percentile as _perf_percentile
-from .services.get_shared_job_store import _normalize_perf_metric_name as _normalize_perf_metric_name
-from .services.get_shared_job_store import _performance_score_from_field as _performance_score_from_field
-from .services.get_shared_job_store import _lighthouse_command_candidates as _lighthouse_command_candidates
-from .services.get_shared_job_store import _run_lighthouse_sync as _run_lighthouse_sync
-from .services.get_shared_job_store import _run_lighthouse as _run_lighthouse
-from .services.get_shared_job_store import _run_pagespeed as _run_pagespeed
-from .services.get_shared_job_store import _run_crux as _run_crux
-from .services.get_shared_job_store import _run_webpagetest as _run_webpagetest
-from .services.get_shared_job_store import _run_http_probe as _run_http_probe
-from .services.get_shared_job_store import _run_network_probe_sync as _run_network_probe_sync
-from .services.get_shared_job_store import _run_network_probe as _run_network_probe
-from .services.get_shared_job_store import _extract_scores as _extract_scores
-from .services.get_shared_job_store import _extract_core_vitals as _extract_core_vitals
-from .services.get_shared_job_store import _clean as _clean
-from .services.extract_waterfall import _extract_waterfall as _extract_waterfall
-from .services.extract_waterfall import _extract_filmstrip as _extract_filmstrip
-from .services.extract_waterfall import _extract_crux_field as _extract_crux_field
-from .services.extract_waterfall import _run_free_performance_stack as _run_free_performance_stack
-from .services.extract_waterfall import _ollama_json as _ollama_json
+from .services.get_shared_job_store import get_shared_job_store as get_shared_job_store
 from .services.rollup_performance_rum import _rollup_performance_rum as _rollup_performance_rum
-from .schemas import TrustRiskGovernanceReq as TrustRiskGovernanceReq
-from .schemas import SiteMigrationReq as SiteMigrationReq
-from .schemas import EntityReq as EntityReq
-from .schemas import LocalSEOReq as LocalSEOReq
-from .schemas import CrawlBudgetReq as CrawlBudgetReq
-from .schemas import AgencyPlatformReq as AgencyPlatformReq
-from .schemas import EcommerceSEOReq as EcommerceSEOReq
-from .schemas import BacklinkIntelligenceReq as BacklinkIntelligenceReq
-from .schemas import AIWriterReq as AIWriterReq
-from .schemas import PlannerExecuteAllReq as PlannerExecuteAllReq
-from .schemas import MediaSeoAuditReq as MediaSeoAuditReq
-from .schemas import PlannerExecuteReq as PlannerExecuteReq
-from .schemas import SchemaGenReq as SchemaGenReq
-from .schemas import AgentRunReq as AgentRunReq
-from .schemas import AEOReq as AEOReq
-from .schemas import AccessibilityAuditReq as AccessibilityAuditReq
-from .schemas import SeoAbTestingReq as SeoAbTestingReq
-from .schemas import GXOReq as GXOReq
-from .schemas import LLMOReq as LLMOReq
-from .schemas import ProgrammaticSEOReq as ProgrammaticSEOReq
-from .schemas import LogFileAnalysisReq as LogFileAnalysisReq
-from .schemas import UxConversionReq as UxConversionReq
-from .schemas import KeywordResearchReq as KeywordResearchReq
-from .schemas import ContentBriefReq as ContentBriefReq
-from .schemas import EEATReq as EEATReq
-from .schemas import GrowthPlaybooksReq as GrowthPlaybooksReq
-from .schemas import PerformanceAuditReq as PerformanceAuditReq
-from .schemas import PerformanceCompareReq as PerformanceCompareReq
-from .schemas import ContentCreationBloggingReq as ContentCreationBloggingReq
-from .schemas import CxaoReq as CxaoReq
-from .schemas import InternationalMultilingualReq as InternationalMultilingualReq
-from .schemas import MultiChannelActivationReq as MultiChannelActivationReq
-from .schemas import LinkBuildingReq as LinkBuildingReq
-from .schemas import PerformanceMonitorCreateReq as PerformanceMonitorCreateReq
-from .schemas import TopicalMapReq as TopicalMapReq
-from .schemas import ContentAuditorReq as ContentAuditorReq
-from .schemas import SecuritySeoAuditReq as SecuritySeoAuditReq
-from .schemas import SageoReq as SageoReq
-from .schemas import PeaoReq as PeaoReq
-from .schemas import DaeoReq as DaeoReq
-from .schemas import RankTrackingReq as RankTrackingReq
-from .schemas import TechnicalAuditReq as TechnicalAuditReq
-from .schemas import VSOReq as VSOReq
-from .schemas import InternalLinkingReq as InternalLinkingReq
-from .schemas import SeoAiCoreReq as SeoAiCoreReq
-from .schemas import KnowledgeGraphReq as KnowledgeGraphReq
-from .schemas import VideoSEOReq as VideoSEOReq
-from .schemas import RealtimeMonitoringReq as RealtimeMonitoringReq
-from .schemas import CompetitorIntelReq as CompetitorIntelReq
-from .schemas import IntegrationsAutomationReq as IntegrationsAutomationReq
-from .schemas import MsvoReq as MsvoReq
-from .schemas import PerformanceRumIngestReq as PerformanceRumIngestReq
-from .schemas import BrandVoiceReq as BrandVoiceReq
-from .schemas import OnPageReq as OnPageReq
-from .schemas import RagSearchReq as RagSearchReq
-from .schemas import AIOReq as AIOReq
-from .schemas import ReviewReputationReq as ReviewReputationReq
-from .schemas import SXOReq as SXOReq
-from .schemas import PerformanceAutoFixReq as PerformanceAutoFixReq
-from .schemas import RevenueAttributionReq as RevenueAttributionReq
-from .schemas import LandingPageGenerateReq as LandingPageGenerateReq
-from .schemas import NewsDiscoverReq as NewsDiscoverReq
-from .schemas import PerformanceReportShareReq as PerformanceReportShareReq
-from .schemas import SocialSeoAuditReq as SocialSeoAuditReq
-from .schemas import GEOReq as GEOReq
-from .constants import SEO_DEFAULT_MODEL as SEO_DEFAULT_MODEL
-from .constants import _STRICT_NO_MOCK_FALSY as _STRICT_NO_MOCK_FALSY
-from .constants import _MULTI_CHANNEL_ACTIVATION_SYS as _MULTI_CHANNEL_ACTIVATION_SYS
-from .constants import SEO_ANALYSIS_CACHE_TTL_SEC as SEO_ANALYSIS_CACHE_TTL_SEC
-from .constants import _PERFORMANCE_SYS as _PERFORMANCE_SYS
-from .constants import _AGENCY_PLATFORM_SYS as _AGENCY_PLATFORM_SYS
-from .constants import _SOCIAL_SEO_SYS as _SOCIAL_SEO_SYS
-from .constants import _CXAO_SYS as _CXAO_SYS
-from .constants import _CONTENT_CREATION_BLOGGING_SYS as _CONTENT_CREATION_BLOGGING_SYS
-from .constants import SEO_OLLAMA_CACHE_TTL_SEC as SEO_OLLAMA_CACHE_TTL_SEC
-from .constants import _ONPAGE_SYS as _ONPAGE_SYS
-from .constants import _GEO_SYS as _GEO_SYS
-from .constants import _TOPICAL_MAP_SYS as _TOPICAL_MAP_SYS
-from .constants import _UX_CONVERSION_SYS as _UX_CONVERSION_SYS
-from .constants import _ANALYTICS_REPORTING_SYS as _ANALYTICS_REPORTING_SYS
-from .constants import _LANDING_SYS as _LANDING_SYS
-from .constants import _KNOWLEDGE_GRAPH_SYS as _KNOWLEDGE_GRAPH_SYS
-from .constants import _REALTIME_MONITORING_SYS as _REALTIME_MONITORING_SYS
-from .constants import _SAGEO_SYS as _SAGEO_SYS
-from .constants import _ECOMMERCE_SYS as _ECOMMERCE_SYS
-from .constants import _AEO_SYS as _AEO_SYS
-from .constants import _LOG_FILE_SYS as _LOG_FILE_SYS
-from .constants import _VSO_SYS as _VSO_SYS
-from .constants import _GROWTH_PLAYBOOKS_SYS as _GROWTH_PLAYBOOKS_SYS
-from .constants import _MEDIA_SEO_SYS as _MEDIA_SEO_SYS
-from .constants import _BLOCKED as _BLOCKED
-from .constants import _RANK_TRACKING_SYS as _RANK_TRACKING_SYS
-from .constants import SEO_PERF_FREE_TIMEOUT_SEC as SEO_PERF_FREE_TIMEOUT_SEC
-from .constants import _MSVO_SYS as _MSVO_SYS
-from .constants import _BRAND_VOICE_SYS as _BRAND_VOICE_SYS
-from .constants import _CRAWL_BUDGET_SYS as _CRAWL_BUDGET_SYS
-from .constants import SEO_PERF_LIGHTHOUSE_PATH as SEO_PERF_LIGHTHOUSE_PATH
-from .constants import _BRIEF_SYS as _BRIEF_SYS
-from .constants import _shared_job_store as _shared_job_store
-from .constants import OLLAMA_BASE_URL as OLLAMA_BASE_URL
-from .constants import _GXO_SYS as _GXO_SYS
-from .constants import _TECHNICAL_SYS as _TECHNICAL_SYS
-from .constants import SEO_OLLAMA_CACHE_MAX_ENTRIES as SEO_OLLAMA_CACHE_MAX_ENTRIES
-from .constants import logger as logger
-from .constants import OLLAMA_TIMEOUT as OLLAMA_TIMEOUT
-from .constants import _WRITER_SYS as _WRITER_SYS
-from .constants import SEO_PERF_CRUX_API_KEY as SEO_PERF_CRUX_API_KEY
-from .constants import _KEYWORD_SYS as _KEYWORD_SYS
-from .constants import _INTERNAL_LINKING_SYS as _INTERNAL_LINKING_SYS
-from .constants import _AGENT_SYS as _AGENT_SYS
-from .constants import _EEAT_SYS as _EEAT_SYS
-from .constants import _SEO_AI_CORE_SYS as _SEO_AI_CORE_SYS
-from .constants import _REVIEW_REPUTATION_SYS as _REVIEW_REPUTATION_SYS
-from .constants import _BACKLINK_INTELLIGENCE_SYS as _BACKLINK_INTELLIGENCE_SYS
-from .constants import SEO_MODULE_COUNT as SEO_MODULE_COUNT
-from .constants import _ACCESSIBILITY_SYS as _ACCESSIBILITY_SYS
-from .constants import _NEWS_DISCOVER_SYS as _NEWS_DISCOVER_SYS
-from .constants import _LOCAL_SYS as _LOCAL_SYS
-from .constants import _REVENUE_ATTRIBUTION_SYS as _REVENUE_ATTRIBUTION_SYS
-from .constants import _SITE_MIGRATION_SYS as _SITE_MIGRATION_SYS
-from .constants import _LINKBUILDING_SYS as _LINKBUILDING_SYS
-from .constants import SEO_UPSTASH_TIMEOUT_SEC as SEO_UPSTASH_TIMEOUT_SEC
-from .constants import _PROGRAMMATIC_SYS as _PROGRAMMATIC_SYS
-from .constants import SEO_PERF_WEBPAGETEST_API_KEY as SEO_PERF_WEBPAGETEST_API_KEY
-from .constants import _VIDEO_SYS as _VIDEO_SYS
-from .constants import _COMPETITOR_INTEL_SYS as _COMPETITOR_INTEL_SYS
-from .constants import _INTERNATIONAL_MULTILINGUAL_SYS as _INTERNATIONAL_MULTILINGUAL_SYS
-from .constants import _ENTITY_SYS as _ENTITY_SYS
-from .constants import _RAG_SEARCH_SYS as _RAG_SEARCH_SYS
-from .constants import _DAEO_SYS as _DAEO_SYS
-from .constants import _SECURITY_SEO_SYS as _SECURITY_SEO_SYS
-from .constants import _SCHEMA_SYS as _SCHEMA_SYS
-from .constants import _INTEGRATIONS_AUTOMATION_SYS as _INTEGRATIONS_AUTOMATION_SYS
-from .constants import SEO_PERF_PSI_API_KEY as SEO_PERF_PSI_API_KEY
-from .constants import _SEO_AB_TESTING_SYS as _SEO_AB_TESTING_SYS
-from .constants import _TRUST_RISK_GOVERNANCE_SYS as _TRUST_RISK_GOVERNANCE_SYS
-from .constants import _PEAO_SYS as _PEAO_SYS
-from .constants import _SXO_SYS as _SXO_SYS
-from .constants import _AIO_SYS as _AIO_SYS
-from .constants import _LLMO_SYS as _LLMO_SYS
-from .constants import _OLLAMA_INFLIGHT as _OLLAMA_INFLIGHT
-from .constants import _OLLAMA_CACHE_LOCK as _OLLAMA_CACHE_LOCK
-from .constants import _OLLAMA_CACHE as _OLLAMA_CACHE
-from .constants import _CONTENT_AUDITOR_SYS as _CONTENT_AUDITOR_SYS
-from .constants import SEO_PERF_CHROME_PATH as SEO_PERF_CHROME_PATH
-from ....deps import AuthContext
-from ....deps import require_auth
-from ....domains.seo.services.seo_ab_testing_service import analyze_seo_ab_testing
-from ....domains.seo.services.seo_accessibility_service import audit_accessibility
-from ....domains.seo.services.seo_aeo_service import analyze_aeo_optimize
-from ....domains.seo.services.seo_agency_platform_service import analyze_agency_platform
-from ....domains.seo.services.seo_agent_service import analyze_agent_plan
-from ....domains.seo.services.seo_ai_service import analyze_seo_ai_core
-from ....domains.seo.services.seo_aio_service import analyze_aio_score
-from ....domains.seo.services.seo_analytics_reporting_service import generate_analytics_report
-from ....domains.seo.services.seo_backlink_intelligence_service import analyze_backlink_intelligence
-from ....domains.seo.services.seo_brand_voice_service import rewrite_brand_voice
-from ....domains.seo.services.seo_competitor_service import analyze_competitor_intel
-from ....domains.seo.services.seo_content_auditor_service import analyze_content_auditor
-from ....domains.seo.services.seo_content_brief_service import generate_content_brief
-from ....domains.seo.services.seo_content_creation_blogging_service import plan_content_creation_blogging
-from ....domains.seo.services.seo_content_writer_service import write_seo_article
-from ....domains.seo.services.seo_crawl_budget_service import analyze_crawl_budget
-from ....domains.seo.services.seo_cxao_service import analyze_cxao_experience
-from ....domains.seo.services.seo_daeo_service import analyze_daeo_readiness
-from ....domains.seo.services.seo_ecommerce_service import optimize_ecommerce_seo
-from ....domains.seo.services.seo_eeat_service import analyze_eeat_score
-from ....domains.seo.services.seo_entity_service import analyze_entity_seo
-from ....domains.seo.services.seo_geo_service import analyze_geo_optimize
-from ....domains.seo.services.seo_growth_playbooks_service import analyze_growth_playbooks
-from ....domains.seo.services.seo_gxo_service import analyze_gxo_optimize
-from ....domains.seo.services.seo_integrations_automation_service import analyze_integrations_automation
-from ....domains.seo.services.seo_internal_linking_service import suggest_internal_linking
-from ....domains.seo.services.seo_international_multilingual_service import analyze_international_multilingual
-from ....domains.seo.services.seo_keyword_research_service import research_keywords
-from ....domains.seo.services.seo_knowledge_graph_service import analyze_knowledge_graph
-from ....domains.seo.services.seo_landing_service import generate_landing_page
-from ....domains.seo.services.seo_linkbuilding_service import analyze_linkbuilding
-from ....domains.seo.services.seo_llmo_service import analyze_llmo_brand
-from ....domains.seo.services.seo_local_seo_service import optimize_local_seo
-from ....domains.seo.services.seo_log_file_service import analyze_log_file
-from ....domains.seo.services.seo_media_service import audit_media_seo
-from ....domains.seo.seo_module_registry import SEO_MODULE_MAP
-from ....domains.seo.seo_module_registry import SEO_MODULE_REGISTRY
-from ....domains.seo.seo_module_registry import audit_ahrefs_core_tool_parity
-from ....domains.seo.seo_module_registry import audit_seo_module_registry
-from ....domains.seo.seo_module_registry import grouped_seo_modules
-from ....domains.seo.services.seo_msvo_service import analyze_msvo_visibility
-from ....domains.seo.services.seo_multi_channel_activation_service import analyze_multi_channel_activation
-from ....domains.seo.services.seo_news_discover_service import analyze_news_discover
-from ....domains.seo.services.seo_on_page_service import analyze_on_page
-from ....domains.seo.services.seo_peao_service import analyze_peao_forecast
-from ....domains.seo.services.seo_performance_service import apply_performance_auto_fix
-from ....domains.seo.services.seo_planner_service import default_planner_workflow
-from ....domains.seo.services.seo_planner_service import execute_planner
-from ....domains.seo.services.seo_planner_service import execute_planner_all_modules
-from ....domains.seo.services.seo_programmatic_service import generate_programmatic_seo
-from ....domains.seo.services.seo_rag_search_service import query_rag_search
-from ....domains.seo.services.seo_rank_tracking_service import analyze_rank_tracking
-from ....domains.seo.services.seo_realtime_monitoring_service import analyze_realtime_monitoring
-from ....domains.seo.services.seo_revenue_attribution_service import analyze_revenue_attribution
-from ....domains.seo.services.seo_reviews_service import analyze_review_reputation
-from ....domains.seo.services.seo_sageo_service import analyze_sageo_plan
-from ....domains.seo.services.seo_schema_service import generate_schema_markup
-from ....domains.seo.services.seo_security_service import audit_security_seo
-from ....domains.seo.services.seo_site_migration_service import analyze_site_migration
-from ....domains.seo.services.seo_social_service import audit_social_seo
-from ....domains.seo.services.seo_sxo_service import analyze_sxo_experience
-from ....domains.seo.services.seo_technical_audit_service import analyze_technical_audit
-from ....domains.seo.services.seo_topical_map_service import build_topical_map
-from ....domains.seo.services.seo_trust_risk_governance_service import analyze_trust_risk_governance
-from ....domains.seo.services.seo_ux_service import audit_ux_conversion
-from ....domains.seo.services.seo_video_seo_service import optimize_video_seo
-from ....domains.seo.services.seo_vso_service import analyze_vso_optimize
 
 
 def create_seo_platform_router(
@@ -586,5 +515,6 @@ def create_seo_platform_router(
     agent_run.register(router, runtime)
     competitor_analyze.register(router, runtime)
     agency_platform_analyze.register(router, runtime)
+    planner.register(router, runtime)
     backlink_intelligence_analyze.register(router, runtime)
     return router

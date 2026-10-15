@@ -400,6 +400,26 @@ class JobExecution(BaseTenantModel):
     data: Mapped[JsonObject] = mapped_column(JsonField, default=dict)
 
 
+class JobOutbox(BaseTenantModel):
+    """Transactional message waiting to be published to a worker queue."""
+
+    __tablename__ = 'job_outbox'
+    __table_args__ = (
+        Index('ix_job_outbox_tenant_status_available', 'tenant_id', 'status', 'available_at'),
+        Index('ix_job_outbox_tenant_job', 'tenant_id', 'job_id'),
+    )
+
+    job_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    task_name: Mapped[str] = mapped_column(String(180), nullable=False)
+    queue: Mapped[str] = mapped_column(String(80), nullable=False)
+    payload: Mapped[JsonObject] = mapped_column(JsonField, default=dict)
+    status: Mapped[str] = mapped_column(String(30), default='pending')
+    attempts: Mapped[int] = mapped_column(default=0)
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    last_error: Mapped[str | None] = mapped_column(Text, default=None)
+
+
 class BillingSubscription(BaseTenantModel):
     """Durable local projection of a Stripe subscription."""
 
@@ -482,6 +502,7 @@ __all__ = [
     'MissionJob',
     'WorkflowExecution',
     'JobExecution',
+    'JobOutbox',
     'BillingSubscription',
     'BillingCreditPurchase',
     'BillingCreditLedger',

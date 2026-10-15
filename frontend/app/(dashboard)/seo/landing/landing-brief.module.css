@@ -1,0 +1,286 @@
+.scopeNotice {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.scopeNotice p {
+  color: var(--nx-ink-2);
+  flex: 1 1 360px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.inputGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.field > span,
+.legend {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.required {
+  color: var(--nx-danger);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.optional {
+  color: var(--nx-muted);
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+.field input,
+.field textarea {
+  background: var(--nx-bg);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  color: var(--nx-ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  min-width: 0;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.field input:focus-visible,
+.field textarea:focus-visible {
+  border-color: var(--nx-brand);
+  outline: 2px solid color-mix(in srgb, var(--nx-brand) 28%, transparent);
+  outline-offset: 1px;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field small {
+  color: var(--nx-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.schemaOptions {
+  border: 0;
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.legend {
+  margin-bottom: 9px;
+  padding: 0;
+}
+
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.checkLabel {
+  align-items: center;
+  background: var(--nx-bg);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  display: inline-flex;
+  font-size: 12px;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.checkLabel input {
+  accent-color: var(--nx-brand);
+  margin: 0;
+}
+
+.error {
+  color: var(--nx-danger);
+  font-size: 13px;
+  margin: 0;
+}
+
+.loading {
+  color: var(--nx-muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.results {
+  display: grid;
+  gap: 16px;
+}
+
+.resultHeader {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.provenance {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.heroHeadline {
+  font-size: clamp(22px, 3vw, 32px);
+  font-weight: 720;
+  letter-spacing: -0.025em;
+  line-height: 1.16;
+  margin: 14px 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.heroSubheadline {
+  color: var(--nx-ink-2);
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.ctaCopy {
+  border-left: 3px solid var(--nx-brand);
+  display: grid;
+  gap: 4px;
+  margin-top: 18px;
+  padding: 7px 0 7px 12px;
+}
+
+.ctaCopy small,
+.metaLabel,
+.limitNote,
+.missing {
+  color: var(--nx-muted);
+  font-size: 12px;
+}
+
+.ctaCopy strong {
+  font-size: 13px;
+}
+
+.metaList,
+.contentList {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.metaList li,
+.contentList li,
+.faqItem,
+.variantItem,
+.schemaItem {
+  background: var(--nx-bg);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  min-width: 0;
+  padding: 12px;
+}
+
+.metaList li {
+  display: grid;
+  gap: 5px;
+}
+
+.metaValue,
+.contentList li,
+.faqAnswer,
+.variantItem,
+.schemaItem pre {
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.metaValue {
+  white-space: pre-wrap;
+}
+
+.faqList,
+.variantList,
+.schemaList {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.faqQuestion {
+  font-size: 13px;
+  font-weight: 650;
+  margin: 0 0 5px;
+}
+
+.faqAnswer {
+  color: var(--nx-ink-2);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.schemaItem summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.schemaItem pre {
+  background: var(--nx-card);
+  border-radius: var(--nx-radius-sm);
+  margin: 10px 0 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px;
+  white-space: pre-wrap;
+}
+
+.limitNote {
+  line-height: 1.5;
+  margin: 0;
+}
+
+.missing {
+  line-height: 1.5;
+  margin: 12px 0 0;
+}
+
+@media (max-width: 680px) {
+  .inputGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .resultHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .resultHeader button {
+    width: 100%;
+  }
+}

@@ -1,221 +1,236 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { apiGet, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Badge, Button, Card, CardTitle, Field, FieldSelect, Page, PageHeader } from '../../_ui/kit';
+import { resolveSessionTenant } from '@/app/lib/api-client';
+import { apiGet } from '@/app/lib/platform-api';
+import {
+  describeSavedResult,
+  formatModuleLabel,
+  formatRedactedJson,
+  parseSeoHistoryResponse,
+  type SeoHistoryRecord,
+} from './history-model';
+import styles from './history.module.css';
 
-type AnalysisRecord = {
-  id: string;
-  module: string;
-  payload: Record<string, unknown>;
-  result: Record<string, unknown>;
-  created_at: string;
-};
+function formatDate(value: string): string {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return 'Date unavailable';
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(timestamp);
+}
 
-type AnalysesResponse = {
-  analyses: AnalysisRecord[];
-  total: number;
-  persistence?: string;
-};
+function describeHistoryError(cause: unknown): string {
+  if (cause instanceof Error && /workspace context is required/i.test(cause.message)) {
+    return 'A signed-in workspace is required. Sign in or select a workspace, then retry.';
+  }
+  return 'The history service could not complete this request. Retry; if the problem persists, contact your workspace owner.';
+}
 
 export default function SEOHistoryPage() {
+  const requestSequence = useRef(0);
   const [moduleFilter, setModuleFilter] = useState('');
-  const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
-  const [selected, setSelected] = useState<AnalysisRecord | null>(null);
-  const [persistence, setPersistence] = useState('unknown');
-  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [records, setRecords] = useState<SeoHistoryRecord[]>([]);
+  const recordsWorkspaceId = useRef('');
+  const [total, setTotal] = useState(0);
+  const [persistence, setPersistence] = useState<'postgres' | 'memory' | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState('');
+  const [updatedAt, setUpdatedAt] = useState('');
 
-  const uniqueModules = useMemo(() => {
-    return Array.from(new Set(analyses.map((a) => a.module))).sort((a, b) => a.localeCompare(b));
-  }, [analyses]);
-
-  async function loadAnalyses(currentFilter: string) {
+  const loadAnalyses = useCallback(async (currentFilter: string) => {
+    const currentRequest = ++requestSequence.current;
     setLoading(true);
     setError('');
+
     try {
-      const qs = currentFilter ? `?module=${encodeURIComponent(currentFilter)}&limit=100` : '?limit=100';
-      const data = await apiGet<AnalysesResponse>(`/seo-platform/analyses${qs}`, DEFAULT_TENANT_ID);
-      const items = Array.isArray(data.analyses) ? data.analyses : [];
-      setAnalyses(items);
-      setPersistence(typeof data.persistence === 'string' ? data.persistence : 'unknown');
-      if (items.length === 0) {
-        setSelected(null);
-      } else if (!selected || !items.some((item) => item.id === selected.id)) {
-        setSelected(items[0]);
+      const workspaceId = resolveSessionTenant();
+      if (!workspaceId) {
+        recordsWorkspaceId.current = '';
+        setRecords([]);
+        setTotal(0);
+        setPersistence(null);
+        setSelectedId(null);
+        throw new Error('Workspace context is required.');
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load analyses');
+
+      // Never leave data from the prior workspace visible while switching scope.
+      if (recordsWorkspaceId.current && recordsWorkspaceId.current !== workspaceId) {
+        setRecords([]);
+        setTotal(0);
+        setPersistence(null);
+        setSelectedId(null);
+        recordsWorkspaceId.current = '';
+      }
+
+      const query = currentFilter
+        ? `?module=${encodeURIComponent(currentFilter)}&limit=100`
+        : '?limit=100';
+      const response = await apiGet<unknown>(`/seo-platform/analyses${query}`, workspaceId, { cache: false });
+      const parsed = parseSeoHistoryResponse(response);
+      if (!parsed) throw new Error('The history service returned an invalid response.');
+      if (currentRequest !== requestSequence.current) return;
+
+      setRecords(parsed.analyses);
+      recordsWorkspaceId.current = workspaceId;
+      setTotal(parsed.total);
+      setPersistence(parsed.persistence);
+      setUpdatedAt(new Date().toISOString());
+      setSelectedId((current) =>
+        parsed.analyses.some((record) => record.id === current) ? current : parsed.analyses[0]?.id ?? null,
+      );
+    } catch (cause) {
+      if (currentRequest === requestSequence.current) setError(describeHistoryError(cause));
     } finally {
-      setLoading(false);
+      if (currentRequest === requestSequence.current) {
+        setHasLoaded(true);
+        setLoading(false);
+      }
     }
-  }
+  }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadAnalyses(moduleFilter);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [moduleFilter]);
+    let active = true;
+    window.queueMicrotask(() => {
+      if (active) void loadAnalyses(moduleFilter);
+    });
+    return () => {
+      active = false;
+      requestSequence.current += 1;
+    };
+  }, [loadAnalyses, moduleFilter]);
 
-  const card = {
-    background: 'var(--bg-soft)',
-    border: '1px solid var(--line)',
-    borderRadius: 12,
-    padding: 16,
-  };
+  const modules = useMemo(() => {
+    const available = new Set(records.map((record) => record.module));
+    if (moduleFilter) available.add(moduleFilter);
+    return [...available].sort();
+  }, [moduleFilter, records]);
+  const visibleRecords = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return records;
+    return records.filter((record) => `${record.module} ${record.id}`.toLowerCase().includes(query));
+  }, [records, search]);
+  const selected = records.find((record) => record.id === selectedId) ?? null;
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ marginBottom: 16 }}>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>SEO Analysis History</h1>
-          <p style={{ color: 'var(--muted)', marginTop: 6 }}>
-            Production history viewer for all SEO modules. Persistence mode: <strong>{persistence}</strong>
-          </p>
-        </div>
+    <Page>
+      <PageHeader
+        title="SEO Analysis History"
+        subtitle="Find and inspect saved SEO analysis inputs and outputs for this workspace."
+        actions={
+          <Button onClick={() => void loadAnalyses(moduleFilter)} disabled={loading} variant="primary">
+            {loading ? 'Refreshing…' : 'Refresh'}
+          </Button>
+        }
+      />
 
-        <section
-          style={{ ...card, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
+      {persistence === 'memory' ? (
+        <div className={`${styles.notice} ${styles.noticeWarning}`} role="note">
+          <strong>Temporary storage.</strong> These records are currently held in process memory and may be lost when the service restarts. They are not durable history.
+        </div>
+      ) : null}
+      {persistence === 'postgres' ? (
+        <div className={styles.notice} role="status">Saved history is stored in PostgreSQL for this workspace.</div>
+      ) : null}
+
+      <Card className={styles.toolbar}>
+        <FieldSelect
+          id="analysis-module-filter"
+          label="Module"
+          value={moduleFilter}
+          onChange={(event) => setModuleFilter(event.target.value)}
+          disabled={loading && !hasLoaded}
         >
-          <label style={{ fontSize: 12, fontWeight: 700 }} htmlFor="module-filter">
-            Module
-          </label>
-          <select
-            id="module-filter"
-            value={moduleFilter}
-            onChange={(e) => setModuleFilter(e.target.value)}
-            style={{
-              minWidth: 220,
-              padding: '8px 10px',
-              borderRadius: 8,
-              border: '1px solid var(--line)',
-              background: 'var(--bg)',
-              color: 'var(--text)',
-            }}
-          >
-            <option value="">All modules</option>
-            {uniqueModules.map((moduleName) => (
-              <option key={moduleName} value={moduleName}>
-                {moduleName}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => void loadAnalyses(moduleFilter)}
-            disabled={loading}
-            style={{
-              padding: '8px 14px',
-              borderRadius: 8,
-              border: 'none',
-              background: 'var(--brand)',
-              color: 'var(--on-brand)',
-              fontWeight: 700,
-              cursor: 'pointer',
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
-          <span style={{ fontSize: 12, color: 'var(--muted)' }}>{analyses.length} records</span>
-        </section>
+          <option value="">All modules</option>
+          {modules.map((module) => <option key={module} value={module}>{formatModuleLabel(module)}</option>)}
+        </FieldSelect>
+        <Field
+          id="analysis-history-search"
+          label="Search current results"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Module or record ID"
+        />
+        <span className={styles.count}>
+          {loading && !hasLoaded ? 'Loading…' : `${total} records returned · request limit 100`}
+        </span>
+        <span className={styles.updated}>{updatedAt ? `Last refreshed ${formatDate(updatedAt)}` : 'Not refreshed yet'}</span>
+      </Card>
 
-        {error && (
-          <section style={{ ...card, borderColor: 'var(--danger)', color: 'var(--danger-line)', marginBottom: 12 }}>{error}</section>
-        )}
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 12 }}>
-          <section style={{ ...card, maxHeight: '70vh', overflowY: 'auto' }}>
-            <h2 style={{ marginTop: 0, fontSize: 14 }}>Analyses</h2>
-            {analyses.length === 0 ? (
-              <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0 }}>
-                No analyses found for the selected filter.
-              </p>
-            ) : (
-              <div style={{ display: 'grid', gap: 8 }}>
-                {analyses.map((item) => {
-                  const active = selected?.id === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setSelected(item)}
-                      style={{
-                        textAlign: 'left',
-                        padding: 10,
-                        borderRadius: 8,
-                        border: active ? '1px solid var(--brand)' : '1px solid var(--line)',
-                        background: active ? 'rgba(27,199,255,0.08)' : 'var(--bg)',
-                        color: 'var(--text)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 3 }}>{item.module}</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{item.id}</div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                        {new Date(item.created_at).toLocaleString()}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          <section style={{ ...card, maxHeight: '70vh', overflowY: 'auto' }}>
-            <h2 style={{ marginTop: 0, fontSize: 14 }}>Analysis Details</h2>
-            {!selected ? (
-              <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0 }}>
-                Select an analysis record to inspect payload and result.
-              </p>
-            ) : (
-              <>
-                <div style={{ fontSize: 12, marginBottom: 8 }}>
-                  <strong>Module:</strong> {selected.module}
-                </div>
-                <div style={{ fontSize: 12, marginBottom: 8 }}>
-                  <strong>Created:</strong> {new Date(selected.created_at).toLocaleString()}
-                </div>
-                <div style={{ fontSize: 12, marginBottom: 8 }}>
-                  <strong>ID:</strong> {selected.id}
-                </div>
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Payload</div>
-                  <pre
-                    style={{
-                      margin: 0,
-                      fontSize: 11,
-                      color: 'var(--muted)',
-                      background: 'var(--bg)',
-                      border: '1px solid var(--line)',
-                      borderRadius: 8,
-                      padding: 10,
-                      overflowX: 'auto',
-                    }}
-                  >
-                    {JSON.stringify(selected.payload, null, 2)}
-                  </pre>
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Result</div>
-                  <pre
-                    style={{
-                      margin: 0,
-                      fontSize: 11,
-                      color: 'var(--muted)',
-                      background: 'var(--bg)',
-                      border: '1px solid var(--line)',
-                      borderRadius: 8,
-                      padding: 10,
-                      overflowX: 'auto',
-                    }}
-                  >
-                    {JSON.stringify(selected.result, null, 2)}
-                  </pre>
-                </div>
-              </>
-            )}
-          </section>
+      {error ? (
+        <div className={`${styles.notice} ${styles.noticeWarning}`} role="alert">
+          <strong>History could not be refreshed.</strong> {error}{records.length ? ' Previously loaded records remain visible and may not match the current filter.' : ''}
         </div>
+      ) : null}
+      {loading && hasLoaded ? <p className={styles.statusMessage} role="status">Refreshing history; previously loaded records remain available.</p> : null}
+
+      <div className={styles.layout}>
+        <Card className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <CardTitle sub="Select a saved record to inspect its provenance and output.">Saved analyses</CardTitle>
+            {persistence ? <Badge tone={persistence === 'postgres' ? 'success' : 'neutral'}>{persistence === 'postgres' ? 'Durable' : 'Temporary'}</Badge> : null}
+          </div>
+          {!hasLoaded && loading ? (
+            <p className={styles.statusMessage} role="status">Loading saved analyses…</p>
+          ) : records.length === 0 ? (
+            <p className={styles.statusMessage} role="status">
+              {error ? 'No history is available because the request failed.' : moduleFilter ? 'No saved analyses exist for this module.' : 'No saved SEO analyses yet in this workspace.'}
+            </p>
+          ) : visibleRecords.length === 0 ? (
+            <p className={styles.statusMessage} role="status">No records match this search.</p>
+          ) : (
+            <ul className={styles.recordList} aria-label="Saved SEO analyses">
+              {visibleRecords.map((record) => (
+                <li key={record.id}>
+                  <Button
+                    className={styles.recordButton}
+                    aria-pressed={selectedId === record.id}
+                    onClick={() => setSelectedId(record.id)}
+                  >
+                    <strong>{formatModuleLabel(record.module)}</strong>
+                    <span className={styles.recordMeta}><span>Record {record.id.slice(0, 8)}</span><span>{formatDate(record.createdAt)}</span></span>
+                    <span className={styles.recordSummary}>{describeSavedResult(record)}</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card className={styles.panel}>
+          <CardTitle sub="Historical outputs are records of earlier runs, not live provider measurements.">Analysis details</CardTitle>
+          {!selected ? (
+            <p className={styles.statusMessage}>Select a record from the history list to inspect its saved details.</p>
+          ) : (
+            <>
+              <div className={styles.detailMeta}>
+                <span><strong>Module:</strong> {formatModuleLabel(selected.module)}</span>
+                <span><strong>Created:</strong> {formatDate(selected.createdAt)}</span>
+                <span><strong>Record:</strong> {selected.id.slice(0, 8)}</span>
+              </div>
+              <p className={styles.resultSummary}>
+                This archived record contains {describeSavedResult(selected)}. Review the redacted values below; historical outputs may reflect earlier heuristic or unavailable product behavior.
+              </p>
+              <details className={styles.disclosure}>
+                <summary>Show redacted input and output JSON</summary>
+                <p className={styles.sensitiveNote}>
+                  Fields with keys resembling workspace identifiers, credentials, tokens, or contact details are redacted. Free-text values may still contain sensitive content; inspect before copying or sharing.
+                </p>
+                <div className={styles.rawGroup}>
+                  <h3>Input</h3>
+                  <pre className={styles.rawJson}>{formatRedactedJson(selected.payload)}</pre>
+                </div>
+                <div className={styles.rawGroup}>
+                  <h3>Output</h3>
+                  <pre className={styles.rawJson}>{formatRedactedJson(selected.result)}</pre>
+                </div>
+              </details>
+            </>
+          )}
+        </Card>
       </div>
-    </main>
+    </Page>
   );
 }

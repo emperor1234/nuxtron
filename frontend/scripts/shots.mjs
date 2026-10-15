@@ -1,12 +1,11 @@
 import { chromium } from 'playwright';
 const BASE = 'http://localhost:4173';
 const shots = [
-  ['/ira-monitor', 'desktop', 1280, 900],
-  ['/platform/ai-agent', 'desktop', 1280, 900],
-  ['/seo/ux', 'desktop', 1280, 900],
-  ['/seo/client-portal', 'desktop', 1280, 900],
-  ['/ira-monitor', 'mobile', 390, 844],
-  ['/platform/ai-agent', 'mobile', 390, 844],
+  ['/dashboard', 'desktop', 1280, 900],
+  ['/seo/technical', 'desktop', 1280, 900],
+  ['/studio/social-studio', 'desktop', 1280, 900],
+  ['/studio/analytics', 'mobile', 390, 844],
+  ['/studio/editor', 'mobile', 390, 844],
 ];
 const browser = await chromium.launch();
 const page = await browser.newPage();

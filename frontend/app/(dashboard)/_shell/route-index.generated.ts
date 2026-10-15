@@ -35,29 +35,15 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/account/settings",
-    "title": "Settings",
-    "section": "settings",
-    "group": "Account",
-    "keywords": []
-  },
-  {
-    "route": "/account/wallet",
-    "title": "Wallet For Credits",
-    "section": "settings",
-    "group": "Account",
-    "keywords": []
-  },
-  {
     "route": "/ads-generation",
-    "title": "AI Ads Generation",
+    "title": "AI ad generation",
     "section": "apps",
     "group": "General",
     "keywords": []
   },
   {
     "route": "/affiliate",
-    "title": "Grow With Nuxtron As A Partner",
+    "title": "Partner referrals",
     "section": "apps",
     "group": "General",
     "keywords": []
@@ -70,36 +56,15 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/ai-analytics",
-    "title": "AI Analytics",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
     "route": "/ai-search-impact-calculator",
-    "title": "AI Search Impact Calculator",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/ai-security",
-    "title": "AI Security Center",
+    "title": "AI search impact calculator",
     "section": "apps",
     "group": "General",
     "keywords": []
   },
   {
     "route": "/ai-visibility-dashboard",
-    "title": "AI Crawler Visibility Dashboard",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/api-governance",
-    "title": "API Governance And Third-Party Economics",
+    "title": "AI crawler visibility",
     "section": "apps",
     "group": "General",
     "keywords": []
@@ -113,14 +78,14 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/billing",
-    "title": "Billing Center",
+    "title": "Billing & Credits",
     "section": "settings",
     "group": "General",
     "keywords": []
   },
   {
     "route": "/billing/success",
-    "title": "Activating your plan…",
+    "title": "Success",
     "section": "settings",
     "group": "Billing",
     "keywords": []
@@ -140,24 +105,10 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/cost-saving-calculator",
-    "title": "SEO Automation Cost Saving Calculator",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
     "route": "/crm",
-    "title": "CRM Command Center",
+    "title": "CRM",
     "section": "apps",
     "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/crm/abm",
-    "title": "CRM ABM Command Center",
-    "section": "apps",
-    "group": "CRM",
     "keywords": []
   },
   {
@@ -169,73 +120,16 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/disputes",
-    "title": "Disputes Dashboard",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/finance-ops",
-    "title": "Finance Ops",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/ira",
-    "title": "IRA Control Center",
-    "section": "ai",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/ira-monitor",
-    "title": "IRA Monitor",
+    "title": "Disputes",
     "section": "apps",
     "group": "General",
     "keywords": []
   },
   {
     "route": "/media-processing",
-    "title": "Sandboxed Media Processing",
+    "title": "Media Processing",
     "section": "apps",
     "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/outcome-graph",
-    "title": "Outcome Graph",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/platform",
-    "title": "Nuxtron Unified Platform Surface",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/platform-ops",
-    "title": "Platform Ops",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/platform/ai-agent",
-    "title": "AI Agent Architecture",
-    "section": "apps",
-    "group": "Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/platform/backend",
-    "title": "Super Admin Backend",
-    "section": "apps",
-    "group": "Platform",
     "keywords": []
   },
   {
@@ -253,66 +147,17 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo-aeo-geo-audit-tool",
-    "title": "SEO AEO GEO Audit Tool",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
     "route": "/seo-analysis",
-    "title": "AI SEO Analysis",
+    "title": "SEO Content Check",
     "section": "apps",
     "group": "General",
     "keywords": []
   },
   {
     "route": "/seo/accessibility",
-    "title": "Accessibility Optimizer",
+    "title": "Accessibility Audit",
     "section": "seo",
     "group": "Accessibility & Media",
-    "keywords": []
-  },
-  {
-    "route": "/seo/ads-calendar",
-    "title": "Ads Calendar",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/ads-campaigns",
-    "title": "Campaign Manager",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/ads-connectors",
-    "title": "Ad Network Connectors",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/ads-kpis",
-    "title": "Ads KPI & Analytics",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/ads-metrics",
-    "title": "Campaign Metrics",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/ads-smart-schedule",
-    "title": "Smart Schedule &amp; Approval",
-    "section": "seo",
-    "group": "SEO",
     "keywords": []
   },
   {
@@ -324,7 +169,7 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/seo/agency-platform",
-    "title": "Agency & Multi-Tenant Platform",
+    "title": "Agency Workspace Health",
     "section": "seo",
     "group": "SaaS Platform",
     "keywords": []
@@ -334,21 +179,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "title": "Autonomous Agent Engine",
     "section": "seo",
     "group": "Experience Optimization",
-    "keywords": []
-  },
-  {
-    "route": "/seo/ahrefs-command-center",
-    "title": "Ahrefs Command Center",
-    "section": "seo",
-    "group": "Ahrefs Core Tools",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/ai-creative-keyword-lab",
-    "title": "AI Creative & Keyword Lab",
-    "section": "seo",
-    "group": "Ads Orchestration & Retail Media",
     "keywords": []
   },
   {
@@ -362,14 +192,7 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "route": "/seo/analytics",
     "title": "Traffic Analytics",
     "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/attribution-conversion-intelligence",
-    "title": "Attribution & Conversion Intelligence",
-    "section": "seo",
-    "group": "Ads Orchestration & Retail Media",
+    "group": "Analytics & history",
     "keywords": []
   },
   {
@@ -387,38 +210,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo/botify-assist",
-    "title": "Botify Assist Console",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/botify-automation",
-    "title": "Botify Automation",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/botify-integrations",
-    "title": "Botify Integrations",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/botify-readiness",
-    "title": "Botify Readiness Hub",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
     "route": "/seo/brand-voice",
     "title": "Brand Voice & Style Engine",
     "section": "seo",
@@ -426,61 +217,22 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo/brightedge-assist",
-    "title": "BrightEdge Assist Console",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/brightedge-automation",
-    "title": "BrightEdge Automation",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/brightedge-integrations",
-    "title": "BrightEdge Integrations",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/brightedge-readiness",
-    "title": "BrightEdge Readiness Hub",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/budget-pacing-bid-engine",
-    "title": "Budget Pacing & Bid Engine",
-    "section": "seo",
-    "group": "Ads Orchestration & Retail Media",
-    "keywords": []
-  },
-  {
-    "route": "/seo/client-portal",
-    "title": "Client Portal",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
     "route": "/seo/competitor",
-    "title": "Competitor Intelligence Engine",
+    "title": "SEO Competitor Research",
     "section": "seo",
-    "group": "Schema & Optimization",
+    "group": "Search Intelligence",
+    "keywords": []
+  },
+  {
+    "route": "/seo/competitor-monitoring",
+    "title": "Competitor Activity Monitor",
+    "section": "seo",
+    "group": "Search Intelligence",
     "keywords": []
   },
   {
     "route": "/seo/content-auditor",
-    "title": "Content Quality & Hallucination Auditor",
+    "title": "Content Review",
     "section": "seo",
     "group": "Monitoring & Observability",
     "keywords": []
@@ -500,24 +252,10 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo/contentshake",
-    "title": "ContentShake AI",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
     "route": "/seo/crawl-budget",
-    "title": "Crawl Budget Optimizer",
+    "title": "Crawl Budget Review",
     "section": "seo",
     "group": "Monitoring & Observability",
-    "keywords": []
-  },
-  {
-    "route": "/seo/cross-network-campaign-orchestrator",
-    "title": "Cross-Network Campaign Orchestrator",
-    "section": "seo",
-    "group": "Ads Orchestration & Retail Media",
     "keywords": []
   },
   {
@@ -563,50 +301,11 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo/eyeon",
-    "title": "EyeOn Competitor Monitor",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
     "route": "/seo/geo",
     "title": "GEO: Generative Engine Optimization",
     "section": "seo",
     "group": "Search Intelligence",
     "keywords": []
-  },
-  {
-    "route": "/seo/geoptie-assist",
-    "title": "Geoptie Assist",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/geoptie-automation",
-    "title": "Geoptie Automation",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/geoptie-integrations",
-    "title": "Geoptie Integrations",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/geoptie-readiness",
-    "title": "Geoptie Readiness",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": [],
-    "internal": true
   },
   {
     "route": "/seo/growth-playbooks",
@@ -624,34 +323,10 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/seo/history",
-    "title": "Analytics, Reporting & Intelligence",
+    "title": "SEO Analysis History",
     "section": "seo",
-    "group": "SaaS Platform",
+    "group": "Analytics & history",
     "keywords": []
-  },
-  {
-    "route": "/seo/hootsuite-automation",
-    "title": "Hootsuite Automation",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/hootsuite-integrations",
-    "title": "Hootsuite Integrations",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/hootsuite-readiness",
-    "title": "Hootsuite Readiness Hub",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
   },
   {
     "route": "/seo/integrations-automation",
@@ -669,30 +344,30 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/seo/international-multilingual",
-    "title": "International & Multilingual SEO",
+    "title": "Hreflang & Locale Review",
     "section": "seo",
-    "group": "Expansion Modules",
+    "group": "International SEO",
     "keywords": []
   },
   {
     "route": "/seo/keywords",
-    "title": "Keyword Research",
+    "title": "Keyword Data Review",
     "section": "seo",
-    "group": "Core Foundations",
+    "group": "Research & visibility",
     "keywords": []
   },
   {
     "route": "/seo/knowledge-graph",
-    "title": "Knowledge Graph Management",
+    "title": "Entity Graph Planner",
     "section": "seo",
     "group": "Monitoring & Observability",
     "keywords": []
   },
   {
     "route": "/seo/landing",
-    "title": "Landing Page Builder",
+    "title": "Landing Page Brief",
     "section": "seo",
-    "group": "Accessibility & Media",
+    "group": "Content & Distribution",
     "keywords": []
   },
   {
@@ -710,38 +385,10 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo/local",
-    "title": "Local SEO Optimizer",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/local-heatmap",
-    "title": "Local Heatmap",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/local-seo",
-    "title": "Local SEO Suite",
-    "section": "seo",
-    "group": "Expansion Modules",
-    "keywords": []
-  },
-  {
     "route": "/seo/log-file",
     "title": "Log File Analysis Engine",
     "section": "seo",
     "group": "Content & Distribution",
-    "keywords": []
-  },
-  {
-    "route": "/seo/map-rank-tracker",
-    "title": "Map Rank Tracker",
-    "section": "seo",
-    "group": "SEO",
     "keywords": []
   },
   {
@@ -753,7 +400,7 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/seo/media",
-    "title": "Image & Media SEO Engine",
+    "title": "Media Markup Review",
     "section": "seo",
     "group": "Accessibility & Media",
     "keywords": []
@@ -771,22 +418,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "section": "seo",
     "group": "Growth & Governance",
     "keywords": []
-  },
-  {
-    "route": "/seo/neo4j-automation",
-    "title": "Neo4j Automation",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/neo4j-integrations",
-    "title": "Neo4j Integrations",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
   },
   {
     "route": "/seo/news-discover",
@@ -810,13 +441,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo/performance",
-    "title": "GTmetrix-Style Performance Audit",
-    "section": "seo",
-    "group": "Performance & Audits",
-    "keywords": []
-  },
-  {
     "route": "/seo/pla-research",
     "title": "PLA Research",
     "section": "seo",
@@ -825,21 +449,14 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/seo/planner",
-    "title": "SEO Execution Planner",
+    "title": "SEO Workflow Planner",
     "section": "seo",
     "group": "SEO",
     "keywords": []
   },
   {
-    "route": "/seo/platform-intelligence",
-    "title": "Platform Matrix Score",
-    "section": "seo",
-    "group": "Performance & Audits",
-    "keywords": []
-  },
-  {
     "route": "/seo/programmatic",
-    "title": "Programmatic SEO Engine",
+    "title": "Programmatic SEO Draft Preview",
     "section": "seo",
     "group": "Experience Optimization",
     "keywords": []
@@ -852,77 +469,31 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo/promptwatch-assist",
-    "title": "Promptwatch Assist Console",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/promptwatch-automation",
-    "title": "Promptwatch Automation",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/promptwatch-integrations",
-    "title": "Promptwatch Integrations",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/promptwatch-readiness",
-    "title": "Promptwatch Readiness Hub",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
     "route": "/seo/rag-search",
-    "title": "RAG Site Search Engine",
+    "title": "Corpus Search Preview",
     "section": "seo",
-    "group": "Schema & Optimization",
+    "group": "Search Intelligence",
     "keywords": []
   },
   {
     "route": "/seo/rank-tracking",
-    "title": "Advanced Rank Tracking",
+    "title": "Rank Position Review",
     "section": "seo",
     "group": "Core Foundations",
     "keywords": []
   },
   {
     "route": "/seo/realtime-monitoring",
-    "title": "Real-Time Search & AI Monitoring",
+    "title": "Search Observation Log",
     "section": "seo",
     "group": "Monitoring & Observability",
     "keywords": []
   },
   {
-    "route": "/seo/retail-media-app-growth-hub",
-    "title": "Retail Media & App Growth Hub",
-    "section": "seo",
-    "group": "Ads Orchestration & Retail Media",
-    "keywords": []
-  },
-  {
     "route": "/seo/revenue-attribution",
-    "title": "Revenue Attribution Intelligence",
+    "title": "Revenue Attribution",
     "section": "seo",
     "group": "Growth & Governance",
-    "keywords": []
-  },
-  {
-    "route": "/seo/reviews",
-    "title": "Review & Reputation Engine",
-    "section": "seo",
-    "group": "Content & Distribution",
     "keywords": []
   },
   {
@@ -941,18 +512,10 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/seo/security",
-    "title": "Security & SEO Health Monitor",
+    "title": "Security Header Review",
     "section": "seo",
     "group": "Accessibility & Media",
     "keywords": []
-  },
-  {
-    "route": "/seo/semrush-command-center",
-    "title": "Semrush End-to-End SEO Operations",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": [],
-    "internal": true
   },
   {
     "route": "/seo/seo-ab-testing",
@@ -969,38 +532,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo/seo-ai-assist",
-    "title": "SEO.AI Assist Console",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/seo-ai-automation",
-    "title": "SEO.AI Automation",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/seo-ai-integrations",
-    "title": "SEO.AI Integrations",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/seo-ai-readiness",
-    "title": "SEO.AI Readiness Hub",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
     "route": "/seo/site-migration",
     "title": "Site Migration SEO Manager",
     "section": "seo",
@@ -1009,58 +540,10 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/seo/social",
-    "title": "Social SEO & Distribution",
+    "title": "Social Share Preview",
     "section": "seo",
-    "group": "Accessibility & Media",
+    "group": "Content & Distribution",
     "keywords": []
-  },
-  {
-    "route": "/seo/sproutsocial-automation",
-    "title": "Sprout Social Automation",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/surfer-automation",
-    "title": "Surfer Automation",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/surfer-command-center",
-    "title": "Surfer Command Center",
-    "section": "seo",
-    "group": "Surfer Core Tools",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/surfer-readiness",
-    "title": "Surfer Readiness",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/surfer-setup-playbook",
-    "title": "Surfer Setup Playbook",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/surfer-wiring-plan",
-    "title": "Surfer Wiring Plan",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": [],
-    "internal": true
   },
   {
     "route": "/seo/sxo",
@@ -1071,7 +554,7 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/seo/technical",
-    "title": "AI Technical SEO Engine",
+    "title": "Technical SEO Audit",
     "section": "seo",
     "group": "Monitoring & Observability",
     "keywords": []
@@ -1088,13 +571,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "title": "Trust & Risk Governance",
     "section": "seo",
     "group": "Growth & Governance",
-    "keywords": []
-  },
-  {
-    "route": "/seo/unified-ads-control-tower",
-    "title": "Unified Ads Control Tower",
-    "section": "seo",
-    "group": "Ads Orchestration & Retail Media",
     "keywords": []
   },
   {
@@ -1126,77 +602,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo/writesonic-assist",
-    "title": "Writesonic Assist Console",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/writesonic-automation",
-    "title": "Writesonic Automation",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/writesonic-integrations",
-    "title": "Writesonic Integrations",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/writesonic-readiness",
-    "title": "Writesonic Readiness Hub",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/yext-assist",
-    "title": "Yext Assist Console",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/yext-automation",
-    "title": "Yext Automation",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/yext-integrations",
-    "title": "Yext Integrations",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/seo/yext-readiness",
-    "title": "Yext Readiness Hub",
-    "section": "seo",
-    "group": "SaaS Platform",
-    "keywords": [],
-    "internal": true
-  },
-  {
-    "route": "/siem",
-    "title": "SIEM & Security Operations",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
     "route": "/smart-inbox",
     "title": "Customer Inbox",
     "section": "apps",
@@ -1225,13 +630,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/studio/ads-engine",
-    "title": "Creative Testing & Budget Optimization",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
     "route": "/studio/agent-analytics",
     "title": "Agent Analytics",
     "section": "studio",
@@ -1254,7 +652,7 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/studio/avatar-builder",
-    "title": "Avatar Builder",
+    "title": "🧑‍💻 Avatar Builder",
     "section": "studio",
     "group": "Studio",
     "keywords": []
@@ -1352,14 +750,7 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   },
   {
     "route": "/studio/faceless-video-engine",
-    "title": "Faceless Video Engine",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/growth-suite",
-    "title": "AI Growth Suite",
+    "title": "🤖 Faceless Video Engine",
     "section": "studio",
     "group": "Studio",
     "keywords": []
@@ -1393,22 +784,8 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/studio/rank-tracker",
-    "title": "Rank Tracker",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
     "route": "/studio/reels-factory",
     "title": "Reels Factory",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/seo-suite",
-    "title": "Topic Clustering & On-Page Optimization",
     "section": "studio",
     "group": "Studio",
     "keywords": []
@@ -1540,27 +917,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/studio/social-studio/listening",
-    "title": "Social Listening",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/manychat",
-    "title": "ManyChat integration",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/mobile",
-    "title": "Mobile + PWA Ops",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
     "route": "/studio/social-studio/optimization",
     "title": "AI Optimization",
     "section": "social",
@@ -1589,13 +945,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/studio/social-studio/reviews",
-    "title": "Review Management",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
     "route": "/studio/social-studio/streams",
     "title": "Monitoring Streams",
     "section": "social",
@@ -1605,13 +954,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
   {
     "route": "/studio/social-studio/trends",
     "title": "Social Trends & Intelligence",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/ugc",
-    "title": "UGC Management",
     "section": "social",
     "group": "Social Studio",
     "keywords": []
@@ -1631,13 +973,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/studio/workflow-orchestrator",
-    "title": "Workflow Orchestrator",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
     "route": "/studio/workspace",
     "title": "Workspace",
     "section": "studio",
@@ -1652,29 +987,8 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/vendor-inventory-report",
-    "title": "Unified Third-Party Vendor Report",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/vse",
-    "title": "⚡ Viral Singularity Engine",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/white-label",
-    "title": "White Label",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
     "route": "/workflows",
-    "title": "Workflows Automation",
+    "title": "Workflows",
     "section": "apps",
     "group": "General",
     "keywords": []
@@ -1683,57 +997,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
 
 /** Routes that only re-export or redirect to a canonical page. */
 export const ROUTE_ALIASES: Readonly<Record<string, string>> = {
-  "/airanklab/wiring": "/seo/integrations-automation",
-  "/hubspot-e2e": "/crm",
-  "/seo/ai-content-grader": "../content-auditor/page",
-  "/seo/ai-content-helper": "../content-creation-blogging/page",
-  "/seo/ai-localization": "@/app/(public)/tools/translation-studio/page",
-  "/seo/bot-analytics": "/seo/realtime-monitoring",
-  "/seo/brand-radar": "/seo/realtime-monitoring",
-  "/seo/content-explorer": "/seo/content-creation-blogging",
-  "/seo/custom-prompts": "/seo/planner",
-  "/seo/dashboard": "/dashboard",
-  "/seo/gbp-monitor": "/seo/map-rank-tracker",
-  "/seo/gsc-insights": "/seo/history",
-  "/seo/keywords-explorer": "/seo/planner",
-  "/seo/neo4j-readiness": "/seo/neo4j-integrations",
-  "/seo/nsvo": "../msvo/page",
-  "/seo/patches": "../technical/page",
-  "/seo/portfolios": "/seo/agency-platform",
-  "/seo/rank-tracker": "/seo/rank-tracking",
-  "/seo/report-builder": "/seo/client-portal",
-  "/seo/site-audit": "/seo/technical",
-  "/seo/site-explorer": "/seo/domain-overview",
-  "/seo/social-media-manager": "/studio/social-studio",
-  "/seo/web-analytics": "/seo/history",
-  "/studio/ar-experience-studio": "../social-studio/page",
-  "/studio/blog-studio": "../social-studio/page",
-  "/studio/editing-suite": "../social-studio/page",
-  "/studio/hologram-stage": "../social-studio/page",
-  "/studio/image-slider": "../social-studio/page",
-  "/studio/keyword-research": "../rank-tracker/page",
-  "/studio/music-generator": "../social-studio/page",
-  "/studio/social-accounts": "../social-studio/accounts/page",
-  "/studio/social-ads": "../social-studio/ads/page",
-  "/studio/social-advocacy": "../social-studio/advocacy/page",
-  "/studio/social-analytics": "../social-studio/analytics/page",
-  "/studio/social-approvals": "../social-studio/approvals/page",
-  "/studio/social-automation": "../social-studio/automation/page",
-  "/studio/social-best-time": "../social-studio/best-time/page",
-  "/studio/social-bulk-schedule": "../social-studio/bulk-schedule/page",
-  "/studio/social-calendar": "../social-studio/calendar/page",
-  "/studio/social-inbox": "../social-studio/inbox/page",
-  "/studio/social-influencers": "../social-studio/influencers/page",
-  "/studio/social-link-in-bio": "../social-studio/link-in-bio/page",
-  "/studio/social-listening": "../social-studio/listening/page",
-  "/studio/social-posts": "../social-studio/posts/page",
-  "/studio/social-reports": "../social-studio/reports/page",
-  "/studio/social-reviews": "../social-studio/reviews/page",
-  "/studio/social-streams": "../social-studio/streams/page",
-  "/studio/social-trends": "../social-studio/trends/page",
-  "/studio/social-ugc": "../social-studio/ugc/page",
-  "/studio/sound-design": "../social-studio/page",
-  "/studio/vr-world-builder": "../social-studio/page",
   "/studio/lately": "/studio/content-hub",
   "/studio/prompt-volumes": "/seo/prompt-research",
   "/buffer-create": "/studio/social-studio/ideas",
@@ -1745,6 +1008,101 @@ export const ROUTE_ALIASES: Readonly<Record<string, string>> = {
   "/platform/owly-writer-ai": "/studio/copywriter",
   "/social-scheduling": "/studio/social-studio/posts",
   "/studio/scheduler": "/studio/social-studio/posts",
-  "/reviews": "/studio/social-studio/reviews",
-  "/seo/one2target": "/seo/audience-intelligence"
+  "/reviews": "/studio/social-studio",
+  "/seo/reviews": "/seo",
+  "/studio/social-studio/reviews": "/studio/social-studio",
+  "/seo/one2target": "/seo/audience-intelligence",
+  "/airanklab/wiring": "/seo/integrations-automation",
+  "/hubspot-e2e": "/crm",
+  "/seo/ai-content-grader": "/seo/content-auditor",
+  "/seo/ai-content-helper": "/seo/content-creation-blogging",
+  "/seo/bot-analytics": "/seo/realtime-monitoring",
+  "/seo/brand-radar": "/seo/realtime-monitoring",
+  "/seo/content-explorer": "/seo/content-creation-blogging",
+  "/seo/custom-prompts": "/seo/planner",
+  "/seo/dashboard": "/dashboard",
+  "/seo/eyeon": "/seo/competitor-monitoring",
+  "/seo/gbp-monitor": "/seo",
+  "/seo/local": "/seo",
+  "/seo/local-seo": "/seo",
+  "/seo/local-heatmap": "/seo",
+  "/seo/map-rank-tracker": "/seo",
+  "/seo/gsc-insights": "/seo/history",
+  "/seo/keywords-explorer": "/seo/keywords",
+  "/seo/nsvo": "/seo/msvo",
+  "/seo/patches": "/seo/technical",
+  "/seo/portfolios": "/seo/agency-platform",
+  "/seo/rank-tracker": "/seo/rank-tracking",
+  "/seo/report-builder": "/seo",
+  "/seo/client-portal": "/seo",
+  "/seo/performance": "/seo",
+  "/seo/retail-media-app-growth-hub": "/seo",
+  "/seo/modules/retail-media-app-growth-hub": "/seo",
+  "/seo/ai-creative-keyword-lab": "/seo",
+  "/seo/modules/ai-creative-keyword-lab": "/seo",
+  "/seo/attribution-conversion-intelligence": "/seo",
+  "/seo/modules/attribution-conversion-intelligence": "/seo",
+  "/seo/budget-pacing-bid-engine": "/seo",
+  "/seo/modules/budget-pacing-bid-engine": "/seo",
+  "/seo/cross-network-campaign-orchestrator": "/seo",
+  "/seo/modules/cross-network-campaign-orchestrator": "/seo",
+  "/seo/unified-ads-control-tower": "/seo",
+  "/seo/modules/unified-ads-control-tower": "/seo",
+  "/seo/ads-connectors": "/seo",
+  "/seo/ads-campaigns": "/seo",
+  "/seo/ads-calendar": "/seo",
+  "/seo/ads-metrics": "/seo",
+  "/seo/ads-kpis": "/seo",
+  "/seo/ads-smart-schedule": "/seo",
+  "/seo/site-audit": "/seo/technical",
+  "/seo/site-explorer": "/seo/domain-overview",
+  "/seo/social-media-manager": "/studio/social-studio",
+  "/seo/web-analytics": "/seo/analytics",
+  "/studio/ar-experience-studio": "/studio/social-studio",
+  "/studio/blog-studio": "/studio/social-studio",
+  "/studio/editing-suite": "/studio/social-studio",
+  "/studio/hologram-stage": "/studio/social-studio",
+  "/studio/image-slider": "/studio/social-studio",
+  "/studio/keyword-research": "/seo/keywords",
+  "/studio/rank-tracker": "/seo/rank-tracking",
+  "/studio/music-generator": "/studio/social-studio",
+  "/studio/social-accounts": "/studio/social-studio/accounts",
+  "/studio/social-ads": "/studio/social-studio/ads",
+  "/studio/social-advocacy": "/studio/social-studio/advocacy",
+  "/studio/social-analytics": "/studio/social-studio/analytics",
+  "/studio/social-approvals": "/studio/social-studio/approvals",
+  "/studio/social-automation": "/studio/social-studio/automation",
+  "/studio/social-studio/manychat": "/studio/social-studio/automation",
+  "/studio/social-studio/mobile": "/studio/social-studio",
+  "/studio/social-best-time": "/studio/social-studio/best-time",
+  "/studio/social-bulk-schedule": "/studio/social-studio/bulk-schedule",
+  "/studio/social-calendar": "/studio/social-studio/calendar",
+  "/studio/social-inbox": "/studio/social-studio/inbox",
+  "/studio/social-influencers": "/studio/social-studio/influencers",
+  "/studio/social-link-in-bio": "/studio/social-studio/link-in-bio",
+  "/studio/social-listening": "/social-listening",
+  "/studio/social-studio/listening": "/social-listening",
+  "/studio/social-posts": "/studio/social-studio/posts",
+  "/studio/social-reports": "/studio/social-studio/reports",
+  "/studio/social-reviews": "/studio/social-studio",
+  "/studio/social-streams": "/studio/social-studio/streams",
+  "/studio/social-trends": "/studio/social-studio/trends",
+  "/studio/social-ugc": "/studio/social-studio",
+  "/studio/social-studio/ugc": "/studio/social-studio",
+  "/studio/sound-design": "/studio/social-studio",
+  "/studio/vr-world-builder": "/studio/social-studio",
+  "/ai-analytics": "/studio/agent-analytics",
+  "/cost-saving-calculator": "/ai-search-impact-calculator",
+  "/crm/abm": "/crm",
+  "/finance-ops": "/billing",
+  "/account/wallet": "/billing",
+  "/account/settings": "/account/profile",
+  "/seo/ai-localization": "/tools/translation-studio",
+  "/studio/ads-engine": "/ads-generation",
+  "/studio/seo-suite": "/seo",
+  "/studio/growth-suite": "/studio",
+  "/seo/contentshake": "/content-generation",
+  "/seo-aeo-geo-audit-tool": "/seo/technical",
+  "/studio/workflow-orchestrator": "/workflows",
+  "/vse": "/studio"
 };

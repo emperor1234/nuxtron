@@ -108,6 +108,21 @@ describe('fastapi route fallback internals', () => {
     await expect(response?.json()).resolves.toEqual({ detail: 'Forced fallback is disabled in production.' });
   });
 
+  it('does not synthesize a connected Ads account from an offline OAuth callback', () => {
+    vi.stubEnv('NUXTRON_ALLOW_PROXY_FALLBACK', 'true');
+
+    const response = __test__.buildOfflineFallbackResponse({
+      method: 'POST',
+      path: ['ads-control-tower', 'connectors', 'google_ads', 'oauth', 'callback'],
+      tenantId: 'org-test',
+      requestBody: JSON.stringify({ state: 'fake', code: 'demo-code' }),
+      detail: 'Provider service unavailable.',
+      fallbackKind: 'offline',
+    });
+
+    expect(response).toBeNull();
+  });
+
   it('keeps localhost fallbacks outside production', () => {
     vi.stubEnv('NODE_ENV', 'development');
 

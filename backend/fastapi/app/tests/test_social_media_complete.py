@@ -632,30 +632,28 @@ class TestSocialListening:
 class TestReviews:
     """Test review ingestion and reply workflows."""
 
-    @pytest.mark.asyncio
-    async def test_ingest_and_reply_review(self, client: TestClient, auth_headers):
+    def test_ingest_and_reply_review(self, client: TestClient, auth_headers):
         ingest = client.post(
             "/social/reviews/ingest?platform=google&author=customer-a&rating=2&text=bad response time",
             headers=auth_headers,
         )
-        assert ingest.status_code == 200
-        review_id = ingest.json()["review"]["id"]
+        assert ingest.status_code == 501
+        assert ingest.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
         reply = client.post(
-            f"/social/reviews/replies/{review_id}",
+            "/social/reviews/replies/review-id",
             params={
                 "platform": "google",
                 "reply_text": "We are improving this now",
             },
             headers=auth_headers,
         )
-        assert reply.status_code == 200
-        assert reply.json()["success"] is True
+        assert reply.status_code == 501
+        assert reply.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
         list_reviews = client.get("/social/reviews/hub?platform=google&min_rating=1", headers=auth_headers)
-        assert list_reviews.status_code == 200
-        assert list_reviews.json()["reply_count"] >= 1
-        assert list_reviews.json()["reviews"]
+        assert list_reviews.status_code == 501
+        assert list_reviews.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
 
 class TestParityStatePersistence:

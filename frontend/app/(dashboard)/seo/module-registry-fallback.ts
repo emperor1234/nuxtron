@@ -37,6 +37,10 @@ type FallbackSeed = {
   group: string;
   description: string;
   route_path: string;
+  implemented?: boolean;
+  backend_ready?: boolean;
+  frontend_ready?: boolean;
+  database_ready?: boolean;
   badge?: string;
   integrations?: string[];
   supported_channels?: string[];
@@ -53,7 +57,7 @@ const REGISTRY_SEED: FallbackSeed[] = [
     key: 'seo-ai',
     display_name: 'SEO-AI',
     group: 'Search Intelligence',
-    description: 'AI-enhanced traditional SEO workflows spanning keyword research, content, and technical signals.',
+    description: 'SEO workflow tools for content and technical review; keyword exports are reviewed locally and provider-backed discovery is unavailable.',
     route_path: '/seo/seo-ai',
     badge: 'Core',
   },
@@ -174,10 +178,14 @@ const REGISTRY_SEED: FallbackSeed[] = [
   },
   {
     key: 'programmatic-seo-engine',
-    display_name: 'Programmatic SEO Engine',
+    display_name: 'Programmatic SEO Draft Preview',
     group: 'Experience Optimization',
-    description: 'Programmatic landing page and template-driven SEO at scale.',
+    description: 'Browser-local expansion of user-supplied templates is available; server generation, search metrics, persistence, and publishing are unavailable.',
     route_path: '/seo/programmatic',
+    implemented: false,
+    backend_ready: false,
+    frontend_ready: true,
+    database_ready: false,
   },
   {
     key: 'seo-ab-testing',
@@ -197,9 +205,9 @@ const REGISTRY_SEED: FallbackSeed[] = [
   },
   {
     key: 'revenue-attribution-intelligence',
-    display_name: 'Revenue Attribution Intelligence',
+    display_name: 'Revenue Attribution',
     group: 'Growth & Governance',
-    description: 'Attribution from search and AI channels through to revenue outcomes.',
+    description: 'Workspace-scoped report of recorded conversions and tracked touchpoints. Currency totals remain separate; no causal lift is estimated.',
     route_path: '/seo/revenue-attribution',
   },
   {
@@ -213,8 +221,11 @@ const REGISTRY_SEED: FallbackSeed[] = [
     key: 'trust-risk-governance',
     display_name: 'Trust & Risk Governance',
     group: 'Growth & Governance',
-    description: 'Policy, governance, and risk controls for SEO and AI execution.',
+    description: 'Verified policy, control, incident, and audit evidence sources are not connected; posture scores and risk findings are unavailable.',
     route_path: '/seo/trust-risk-governance',
+    implemented: false,
+    backend_ready: false,
+    frontend_ready: true,
   },
   {
     key: 'multi-channel-activation-loop',
@@ -232,11 +243,15 @@ const REGISTRY_SEED: FallbackSeed[] = [
   },
   {
     key: 'keyword-research-engine',
-    display_name: 'Keyword Research',
-    group: 'Core Foundations',
-    description: 'Intent, clustering, SERP features, and keyword opportunity scoring.',
+    display_name: 'Keyword Data Review',
+    group: 'Research & visibility',
+    description: 'Browser-local review of user-provided keyword exports; connected search data, generated metrics, and competitor gaps are unavailable.',
     route_path: '/seo/keywords',
     badge: 'Core',
+    implemented: false,
+    backend_ready: false,
+    frontend_ready: true,
+    database_ready: false,
   },
   {
     key: 'backlink-intelligence-engine',
@@ -249,12 +264,12 @@ const REGISTRY_SEED: FallbackSeed[] = [
   },
   {
     key: 'advanced-rank-tracking-system',
-    display_name: 'Advanced Rank Tracking',
+    display_name: 'Rank Position Review',
     group: 'Core Foundations',
-    description: 'Time-series ranking data, volatility detection, competitor tracking, and SERP forecasting.',
+    description: 'Browser-local review of positions and context from a user-supplied CSV. Live tracking and forecasts are unavailable.',
     route_path: '/seo/rank-tracking',
     badge: 'Core',
-    integrations: ['opensearch', 'grafana', 'time_series_db'],
+    integrations: [],
   },
   {
     key: 'content-creation-blogging-suite',
@@ -267,10 +282,14 @@ const REGISTRY_SEED: FallbackSeed[] = [
   },
   {
     key: 'international-multilingual-seo',
-    display_name: 'International & Multilingual SEO',
-    group: 'Expansion Modules',
-    description: 'Regionalization, hreflang, and multilingual search optimization.',
+    display_name: 'Hreflang & Locale Review',
+    group: 'International SEO',
+    description: 'Browser-local syntax and user-supplied locale review only; live-page, reciprocal-link, and canonical verification are unavailable.',
     route_path: '/seo/international-multilingual',
+    implemented: false,
+    backend_ready: false,
+    frontend_ready: true,
+    database_ready: false,
   },
   {
     key: 'site-migration-seo-manager',
@@ -287,13 +306,6 @@ const REGISTRY_SEED: FallbackSeed[] = [
     route_path: '/seo/video',
   },
   {
-    key: 'local-seo-suite',
-    display_name: 'Local SEO Suite',
-    group: 'Expansion Modules',
-    description: 'Local intent, map visibility, location pages, and review signals.',
-    route_path: '/seo/local',
-  },
-  {
     key: 'news-seo-google-discover',
     display_name: 'News SEO & Google Discover',
     group: 'SaaS Platform',
@@ -302,226 +314,30 @@ const REGISTRY_SEED: FallbackSeed[] = [
   },
   {
     key: 'analytics-reporting-intelligence',
-    display_name: 'Analytics, Reporting & Intelligence',
-    group: 'SaaS Platform',
-    description: 'Central analytics and reporting across the SEO estate.',
-    route_path: '/seo/analytics',
+    display_name: 'SEO Analysis History',
+    group: 'Analytics & history',
+    description: 'Workspace-scoped archive of saved SEO analysis records with explicit persistence status and redacted details.',
+    route_path: '/seo/history',
   },
   {
     key: 'agency-multi-tenant-platform',
-    display_name: 'Agency & Multi-Tenant Platform',
+    display_name: 'Agency Workspace Health',
     group: 'SaaS Platform',
-    description: 'Tenant-aware SEO operations, workspaces, and governance.',
+    description: 'Workspace inventory, roles, policies, audit events, owners, and SLA evidence are not connected; health scores are unavailable.',
     route_path: '/seo/agency-platform',
+    implemented: false,
+    backend_ready: false,
+    frontend_ready: true,
   },
   {
     key: 'integrations-automation-layer',
     display_name: 'Integrations & Automation Layer',
     group: 'SaaS Platform',
-    description: 'Third-party integrations, connectors, and automation plumbing.',
+    description: 'Connector inventory and automation controls are not available in this customer experience yet.',
     route_path: '/seo/integrations-automation',
-  },
-  {
-    key: 'unified-ads-control-tower',
-    display_name: 'Unified Ads Control Tower',
-    group: 'Ads Orchestration & Retail Media',
-    description:
-      'Production-grade command center for orchestrating Google, Microsoft, Amazon, Apple Search Ads, and YouTube campaigns from one operating plane.',
-    route_path: '/seo/unified-ads-control-tower',
-    badge: 'Core',
-    integrations: [
-      'google_ads_api',
-      'microsoft_ads',
-      'amazon_ads',
-      'apple_search_ads',
-      'youtube_ads',
-      'postgres',
-      'redis',
-    ],
-    supported_channels: [
-      'Google Ads',
-      'Microsoft Advertising',
-      'Amazon Advertising',
-      'Apple Search Ads',
-      'YouTube Ads',
-    ],
-    architecture_layers: [
-      'Next.js control tower UI',
-      'FastAPI orchestration layer',
-      'Django admin and billing spine',
-      'PostgreSQL control plane',
-      'Redis + Celery execution fabric',
-    ],
-    automation_features: [
-      'Cross-network campaign launch',
-      'Shared budget guardrails',
-      'Creative approval routing',
-      'Realtime anomaly and pacing alerts',
-    ],
-    analytics_features: [
-      'Unified ROAS scorecards',
-      'Network-normalized KPI schema',
-      'Cross-channel spend rollups',
-      'Realtime delivery health snapshots',
-    ],
-    enterprise_features: [
-      'Multi-tenant workspaces',
-      'RBAC and audit logs',
-      'API gateway + rate limiting',
-      'GDPR-aware consent boundaries',
-    ],
-    ai_models: ['llama-3.1-70b', 'deepseek-r1', 'qwen2.5-72b', 'bge-m3'],
-    delivery_constraints: [
-      'Requires advertiser API approvals',
-      'Cannot replace underlying ad exchanges',
-      'Each network has different reporting latency and policy rules',
-    ],
-  },
-  {
-    key: 'cross-network-campaign-orchestrator',
-    display_name: 'Cross-Network Campaign Orchestrator',
-    group: 'Ads Orchestration & Retail Media',
-    description:
-      'Advanced workflow engine for cloning, localizing, and synchronizing campaigns, ad groups, audiences, and creative packages across major ad networks.',
-    route_path: '/seo/cross-network-campaign-orchestrator',
-    badge: 'AI',
-    integrations: ['google_ads_api', 'microsoft_ads', 'amazon_ads', 'apple_search_ads', 'celery', 'airflow'],
-    supported_channels: ['Search', 'Shopping', 'Retail media', 'App acquisition', 'Video'],
-    architecture_layers: [
-      'Campaign template service',
-      'Connector abstraction layer',
-      'Async execution queues',
-      'Approval + rollback workflow service',
-    ],
-    automation_features: [
-      'Campaign cloning by market',
-      'Audience and keyword sync',
-      'Landing-page mapping automation',
-      'Failure-safe retries with rollback',
-    ],
-    analytics_features: ['Execution audit timeline', 'Platform drift detection', 'Template performance benchmarking'],
-    enterprise_features: [
-      'Approval checkpoints',
-      'Tenant-safe connector isolation',
-      'Change history and operator attribution',
-    ],
-    ai_models: ['qwen2.5-coder', 'deepseek-v3'],
-    delivery_constraints: [
-      'Platform object models differ by network',
-      'Bulk mutation limits must be throttled',
-      'Creative policy violations can block sync jobs',
-    ],
-  },
-  {
-    key: 'budget-pacing-bid-engine',
-    display_name: 'Budget Pacing & Bid Engine',
-    group: 'Ads Orchestration & Retail Media',
-    description:
-      'Rule-driven and model-assisted bid engine that monitors CTR, CPA, CPC, ROAS, and spend pacing to keep campaigns on target throughout the day.',
-    route_path: '/seo/budget-pacing-bid-engine',
-    badge: 'AI',
-    integrations: ['redis', 'celery', 'prometheus', 'grafana', 'postgres'],
-    supported_channels: ['Search', 'Retail media', 'App store search', 'Video performance'],
-    architecture_layers: [
-      'Realtime metrics ingest',
-      'Rules engine',
-      'Bid recommendation service',
-      'Task workers for pacing adjustments',
-    ],
-    automation_features: [
-      'If CTR drops then pause/repair',
-      'If CPA spikes then lower bid',
-      'Budget pacing by hour',
-      'Seasonality and daypart bid multipliers',
-    ],
-    analytics_features: [
-      'Pacing variance dashboards',
-      'Bid-change impact attribution',
-      'Spend anomaly detection',
-      'Forecast vs actual delivery',
-    ],
-    enterprise_features: [
-      'Per-tenant guardrails',
-      'Manual override controls',
-      'Threshold-based approvals for high-spend changes',
-    ],
-    ai_models: ['xgboost-ctr', 'lightgbm-cpa', 'llama-3.1-8b-instruct'],
-    delivery_constraints: [
-      'Requires sufficient conversion volume',
-      'Model quality varies by channel maturity',
-      'Realtime bidding is limited by API refresh windows',
-    ],
-  },
-  {
-    key: 'attribution-conversion-intelligence',
-    display_name: 'Attribution & Conversion Intelligence',
-    group: 'Ads Orchestration & Retail Media',
-    description:
-      'Server-side tracking and attribution fabric that unifies ad clicks, conversions, revenue events, and offline outcomes into decision-grade reporting.',
-    route_path: '/seo/attribution-conversion-intelligence',
-    badge: 'Core',
-    integrations: ['posthog', 'snowplow', 'postgres', 'google_conversion_api'],
-    supported_channels: ['Paid search', 'Retail media', 'Organic assist', 'CRM/offline revenue'],
-    architecture_layers: [
-      'Event ingestion API',
-      'Identity resolution layer',
-      'Attribution model service',
-      'Warehouse-ready reporting marts',
-    ],
-    automation_features: [
-      'Server-side event capture',
-      'Conversion deduplication',
-      'Assisted conversion stitching',
-      'Multi-touch model refresh jobs',
-    ],
-    analytics_features: [
-      'Path-to-conversion analysis',
-      'LTV by acquisition source',
-      'Incrementality-ready reporting',
-      'ROAS by campaign and keyword cluster',
-    ],
-    enterprise_features: [
-      'Consent-aware event governance',
-      'Data retention policy hooks',
-      'Auditability for metric definitions',
-    ],
-    ai_models: ['bge-large', 'e5-large-v2'],
-    delivery_constraints: [
-      'Attribution is probabilistic, not absolute',
-      'Cross-device identity remains imperfect',
-      'Privacy policies differ by geography',
-    ],
-  },
-  {
-    key: 'ai-creative-keyword-lab',
-    display_name: 'AI Creative & Keyword Lab',
-    group: 'Ads Orchestration & Retail Media',
-    description:
-      'Advanced AI workspace for generating ad copy, keyword clusters, negative keywords, landing-page angles, and channel-specific test matrices.',
-    route_path: '/seo/ai-creative-keyword-lab',
-    badge: 'AI',
-    integrations: ['ollama', 'llama3', 'deepseek', 'qwen', 'openai_embeddings', 'serp_data'],
-    supported_channels: ['Search ads', 'Retail media search', 'YouTube and video scripts', 'App store copy variants'],
-    architecture_layers: [
-      'Prompt/version registry',
-      'Embedding clustering service',
-      'Approval workspace',
-      'Experiment publishing hooks',
-    ],
-    automation_features: [
-      'Keyword expansion',
-      'Negative keyword mining',
-      'Ad copy variant generation',
-      'Creative fatigue detection',
-    ],
-    analytics_features: ['Prompt-to-performance lineage', 'Keyword cluster scoring', 'Creative win-rate analysis'],
-    enterprise_features: ['Human approval queues', 'Brand safety constraints', 'Prompt audit log'],
-    ai_models: ['llama-3.1-70b', 'deepseek-v3', 'qwen2.5-72b', 'mistral-nemo', 'bge-m3'],
-    delivery_constraints: [
-      'Generated copy still requires policy review',
-      'Keyword suggestions depend on source quality',
-      'Platform editorial rules vary by locale',
-    ],
+    implemented: false,
+    backend_ready: false,
+    frontend_ready: true,
   },
   {
     key: 'retail-media-app-growth-hub',
@@ -625,17 +441,35 @@ const REGISTRY_SEED: FallbackSeed[] = [
   },
   {
     key: 'rag-site-search-engine',
-    display_name: 'RAG Site Search Engine',
-    group: 'Schema & Optimization',
-    description: 'Semantic site search powered by retrieval and reasoning.',
+    display_name: 'Corpus Search Preview',
+    group: 'Search Intelligence',
+    description: 'Browser-local keyword matching over user-supplied text; no connected crawling, semantic index, or server search.',
     route_path: '/seo/rag-search',
+    implemented: true,
+    backend_ready: false,
+    frontend_ready: true,
+    database_ready: false,
   },
   {
     key: 'competitor-intelligence-engine',
-    display_name: 'Competitor Intelligence Engine',
-    group: 'Schema & Optimization',
-    description: 'Competitive search, AI visibility, and content gap intelligence.',
+    display_name: 'SEO Competitor Research',
+    group: 'Search Intelligence',
+    description: 'Verified SERP, keyword, traffic, backlink, and AI-answer evidence sources are not connected; competitor metrics are unavailable.',
     route_path: '/seo/competitor',
+    implemented: false,
+    backend_ready: false,
+    frontend_ready: true,
+  },
+  {
+    key: 'competitor-activity-monitor',
+    display_name: 'Competitor Activity Monitor',
+    group: 'Search Intelligence',
+    description: 'Durable tenant-scoped storage, authorized data sources, and scheduled collection are not configured; no sample events or alerts are generated.',
+    route_path: '/seo/competitor-monitoring',
+    implemented: false,
+    backend_ready: false,
+    frontend_ready: true,
+    database_ready: false,
   },
   {
     key: 'topical-map-silo-builder',
@@ -650,13 +484,6 @@ const REGISTRY_SEED: FallbackSeed[] = [
     group: 'Content & Distribution',
     description: 'Crawl-log ingestion, anomaly detection, and bot behavior analysis.',
     route_path: '/seo/log-file',
-  },
-  {
-    key: 'review-reputation-engine',
-    display_name: 'Review & Reputation Engine',
-    group: 'Content & Distribution',
-    description: 'Review mining, sentiment analysis, and reputation response workflows.',
-    route_path: '/seo/reviews',
   },
   {
     key: 'brand-voice-style-engine',
@@ -700,34 +527,15 @@ const REGISTRY_SEED: FallbackSeed[] = [
     description: 'Security posture, spam, cloaking, and SEO integrity monitoring.',
     route_path: '/seo/security',
   },
-  {
-    key: 'performance-audit',
-    display_name: 'GTmetrix-Style Performance Audit',
-    group: 'Performance & Audits',
-    description: 'Lighthouse, CDP waterfall, Web Vitals, filmstrip, history, and alert-driven performance auditing.',
-    route_path: '/seo/performance',
-    badge: 'New',
-    integrations: ['lighthouse', 'playwright_cdp', 'web_vitals', 'opensearch', 'prometheus', 'grafana', 'metabase'],
-  },
-  {
-    key: 'platform-intelligence',
-    display_name: 'Platform Matrix Score',
-    group: 'Performance & Audits',
-    description:
-      'Cross-module health score, SLA compliance, latency matrix, AI governance, anomaly detection, and ranked action items.',
-    route_path: '/seo/platform-intelligence',
-    badge: 'Core',
-    integrations: ['prometheus', 'grafana', 'opensearch', 'dbt', 'deepseek', 'llm_pool', 'mlflow_patterns'],
-  },
 ];
 
 function toSeoModule(item: FallbackSeed): SeoModule {
   return {
     ...item,
-    implemented: true,
-    backend_ready: true,
-    frontend_ready: true,
-    database_ready: true,
+    implemented: item.implemented ?? true,
+    backend_ready: item.backend_ready ?? true,
+    frontend_ready: item.frontend_ready ?? true,
+    database_ready: item.database_ready ?? true,
     badge: item.badge ?? null,
     integrations: item.integrations ?? [],
     supported_channels: item.supported_channels ?? [],
@@ -742,6 +550,7 @@ function toSeoModule(item: FallbackSeed): SeoModule {
 
 export function getFallbackModulesResponse(): ModulesResponse {
   const modules = REGISTRY_SEED.map(toSeoModule);
+  const implemented = modules.filter((module) => module.implemented).length;
   const groupsByName: Record<string, SeoModule[]> = {};
   for (const module of modules) {
     groupsByName[module.group] = groupsByName[module.group] ?? [];
@@ -752,7 +561,7 @@ export function getFallbackModulesResponse(): ModulesResponse {
 
   return {
     total: modules.length,
-    implemented: modules.length,
+    implemented,
     groups,
     modules,
   };

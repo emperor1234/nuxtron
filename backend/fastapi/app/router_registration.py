@@ -13,26 +13,40 @@ from fastapi import FastAPI, Request
 
 from . import legacy_main as lg
 from . import memory_stores
+from .domains.assistant.bootstrap import IRAContext, create_ira_router
+from .domains.automation.workforce.bootstrap import create_autonomous_workforce_router
+from .domains.content.media.bootstrap import create_media_jobs_router
+from .domains.crm.bootstrap import create_crm_router
 from .domains.identity.auth_utils import jwt_sign_hs256, jwt_verify_hs256
+from .domains.integrations.cms.bootstrap import create_cms_router
+from .domains.integrations.platforms.bootstrap import create_platform_integration_router
+from .domains.intelligence.platform.bootstrap import create_platform_intelligence_router
+from .domains.marketing.ads.bootstrap import create_ads_control_tower_router
+from .domains.marketing.growth.bootstrap import GrowthSuiteContext, create_growth_suite_router
+from .domains.notifications.delivery.bootstrap import create_notifications_router
+from .domains.search.bootstrap import create_search_everywhere_automation_router
+from .domains.search.crawlers.bootstrap import create_ai_crawler_enablement_router
+from .domains.search.visibility.bootstrap import create_vse_router
+from .domains.seo.platform.bootstrap import create_seo_platform_router
+from .domains.social.bootstrap import create_social_workspace_router
+from .domains.social.inbox.bootstrap import create_smart_inbox_router
+from .domains.workflows.bootstrap import create_workflows_router
 
 # ── Intelligence router ──────────────────────────────────────────────────────
 from .intelligence.routes import router as intel_router
 
 # ── Router factory functions ──────────────────────────────────────────────────
 from .routers.ad_generation import router as ad_generation_router
-from .domains.marketing.ads.bootstrap import create_ads_control_tower_router
 
 # ── Pre-built router instances ────────────────────────────────────────────────
 from .routers.agent_analytics import router as agent_analytics_router
 from .routers.agents import router as agents_router
 from .routers.ai import create_ai_router
-from .domains.search.crawlers.bootstrap import create_ai_crawler_enablement_router
 from .routers.ai_security import create_ai_security_router
 from .routers.analytics_dashboard import create_analytics_router
 from .routers.answer_engine import router as answer_engine_router
 from .routers.api_governance import ApiGovernanceContext, create_api_governance_router
 from .routers.auth import AuthSecurityRecord, create_auth_router
-from .domains.automation.workforce.bootstrap import create_autonomous_workforce_router
 from .routers.backlink_intelligence import router as backlink_intelligence_router
 from .routers.benchmarks import BenchmarksContext, create_benchmarks_router
 from .routers.billing import create_billing_router
@@ -43,23 +57,19 @@ from .routers.chatbot import create_chatbot_router
 
 # ── SEMrush feature-parity routers ───────────────────────────────────────────
 from .routers.client_portal import router as client_portal_router  # noqa: E402
-from .domains.integrations.cms.bootstrap import create_cms_router
 from .routers.competitive import create_competitive_router
+from .routers.competitor_activity_monitor import router as competitor_activity_monitor_router  # noqa: E402
 from .routers.competitor_analysis import router as competitor_analysis_router
 from .routers.content_approval import create_content_approval_router
 from .routers.content_integrations import create_content_integrations_router
 from .routers.contentshake_ai import router as contentshake_ai_router  # noqa: E402
-from .domains.crm.bootstrap import create_crm_router
 from .routers.crm_abm import create_crm_abm_router
 from .routers.documents import create_documents_router
 from .routers.domain_overview import router as domain_overview_router  # noqa: E402
 from .routers.email_provider import create_email_router
 from .routers.employee_advocacy import create_employee_advocacy_router
 from .routers.engagement import create_engagement_router
-from .routers.eyeon_monitor import router as eyeon_monitor_router  # noqa: E402
-from .domains.marketing.growth.bootstrap import GrowthSuiteContext, create_growth_suite_router
 from .routers.influencer import create_influencer_router
-from .domains.assistant.bootstrap import IRAContext, create_ira_router
 from .routers.knowledge_base import create_knowledge_base_router
 from .routers.lindy_email_management import router as lindy_email_management_router
 from .routers.linkinbio import create_linkinbio_router
@@ -68,34 +78,26 @@ from .routers.local_heatmap import router as local_heatmap_router  # noqa: E402
 from .routers.map_rank_tracker import router as map_rank_tracker_router  # noqa: E402
 from .routers.market_explorer import router as market_explorer_router  # noqa: E402
 from .routers.marketplace import create_marketplace_router
-from .domains.content.media.bootstrap import create_media_jobs_router
 from .routers.media_library import create_media_library_router
 from .routers.meetings import create_meetings_router
 from .routers.neo4j_graph_intelligence import create_neo4j_graph_intelligence_router
-from .domains.notifications.delivery.bootstrap import create_notifications_router
 from .routers.one2target import router as one2target_router  # noqa: E402
 from .routers.ops import _OpsCallbacks, create_ops_router
 from .routers.outcome_attribution import OutcomeAttributionContext, create_outcome_attribution_router
 from .routers.pentest import create_pentest_router
 from .routers.pentest_sync import create_pentest_sync_router
 from .routers.pla_research import router as pla_research_router  # noqa: E402
-from .domains.integrations.platforms.bootstrap import create_platform_integration_router
-from .domains.intelligence.platform.bootstrap import create_platform_intelligence_router
 from .routers.playbooks import PlaybooksContext, create_playbooks_router
 from .routers.predis_features import predis_router
 from .routers.products import create_products_router
 from .routers.prompt_volumes import router as prompt_volumes_router
 from .routers.rank_tracker import router as rank_tracker_router
 from .routers.revenue_attribution import create_revenue_attribution_router
-from .domains.search.bootstrap import create_search_everywhere_automation_router
-from .domains.seo.platform.bootstrap import create_seo_platform_router
 from .routers.sequences import create_sequences_router
 from .routers.site_portfolio_manager import create_site_portfolio_router
-from .domains.social.inbox.bootstrap import create_smart_inbox_router
 from .routers.social_manychat import create_social_manychat_router
 from .routers.social_media_router import router as social_media_router
 from .routers.social_posting import router as social_posting_router
-from .domains.social.bootstrap import create_social_workspace_router
 from .routers.stripe_billing import create_stripe_billing_router
 from .routers.super_admin_finance import create_super_admin_finance_router
 from .routers.surveys import create_surveys_router
@@ -108,8 +110,6 @@ from .routers.trust_center import TrustCenterContext, create_trust_center_router
 from .routers.utm_builder import create_utm_builder_router
 from .routers.v1_loop import create_v1_loop_router
 from .routers.viralpost import create_viralpost_router
-from .domains.search.visibility.bootstrap import create_vse_router
-from .domains.workflows.bootstrap import create_workflows_router
 from .services.ai_providers import _provider_health_metrics
 
 # ── Late-bound compatibility adapters ────────────────────────────────────────
@@ -264,8 +264,6 @@ def register_all_routers(app: FastAPI) -> None:
                 ),
                 list_siem_dead_code_findings=lambda auth, severity, limit: lg._platform_siem_dead_code_findings_payload(auth, severity, limit),
                 get_siem_advanced_threat_hunt=lambda auth, minutes: lg._platform_siem_advanced_threat_hunt_payload(auth, minutes),
-                get_hybrid_stacks=lambda auth: lg._platform_hybrid_stacks_payload(auth),
-                get_module_registry=lambda auth: lg._platform_module_registry_payload(auth),
                 require_super_admin_access=_ops_require_super_admin_access,
             ),
         )
@@ -285,6 +283,7 @@ def register_all_routers(app: FastAPI) -> None:
                 'list_social_listening_mentions': lg.list_social_listening_mentions,
                 'get_social_listening_summary': lg.get_social_listening_summary,
                 'create_social_listening_alert_rule': lg.create_social_listening_alert_rule,
+                'list_social_listening_alert_rules': lg.list_social_listening_alert_rules,
                 'list_social_listening_alerts': lg.list_social_listening_alerts,
                 'get_social_listening_clusters': lg.get_social_listening_clusters,
                 'ingest_review': lg.ingest_review,
@@ -1100,11 +1099,11 @@ def register_all_routers(app: FastAPI) -> None:
         )
     )
 
-    # ── SEMrush Feature Parity: New Routers ───────────────────────────────────────
+    # ── Search & Local SEO Routers ────────────────────────────────────────────────
     app.include_router(domain_overview_router)
     app.include_router(market_explorer_router)
     app.include_router(one2target_router)
-    app.include_router(eyeon_monitor_router)
+    app.include_router(competitor_activity_monitor_router)
     app.include_router(pla_research_router)
     app.include_router(map_rank_tracker_router)
     app.include_router(local_heatmap_router)

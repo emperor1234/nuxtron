@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from ..constants import AuthDep
+from ..capabilities import WORKFORCE_EXECUTION_UNAVAILABLE_RESPONSES
 from ..operations.list_capabilities import execute_approve_mission
 from ..operations.list_capabilities import execute_list_missions
 from ..operations.list_capabilities import execute_list_schedules
@@ -30,7 +31,7 @@ def register(router: APIRouter, runtime: ContextRuntime):
 
     @router.post(
         "/missions/{mission_id}/approve",
-        responses={404: {"description": "Mission not found."}, 409: {"description": "Mission already finalized."}},
+        responses={**WORKFORCE_EXECUTION_UNAVAILABLE_RESPONSES, 404: {"description": "Mission not found."}, 409: {"description": "Mission already finalized."}},
     )
     async def approve_mission(mission_id: str, payload: MissionDecisionRequest, auth: AuthDep) -> dict[str, Any]:
         return await execute_approve_mission(runtime, mission_id, payload, auth)
@@ -51,7 +52,7 @@ def register(router: APIRouter, runtime: ContextRuntime):
     def list_schedules(auth: AuthDep) -> dict[str, Any]:
         return execute_list_schedules(runtime, auth)
 
-    @router.post("/runner/tick")
+    @router.post("/runner/tick", responses=WORKFORCE_EXECUTION_UNAVAILABLE_RESPONSES)
     async def run_due_schedules(auth: AuthDep, limit: Annotated[int, Query(ge=1, le=200)] = 20) -> dict[str, Any]:
         return await execute_run_due_schedules(runtime, auth, limit)
 

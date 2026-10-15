@@ -10,7 +10,7 @@ from collections import defaultdict
 from typing import TypedDict, cast
 from fastapi import Header, HTTPException, Request
 from pydantic import BaseModel, Field
-from .domains.identity.auth_utils import b64url_decode as _b64url_decode
+from .domains.identity.auth_utils import b64url_decode as _b64url_decode  # noqa: F401 - compatibility export
 from .domains.identity.auth_utils import JwtClaims as JwtClaims
 from .domains.identity.auth_utils import jwt_verify_hs256 as _jwt_verify_hs256
 from .config import env_bool
@@ -146,8 +146,7 @@ async def _audit_api_usage(request: Request, *, tenant_id: str, auth_mode: str, 
         return
     store = cast(list[ApiUsageAuditRecord], store_obj)
     max_items = int(os.getenv("API_USAGE_AUDIT_MAX", "2000"))
-    forwarded_for = (request.headers.get("X-Forwarded-For", "") or "").split(",")[0].strip()
-    client_host = forwarded_for or (request.client.host if request.client else "")
+    client_host = request.client.host if request.client else ""
     ua = request.headers.get("User-Agent", "")
     ip_hash = hashlib.sha256(client_host.encode("utf-8")).hexdigest()[:16] if client_host else ""
     ua_hash = hashlib.sha256(ua.encode("utf-8")).hexdigest()[:16] if ua else ""
@@ -231,7 +230,7 @@ def _enforce_query_api_key_policy(request: Request) -> None:
 def _enforce_transport_security(forwarded_proto: str, client_cert_verified: str) -> None:
     if env_bool("ENFORCE_HTTPS_HEADER", False):
         scheme = forwarded_proto.split(",")[0].strip().lower()
-        if scheme and scheme != "https":
+        if scheme != "https":
             raise HTTPException(status_code=400, detail="HTTPS is required.")
     if env_bool("REQUIRE_MTLS", False):
         cert_state = client_cert_verified.strip().lower()

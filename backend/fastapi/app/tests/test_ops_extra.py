@@ -7,16 +7,33 @@ updates, endpoint-hardening, network-anomalies, dead-code findings, threat-hunti
 from __future__ import annotations
 
 import os
+import time
 
 os.environ.setdefault("NUXTRON_SKIP_STARTUP_DB_INIT", "1")
 os.environ.setdefault("FASTAPI_API_KEY", "test-api-key")
+os.environ.setdefault("JWT_SIGNING_KEY", "ops-test-secret")
 
 import pytest
 from fastapi.testclient import TestClient
+from backend.fastapi.app.domains.identity.auth_utils import jwt_sign_hs256
 
 H = {"X-API-Key": "test-api-key", "X-Tenant-Id": "test-tenant"}
 HA = {**H, "X-Super-Admin": "true"}
 VALID = (200, 201, 202, 400, 401, 403, 404, 409, 422, 500, 503)
+
+
+def _admin_headers() -> dict[str, str]:
+    secret = os.environ.get("JWT_SIGNING_KEY", "ops-test-secret")
+    token = jwt_sign_hs256(
+        {
+            "tenant_id": "test-tenant",
+            "sub": "ops-admin",
+            "roles": ["admin"],
+            "exp": int(time.time()) + 3600,
+        },
+        secret,
+    )
+    return {"Authorization": f"Bearer {token}", "X-Tenant-Id": "test-tenant"}
 
 
 @pytest.fixture(scope="module")
@@ -40,6 +57,18 @@ class TestOpsPlatformExtra:
 
 
 class TestOpsSiemExtra:
+    def test_siem_rejects_api_key_without_admin_identity(self, client: TestClient) -> None:
+        response = client.get("/ops/siem/data-collection", headers=H)
+        assert response.status_code == 403
+
+    def test_siem_allows_admin_bearer(self, client: TestClient, monkeypatch) -> None:
+        from backend.fastapi.app.middleware import admin_allowlist
+
+        monkeypatch.setattr(admin_allowlist, "_NETWORKS", [])
+        monkeypatch.delenv("PRIVILEGED_IP_ALLOWLIST", raising=False)
+        response = client.get("/ops/siem/data-collection", headers=_admin_headers())
+        assert response.status_code == 200
+
     def test_siem_data_collection(self, client: TestClient) -> None:
         r = client.get("/ops/siem/data-collection", headers=H)
         assert r.status_code in VALID

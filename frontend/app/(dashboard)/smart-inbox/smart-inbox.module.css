@@ -1,0 +1,129 @@
+.toolbar {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.55fr);
+  gap: 12px;
+  flex: 1 1 430px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.queue {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.message {
+  min-width: 0;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-card);
+  padding: 14px;
+}
+
+.messageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.messageIdentity {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.messageText {
+  margin: 12px 0;
+  color: var(--nx-ink-2);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.messageMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: var(--nx-muted);
+  font-size: 12px;
+}
+
+.messageActions {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.statusField {
+  width: min(260px, 100%);
+}
+
+.intake {
+  display: grid;
+  gap: 12px;
+}
+
+.textareaLabel {
+  display: grid;
+  gap: 6px;
+  color: var(--nx-ink-2);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 116px;
+  resize: vertical;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  background: var(--nx-card);
+  color: var(--nx-ink);
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.note {
+  color: var(--nx-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .messageActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .statusField {
+    width: 100%;
+  }
+}

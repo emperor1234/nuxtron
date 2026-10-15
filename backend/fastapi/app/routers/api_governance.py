@@ -9,6 +9,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from ..authz import require_role
 from ..deps import AuthContext, require_auth
 from ..middleware.admin_allowlist import require_privileged_ip
 from ..quantum_nist import get_quantum_nist_status
@@ -67,14 +68,18 @@ def create_api_governance_router(ctx: ApiGovernanceContext) -> APIRouter:  # NOS
     # docstring) but never actually wired up anywhere. This router manages
     # provider credentials/tokens for the whole platform, so it belongs behind
     # the IP allowlist as well as the existing token-only policy below.
-    router = APIRouter(prefix='/api-governance', tags=['api-governance'], dependencies=[Depends(require_privileged_ip)])
+    router = APIRouter(
+        prefix='/api-governance',
+        tags=['api-governance'],
+        dependencies=[Depends(require_privileged_ip), Depends(require_role('admin'))],
+    )
 
     def _now() -> str:
         return datetime.now(UTC).isoformat()
 
     def _require_token_only(auth: AuthContext) -> None:
-        if auth.auth_mode != 'bearer_jwt':
-            raise HTTPException(status_code=403, detail='Token-only policy is enforced for API governance endpoints.')  # NOSONAR
+        if auth.auth_mode not in {'bearer_jwt', 'oidc_bearer'} or not auth.subject.strip():
+            raise HTTPException(status_code=403, detail='Verified user bearer authentication is required for API governance.')  # NOSONAR
 
     def _provider_not_found(provider_id: int) -> None:
         raise HTTPException(status_code=404, detail=f'Provider {provider_id} not found.')  # NOSONAR

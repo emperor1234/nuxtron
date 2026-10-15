@@ -3,6 +3,7 @@
 from __future__ import annotations
 from .....provider_executors import get_executor
 from ..constants import MissionStatus
+from ..capabilities import require_workforce_execution_available
 from ..constants import PROVIDER_CATALOG
 from ..runtime import ContextRuntime
 from ..services.mission_execution import _dispatch_provider_action
@@ -144,6 +145,7 @@ def helper_connected_provider_connections(
 def helper_queue_mission_execution(
     runtime: ContextRuntime, tenant_id: str, mission: dict[str, Any], source: str
 ) -> dict[str, Any]:
+    require_workforce_execution_available()
     from .....tasks.workforce_tasks import enqueue_execute_mission
 
     providers_for_mission = mission.get("providers", [])
@@ -190,6 +192,7 @@ def helper_queue_mission_execution(
 
 
 async def helper_execute_mission(runtime: ContextRuntime, tenant_id: str, mission: dict[str, Any]) -> dict[str, Any]:
+    require_workforce_execution_available()
     mission_start = time.time()
     mission_id = mission.get("id", "unknown")
     role = mission.get("role", "general")

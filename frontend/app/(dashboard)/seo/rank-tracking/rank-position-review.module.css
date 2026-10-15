@@ -1,0 +1,340 @@
+.page {
+  width: min(100%, 1320px);
+  margin-inline: auto;
+  gap: 20px;
+}
+
+.localNotice {
+  border-color: var(--nx-info-line);
+  background: var(--nx-info-soft);
+}
+
+.noticeRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.noticeIcon {
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--nx-info-ink);
+  background: var(--nx-card);
+  font-weight: 750;
+}
+
+.noticeCopy {
+  margin: 0;
+  color: var(--nx-ink-2);
+  line-height: 1.55;
+}
+
+.noticeCopy strong {
+  color: var(--nx-ink);
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.label {
+  color: var(--nx-ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.helper {
+  margin: 0;
+  color: var(--nx-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  background: var(--nx-card);
+  color: var(--nx-ink);
+  font: inherit;
+}
+
+.input {
+  min-height: 40px;
+  padding: 9px 11px;
+}
+
+.textarea {
+  min-height: 190px;
+  padding: 12px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.textarea::placeholder {
+  color: var(--nx-faint);
+}
+
+.fileRow,
+.actionRow,
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+
+.fileControl {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+  border: 0;
+}
+
+.fileControl:focus-visible + .fileLabel {
+  outline: 2px solid var(--nx-brand);
+  outline-offset: 3px;
+}
+
+.fileLabel {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  background: var(--nx-card);
+  color: var(--nx-ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.fileName {
+  color: var(--nx-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.contextGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.contextFieldset {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--nx-border-soft);
+  border-radius: var(--nx-radius-sm);
+}
+
+.error,
+.warning,
+.emptyState {
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  padding: 12px 14px;
+  line-height: 1.5;
+}
+
+.error {
+  color: var(--nx-danger-ink);
+  background: var(--nx-danger-soft);
+  border-color: var(--nx-danger-line);
+}
+
+.warning {
+  color: var(--nx-warning-ink);
+  background: var(--nx-warning-soft);
+  border-color: var(--nx-warning-line);
+}
+
+.emptyState {
+  color: var(--nx-muted);
+  background: var(--nx-neutral-soft);
+  text-align: center;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metric {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--nx-border-soft);
+  border-radius: var(--nx-radius-sm);
+  background: var(--nx-card);
+}
+
+.metricLabel {
+  display: block;
+  color: var(--nx-muted);
+  font-size: 12px;
+}
+
+.metricValue {
+  display: block;
+  margin-top: 4px;
+  color: var(--nx-ink);
+  font-size: 21px;
+  font-weight: 720;
+  font-variant-numeric: tabular-nums;
+}
+
+.resultsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.resultStatus {
+  margin: 14px 0 10px;
+  color: var(--nx-ink-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.contextSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  color: var(--nx-muted);
+  font-size: 12px;
+}
+
+.filterRow {
+  align-items: end;
+}
+
+.filterSearch {
+  flex: 1 1 240px;
+}
+
+.tableScroller {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--nx-border-soft);
+  border-radius: var(--nx-radius-sm);
+  scrollbar-gutter: stable;
+}
+
+.table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table th {
+  padding: 0;
+  border-bottom: 1px solid var(--nx-border);
+  background: var(--nx-neutral-soft);
+  color: var(--nx-muted);
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--nx-border-soft);
+  color: var(--nx-ink);
+  font-size: 13px;
+  vertical-align: top;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.sortButton {
+  width: 100%;
+  min-height: 40px;
+  justify-content: flex-start;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sortMark {
+  margin-left: 5px;
+  color: var(--nx-brand);
+}
+
+.metricMissing {
+  color: var(--nx-muted);
+}
+
+.keywordCell {
+  min-width: 220px;
+  overflow-wrap: anywhere;
+  font-weight: 620;
+}
+
+.noWrap {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.caption {
+  padding: 10px 13px;
+  color: var(--nx-muted);
+  font-size: 12px;
+  text-align: left;
+}
+
+.urlCell {
+  max-width: 280px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .contextGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .contextGrid,
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .textarea {
+    min-height: 160px;
+  }
+}

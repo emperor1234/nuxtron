@@ -1,279 +1,255 @@
 'use client';
 
 import { useState } from 'react';
-import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import type { FormEvent } from 'react';
 
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
-
-type LocaleTarget = {
-  locale: string;
-  status?: string;
-  focus_keyword?: string;
-};
-
-type RegionalGap = {
-  locale?: string;
-  gap?: string;
-  severity?: string;
-};
-
-type IntlResult = {
-  readiness_score?: number;
-  hreflang_coverage_pct?: number;
-  canonical_consistency_pct?: number;
-  locale_targets?: LocaleTarget[];
-  regional_gaps?: RegionalGap[];
-  priority_actions?: string[];
-  analysis_id?: string;
-  cached?: boolean;
-  analysis_mode?: 'llm' | 'heuristic';
-  fallback?: boolean;
-};
+import { Badge, Button, Card, CardTitle, Page, PageHeader } from '../../_ui/kit';
+import {
+  reviewHreflangMarkup,
+  type HreflangReview,
+  type HreflangSeverity,
+} from './international-review-model';
+import styles from './international-review.module.css';
 
 export default function InternationalMultilingualPage() {
-  const [domain, setDomain] = useState('');
-  const [locales, setLocales] = useState('en-us, en-gb, es-es');
-  const [hreflangMap, setHreflangMap] = useState('');
-  const [notes, setNotes] = useState('');
-  const [result, setResult] = useState<IntlResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [currentPageLocale, setCurrentPageLocale] = useState('');
+  const [expectedLocales, setExpectedLocales] = useState('');
+  const [canonicalUrl, setCanonicalUrl] = useState('');
+  const [markup, setMarkup] = useState('');
+  const [result, setResult] = useState<HreflangReview | null>(null);
+  const [formError, setFormError] = useState('');
 
-  async function run() {
-    if (!domain.trim()) {
-      setError('Domain is required.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      const data = await apiSend<IntlResult>(
-        '/seo-platform/international-multilingual/analyze',
-        'POST',
-        {
-          domain: domain.trim(),
-          locales: locales
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean),
-          current_hreflang_map: hreflangMap,
-          notes,
-        },
-        DEFAULT_TENANT_ID
-      );
-      if (data?.fallback === true && data?.analysis_mode !== 'heuristic') {
-        throw new Error(
-          IS_STRICT_NO_MOCK_MODE
-            ? 'Live LLM backend is unavailable in strict no-mock mode.'
-            : 'Live LLM backend is unavailable in fail-closed mode.'
-        );
-      }
-      setResult(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'International SEO analysis failed');
-    } finally {
-      setLoading(false);
-    }
+  function clearResult() {
+    setResult(null);
+    setFormError('');
   }
 
-  const card = {
-    background: 'var(--bg-soft)',
-    border: '1px solid var(--line)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  };
-  const input = {
-    width: '100%',
-    padding: '8px 10px',
-    borderRadius: 8,
-    border: '1px solid var(--line)',
-    background: 'var(--bg)',
-    color: 'var(--text)',
-    marginBottom: 10,
-    boxSizing: 'border-box' as const,
-  };
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!markup.trim()) {
+      setResult(null);
+      setFormError('Paste the alternate link markup you want to inspect. Nothing is fetched automatically.');
+      return;
+    }
+    setFormError('');
+    setResult(reviewHreflangMarkup({ currentPageLocale, expectedLocales, canonicalUrl, markup }));
+  }
+
+  const issueCounts = result
+    ? {
+        errors: result.findings.filter((finding) => finding.severity === 'error').length,
+        warnings: result.findings.filter((finding) => finding.severity === 'warning').length,
+      }
+    : null;
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
-      <div style={{ maxWidth: 980, margin: '0 auto' }}>
-        <h1 style={{ marginTop: 0 }}>International & Multilingual SEO</h1>
-        <p style={{ color: 'var(--muted)' }}>
-          Regionalization, hreflang quality, and locale-level optimization planning.
-        </p>
+    <Page className={styles.page}>
+      <PageHeader
+        title="Hreflang & Locale Review"
+        subtitle="Check language tags, alternate links, and an optional locale list using only the markup you provide."
+        actions={<Badge tone="brand">Browser-only review</Badge>}
+      />
 
-        {error && <div style={{ ...card, color: 'var(--danger)' }}>{error}</div>}
+      <p className={styles.notice} role="note">
+        <strong>No live-site audit:</strong> this page does not fetch URLs, inspect other locale pages, check reciprocal tags,
+        or verify canonical elements. Your entries are analyzed in this tab and are not saved or sent to Nuxtron.
+      </p>
 
-        <section style={card}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Domain</label>
-          <input style={input} value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="example.com" />
+      <Card className={styles.formCard}>
+        <CardTitle
+          sub="Paste a source page's link tags. Optional locale and canonical fields add checks against the values you enter."
+        >
+          Review supplied markup
+        </CardTitle>
 
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-            Locales (comma-separated)
-          </label>
-          <input
-            style={input}
-            value={locales}
-            onChange={(e) => setLocales(e.target.value)}
-            placeholder="en-us, en-gb, es-es, de-de"
-          />
+        <form onSubmit={handleSubmit} noValidate>
+          <div className={styles.fieldsGrid}>
+            <label className={styles.field} htmlFor="current-page-locale">
+              <span id="current-page-locale-label">Current page locale <span className={styles.optional}>(optional)</span></span>
+              <input
+                id="current-page-locale"
+                name="currentPageLocale"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                maxLength={80}
+                value={currentPageLocale}
+                onChange={(event) => {
+                  setCurrentPageLocale(event.target.value);
+                  clearResult();
+                }}
+                placeholder=""
+                aria-describedby="current-locale-help"
+                aria-labelledby="current-page-locale-label"
+              />
+              <span className={styles.fieldHelp} id="current-locale-help">
+                Used only to check whether this tag is present in the pasted alternates.
+              </span>
+            </label>
 
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-            Current hreflang map (optional)
-          </label>
-          <textarea
-            style={{ ...input, minHeight: 90 }}
-            value={hreflangMap}
-            onChange={(e) => setHreflangMap(e.target.value)}
-            placeholder="Paste hreflang snippets or mapping notes"
-          />
+            <label className={styles.field} htmlFor="expected-locales">
+              <span id="expected-locales-label">Expected locales <span className={styles.optional}>(optional)</span></span>
+              <textarea
+                id="expected-locales"
+                name="expectedLocales"
+                rows={3}
+                maxLength={1000}
+                value={expectedLocales}
+                onChange={(event) => {
+                  setExpectedLocales(event.target.value);
+                  clearResult();
+                }}
+                placeholder=""
+                aria-describedby="expected-locales-help"
+                aria-labelledby="expected-locales-label"
+              />
+              <span className={styles.fieldHelp} id="expected-locales-help">
+                Enter language tags separated by commas or new lines. No locale list is prefilled.
+              </span>
+            </label>
 
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Notes</label>
-          <textarea
-            style={{ ...input, minHeight: 80 }}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Target regions, priority markets, rollout constraints"
-          />
+            <label className={styles.field} htmlFor="canonical-url">
+              <span id="canonical-url-label">Canonical URL <span className={styles.optional}>(optional)</span></span>
+              <input
+                id="canonical-url"
+                name="canonicalUrl"
+                type="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                maxLength={2048}
+                value={canonicalUrl}
+                onChange={(event) => {
+                  setCanonicalUrl(event.target.value);
+                  clearResult();
+                }}
+                placeholder=""
+                aria-describedby="canonical-url-help"
+                aria-labelledby="canonical-url-label"
+              />
+              <span className={styles.fieldHelp} id="canonical-url-help">
+                Only URL syntax is checked; no canonical tag is retrieved or compared.
+              </span>
+            </label>
+          </div>
 
-          <button
-            onClick={run}
-            disabled={loading}
-            style={{
-              padding: '8px 16px',
-              borderRadius: 8,
-              border: 'none',
-              background: 'var(--brand)',
-              color: 'var(--on-brand)',
-              fontWeight: 700,
-              cursor: 'pointer',
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? 'Analyzing multilingual SEO...' : 'Analyze International SEO'}
-          </button>
-        </section>
-
-        {result && (
-          <>
-            {(result.analysis_mode || result.cached) && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
-                    {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
-                  </span>
-                )}
-                {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
-                )}
-              </div>
-            )}
-            <section
-              style={{
-                ...card,
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))',
-                gap: 10,
+          <label className={`${styles.field} ${styles.markupField}`} htmlFor="hreflang-markup">
+            <span id="hreflang-markup-label">Hreflang link markup</span>
+            <textarea
+              id="hreflang-markup"
+              name="markup"
+              rows={9}
+              maxLength={30000}
+              value={markup}
+              onChange={(event) => {
+                setMarkup(event.target.value);
+                clearResult();
               }}
-            >
-              <div
-                style={{
-                  background: 'var(--bg)',
-                  border: '1px solid var(--line)',
-                  borderRadius: 8,
-                  padding: '10px 12px',
-                }}
-              >
-                <div style={{ fontSize: 10, color: 'var(--muted)' }}>Readiness Score</div>
-                <div style={{ fontSize: 24, fontWeight: 800 }}>{result.readiness_score ?? '--'}</div>
-              </div>
-              <div
-                style={{
-                  background: 'var(--bg)',
-                  border: '1px solid var(--line)',
-                  borderRadius: 8,
-                  padding: '10px 12px',
-                }}
-              >
-                <div style={{ fontSize: 10, color: 'var(--muted)' }}>hreflang Coverage</div>
-                <div style={{ fontSize: 24, fontWeight: 800 }}>{result.hreflang_coverage_pct ?? '--'}%</div>
-              </div>
-              <div
-                style={{
-                  background: 'var(--bg)',
-                  border: '1px solid var(--line)',
-                  borderRadius: 8,
-                  padding: '10px 12px',
-                }}
-              >
-                <div style={{ fontSize: 10, color: 'var(--muted)' }}>Canonical Consistency</div>
-                <div style={{ fontSize: 24, fontWeight: 800 }}>{result.canonical_consistency_pct ?? '--'}%</div>
-              </div>
-            </section>
+              placeholder=""
+              spellCheck={false}
+              aria-invalid={formError ? true : undefined}
+              aria-labelledby="hreflang-markup-label"
+              aria-describedby="markup-help"
+            />
+            <span className={styles.fieldHelp} id="markup-help">
+              Paste the actual <code>&lt;link rel=&quot;alternate&quot; hreflang=&quot;…&quot; href=&quot;…&quot;&gt;</code> lines you want checked.
+              Markup is parsed as text and never inserted into the page.
+            </span>
+          </label>
 
-            {(result.locale_targets ?? []).length > 0 && (
-              <section style={card}>
-                <h3 style={{ marginTop: 0, fontSize: 14 }}>Locale Targets</h3>
-                {(result.locale_targets ?? []).map((item, index) => (
-                  <div
-                    key={`${item.locale ?? 'locale'}-${index}`}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: 12,
-                      padding: '8px 0',
-                      borderBottom: index < (result.locale_targets ?? []).length - 1 ? '1px solid var(--line)' : 'none',
-                    }}
-                  >
-                    <div>
-                      <strong style={{ fontSize: 13 }}>{item.locale ?? '--'}</strong>
-                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{item.focus_keyword ?? ''}</div>
+          {formError ? (
+            <p className={styles.formError} role="alert">
+              {formError}
+            </p>
+          ) : null}
+
+          <div className={styles.formActions}>
+            <Button variant="primary" type="submit">Review supplied markup</Button>
+            <span className={styles.actionHint}>No fetch, score, persistence, or generated locale targets.</span>
+          </div>
+        </form>
+      </Card>
+
+      {result ? (
+        <section className={styles.resultSection} aria-labelledby="review-results-title">
+          <div className={styles.resultHeader}>
+            <div>
+              <p className={styles.eyebrow}>Local review</p>
+              <h2 id="review-results-title">Results for supplied markup</h2>
+              <p className={styles.resultSummary} role="status" aria-live="polite">
+                {result.alternateTagsFound} alternate {result.alternateTagsFound === 1 ? 'link' : 'links'} found in the supplied text.
+                {issueCounts ? ` ${issueCounts.errors} ${issueCounts.errors === 1 ? 'error' : 'errors'} and ${issueCounts.warnings} ${issueCounts.warnings === 1 ? 'warning' : 'warnings'}.` : ''}
+              </p>
+            </div>
+            <Badge tone={issueCounts?.errors ? 'danger' : issueCounts?.warnings ? 'neutral' : 'success'}>
+              {issueCounts?.errors ? 'Review needed' : issueCounts?.warnings ? 'Check warnings' : 'No structural issues found'}
+            </Badge>
+          </div>
+
+          {result.findings.length > 0 ? (
+            <ul className={styles.findingList} aria-label="Review findings">
+              {result.findings.map((finding) => (
+                <FindingItem key={finding.code} severity={finding.severity} title={finding.title} detail={finding.detail} />
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.cleanNote}>The supplied tags and optional checks passed this limited syntax and coverage review.</p>
+          )}
+
+          {result.entries.length > 0 ? (
+            <div className={styles.entriesSection}>
+              <h3>Alternate links inspected</h3>
+              <ul className={styles.entryList}>
+                {result.entries.map((entry) => (
+                  <li className={styles.entry} key={entry.index}>
+                    <div className={styles.entryHeader}>
+                      <code className={styles.localeCode}>{entry.locale ?? entry.rawLocale}</code>
+                      <span className={`${styles.entryStatus} ${styles[entry.status]}`}>
+                        {entry.status === 'valid' ? 'Syntax valid' : entry.status === 'duplicate' ? 'Duplicate locale' : entry.status === 'unexpected' ? 'Not in expected list' : 'Check markup'}
+                      </span>
                     </div>
-                    <span style={{ fontSize: 11, color: 'var(--brand)' }}>{item.status ?? 'planned'}</span>
-                  </div>
+                    <code className={styles.href}>{entry.hrefPreview}</code>
+                    {entry.details.length > 0 ? (
+                      <ul className={styles.entryDetails}>
+                        {entry.details.map((detail) => <li key={detail}>{detail}</li>)}
+                      </ul>
+                    ) : null}
+                  </li>
                 ))}
-              </section>
-            )}
+              </ul>
+            </div>
+          ) : null}
 
-            {(result.regional_gaps ?? []).length > 0 && (
-              <section style={card}>
-                <h3 style={{ marginTop: 0, fontSize: 14 }}>Regional Gaps</h3>
-                {(result.regional_gaps ?? []).map((gap, index) => (
-                  <div
-                    key={`gap-${index}`}
-                    style={{
-                      padding: '8px 0',
-                      borderBottom: index < (result.regional_gaps ?? []).length - 1 ? '1px solid var(--line)' : 'none',
-                    }}
-                  >
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>
-                      {gap.locale ?? 'Global'} · {gap.severity ?? 'info'}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>{gap.gap ?? ''}</div>
-                  </div>
-                ))}
-              </section>
-            )}
+          <p className={styles.limitNote}>
+            This is a markup-format and user-supplied locale comparison only. It cannot establish that target pages exist,
+            return matching reciprocal tags, use aligned canonicals, or contain suitable translations. Query strings and fragments are hidden from displayed targets.
+          </p>
+        </section>
+      ) : (
+        <Card className={styles.emptyCard}>
+          <CardTitle sub="No example data is loaded. Add your own source snippet above to begin.">
+            Nothing reviewed yet
+          </CardTitle>
+          <p>Paste the alternate links you want to inspect. The page stays blank until you submit your own markup.</p>
+        </Card>
+      )}
+    </Page>
+  );
+}
 
-            {(result.priority_actions ?? []).length > 0 && (
-              <section style={card}>
-                <h3 style={{ marginTop: 0, fontSize: 14 }}>Priority Actions</h3>
-                <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  {(result.priority_actions ?? []).map((action, index) => (
-                    <li key={`action-${index}`} style={{ marginBottom: 6, fontSize: 12, color: 'var(--muted)' }}>
-                      {action}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+function FindingItem({
+  severity,
+  title,
+  detail,
+}: {
+  severity: HreflangSeverity;
+  title: string;
+  detail: string;
+}) {
+  return (
+    <li className={`${styles.finding} ${styles[`finding${severity[0]?.toUpperCase()}${severity.slice(1)}`]}`}>
+      <strong>{title}</strong>
+      <span>{detail}</span>
+    </li>
   );
 }

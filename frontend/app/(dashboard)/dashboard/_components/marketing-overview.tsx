@@ -175,7 +175,7 @@ export default function MarketingOverview({
             ).toLowerCase(),
           ),
       );
-      const state: DataStatusState = !valid.some(Boolean)
+      const state: DataStatusState = !valid.every(Boolean)
         ? "unavailable"
         : preview
           ? "preview"
@@ -252,7 +252,9 @@ export default function MarketingOverview({
           </Button>
         }
       />
-      {!loading && <DataStatus state={summary.state} />}
+      {!loading && (summary.failed.length === 0 || summary.failed.length === 3) && (
+        <DataStatus state={summary.state} />
+      )}
       <section aria-label="Workspace summary" aria-busy={loading}>
         <StatGrid>
           <Stat
@@ -346,7 +348,7 @@ export default function MarketingOverview({
             <ArrowUpRight size={16} aria-hidden="true" />
           </Link>
           <Link href="/account">
-            Manage your team <ArrowUpRight size={16} aria-hidden="true" />
+            Account overview <ArrowUpRight size={16} aria-hidden="true" />
           </Link>
         </Card>
       </div>

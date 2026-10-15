@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken } from '@/app/lib/auth/jwt-edge';
-import INTERNAL_CONSOLES from '@/app/lib/internal-consoles.json';
 import { SESSION_COOKIE_NAME } from '@/app/lib/auth/session-cookie';
 import {
   PRODUCT_COOKIE_NAME,
@@ -65,21 +64,6 @@ const PUBLIC_EXACT_PATHS = new Set([
 // covers individual [slug] post pages (the index itself is /blog, above).
 const PUBLIC_PREFIXES = ['/tools/', '/blog/'];
 
-// Paths that require an elevated role beyond plain authentication — the
-// super-admin backend console plus the internal vendor-integration consoles
-// listed in app/lib/internal-consoles.json. The
-// backend RBAC layer (backend/fastapi/app/authz.py) is the real
-// authorization boundary for API calls; this is a UI-level defense-in-depth
-// gate so a non-admin session never even receives the admin page shell.
-//
-// Scoped to exactly the pages confirmed to use the super-admin key
-// (app/lib/api-client.ts STORAGE_SUPER_ADMIN_KEY / X-Super-Admin-Key) —
-// currently only /platform/backend. `/platform-ops` and `/white-label`
-// sound admin-adjacent by name but have no such evidence in their page
-// code; gating them here would incorrectly lock out regular users, and
-// `/platform` itself hosts unrelated non-admin feature pages (e.g.
-// /platform/owly-writer-ai), so the match must not be a bare prefix.
-const ADMIN_ONLY_PATHS = ['/platform/backend', ...INTERNAL_CONSOLES.paths];
 const ADMIN_ROLES = new Set(['admin', 'super_admin']);
 
 // Same escape hatch as ClientAuthGuard (app/components/client-auth-guard.tsx)
@@ -91,10 +75,6 @@ const AUTH_GUARD_DISABLED = process.env.NEXT_PUBLIC_DISABLE_AUTH_GUARD === 'true
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_EXACT_PATHS.has(pathname)) return true;
   return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-}
-
-function isAdminOnlyPath(pathname: string): boolean {
-  return ADMIN_ONLY_PATHS.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
 async function guardAppRoute(request: NextRequest): Promise<NextResponse | null> {
@@ -113,10 +93,6 @@ async function guardAppRoute(request: NextRequest): Promise<NextResponse | null>
   }
 
   const isAdmin = claims.roles.some((role) => ADMIN_ROLES.has(role));
-
-  if (isAdminOnlyPath(pathname) && !isAdmin) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
 
   return guardProductLine(request, pathname, {
     claim: claims.product,

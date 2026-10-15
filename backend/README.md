@@ -124,3 +124,12 @@ Good starting points for provider work:
 Media validation token signing refuses a missing/short/known-development `FASTAPI_SECRET` in production. Generate and store a high-entropy secret; never copy the development default into a deployment.
 
 For verification evidence and the remaining acceptance backlog, read `../docs/BACKEND-MODULARIZATION-VALIDATION-2026-10-10.md`. A modular monolith improves locality and testing; it does not guarantee a process cannot fail or that incomplete features become functional automatically.
+
+
+## 10. Current capability and verification status — 2026-10-13
+
+Media job create/read/retry/progress/output and provider-dispatch routes return typed `501` in every environment until a tenant-scoped durable repository, queue/worker, and artifact-completion path are implemented. The provider catalog's `configured` flag means only that deployment credentials exist; it does **not** mean processing is available. The legacy media job-record helper also fails closed. Raw-input deletion is a separate path and must continue to require durable audit and a successful signed storage DELETE.
+
+All 17 Client Portal client/report/template/schedule/share-link routes return typed JSON `501`; no sample metrics, generated reports, or HTML success should be reintroduced as a substitute for durable customer data and verified analytics.
+
+The latest full local FastAPI suite passed `7,125` tests with `26` skipped and `78.85%` source-only coverage (the repository gate remains `39%`). This is not a production deployment test. Production NO-GO blockers include global tenant/RLS proof, durable distributed work and remaining feature implementation, live Auth0/DB/Redis/Celery/storage/provider verification, AWS/Kubernetes deployment and network policy, backup/restore/chaos, authenticated DAST, and representative load evidence. No Kubernetes/Helm/Terraform/EKS manifest was found in the tracked repository inventory, and no Docker image or cloud deployment was built in this verification. Do not claim `10,000` concurrent users, complete product functionality, SOC 2/ISO 27001 certification, or absolute security. See `../docs/BACKEND-MODULARIZATION-VALIDATION-2026-10-10.md` and `../docs/BACKEND-SECURITY-READINESS-2026-10-09.md` for evidence and release gates.

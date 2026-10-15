@@ -1,187 +1,159 @@
 'use client';
 
-import { useState } from 'react';
-import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
-
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
-
-type CrawlIssue = { type: string; severity: string; detail: string; fix: string };
-
-type CrawlBudgetResult = {
-  analysis_id: string;
-  crawl_budget_score: number;
-  waste_pct: number;
-  priority_buckets: { high: string[]; medium: string[]; low: string[] };
-  issues: CrawlIssue[];
-  bot_efficiency: { googlebot_efficiency: number; bingbot_efficiency: number };
-  exclude_recommendations: string[];
-  quick_wins: string[];
-  analyzed_at: string;
-  cached?: boolean;
-  analysis_mode?: 'llm' | 'heuristic';
-  fallback?: boolean;
-};
+import { useState, type FormEvent } from 'react';
+import { Badge, Button, Card, CardTitle, Page, PageHeader, Stat, StatGrid } from '../../_ui/kit';
+import { analyzeCrawlReview, crawlCandidatesCsv, type CrawlReview } from './crawl-review-model';
+import styles from './crawl-budget.module.css';
 
 export default function CrawlBudgetPage() {
   const [domain, setDomain] = useState('');
-  const [sampleUrls, setSampleUrls] = useState('/\n/blog/\n/tag/\n/page/2/');
+  const [sampleUrls, setSampleUrls] = useState('');
   const [logSnippet, setLogSnippet] = useState('');
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<CrawlBudgetResult | null>(null);
+  const [review, setReview] = useState<CrawlReview | null>(null);
 
-  async function runAnalyze(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError('');
-    setResult(null);
+    setReview(null);
     try {
-      const urls = sampleUrls
-        .split('\n')
-        .map((u) => u.trim())
-        .filter(Boolean);
-      const data = await apiSend<CrawlBudgetResult>(
-        '/seo-platform/crawl-budget/analyze',
-        'POST',
-        { domain, sample_urls: urls, log_snippet: logSnippet, notes },
-        DEFAULT_TENANT_ID
-      );
-      if (data?.fallback === true && data?.analysis_mode !== 'heuristic') {
-        throw new Error(
-          IS_STRICT_NO_MOCK_MODE
-            ? 'Live LLM backend is unavailable in strict no-mock mode.'
-            : 'Live LLM backend is unavailable in fail-closed mode.'
-        );
-      }
-      setResult(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Analysis failed');
-    } finally {
-      setLoading(false);
+      setReview(analyzeCrawlReview({ domain, sampleUrls, logSnippet }));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not review these samples.');
     }
   }
 
+  function exportCandidates() {
+    if (!review || review.candidates.length === 0) return;
+    const blob = new Blob([crawlCandidatesCsv(review.candidates)], { type: 'text/csv;charset=utf-8' });
+    const href = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.download = 'crawl-review-candidates.csv';
+    anchor.click();
+    URL.revokeObjectURL(href);
+  }
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Crawl Budget Optimizer</h1>
-        <p className="text-gray-500 mt-1">Prioritize high-value URLs and reduce crawl waste from low-value paths.</p>
-      </div>
+    <Page>
+      <PageHeader
+        title="Crawl Budget Review"
+        subtitle="Inspect URL patterns and access-log samples you provide. This page does not connect to your site or search-engine data."
+      />
 
-      <form onSubmit={runAnalyze} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <div>
-          <label htmlFor="domain" className="block text-sm font-medium text-gray-700 mb-1">
-            Domain *
-          </label>
-          <input
-            id="domain"
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="sample-urls" className="block text-sm font-medium text-gray-700 mb-1">
-              Sample URLs (one per line)
-            </label>
-            <textarea
-              id="sample-urls"
-              value={sampleUrls}
-              onChange={(e) => setSampleUrls(e.target.value)}
-              rows={5}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+      <Card className={styles.scopeNotice}>
+        <Badge tone="brand">Local sample review</Badge>
+        <p>
+          Your inputs are analyzed in this browser and are not sent to the Nuxtron API. Pattern matches are review candidates, not crawl-budget measurements or instructions to change robots.txt.
+        </p>
+      </Card>
+
+      <Card>
+        <CardTitle sub="Provide a website origin and at least one same-origin sample URL or supported access-log line. Nothing is prefilled.">
+          Choose the evidence to inspect
+        </CardTitle>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <label className={styles.field} htmlFor="crawl-domain">
+            <span>Website origin</span>
+            <input
+              id="crawl-domain"
+              autoComplete="url"
+              inputMode="url"
+              placeholder="https://example.com"
+              value={domain}
+              onChange={(event) => setDomain(event.target.value)}
+              required
             />
-          </div>
-          <div>
-            <label htmlFor="log-snippet" className="block text-sm font-medium text-gray-700 mb-1">
-              Log Snippet (optional)
-            </label>
-            <textarea
-              id="log-snippet"
-              value={logSnippet}
-              onChange={(e) => setLogSnippet(e.target.value)}
-              rows={5}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
-            />
-          </div>
-        </div>
-        <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-            Notes
+            <small>Enter the root origin only. The review will reject sample URLs from other hosts.</small>
           </label>
-          <textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading || !domain}
-          className="w-full bg-[var(--brand)] text-white py-2 px-4 rounded-lg text-sm font-medium disabled:opacity-50"
-        >
-          {loading ? 'Analyzing...' : 'Analyze Crawl Budget'}
-        </button>
-      </form>
+          <div className={styles.inputGrid}>
+            <label className={styles.field} htmlFor="crawl-sample-urls">
+              <span>Sample URLs <em>Optional</em></span>
+              <textarea
+                id="crawl-sample-urls"
+                rows={7}
+                value={sampleUrls}
+                onChange={(event) => setSampleUrls(event.target.value)}
+                placeholder={'/pricing\n/blog/article\n/tag/topic'}
+              />
+              <small>Use one same-origin path or full URL per line. Up to 200 entries.</small>
+            </label>
+            <label className={styles.field} htmlFor="crawl-log-snippet">
+              <span>Access-log excerpt <em>Optional</em></span>
+              <textarea
+                id="crawl-log-snippet"
+                rows={7}
+                className={styles.mono}
+                value={logSnippet}
+                onChange={(event) => setLogSnippet(event.target.value)}
+                placeholder={'192.0.2.1 - - [12/Oct/2026:21:00:00 -0700] "GET /tag/topic HTTP/1.1" 404 123 "-" "ExampleBot/1.0"'}
+              />
+              <small>Common/Combined Log Format is parsed locally. User-agent strings are not verified.</small>
+            </label>
+          </div>
+          {error && <p className={styles.error} role="alert">{error}</p>}
+          <Button type="submit" variant="primary">Review samples</Button>
+        </form>
+      </Card>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>
-      )}
-
-      {result && (
-        <div className="space-y-4">
-          {(result.analysis_mode || result.cached) && (
-            <div className="flex gap-2 flex-wrap">
-              {result.analysis_mode && (
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${result.analysis_mode === 'llm' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                  {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
-                </span>
-              )}
-              {result.cached && (
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-sky-100 text-[var(--brand)]">Cached result</span>
-              )}
+      {review && (
+        <section aria-label="Crawl sample review results" className={styles.results}>
+          <Card className={styles.resultHeader}>
+            <div>
+              <CardTitle sub={`Origin: ${review.origin}. Results reflect only the supplied sample.`}>Review summary</CardTitle>
             </div>
+            <Button type="button" onClick={exportCandidates} disabled={review.candidates.length === 0}>
+              Export candidate list
+            </Button>
+          </Card>
+
+          <StatGrid>
+            <Stat label="Unique sample URLs" value={review.sampleUrlCount} hint={`${review.duplicateSampleCount} duplicate entries removed`} />
+            <Stat label="Pattern candidates" value={review.candidates.length} hint="Human review required" />
+            <Stat label="Parsed log rows" value={review.parsedLogLineCount} hint={review.logLineCount ? `${review.unrecognizedLogLineCount} unrecognized` : 'No log excerpt supplied'} />
+            <Stat label="4xx / 5xx in sample" value={`${review.clientErrorCount} / ${review.serverErrorCount}`} hint="Observed log responses only" />
+          </StatGrid>
+
+          {Object.keys(review.statusCounts).length > 0 && (
+            <Card className={styles.statusCodes}>
+              <CardTitle sub="Counts from parsed log rows; crawler identity is not verified.">Observed response codes</CardTitle>
+              <ul>
+                {Object.entries(review.statusCounts).map(([code, count]) => <li key={code}><strong>{code}</strong><span>{count} requests</span></li>)}
+              </ul>
+            </Card>
           )}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 grid grid-cols-2 gap-6 text-center">
-            <div>
-              <div className="text-4xl font-bold text-gray-800">{result.crawl_budget_score}</div>
-              <div className="text-xs text-gray-500">Crawl Budget Score</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-red-600">{result.waste_pct}%</div>
-              <div className="text-xs text-gray-500">Estimated Waste</div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-base font-semibold text-gray-800 mb-3">Issues</h2>
-            <div className="space-y-2">
-              {result.issues.map((i) => (
-                <div key={`${i.type}-${i.detail}`} className="border border-gray-100 rounded-lg p-3">
-                  <div className="text-xs font-mono text-gray-500">
-                    {i.severity.toUpperCase()} · {i.type}
-                  </div>
-                  <div className="text-sm text-gray-700">{i.detail}</div>
-                  <div className="text-xs text-[var(--brand)]">Fix: {i.fix}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Card>
+            <CardTitle sub="Pattern matches identify URLs worth a human look. They do not prove that a path wastes crawl budget.">
+              URL patterns to review
+            </CardTitle>
+            {review.candidates.length === 0 ? (
+              <p className={styles.empty}>No review patterns were found in the provided sample. This is not evidence that the full site has no crawl issues.</p>
+            ) : (
+              <div className={styles.candidateList}>
+                {review.candidates.map((candidate) => (
+                  <article className={styles.candidate} key={candidate.url}>
+                    <code className={styles.url}>{candidate.url}</code>
+                    <div className={styles.tags}>
+                      {candidate.reasons.map((reason) => <Badge key={reason} tone="neutral">{reason}</Badge>)}
+                    </div>
+                    <p className={styles.evidence}>Observed in: {candidate.sources.join(' · ')}</p>
+                    {candidate.requestCount > 0 && (
+                      <p className={styles.evidence}>
+                        Parsed requests: {candidate.requestCount}; response codes: {Object.entries(candidate.statusCounts).map(([code, count]) => `${code} × ${count}`).join(', ')}
+                      </p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </Card>
 
-          <p className="text-xs text-[var(--muted)] text-right">
-            Analyzed: {new Date(result.analyzed_at).toLocaleString()} · ID: {result.analysis_id.slice(0, 8)}
+          <p className={styles.limitNote}>
+            This review does not estimate total crawl waste, discover unlisted URLs, connect to Search Console, verify bots, or modify site settings.
           </p>
-        </div>
+        </section>
       )}
-    </div>
+    </Page>
   );
 }

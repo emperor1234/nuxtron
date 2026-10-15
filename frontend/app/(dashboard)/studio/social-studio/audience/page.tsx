@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiGet, apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { apiGet, apiSend } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
 
 type NetworkAnalytics = {
   network: string;
@@ -60,7 +61,7 @@ const shell = {
 } as const;
 
 export default function AudienceInsightsPage() {
-  const [tenantId] = useState(DEFAULT_TENANT_ID || 'tenant-demo');
+  const [tenantId] = useState(resolveSessionTenant);
   const [network, setNetwork] = useState('instagram');
   const [days, setDays] = useState(30);
   const [overview, setOverview] = useState<OverviewResponse>({});

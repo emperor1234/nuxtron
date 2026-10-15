@@ -1,52 +1,50 @@
 """Seo/Platform use cases: ahrefs parity."""
 
-from ..services import extract_waterfall as provider_ollama_json
+import asyncio
+from datetime import UTC, datetime
 from functools import partial
-from .....deps import AuthContext
-from .....deps import require_auth
+from typing import Annotated, Any
+
+from fastapi import Depends, HTTPException
+from starlette.concurrency import run_in_threadpool
+
+from .....deps import AuthContext, require_auth
 from .....domains.seo.seo_module_registry import audit_ahrefs_core_tool_parity
 from .....domains.seo.services.seo_ai_service import analyze_seo_ai_core
 from .....domains.seo.services.seo_content_brief_service import generate_content_brief
-from .....domains.seo.services.seo_keyword_research_service import research_keywords
+from .....domains.seo.services.seo_keyword_research_service import raise_keyword_research_unavailable
 from .....domains.seo.services.seo_linkbuilding_service import analyze_linkbuilding
 from .....domains.seo.services.seo_on_page_service import analyze_on_page
+from .....domains.seo.services.seo_performance_service import raise_performance_unavailable
 from .....domains.seo.services.seo_schema_service import generate_schema_markup
-from ..constants import _BRIEF_SYS
-from ..constants import _KEYWORD_SYS
-from ..constants import _LINKBUILDING_SYS
-from ..constants import _ONPAGE_SYS
-from ..constants import _SCHEMA_SYS
-from ..constants import _SEO_AI_CORE_SYS
+from ..constants import _BRIEF_SYS, _LINKBUILDING_SYS, _ONPAGE_SYS, _SCHEMA_SYS, _SEO_AI_CORE_SYS
 from ..runtime import ContextRuntime
-from ..schemas import ContentBriefReq
-from ..schemas import KeywordResearchReq
-from ..schemas import LinkBuildingReq
-from ..schemas import OnPageReq
-from ..schemas import PerformanceAuditReq
-from ..schemas import SchemaGenReq
-from ..schemas import SeoAiCoreReq
-from ..schemas import TechnicalAuditReq
+from ..schemas import (
+    ContentBriefReq,
+    KeywordResearchReq,
+    LinkBuildingReq,
+    OnPageReq,
+    PerformanceAuditReq,
+    SchemaGenReq,
+    SeoAiCoreReq,
+    TechnicalAuditReq,
+)
+from ..services import extract_waterfall as provider_ollama_json
 from ..services.get_shared_job_store import _clean
-from .save_analysis import helper_get_module
-from .save_analysis import helper_job_get
-from .save_analysis import helper_job_update
-from .save_analysis import helper_run_keyword_research_job
-from .save_analysis import helper_run_on_page_job
-from .save_analysis import helper_run_schema_job
-from .save_analysis import helper_run_technical_audit_analysis
-from .save_analysis import helper_run_technical_audit_job
-from .save_analysis import helper_save_analysis
-from .sync_job_store import helper_find_cached_analysis
-from .sync_job_store import helper_job_create
-from .sync_job_store import helper_log
-from datetime import UTC
-from datetime import datetime
-from fastapi import Depends
-from fastapi import HTTPException
-from starlette.concurrency import run_in_threadpool
-from typing import Annotated
-from typing import Any
-import asyncio
+from .save_analysis import (
+    helper_get_module,
+    helper_job_get,
+    helper_job_update,
+    helper_run_on_page_job,
+    helper_run_schema_job,
+    helper_save_analysis,
+)
+from .sync_job_store import helper_find_cached_analysis, helper_job_create, helper_log
+
+_TECHNICAL_AUDIT_UNAVAILABLE = {
+    "code": "NOT_IMPLEMENTED",
+    "message": "A verified crawler is not configured. The current audit does not measure the submitted site, so synthetic results are disabled.",
+}
 
 
 async def execute_ahrefs_parity(auth: Annotated[AuthContext, Depends(require_auth)]):
@@ -115,100 +113,15 @@ async def execute_seo_ai_core_analyze(
 async def execute_keyword_research(
     runtime: ContextRuntime, req: KeywordResearchReq, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    """AI-powered keyword research with intent, clustering, and SERP features."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:keywords", limit=20, window_seconds=60)
-    payload = req.model_dump()
-    cached = await run_in_threadpool(
-        partial(helper_find_cached_analysis, runtime), auth.tenant_id, "keyword_research", payload
-    )
-    if cached is not None:
-        helper_log(
-            runtime,
-            auth.tenant_id,
-            "keyword_research",
-            {"keyword": req.seed_keyword, "analysis_id": cached["id"], "cached": True},
-        )
-        return {
-            "analysis_id": cached["id"],
-            "cached": True,
-            **(cached["result"] if isinstance(cached["result"], dict) else {}),
-        }
-    result = await research_keywords(
-        seed_keyword=req.seed_keyword,
-        domain=req.domain,
-        country=req.country,
-        count=req.count,
-        ollama_json_fn=provider_ollama_json._ollama_json,
-        system_prompt=_KEYWORD_SYS,
-        clean_text_fn=_clean,
-    )
-    analysis_id = await run_in_threadpool(
-        partial(helper_save_analysis, runtime), auth.tenant_id, "keyword_research", payload, result
-    )
-    helper_log(
-        runtime,
-        auth.tenant_id,
-        "keyword_research",
-        {"keyword": req.seed_keyword, "analysis_id": analysis_id, "cached": False},
-    )
-    return {"analysis_id": analysis_id, "cached": False, **result}
+    """Reject server-generated keyword metrics until a verified provider is connected."""
+    raise_keyword_research_unavailable()
 
 
 async def execute_keyword_research_async(
     runtime: ContextRuntime, req: KeywordResearchReq, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    """Queue a keyword research job and return immediately with a pollable job id."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:keywords", limit=20, window_seconds=60)
-    payload = req.model_dump()
-    cached = await run_in_threadpool(
-        partial(helper_find_cached_analysis, runtime), auth.tenant_id, "keyword_research", payload
-    )
-    if cached is not None:
-        job = helper_job_create(runtime, auth.tenant_id, "keyword_research", payload)
-        response = {
-            "analysis_id": cached["id"],
-            "cached": True,
-            **(cached["result"] if isinstance(cached["result"], dict) else {}),
-        }
-        helper_job_update(
-            runtime,
-            str(job["job_id"]),
-            status="completed",
-            started_at=datetime.now(UTC).isoformat(),
-            completed_at=datetime.now(UTC).isoformat(),
-            result=response,
-            error=None,
-        )
-        helper_log(
-            runtime,
-            auth.tenant_id,
-            "keyword_research_async",
-            {"keyword": req.seed_keyword, "analysis_id": cached["id"], "cached": True, "job_id": job["job_id"]},
-        )
-        return {
-            "job_id": job["job_id"],
-            "status": "completed",
-            "module": "keyword_research",
-            "cached": True,
-            "poll_path": f"/seo-platform/jobs/{job['job_id']}",
-            "result": response,
-        }
-    job = helper_job_create(runtime, auth.tenant_id, "keyword_research", payload)
-    job_id = str(job["job_id"])
-    asyncio.create_task(helper_run_keyword_research_job(runtime, job_id, auth.tenant_id, req, payload))
-    helper_log(
-        runtime,
-        auth.tenant_id,
-        "keyword_research_async",
-        {"keyword": req.seed_keyword, "job_id": job_id, "cached": False},
-    )
-    return {
-        "job_id": job_id,
-        "status": "queued",
-        "module": "keyword_research",
-        "cached": False,
-        "poll_path": f"/seo-platform/jobs/{job_id}",
-    }
+    """Do not queue synthetic keyword-research jobs."""
+    raise_keyword_research_unavailable()
 
 
 async def execute_on_page_analyze(
@@ -297,81 +210,15 @@ async def execute_on_page_analyze_async(
 async def execute_technical_audit(
     runtime: ContextRuntime, req: TechnicalAuditReq, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    """Full technical SEO audit — CWV, crawlability, indexability, structured data."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:technical", limit=10, window_seconds=60)
-    payload = req.model_dump()
-    cached = await run_in_threadpool(
-        partial(helper_find_cached_analysis, runtime), auth.tenant_id, "technical_audit", payload
-    )
-    if cached is not None:
-        helper_log(
-            runtime, auth.tenant_id, "technical_audit", {"url": req.url, "analysis_id": cached["id"], "cached": True}
-        )
-        return {
-            "analysis_id": cached["id"],
-            "cached": True,
-            **(cached["result"] if isinstance(cached["result"], dict) else {}),
-        }
-    result = await helper_run_technical_audit_analysis(req)
-    analysis_id = await run_in_threadpool(
-        partial(helper_save_analysis, runtime), auth.tenant_id, "technical_audit", payload, result
-    )
-    helper_log(
-        runtime, auth.tenant_id, "technical_audit", {"url": req.url, "analysis_id": analysis_id, "cached": False}
-    )
-    return {"analysis_id": analysis_id, "cached": False, **result}
+    """Do not claim measured technical audit results without an actual crawler."""
+    raise HTTPException(status_code=501, detail=_TECHNICAL_AUDIT_UNAVAILABLE)
 
 
 async def execute_technical_audit_async(
     runtime: ContextRuntime, req: TechnicalAuditReq, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    """Queue a technical SEO audit job and return immediately with a pollable job id."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:technical", limit=10, window_seconds=60)
-    payload = req.model_dump()
-    cached = await run_in_threadpool(
-        partial(helper_find_cached_analysis, runtime), auth.tenant_id, "technical_audit", payload
-    )
-    if cached is not None:
-        job = helper_job_create(runtime, auth.tenant_id, "technical_audit", payload)
-        response = {
-            "analysis_id": cached["id"],
-            "cached": True,
-            **(cached["result"] if isinstance(cached["result"], dict) else {}),
-        }
-        helper_job_update(
-            runtime,
-            str(job["job_id"]),
-            status="completed",
-            started_at=datetime.now(UTC).isoformat(),
-            completed_at=datetime.now(UTC).isoformat(),
-            result=response,
-            error=None,
-        )
-        helper_log(
-            runtime,
-            auth.tenant_id,
-            "technical_audit_async",
-            {"url": req.url, "analysis_id": cached["id"], "cached": True, "job_id": job["job_id"]},
-        )
-        return {
-            "job_id": job["job_id"],
-            "status": "completed",
-            "module": "technical_audit",
-            "cached": True,
-            "poll_path": f"/seo-platform/jobs/{job['job_id']}",
-            "result": response,
-        }
-    job = helper_job_create(runtime, auth.tenant_id, "technical_audit", payload)
-    job_id = str(job["job_id"])
-    asyncio.create_task(helper_run_technical_audit_job(runtime, job_id, auth.tenant_id, req, payload))
-    helper_log(runtime, auth.tenant_id, "technical_audit_async", {"url": req.url, "job_id": job_id, "cached": False})
-    return {
-        "job_id": job_id,
-        "status": "queued",
-        "module": "technical_audit",
-        "cached": False,
-        "poll_path": f"/seo-platform/jobs/{job_id}",
-    }
+    """Do not queue synthetic technical audit results as if they were measured."""
+    raise HTTPException(status_code=501, detail=_TECHNICAL_AUDIT_UNAVAILABLE)
 
 
 async def execute_get_async_job_status(
@@ -583,5 +430,4 @@ def helper_performance_test_profile(req: PerformanceAuditReq) -> dict[str, Any]:
 async def execute_performance_browser_profiles(
     runtime: ContextRuntime, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:perf-browsers", limit=120, window_seconds=60)
-    return {"count": len(runtime._PERF_BROWSER_PROFILES), "profiles": runtime._PERF_BROWSER_PROFILES}
+    raise_performance_unavailable()

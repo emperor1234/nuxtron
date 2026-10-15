@@ -28,7 +28,7 @@ const PREVIEW_KIND: Record<
     "ai-visibility": "ai",
     "rank-tracking": "trend",
     "keyword-research": "keywords",
-    "site-audit": "audit",
+    "traffic-analytics": "report",
     backlinks: "network",
     "content-optimisation": "document",
     local: "map",

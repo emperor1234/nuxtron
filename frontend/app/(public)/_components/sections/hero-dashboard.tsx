@@ -53,8 +53,8 @@ const RAILS: Record<"seo" | "marketing", readonly RailEntry[]> = {
       label: "SEO",
       Icon: Search,
       groups: [
-        { label: "Site Performance", items: ["Site Audit", "Position Tracking", "Log File Analyzer"] },
-        { label: "Competitive Analysis", items: ["Domain Overview", "Organic Research", "Keyword Gap"] },
+        { label: "Market & research", items: ["Market Explorer", "Industry Benchmarks", "Competitive Benchmarking", "Trending Now"] },
+        { label: "Research & visibility", items: ["Domain Overview", "Keyword Data Review", "Rank Position Review", "Competitor Research"] },
       ],
     },
     {
@@ -87,7 +87,7 @@ const RAILS: Record<"seo" | "marketing", readonly RailEntry[]> = {
       Icon: Share2,
       groups: [
         { label: "Publish", items: ["Post Scheduler", "Content Calendar"] },
-        { label: "Engage", items: ["Smart Inbox", "Review Management"] },
+        { label: "Engage", items: ["Smart Inbox", "Comment Replies"] },
       ],
     },
     {

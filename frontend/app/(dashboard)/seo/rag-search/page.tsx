@@ -1,296 +1,229 @@
 'use client';
 
-import { useState } from 'react';
-import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { useRef, useState, type FormEvent } from 'react';
+import { Badge, Button, Card, CardTitle, Field, Page, PageHeader } from '@/app/(dashboard)/_ui/kit';
+import { searchCorpus, type CorpusMatch, type CorpusSource } from './corpus-search-model';
+import styles from './rag-search.module.css';
 
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
+const MAX_SOURCES = 10;
+const MAX_CONTENT_LENGTH = 12000;
 
-function getConfidenceTextColor(confidence: number): string {
-  if (confidence >= 0.8) return 'text-green-600';
-  if (confidence >= 0.6) return 'text-yellow-600';
-  return 'text-red-600';
+function newSource(id: number): CorpusSource {
+  return { id: `source-${id}`, label: '', url: '', content: '' };
 }
 
-function getRelevanceTextColor(score: number): string {
-  if (score >= 0.8) return 'text-green-600';
-  if (score >= 0.6) return 'text-yellow-600';
-  return 'text-red-500';
-}
-
-interface SearchResult {
-  rank: number;
-  title: string;
-  url: string;
-  snippet: string;
-  relevance_score: number;
-  reasoning: string;
-}
-
-interface RagResult {
-  analysis_id: string;
-  query: string;
-  search_results: SearchResult[];
-  answer_synthesis: string;
-  entities_detected: string[];
-  intent: string;
-  related_queries: string[];
-  confidence: number;
-  site_domain: string;
-  searched_at: string;
-  cached?: boolean;
-  analysis_mode?: 'llm' | 'heuristic';
-  fallback?: boolean;
-}
-
-export default function RagSearchPage() {
+export default function CorpusSearchPreviewPage() {
+  const nextSourceId = useRef(2);
   const [query, setQuery] = useState('');
-  const [siteDomain, setSiteDomain] = useState('');
-  const [contentCorpus, setContentCorpus] = useState('');
-  const [topK, setTopK] = useState(5);
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<RagResult | null>(null);
+  const [sources, setSources] = useState<CorpusSource[]>([newSource(1)]);
+  const [limit, setLimit] = useState(5);
+  const [matches, setMatches] = useState<CorpusMatch[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState('');
+  const [status, setStatus] = useState('');
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setResult(null);
-    try {
-      const data = await apiSend<RagResult>(
-        '/seo-platform/rag-search/query',
-        'POST',
-        { query, site_domain: siteDomain, content_corpus: contentCorpus, top_k: topK, notes },
-        DEFAULT_TENANT_ID
-      );
-      if (data?.fallback === true && data?.analysis_mode !== 'heuristic') {
-        throw new Error(
-          IS_STRICT_NO_MOCK_MODE
-            ? 'Live LLM backend is unavailable in strict no-mock mode.'
-            : 'Live LLM backend is unavailable in fail-closed mode.'
-        );
-      }
-      setResult(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Search failed');
-    } finally {
-      setLoading(false);
-    }
+  function updateQuery(value: string) {
+    setQuery(value);
+    setHasSearched(false);
+    setMatches([]);
+    setStatus('');
   }
 
-  const INTENT_COLORS: Record<string, string> = {
-    informational: 'bg-blue-100 text-[var(--brand)]',
-    navigational: 'bg-purple-100 text-[var(--brand)]',
-    transactional: 'bg-green-100 text-green-700',
-    commercial: 'bg-orange-100 text-orange-700',
-  };
+  function updateSource(id: string, field: keyof Omit<CorpusSource, 'id'>, value: string) {
+    setSources((current) => current.map((source) => (source.id === id ? { ...source, [field]: value } : source)));
+    setHasSearched(false);
+    setMatches([]);
+    setStatus('');
+  }
+
+  function addSource() {
+    if (sources.length >= MAX_SOURCES) return;
+    setSources((current) => [...current, newSource(nextSourceId.current++)]);
+    setHasSearched(false);
+  }
+
+  function removeSource(id: string) {
+    setSources((current) => (current.length > 1 ? current.filter((source) => source.id !== id) : current));
+    setHasSearched(false);
+    setMatches([]);
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    const suppliedSources = sources.filter((source) => source.content.trim());
+    if (suppliedSources.length === 0) {
+      setHasSearched(false);
+      setMatches([]);
+      setError('Paste text into at least one source before searching.');
+      return;
+    }
+
+    const result = searchCorpus(query, suppliedSources, limit);
+    setMatches(result);
+    setHasSearched(true);
+    setStatus(
+      result.length
+        ? `Showing ${result.length} matching passage${result.length === 1 ? '' : 's'} from the text you supplied.`
+        : 'No matching passages were found in the text you supplied.',
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">RAG Site Search Engine</h1>
-        <p className="text-gray-500 mt-1">
-          Semantic site search powered by retrieval and reasoning — find answers, not just keywords.
+    <Page className={styles.page}>
+      <PageHeader
+        title="Corpus Search Preview"
+        subtitle="Preview keyword matches in text you provide. This local tool does not crawl a site, use a semantic index, or generate answers."
+      />
+
+      <Card className={styles.scopeCard}>
+        <div className={styles.scopeHeader}>
+          <Badge tone="brand">Browser-local</Badge>
+          <h2>Search supplied sources</h2>
+        </div>
+        <p>
+          Matching runs in this page using query-term overlap. Your query and pasted text are not sent to the Nuxtron search API or saved by this tool. Reloading the page clears them.
         </p>
+        <p>A source URL is only shown as a link when it is a valid HTTP or HTTPS address.</p>
+      </Card>
+
+      <div className={styles.layout}>
+        <Card className={styles.formCard}>
+          <CardTitle sub="Results are exact passages from your supplied text, not live site search or semantic retrieval.">
+            Preview matching passages
+          </CardTitle>
+          <form className={styles.form} onSubmit={handleSubmit}>
+            <Field
+              id="corpus-query"
+              label="Search phrase"
+              value={query}
+              onChange={(event) => updateQuery(event.target.value)}
+              maxLength={300}
+              required
+              placeholder="Enter a phrase to look for"
+              autoComplete="off"
+            />
+
+            <div className={styles.limitField}>
+              <label htmlFor="corpus-limit">Maximum passages</label>
+              <select id="corpus-limit" value={limit} onChange={(event) => setLimit(Number(event.target.value))}>
+                {[3, 5, 10, 20].map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+            </div>
+
+            <div className={styles.sourcesHeader}>
+              <div>
+                <h3>Source text</h3>
+                <p>Add up to {MAX_SOURCES} documents. Content stays in this browser page state.</p>
+              </div>
+              <Button type="button" variant="ghost" onClick={addSource} disabled={sources.length >= MAX_SOURCES}>
+                Add source
+              </Button>
+            </div>
+
+            <div className={styles.sources}>
+              {sources.map((source, index) => (
+                <fieldset className={styles.sourceCard} key={source.id}>
+                  <legend>Source {index + 1}</legend>
+                  <Field
+                    id={`corpus-label-${source.id}`}
+                    label="Source label (optional)"
+                    value={source.label}
+                    onChange={(event) => updateSource(source.id, 'label', event.target.value)}
+                    maxLength={120}
+                    placeholder="A short name for this source"
+                  />
+                  <Field
+                    id={`corpus-url-${source.id}`}
+                    label="Source URL (optional)"
+                    value={source.url}
+                    onChange={(event) => updateSource(source.id, 'url', event.target.value)}
+                    maxLength={2000}
+                    placeholder="https://…"
+                    autoComplete="url"
+                  />
+                  <div className={styles.textareaField}>
+                    <label htmlFor={`corpus-content-${source.id}`}>Pasted content</label>
+                    <textarea
+                      id={`corpus-content-${source.id}`}
+                      value={source.content}
+                      onChange={(event) => updateSource(source.id, 'content', event.target.value.slice(0, MAX_CONTENT_LENGTH))}
+                      maxLength={MAX_CONTENT_LENGTH}
+                      rows={6}
+                      aria-describedby={`corpus-content-help-${source.id}`}
+                      placeholder="Paste page text or an excerpt"
+                    />
+                    <p id={`corpus-content-help-${source.id}`} className={styles.hint}>
+                      {source.content.length.toLocaleString()} / {MAX_CONTENT_LENGTH.toLocaleString()} characters. Blank lines separate passages.
+                    </p>
+                  </div>
+                  {sources.length > 1 ? (
+                    <Button type="button" variant="ghost" onClick={() => removeSource(source.id)}>
+                      Remove source {index + 1}
+                    </Button>
+                  ) : null}
+                </fieldset>
+              ))}
+            </div>
+
+            <div className={styles.formFooter}>
+              <p className={styles.hint}>No account data, site crawl, vector index, or external provider is queried.</p>
+              <Button type="submit" variant="primary">Preview matches</Button>
+            </div>
+          </form>
+        </Card>
+
+        <Card className={styles.methodCard}>
+          <CardTitle>What this preview does</CardTitle>
+          <ul>
+            <li>Splits supplied text at blank lines and compares query terms with each passage.</li>
+            <li>Ranks passages by the number of distinct query terms they contain.</li>
+            <li>Shows matched-term counts instead of confidence or relevance percentages.</li>
+          </ul>
+          <p>It does not fetch the URLs, verify that text is published, or infer site-wide coverage.</p>
+        </Card>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <div>
-          <label htmlFor="rag-query" className="block text-sm font-medium text-gray-700 mb-1">
-            Search Query *
-          </label>
-          <input
-            id="rag-query"
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            required
-            placeholder="e.g. how does AI SEO improve rankings?"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="rag-domain" className="block text-sm font-medium text-gray-700 mb-1">
-              Site Domain (optional)
-            </label>
-            <input
-              id="rag-domain"
-              type="text"
-              value={siteDomain}
-              onChange={(e) => setSiteDomain(e.target.value)}
-              placeholder="example.com"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Top-K Results: {topK}</label>
-            <input
-              type="range"
-              min={1}
-              max={20}
-              value={topK}
-              onChange={(e) => setTopK(Number(e.target.value))}
-              className="w-full mt-2"
-            />
-          </div>
-        </div>
-        <div>
-          <label htmlFor="rag-corpus" className="block text-sm font-medium text-gray-700 mb-1">
-            Content Corpus (optional)
-          </label>
-          <textarea
-            id="rag-corpus"
-            value={contentCorpus}
-            onChange={(e) => setContentCorpus(e.target.value)}
-            rows={5}
-            placeholder="Paste your site content, page excerpts, or sitemap data. The AI will perform semantic retrieval over this corpus to find the most relevant results."
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
-          />
-          <p className="text-xs text-[var(--muted)] mt-1">
-            Leave empty to get AI-generated representative results based on your domain.
-          </p>
-        </div>
-        <div>
-          <label htmlFor="rag-notes" className="block text-sm font-medium text-gray-700 mb-1">
-            Notes
-          </label>
-          <textarea
-            id="rag-notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-            placeholder="Search context, audience, intent..."
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading || !query}
-          className="w-full bg-[var(--brand)] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[var(--brand)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading ? 'Searching…' : 'Run Semantic Search'}
-        </button>
-      </form>
+      <div className={styles.liveStatus} role="status" aria-live="polite" aria-atomic="true">{status}</div>
+      {error ? <div className={styles.error} role="alert">{error}</div> : null}
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>
-      )}
-
-      {result && (
-        <div className="space-y-4">
-          {(result.analysis_mode || result.cached) && (
-            <div className="flex gap-2 flex-wrap">
-              {result.analysis_mode && (
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${result.analysis_mode === 'llm' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                  {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
-                </span>
-              )}
-              {result.cached && (
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-sky-100 text-[var(--brand)]">Cached result</span>
-              )}
-            </div>
-          )}
-          {/* Query meta */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
-            <div className="flex-1">
-              <div className="text-sm font-medium text-gray-700 mb-1">
-                Query:{' '}
-                <span className="text-[var(--brand)]">
-                  {'"'}
-                  {result.query}
-                  {'"'}
-                </span>
+      {hasSearched ? (
+        <section className={styles.results} aria-labelledby="corpus-results-title">
+          <Card>
+            <div className={styles.resultsHeader}>
+              <div>
+                <p className={styles.eyebrow}>Local keyword match</p>
+                <h2 id="corpus-results-title">Matching passages</h2>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${INTENT_COLORS[result.intent] ?? 'bg-gray-100 text-gray-600'}`}
-                >
-                  {result.intent} intent
-                </span>
-                {result.entities_detected.map((e) => (
-                  <span key={`entity-${e}`} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                    {e}
-                  </span>
+              <Badge>{matches.length} shown · maximum {limit}</Badge>
+            </div>
+            {matches.length ? (
+              <ol className={styles.matchList}>
+                {matches.map((match) => (
+                  <li key={match.id}>
+                    <article className={styles.matchCard}>
+                      <div className={styles.matchMeta}>
+                        <strong>{match.sourceLabel}</strong>
+                        <span>{match.matchedTerms.length} of {match.queryTermCount} query terms matched</span>
+                      </div>
+                      <blockquote>{match.excerpt}</blockquote>
+                      {match.sourceUrl ? (
+                        <a href={match.sourceUrl} target="_blank" rel="noreferrer" className={styles.sourceLink}>
+                          Open supplied source
+                        </a>
+                      ) : (
+                        <span className={styles.noSource}>No safe HTTP(S) source link supplied</span>
+                      )}
+                    </article>
+                  </li>
                 ))}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className={`text-2xl font-bold ${getConfidenceTextColor(result.confidence)}`}>
-                {Math.round(result.confidence * 100)}%
-              </div>
-              <div className="text-xs text-gray-500">Confidence</div>
-            </div>
-          </div>
-
-          {/* Answer Synthesis */}
-          <div className="bg-blue-50 rounded-xl border border-blue-200 p-6">
-            <h2 className="text-sm font-semibold text-blue-800 mb-2">Synthesized Answer</h2>
-            <p className="text-sm text-blue-900 leading-relaxed">{result.answer_synthesis}</p>
-          </div>
-
-          {/* Search Results */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-base font-semibold text-gray-800 mb-3">
-              Search Results ({result.search_results.length})
-            </h2>
-            <div className="space-y-4">
-              {result.search_results.map((r) => (
-                <div
-                  key={r.url || r.title}
-                  className="border border-gray-100 rounded-lg p-4 hover:border-blue-200 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs bg-[var(--brand)] text-white rounded-full w-5 h-5 flex items-center justify-center font-bold flex-shrink-0">
-                          {r.rank}
-                        </span>
-                        <span className="text-sm font-medium text-[var(--brand)]">{r.title}</span>
-                      </div>
-                      <div className="text-xs text-[var(--muted)] font-mono mb-2">{r.url}</div>
-                      <p className="text-sm text-gray-600">{r.snippet}</p>
-                      <p className="text-xs text-[var(--muted)] mt-1 italic">Why: {r.reasoning}</p>
-                    </div>
-                    <div className="text-center flex-shrink-0">
-                      <div className={`text-sm font-bold ${getRelevanceTextColor(r.relevance_score)}`}>
-                        {Math.round(r.relevance_score * 100)}%
-                      </div>
-                      <div className="text-xs text-[var(--muted)]">relevance</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Related Queries */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-base font-semibold text-gray-800 mb-3">Related Queries</h2>
-            <div className="flex flex-wrap gap-2">
-              {result.related_queries.map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => setQuery(q)}
-                  className="text-xs bg-gray-100 hover:bg-blue-50 hover:text-[var(--brand)] text-gray-700 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[var(--brand)] transition-colors"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <p className="text-xs text-[var(--muted)] text-right">
-            Searched: {new Date(result.searched_at).toLocaleString()} · ID: {result.analysis_id.slice(0, 8)}
-          </p>
-        </div>
-      )}
-    </div>
+              </ol>
+            ) : (
+              <p className={styles.emptyResult}>No matching passages were found. Try another phrase or add text containing the terms you want to find.</p>
+            )}
+          </Card>
+        </section>
+      ) : null}
+    </Page>
   );
 }

@@ -7,9 +7,9 @@ alert rules, clusters, and reviews ingestion, listing, responding, summary.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, NoReturn
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from .. import memory_stores
@@ -17,6 +17,20 @@ from ..deps import AuthContext, require_auth
 from ..rate_limiter import enforce_rate_limit as _enforce_rate_limit
 
 JsonObject = dict[str, object]
+
+REVIEW_DATA_UNAVAILABLE_DETAIL = {
+    "code": "NOT_IMPLEMENTED",
+    "message": "Connected review-provider data and durable reputation storage are not configured. Review operations do not use synthetic records.",
+}
+REVIEW_DATA_UNAVAILABLE_RESPONSE = {
+    "description": "Connected review-provider data are unavailable.",
+    "content": {"application/json": {"example": {"detail": REVIEW_DATA_UNAVAILABLE_DETAIL}}},
+}
+
+
+def raise_review_data_unavailable() -> NoReturn:
+    raise HTTPException(status_code=501, detail=REVIEW_DATA_UNAVAILABLE_DETAIL)
+
 
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
@@ -184,7 +198,21 @@ def create_social_listening_alert_rule(
         'created_at': datetime.now(UTC).isoformat(),
     }
     _social_listening_alert_rules_memory.append(rule)
-    return {'status': 'ok', 'tenant_id': auth.tenant_id, 'rule': rule}
+    return {'status': 'ok', 'tenant_id': auth.tenant_id, 'persistence': 'memory-fallback', 'rule': rule}
+
+
+def list_social_listening_alert_rules(auth: AuthDep) -> JsonObject:
+    items: list[JsonObject] = [
+        item.copy() for item in _social_listening_alert_rules_memory if item.get('tenant_id') == auth.tenant_id
+    ]
+    items.sort(key=lambda item: str(item.get('created_at') or ''), reverse=True)
+    return {
+        'status': 'ok',
+        'tenant_id': auth.tenant_id,
+        'persistence': 'memory-fallback',
+        'count': len(items),
+        'rules': items,
+    }
 
 
 def list_social_listening_alerts(auth: AuthDep) -> JsonObject:
@@ -213,81 +241,19 @@ def get_social_listening_clusters(auth: AuthDep) -> JsonObject:
 
 
 def ingest_review(payload: ReviewIngestRequest, auth: AuthDep) -> JsonObject:
-    _enforce_rate_limit(f'{auth.tenant_id}:reviews:ingest', limit=60, window_seconds=60)
-    review: JsonObject = {
-        'id': len(_reviews_memory) + 1,
-        'tenant_id': auth.tenant_id,
-        'platform': payload.platform,
-        'reviewer': payload.reviewer,
-        'rating': payload.rating,
-        'text': payload.text,
-        'category': payload.category,
-        'status': 'new',
-        'created_at': datetime.now(UTC).isoformat(),
-    }
-    _reviews_memory.append(review)
-    return {'status': 'ok', 'tenant_id': auth.tenant_id, 'review': review}
+    raise_review_data_unavailable()
 
 
 def list_reviews(auth: AuthDep) -> JsonObject:
-    items: list[JsonObject] = [
-        e for e in _reviews_memory if e.get('tenant_id') == auth.tenant_id
-    ]
-    items.sort(key=lambda x: x.get('created_at', ''), reverse=True)
-    return {'status': 'ok', 'tenant_id': auth.tenant_id, 'count': len(items), 'reviews': items}
+    raise_review_data_unavailable()
 
 
 def respond_to_review(review_id: int, payload: ReviewResponseRequest, auth: AuthDep) -> JsonObject:
-    _enforce_rate_limit(f'{auth.tenant_id}:reviews:respond', limit=60, window_seconds=60)
-    for r in _reviews_memory:
-        if r.get('id') == review_id and r.get('tenant_id') == auth.tenant_id:
-            r['response'] = payload.response
-            r['responded_at'] = datetime.now(UTC).isoformat()
-            r['status'] = 'responded'
-            return {'status': 'ok', 'tenant_id': auth.tenant_id, 'review': r}
-    return {'status': 'error', 'detail': 'Review not found'}
+    raise_review_data_unavailable()
 
 
 def get_reviews_summary(auth: AuthDep) -> JsonObject:
-    reviews = [e for e in _reviews_memory if e.get('tenant_id') == auth.tenant_id]
-    total = len(reviews)
-    if total == 0:
-        return {
-            'status': 'ok',
-            'tenant_id': auth.tenant_id,
-            'total': 0,
-            'average_rating': 0,
-            'rating_distribution': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
-            'platform_distribution': {},
-            'category_distribution': {},
-            'responded_count': 0,
-            'pending_count': 0,
-        }
-
-    rating_dist: dict[int, int] = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-    platform_dist: dict[str, int] = {}
-    category_dist: dict[str, int] = {}
-    responded = 0
-    for r in reviews:
-        rating_dist[r.get('rating', 3)] = rating_dist.get(r.get('rating', 3), 0) + 1
-        platform_dist[r.get('platform', 'unknown')] = platform_dist.get(r.get('platform', 'unknown'), 0) + 1
-        category_dist[r.get('category', 'general')] = category_dist.get(r.get('category', 'general'), 0) + 1
-        if r.get('status') == 'responded':
-            responded += 1
-
-    avg_rating = sum(r.get('rating', 3) for r in reviews) / total
-
-    return {
-        'status': 'ok',
-        'tenant_id': auth.tenant_id,
-        'total': total,
-        'average_rating': round(avg_rating, 2),
-        'rating_distribution': rating_dist,
-        'platform_distribution': platform_dist,
-        'category_distribution': category_dist,
-        'responded_count': responded,
-        'pending_count': total - responded,
-    }
+    raise_review_data_unavailable()
 
 
 # ── Request Models ────────────────────────────────────────────

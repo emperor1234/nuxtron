@@ -35,23 +35,13 @@ def _sample_openapi() -> dict[str, object]:
                     "tags": ["widgets"],
                     "deprecated": True,
                     "responses": {
-                        "200": {
-                            "content": {
-                                "application/json": {
-                                    "schema": {"$ref": "#/components/schemas/Widget"}
-                                }
-                            }
-                        }
+                        "200": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Widget"}}}}
                     },
                 },
                 "post": {
                     "operationId": "replace_widget",
                     "requestBody": {
-                        "content": {
-                            "application/json": {
-                                "schema": {"$ref": "#/components/schemas/WidgetInput"}
-                            }
-                        }
+                        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/WidgetInput"}}}
                     },
                     "responses": {"204": {"description": "Updated"}},
                 },
@@ -74,15 +64,10 @@ def test_route_manifest_is_deterministic_and_schema_sensitive() -> None:
     paths = changed_spec["paths"]
     assert isinstance(paths, dict)
     get_operation = paths["/widgets/{widget_id}"]["get"]
-    get_operation["responses"]["200"]["content"]["application/json"]["schema"] = {
-        "type": "string"
-    }
+    get_operation["responses"]["200"]["content"]["application/json"]["schema"] = {"type": "string"}
     changed_manifest = build_route_manifest(changed_spec)
 
-    assert (
-        manifest["routes"][0]["response_schema_hash"]
-        != changed_manifest["routes"][0]["response_schema_hash"]
-    )
+    assert manifest["routes"][0]["response_schema_hash"] != changed_manifest["routes"][0]["response_schema_hash"]
 
 
 @pytest.mark.parametrize(
@@ -241,3 +226,64 @@ def test_current_route_manifest_matches_checked_in_baseline() -> None:
     from backend.fastapi.app.main import app
 
     assert_manifest_matches(build_app_route_manifest(app), BASELINE_PATH)
+
+
+def test_unavailable_routes_do_not_advertise_success_responses() -> None:
+    from backend.fastapi.app.main import app
+
+    openapi = app.openapi()
+    paths = openapi["paths"]
+    unavailable_prefixes = (
+        "/ads-control-tower/",
+        "/client-portal/",
+        "/media/jobs",
+        "/local-heatmap/",
+        "/map-rank-tracker/",
+        "/rank-tracker/",
+        "/reviews",
+        "/social/reviews/",
+        "/api/v1/social/reviews/",
+        "/social/ugc",
+        "/seo-platform/performance/",
+        "/marketplace/",
+        "/seo-platform/keywords/research",
+    )
+    unavailable_exact_paths = {
+        "/media/sandbox/dispatch",
+        "/seo-platform/local/optimize",
+        "/seo-platform/reviews/analyze",
+        "/seo-platform/rank-tracking/analyze",
+        "/ops/platform/hybrid-stacks",
+        "/ops/platform/module-registry",
+        "/search-everywhere/semrush/full-automation",
+        "/search-everywhere/semrush/production-gate",
+        "/search-everywhere/ahrefs/full-automation",
+        "/search-everywhere/ahrefs/production-gate",
+        "/search-everywhere/surfer/full-automation",
+        "/search-everywhere/surfer/production-gate",
+        "/search-everywhere/frase/full-automation",
+        "/search-everywhere/frase/production-gate",
+        "/search-everywhere/sitebulb/projects/{project_id}/run",
+        "/search-everywhere/sitebulb/schedules/execute",
+        "/search-everywhere/hootsuite/wiring/apply",
+        "/search-everywhere/hootsuite/full-automation",
+        "/search-everywhere/marketmuse/full-automation",
+        "/search-everywhere/brightedge/full-automation",
+    }
+
+    checked = 0
+    for path, path_item in paths.items():
+        if not (path.startswith(unavailable_prefixes) or path in unavailable_exact_paths):
+            continue
+        for method, operation in path_item.items():
+            if not isinstance(operation, dict):
+                continue
+            responses = operation.get("responses", {})
+            if "501" not in responses:
+                continue
+            assert "200" not in responses, f"{method.upper()} {path} falsely advertises success"
+            content = responses["501"].get("content", {})
+            assert "application/json" in content, f"{method.upper()} {path} lacks typed 501 content"
+            checked += 1
+
+    assert checked == 141

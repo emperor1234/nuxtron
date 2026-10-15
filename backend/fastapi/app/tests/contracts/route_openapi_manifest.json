@@ -2,287 +2,56 @@
   "manifest_version": 2,
   "routes": [
     {
-      "method": "GET",
-      "operation_id": "ab_test_suggestions_ads_control_tower_ab_test__campaign_id__suggestions_get",
-      "path": "/ads-control-tower/ab-test/{campaign_id}/suggestions",
-      "request_schema_hash": "sha256:edf7d9d674ec30f0af564207f7f12e82005bb1d76f9cd7c28b44b55355eb412b",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Ab Test Suggestions",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "POST",
-      "operation_id": "auto_resize_asset_ads_control_tower_assets_auto_resize_post",
-      "path": "/ads-control-tower/assets/auto-resize",
-      "request_schema_hash": "sha256:5911cbee52177f9f1c986d60b3c5d2442c117fe4126616da59f99164bc0a1cbe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Auto Resize Asset",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "audience_insights_ads_control_tower_audience_insights_get",
-      "path": "/ads-control-tower/audience-insights",
-      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Audience Insights",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "get_best_time_ads_control_tower_best_time_get",
-      "path": "/ads-control-tower/best-time",
-      "request_schema_hash": "sha256:9b297069585d8a4319729bc067d64c2693d6ee68230a428f75ad841fd9d3286b",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Get Best Time",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "get_calendar_ads_control_tower_calendar_get",
-      "path": "/ads-control-tower/calendar",
-      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Get Calendar",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "POST",
-      "operation_id": "drag_reschedule_ads_control_tower_calendar_drag_reschedule_post",
-      "path": "/ads-control-tower/calendar/drag-reschedule",
-      "request_schema_hash": "sha256:998f4a8f8681020279862d1864eda9273e57a93b7a01bcef60fac02de3f75feb",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Drag Reschedule",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "list_campaigns_ads_control_tower_campaigns_get",
-      "path": "/ads-control-tower/campaigns",
-      "request_schema_hash": "sha256:de3e2123632142961f2cacbfebef7a56188f713b034b79ec5a29b9602b7518f1",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "List Campaigns",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "POST",
-      "operation_id": "create_campaign_ads_control_tower_campaigns_post",
-      "path": "/ads-control-tower/campaigns",
-      "request_schema_hash": "sha256:a001d4f9508515439ad67158b2c1c251fa2ea873e54149e083a6ffa35430b96a",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Create Campaign",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
       "method": "DELETE",
-      "operation_id": "delete_campaign_ads_control_tower_campaigns__campaign_id__delete",
-      "path": "/ads-control-tower/campaigns/{campaign_id}",
-      "request_schema_hash": "sha256:edf7d9d674ec30f0af564207f7f12e82005bb1d76f9cd7c28b44b55355eb412b",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Delete Campaign",
+      "operation_id": "ads_control_tower_unavailable_delete",
+      "path": "/ads-control-tower/{legacy_path}",
+      "request_schema_hash": "sha256:a8affb927f6122520bd83dcd5b86e09d45a2cf9437fc74d2a3ef0969f3257064",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
+      "summary": "Ads Control Tower Unavailable Delete",
       "tags": [
         "ads-control-tower"
       ]
     },
     {
       "method": "GET",
-      "operation_id": "get_campaign_ads_control_tower_campaigns__campaign_id__get",
-      "path": "/ads-control-tower/campaigns/{campaign_id}",
-      "request_schema_hash": "sha256:edf7d9d674ec30f0af564207f7f12e82005bb1d76f9cd7c28b44b55355eb412b",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Get Campaign",
+      "operation_id": "ads_control_tower_unavailable_get",
+      "path": "/ads-control-tower/{legacy_path}",
+      "request_schema_hash": "sha256:a8affb927f6122520bd83dcd5b86e09d45a2cf9437fc74d2a3ef0969f3257064",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
+      "summary": "Ads Control Tower Unavailable Get",
       "tags": [
         "ads-control-tower"
       ]
     },
     {
       "method": "PATCH",
-      "operation_id": "update_campaign_ads_control_tower_campaigns__campaign_id__patch",
-      "path": "/ads-control-tower/campaigns/{campaign_id}",
-      "request_schema_hash": "sha256:8898a85eccacb0055083dc1c528ed42c2275a77f5c9d084fa87e9559410467c7",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Update Campaign",
+      "operation_id": "ads_control_tower_unavailable_patch",
+      "path": "/ads-control-tower/{legacy_path}",
+      "request_schema_hash": "sha256:a8affb927f6122520bd83dcd5b86e09d45a2cf9437fc74d2a3ef0969f3257064",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
+      "summary": "Ads Control Tower Unavailable Patch",
       "tags": [
         "ads-control-tower"
       ]
     },
     {
       "method": "POST",
-      "operation_id": "decide_campaign_approval_ads_control_tower_campaigns__campaign_id__approve_post",
-      "path": "/ads-control-tower/campaigns/{campaign_id}/approve",
-      "request_schema_hash": "sha256:3377e48dd88c5993eaf4a4aa4dcc373c8808f558de54c4c68ef3fc950ff6024f",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Decide Campaign Approval",
+      "operation_id": "ads_control_tower_unavailable_post",
+      "path": "/ads-control-tower/{legacy_path}",
+      "request_schema_hash": "sha256:a8affb927f6122520bd83dcd5b86e09d45a2cf9437fc74d2a3ef0969f3257064",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
+      "summary": "Ads Control Tower Unavailable Post",
       "tags": [
         "ads-control-tower"
       ]
     },
     {
-      "method": "POST",
-      "operation_id": "duplicate_campaign_ads_control_tower_campaigns__campaign_id__duplicate_post",
-      "path": "/ads-control-tower/campaigns/{campaign_id}/duplicate",
-      "request_schema_hash": "sha256:c99c0b7f5c353c19e6ca639e57bbce3bec6321a2ed7f33b64e893990f2ae1da4",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Duplicate Campaign",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "POST",
-      "operation_id": "patch_metrics_ads_control_tower_campaigns__campaign_id__metrics_post",
-      "path": "/ads-control-tower/campaigns/{campaign_id}/metrics",
-      "request_schema_hash": "sha256:ac7f061339efd910baccf7052a8fe01f912e8836ccc4ed56d4ec6f34732c0263",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Patch Metrics",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "POST",
-      "operation_id": "publish_campaign_ads_control_tower_campaigns__campaign_id__publish_post",
-      "path": "/ads-control-tower/campaigns/{campaign_id}/publish",
-      "request_schema_hash": "sha256:f69ef6db741f346f38343aba773b9909c55f7fe35fefa2243183734e50516069",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Publish Campaign",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "POST",
-      "operation_id": "request_approval_ads_control_tower_campaigns__campaign_id__request_approval_post",
-      "path": "/ads-control-tower/campaigns/{campaign_id}/request-approval",
-      "request_schema_hash": "sha256:3ffa1f26719084744902ce9927e203df8edd17aa3bd49b8c8b9916201e29948c",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Request Approval",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "list_connectors_ads_control_tower_connectors_get",
-      "path": "/ads-control-tower/connectors",
-      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:bc5e7275bca3b55a8aea99974824c3001ad607a0235d159491b51accc90d28d5",
-      "summary": "List Connectors",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "DELETE",
-      "operation_id": "disconnect_connector_ads_control_tower_connectors__platform__delete",
-      "path": "/ads-control-tower/connectors/{platform}",
-      "request_schema_hash": "sha256:7962cb73a80c8eb953723b0bd8f94f121c4e6fb07d287119672a6a7be507822d",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Disconnect Connector",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "connector_credentials_status_ads_control_tower_connectors__platform__credentials_status_get",
-      "path": "/ads-control-tower/connectors/{platform}/credentials/status",
-      "request_schema_hash": "sha256:7962cb73a80c8eb953723b0bd8f94f121c4e6fb07d287119672a6a7be507822d",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Connector Credentials Status",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "POST",
-      "operation_id": "oauth_callback_ads_control_tower_connectors__platform__oauth_callback_post",
-      "path": "/ads-control-tower/connectors/{platform}/oauth/callback",
-      "request_schema_hash": "sha256:e215bc8b1738e68010625b2d3fd2921348d1dfd56b27acfc385f950610729bc6",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Oauth Callback",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "POST",
-      "operation_id": "oauth_start_ads_control_tower_connectors__platform__oauth_start_post",
-      "path": "/ads-control-tower/connectors/{platform}/oauth/start",
-      "request_schema_hash": "sha256:7962cb73a80c8eb953723b0bd8f94f121c4e6fb07d287119672a6a7be507822d",
-      "response_schema_hash": "sha256:0493d19fbb2d507b756c8fb516ae7ee88aeb33f319cf45f6df0cb421dd1dec78",
-      "summary": "Oauth Start",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "get_credit_balances_ads_control_tower_credits_get",
-      "path": "/ads-control-tower/credits",
-      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Get Credit Balances",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "get_forecast_ads_control_tower_forecast_get",
-      "path": "/ads-control-tower/forecast",
-      "request_schema_hash": "sha256:115fcb888f99e95ffb18bf0f3e47cb51dd429769a1dd9f91f15ddc36fa0d0aba",
-      "response_schema_hash": "sha256:6d20e1df9b07ab70ca2d32530a36518bd33b908dbef9e3624acd2ae0e4445f0d",
-      "summary": "Get Forecast",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "ads_health_ads_control_tower_health_get",
-      "path": "/ads-control-tower/health",
-      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Ads Health",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "get_kpis_ads_control_tower_kpis_get",
-      "path": "/ads-control-tower/kpis",
-      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Get Kpis",
-      "tags": [
-        "ads-control-tower"
-      ]
-    },
-    {
-      "method": "GET",
-      "operation_id": "list_ads_notifications_ads_control_tower_notifications_get",
-      "path": "/ads-control-tower/notifications",
-      "request_schema_hash": "sha256:dfeb84299ec510511dda47d953b5e317c38f87691286e545a11bd1e81a9c939f",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "List Ads Notifications",
+      "method": "PUT",
+      "operation_id": "ads_control_tower_unavailable_put",
+      "path": "/ads-control-tower/{legacy_path}",
+      "request_schema_hash": "sha256:a8affb927f6122520bd83dcd5b86e09d45a2cf9437fc74d2a3ef0969f3257064",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
+      "summary": "Ads Control Tower Unavailable Put",
       "tags": [
         "ads-control-tower"
       ]
@@ -1866,7 +1635,7 @@
       "method": "POST",
       "operation_id": "ingest_provider_webhook_analytics_revenue_attribution_webhooks__provider__post",
       "path": "/analytics/revenue-attribution/webhooks/{provider}",
-      "request_schema_hash": "sha256:40ae94121ec14ee8448a83fa78ab529a334586e5e968693aa5748a7e193eaff9",
+      "request_schema_hash": "sha256:9e4ac905e866ab8c8e7c1bc0e8aa4aa05c48706dd2362b5d506a8b5305e10472",
       "response_schema_hash": "sha256:8ce582e6a93b9032d63cd9d811d9feb6bfaf81d3828f515336fe7f88094cbff1",
       "summary": "Ingest Provider Webhook"
     },
@@ -3519,7 +3288,7 @@
       "operation_id": "get_reviews_api_v1_social_reviews_hub_get",
       "path": "/api/v1/social/reviews/hub",
       "request_schema_hash": "sha256:07b985a186b33ea099652303544308f179a5051e4a4929131f83d62b1df6a958",
-      "response_schema_hash": "sha256:3aece2485320268e84bf5e980864f087795d26199bd4eda2ae30aea9e27b3f8a",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Reviews",
       "tags": [
         "social_media",
@@ -3531,7 +3300,7 @@
       "operation_id": "ingest_review_api_v1_social_reviews_ingest_post",
       "path": "/api/v1/social/reviews/ingest",
       "request_schema_hash": "sha256:58c6a497ba6cc9669400eb11027ac0c4603d71faba290f04453892f31e28fa77",
-      "response_schema_hash": "sha256:5eec112bae791a7a10062629d478e3178d0b10867dd2a85b2e704cd8e5a19c3d",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Ingest Review",
       "tags": [
         "social_media",
@@ -3543,7 +3312,7 @@
       "operation_id": "reply_to_review_api_v1_social_reviews_replies__review_id__post",
       "path": "/api/v1/social/reviews/replies/{review_id}",
       "request_schema_hash": "sha256:04025ecdf4e40b93ccd531393288166dba90d77e7bfa8c71f1818859144bab81",
-      "response_schema_hash": "sha256:6bef0398eba29730356683efc85767fd9607543db8685d7ec87938ba90ace0c6",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Reply To Review",
       "tags": [
         "social_media",
@@ -3587,7 +3356,7 @@
       "operation_id": "auth_jwt_issue_auth_jwt_issue_post",
       "path": "/auth/jwt/issue",
       "request_schema_hash": "sha256:0c715dbca2960dd0c0fb05e67687db140f74f621d2e40aea2d05fab24399a667",
-      "response_schema_hash": "sha256:d6c2ba4b656f7f20b43a57f18ea99ef626e9ccaadd9f6546f8b2a62e0d569ea2",
+      "response_schema_hash": "sha256:0a105e32e119ce22c9e615579b54264a4fd205526009c0b696e2928c71a96c84",
       "summary": "Auth Jwt Issue"
     },
     {
@@ -3595,7 +3364,7 @@
       "operation_id": "auth_jwt_verify_auth_jwt_verify_post",
       "path": "/auth/jwt/verify",
       "request_schema_hash": "sha256:4c0925aa9175726d5d6c29fec4c5a0ef6fcc074eb3aee7ab28b01da087cd978d",
-      "response_schema_hash": "sha256:6aef72c884ef377ee4cd6fab0b6bc8f3e77ad0fcffd553b09d1c17773c1e4a5c",
+      "response_schema_hash": "sha256:f3c80e4a89d76b8dd6d8cec229871fe9f210585296e96133e99f920d30a6bef0",
       "summary": "Auth Jwt Verify"
     },
     {
@@ -3603,7 +3372,7 @@
       "operation_id": "login_auth_login_post",
       "path": "/auth/login",
       "request_schema_hash": "sha256:903b241af11fb364331eac55a1aea32ac40e3e8bed33ad6d0de543e459a4d316",
-      "response_schema_hash": "sha256:618e295373f821d424bb06c2f19251726b8a24160fa11ae07ed7255579172be2",
+      "response_schema_hash": "sha256:7c03602cf088ce06cf90237983693fc1dff9decdc8abbecb99650bd6017732c8",
       "summary": "Login"
     },
     {
@@ -3619,7 +3388,7 @@
       "operation_id": "confirm_reset_auth_password_reset_confirm_post",
       "path": "/auth/password-reset/confirm",
       "request_schema_hash": "sha256:24972b696c4c129f58639abb560d314bdac64e3967ddcb560d4de50de7d32508",
-      "response_schema_hash": "sha256:b3900517691a93b358c13aca92408752e07aa6830e750dfda74dcae48cf97a62",
+      "response_schema_hash": "sha256:c109095e35a7a6ce3f92b7f8d8654a08e5692543a1692c0fbf596b2a4798c583",
       "summary": "Confirm Reset"
     },
     {
@@ -3627,7 +3396,7 @@
       "operation_id": "request_reset_auth_password_reset_request_post",
       "path": "/auth/password-reset/request",
       "request_schema_hash": "sha256:d19e147e589006f1aa3bd82858c79144404f9147439401f95259786ed46a976c",
-      "response_schema_hash": "sha256:6dcc43b499acd1a627f4e3564d7f16249d18f2786ec60db16680ade075087374",
+      "response_schema_hash": "sha256:57b812611b047b06dc1bdd7b9e7f2988ff7fa46e463d80ec13554f72f9929610",
       "summary": "Request Reset"
     },
     {
@@ -3635,7 +3404,7 @@
       "operation_id": "register_auth_register_post",
       "path": "/auth/register",
       "request_schema_hash": "sha256:27f1c971a1319ab688ba82f34b63d6861ce0e210b2751cd772ab4f4d081fcd33",
-      "response_schema_hash": "sha256:b8ec0073674967352854d122f9f2a3506be9338779dfc53222777e7157ba3d38",
+      "response_schema_hash": "sha256:673ed6eaa5f68d5faa613d293686aeb727e18f658aeb3d6c676814544dcd4c5e",
       "summary": "Register"
     },
     {
@@ -3643,7 +3412,7 @@
       "operation_id": "acs_auth_saml_acs_post",
       "path": "/auth/saml/acs",
       "request_schema_hash": "sha256:9b0873adf84fe6b709a749cbc4b2db6bb49d624919e6d5eec3ee5266584c8fa9",
-      "response_schema_hash": "sha256:00986fbee4f13c2d6b34b205fd12cf02a2e20db4dfcb106dfb0e836102362b2d",
+      "response_schema_hash": "sha256:4dae9236b6d6f729761062d8b113f05cffe70add34a6be3ae2b5dcc3dfb8ac06",
       "summary": "Acs"
     },
     {
@@ -3651,7 +3420,7 @@
       "operation_id": "login_auth_saml_login_get",
       "path": "/auth/saml/login",
       "request_schema_hash": "sha256:2eece010569f4cc01a237c88a6ea0b6fae1b9d419e078077dc6fde8a0b139222",
-      "response_schema_hash": "sha256:5d476992c3863d63fad5b4e5d80fc835e4ebbca83e75fcb745a496830b466e6f",
+      "response_schema_hash": "sha256:7fda9a2d5e46dba408d88afe1669a76203efde8f1b7066de7f6a697ddc272a42",
       "summary": "Login"
     },
     {
@@ -3659,7 +3428,7 @@
       "operation_id": "metadata_auth_saml_metadata_get",
       "path": "/auth/saml/metadata",
       "request_schema_hash": null,
-      "response_schema_hash": "sha256:a068e9f6cbd65781491b79d29d812505632fc91885ba4563ad52782ab11cd643",
+      "response_schema_hash": "sha256:c534a4f768111fef7190b8c309f0f1f873c940f9de8d470acea5002bbad98ce7",
       "summary": "Metadata"
     },
     {
@@ -3667,7 +3436,7 @@
       "operation_id": "auth_totp_setup_auth_totp_setup_post",
       "path": "/auth/totp/setup",
       "request_schema_hash": "sha256:a9276d28e240317a345f5e9d4f41fd7db7d1ff6e6f433b245182a249497ce0e3",
-      "response_schema_hash": "sha256:98190e9322d3664b89b5acf89bc00572e72fc7e0530faf25def70e19925bc5b6",
+      "response_schema_hash": "sha256:9b50231968368460fbbed944295c06744c790eb6af6241e8839e47ac020e261b",
       "summary": "Auth Totp Setup"
     },
     {
@@ -3675,7 +3444,7 @@
       "operation_id": "auth_totp_verify_auth_totp_verify_post",
       "path": "/auth/totp/verify",
       "request_schema_hash": "sha256:be4d6687091e230a3da25c960acccd11ca644b18887053cf9bd09b3c5641a0d9",
-      "response_schema_hash": "sha256:039e06a0dcfae7840e99966375b48b21256c2c0c69eee2c3224c191923eb1df2",
+      "response_schema_hash": "sha256:96e63dcec88832c507bda8cdc872755c090ce3ed73506af21896ea81bf1dd3ec",
       "summary": "Auth Totp Verify"
     },
     {
@@ -3683,7 +3452,7 @@
       "operation_id": "list_capabilities_autonomous_workforce_capabilities_get",
       "path": "/autonomous-workforce/capabilities",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:f0db6e6564e248c1d5767eba5a73192cb931ce235b29c2321c2612a2c7bddd59",
+      "response_schema_hash": "sha256:50ab0210315f6ce7745a37c2a70190d9f7de507d16174290b79934b529a68791",
       "summary": "List Capabilities",
       "tags": [
         "Autonomous Workforce"
@@ -3694,7 +3463,7 @@
       "operation_id": "live_feed_autonomous_workforce_feed_get",
       "path": "/autonomous-workforce/feed",
       "request_schema_hash": "sha256:23df6c02cc453abceef63aa43fc7e5440330192263f7647343434d4aa2e9d77d",
-      "response_schema_hash": "sha256:05333a530de13988b02162e9f3963e8c7feee89142267e43baa1a2cb8a4d543d",
+      "response_schema_hash": "sha256:b540fa93ad6bc61311b041e702db3ac33cd218f3b64ef15c735f5e766e211b9e",
       "summary": "Live Feed",
       "tags": [
         "Autonomous Workforce"
@@ -3705,7 +3474,7 @@
       "operation_id": "list_integrations_autonomous_workforce_integrations_get",
       "path": "/autonomous-workforce/integrations",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:666e161e7aeeadf33d6da01a47a4950f00ef6453374100112efd85ce029f5c0c",
+      "response_schema_hash": "sha256:f87d1540986cf6593d71e2ef76ee1a520d6c3b981145b8b5eab91adad566e4ab",
       "summary": "List Integrations",
       "tags": [
         "Autonomous Workforce"
@@ -3716,7 +3485,7 @@
       "operation_id": "integration_catalog_autonomous_workforce_integrations_catalog_get",
       "path": "/autonomous-workforce/integrations/catalog",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:8b7c10761de151d23f0fe9df28665c94f667831fe102a257ae8f403aef18cd07",
+      "response_schema_hash": "sha256:89fd245b6da3ae8f0a62e655ee4a7bd298a0fe2b8d75db7072d878c604a9cb89",
       "summary": "Integration Catalog",
       "tags": [
         "Autonomous Workforce"
@@ -3727,7 +3496,7 @@
       "operation_id": "connect_integration_autonomous_workforce_integrations_connect_post",
       "path": "/autonomous-workforce/integrations/connect",
       "request_schema_hash": "sha256:b96211b8da43ee889ed316209f92827cd09850601ea02105af22c0b9e41ce915",
-      "response_schema_hash": "sha256:d4df97111881427837660b668fe914212421cb6bcdc4b8ef2adb7130a9555227",
+      "response_schema_hash": "sha256:fb261a4c81770d0e436ae0eadb5331fa6da9a167522c779a819a96d26b6675de",
       "summary": "Connect Integration",
       "tags": [
         "Autonomous Workforce"
@@ -3738,7 +3507,7 @@
       "operation_id": "list_knowledge_autonomous_workforce_knowledge_get",
       "path": "/autonomous-workforce/knowledge",
       "request_schema_hash": "sha256:bf5f996ad72baeff4a86a1f707afb17ee5c84432de2d0894b4941f31821cb417",
-      "response_schema_hash": "sha256:144f3b16ca284096daad8adcf9feb317773658c42ca963eba5c1b8319f2b6ad4",
+      "response_schema_hash": "sha256:622884e6ace4cad1d899dcb9763b0e75fd46b45faa8a1def9de7ff6615c1c89c",
       "summary": "List Knowledge",
       "tags": [
         "Autonomous Workforce"
@@ -3749,7 +3518,7 @@
       "operation_id": "add_knowledge_autonomous_workforce_knowledge_post",
       "path": "/autonomous-workforce/knowledge",
       "request_schema_hash": "sha256:bdbcbe9032343ec4a7a559ff6d35772a79f5df028d41c2a621d705e37f5e5fc8",
-      "response_schema_hash": "sha256:ea5cd6850ee1139ad7b6e71458887734810654be2e16ac968fd42925a859e6ae",
+      "response_schema_hash": "sha256:b5ba07eb2cb9c5c2d6d979ed2e6e4924f297e6d1b6ad1dbbee8c75dcb33d75e2",
       "summary": "Add Knowledge",
       "tags": [
         "Autonomous Workforce"
@@ -3760,7 +3529,7 @@
       "operation_id": "search_knowledge_autonomous_workforce_knowledge_search_post",
       "path": "/autonomous-workforce/knowledge-search",
       "request_schema_hash": "sha256:e06c8c676817dc39d323b75ecccf2da7226c2221e64d5e45daa39dabcf0a544b",
-      "response_schema_hash": "sha256:3b7535eb5a590a911bf6602bd7c6a8aa0a32451a010022fd943f0c656013dcc5",
+      "response_schema_hash": "sha256:0a77b50d365f100206e6b746fe11f18c1f93d90407de643aa37e981329fe3a8a",
       "summary": "Search Knowledge",
       "tags": [
         "Autonomous Workforce"
@@ -3771,7 +3540,7 @@
       "operation_id": "memory_stats_autonomous_workforce_memory_stats_get",
       "path": "/autonomous-workforce/memory/stats",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:62cf20eb12ad857400ac3e6c6ff263e2cc431440e640d13f2b7a33bec57348c6",
+      "response_schema_hash": "sha256:83826d9cc10f08a47515a6765ae88d8d6ccd3c189f12c119568bd0bd5e1cb4c6",
       "summary": "Memory Stats",
       "tags": [
         "Autonomous Workforce"
@@ -3782,7 +3551,7 @@
       "operation_id": "metrics_dashboard_autonomous_workforce_metrics_dashboard_get",
       "path": "/autonomous-workforce/metrics/dashboard",
       "request_schema_hash": "sha256:b07ff21ac802458dc81c170cf35f58332944af220ae19c5f178da8105d2ed9a8",
-      "response_schema_hash": "sha256:8904ccbe020166287d88e23386a7b956aafb63489a0d26bb7dcee40d522fb87f",
+      "response_schema_hash": "sha256:b99f025ef86231d17b7f1aebea65ff15e0f8487b6bcf8d54001cb1de6d121dca",
       "summary": "Metrics Dashboard",
       "tags": [
         "Autonomous Workforce"
@@ -3793,7 +3562,7 @@
       "operation_id": "metrics_providers_autonomous_workforce_metrics_providers_get",
       "path": "/autonomous-workforce/metrics/providers",
       "request_schema_hash": "sha256:b07ff21ac802458dc81c170cf35f58332944af220ae19c5f178da8105d2ed9a8",
-      "response_schema_hash": "sha256:a80cd0119162ed55bd41a5b8c11093d05375e99bd31bd86e2ed5b81477d79f9b",
+      "response_schema_hash": "sha256:d100d05c6f38f811b00bca80e1d4ce43944241a88f9ce0690a6b57b28d95d3d0",
       "summary": "Metrics Providers",
       "tags": [
         "Autonomous Workforce"
@@ -3804,7 +3573,7 @@
       "operation_id": "list_missions_autonomous_workforce_missions_get",
       "path": "/autonomous-workforce/missions",
       "request_schema_hash": "sha256:623b203cc5f38bc0a350061b391aff7f4f5eaffdaad7a8df45db9b7b4f3c68f3",
-      "response_schema_hash": "sha256:116724cd5bf0642f8a50b99a1a05e31d6e73d98f0c7c4bc23082f1b893140928",
+      "response_schema_hash": "sha256:4396d7be18108bc08b57556c2b7192e9f61bb31e5208a42ab87ce5bf88ca6fed",
       "summary": "List Missions",
       "tags": [
         "Autonomous Workforce"
@@ -3815,7 +3584,7 @@
       "operation_id": "create_mission_autonomous_workforce_missions_post",
       "path": "/autonomous-workforce/missions",
       "request_schema_hash": "sha256:e7ee17d954a6b5e18c6fe095d6db0a97bbe5c6e3ba529b493706ba6393a0ce60",
-      "response_schema_hash": "sha256:0ec5674f7bb65f47587ba99357d4b2cfcd37f7b18c96ed3b748513e0817ddbbd",
+      "response_schema_hash": "sha256:62fd4eefcaf0e58aa642dbe2cac009c70b7edf7ff5a1e73d86c81a989b510558",
       "summary": "Create Mission",
       "tags": [
         "Autonomous Workforce"
@@ -3826,7 +3595,7 @@
       "operation_id": "approve_mission_autonomous_workforce_missions__mission_id__approve_post",
       "path": "/autonomous-workforce/missions/{mission_id}/approve",
       "request_schema_hash": "sha256:e6c00b7bbf390b697dcc16b4aad649b677e7de9bba1675c550644c732914fb14",
-      "response_schema_hash": "sha256:c4eb2286a6691a59abf9275711b984224b8d95d4554bba08dd7cffa2362c0e4f",
+      "response_schema_hash": "sha256:9cbfc83b5abc1d6480c7fd433e96cec8229acec443a871fcb42a196025b88610",
       "summary": "Approve Mission",
       "tags": [
         "Autonomous Workforce"
@@ -3837,7 +3606,7 @@
       "operation_id": "reject_mission_autonomous_workforce_missions__mission_id__reject_post",
       "path": "/autonomous-workforce/missions/{mission_id}/reject",
       "request_schema_hash": "sha256:e6c00b7bbf390b697dcc16b4aad649b677e7de9bba1675c550644c732914fb14",
-      "response_schema_hash": "sha256:f4d906d256a44a202d18e6e3b420615ffe9efa6d44ba3f6e028f5447c517bf00",
+      "response_schema_hash": "sha256:ba12ae200d80c0384af6efc7acb18fb7e4c9206235f059f04ec678ad2ca62d23",
       "summary": "Reject Mission",
       "tags": [
         "Autonomous Workforce"
@@ -3848,7 +3617,7 @@
       "operation_id": "enable_tool_calling_for_mission_autonomous_workforce_missions__mission_id__use_tool_calling_post",
       "path": "/autonomous-workforce/missions/{mission_id}/use-tool-calling",
       "request_schema_hash": "sha256:ef34be8d216c51c7a018e5f27d8c05fe6b6df4fe7bc482ade7465600e395bdc9",
-      "response_schema_hash": "sha256:e1d8c7ea0aa62bf08994a237ff251f73bb1dce72383db5f9217cc4c01ad09fe4",
+      "response_schema_hash": "sha256:7682e7a705547564d0dfe214a7da52f92a35fd77127b87cf6023400811c1e440",
       "summary": "Enable Tool Calling For Mission",
       "tags": [
         "Autonomous Workforce"
@@ -3859,7 +3628,7 @@
       "operation_id": "list_outcomes_autonomous_workforce_outcomes_get",
       "path": "/autonomous-workforce/outcomes",
       "request_schema_hash": "sha256:23df6c02cc453abceef63aa43fc7e5440330192263f7647343434d4aa2e9d77d",
-      "response_schema_hash": "sha256:cdc7157dc87d8df268bdd175a0046ff60deac2402ead478bca4debb068e1e8f2",
+      "response_schema_hash": "sha256:c14700e19540e9d0782749d691bf32ff254da0046dd62d794a9823bd74b3c0c5",
       "summary": "List Outcomes",
       "tags": [
         "Autonomous Workforce"
@@ -3870,7 +3639,7 @@
       "operation_id": "get_profile_autonomous_workforce_profile_get",
       "path": "/autonomous-workforce/profile",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:9d8c4fbb65f4fc8f08b2a2fa072ed042220e8e74fcf10629e2eeafea40f44919",
+      "response_schema_hash": "sha256:c26f38f53d54f373650cfbc0c514185caaf5aa260cd0f34f6822bb75ccb3ee84",
       "summary": "Get Profile",
       "tags": [
         "Autonomous Workforce"
@@ -3881,7 +3650,7 @@
       "operation_id": "upsert_profile_autonomous_workforce_profile_post",
       "path": "/autonomous-workforce/profile",
       "request_schema_hash": "sha256:efba64b17435de476fb7788eeb086a2e88d42c47fe820f4784b1a3f8fb18b816",
-      "response_schema_hash": "sha256:cf4412d63abfc7d12129ee9d94ce9dd527611bf1b68dccc7326ea2e8827ecd4b",
+      "response_schema_hash": "sha256:953575ac54f2ecbce900ff86d6185dd908ad14cba062e9d8d7c17b1b6a063e68",
       "summary": "Upsert Profile",
       "tags": [
         "Autonomous Workforce"
@@ -3892,7 +3661,7 @@
       "operation_id": "list_retry_queue_autonomous_workforce_retry_queue_get",
       "path": "/autonomous-workforce/retry-queue",
       "request_schema_hash": "sha256:49ced521946c615169a863d1d13b8330d220652e408ef22508294d4b62ac7b5f",
-      "response_schema_hash": "sha256:40a250f6158ffc4834f4e397d2955ba23e30a5a51a8fcbf43d884d612f469c24",
+      "response_schema_hash": "sha256:dbf2c438753ed793035362cd6829c496314f11c750c1e16852cbd22e6384a3c9",
       "summary": "List Retry Queue",
       "tags": [
         "Autonomous Workforce"
@@ -3903,7 +3672,7 @@
       "operation_id": "retry_action_autonomous_workforce_retry_queue__retry_id__retry_post",
       "path": "/autonomous-workforce/retry-queue/{retry_id}/retry",
       "request_schema_hash": "sha256:eeb672d7ddd33f8acdd9bd00290b66661131dc125f3baf455b7c4bb31023a1a3",
-      "response_schema_hash": "sha256:cde708385d9f88efa390cb49b4b7eba86dae3f1702c3f2ffa242b7f4e94c98fb",
+      "response_schema_hash": "sha256:f1f52567476932c19d183894bc31d8a198b31fc723a96a18a30e88a6cd6e3cb2",
       "summary": "Retry Action",
       "tags": [
         "Autonomous Workforce"
@@ -3914,7 +3683,7 @@
       "operation_id": "run_due_schedules_autonomous_workforce_runner_tick_post",
       "path": "/autonomous-workforce/runner/tick",
       "request_schema_hash": "sha256:31b6710c40902e96232418497cbfeb576bf6a2fcc1844abe58da875001201379",
-      "response_schema_hash": "sha256:3988dea68daf59459732b9f6fc83ade5ebf9372ef75d25cd5f882407e03426d2",
+      "response_schema_hash": "sha256:f9544e1c82975b69379fbffcbdc24f0526f414e7fcedf46b5d5c3e2db144402d",
       "summary": "Run Due Schedules",
       "tags": [
         "Autonomous Workforce"
@@ -3925,7 +3694,7 @@
       "operation_id": "list_schedules_autonomous_workforce_schedules_get",
       "path": "/autonomous-workforce/schedules",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:3592189f6ecaa0b82c7987d0a1ac1a06b67c348aa10fe76e29699f8b4ce96d00",
+      "response_schema_hash": "sha256:17e248b01b6ef288b96ed7e8979ec07379d35c0fe1ec5c3187fd9472ebbe599a",
       "summary": "List Schedules",
       "tags": [
         "Autonomous Workforce"
@@ -3936,7 +3705,7 @@
       "operation_id": "create_schedule_autonomous_workforce_schedules_post",
       "path": "/autonomous-workforce/schedules",
       "request_schema_hash": "sha256:ec5975f9e608a3c8fd99a3ac407783fd402d47ffbe4a9aaa8cbbb49c7aed9c11",
-      "response_schema_hash": "sha256:8e73b0753baf0dcf3c5bb9d214dc53f924fdf164bfd764e913017e6ddc6636d1",
+      "response_schema_hash": "sha256:33a5e7ebea9d2e0161800ce8cb67c896f430c7de98514d45df2503fedad6aabb",
       "summary": "Create Schedule",
       "tags": [
         "Autonomous Workforce"
@@ -3947,7 +3716,7 @@
       "operation_id": "list_vendors_autonomous_workforce_vendors_get",
       "path": "/autonomous-workforce/vendors",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:e276f0cd33a3903ff0af24e170c67b9ce3afc31ad93cffff9591b28ce4dbc1ab",
+      "response_schema_hash": "sha256:e49d67398514949b8c91eea08241158cfa39e05a8bcb7d005ff258c492caebe3",
       "summary": "List Vendors",
       "tags": [
         "Autonomous Workforce"
@@ -3958,7 +3727,7 @@
       "operation_id": "webhook_trigger_autonomous_workforce_webhook_trigger_post",
       "path": "/autonomous-workforce/webhook/trigger",
       "request_schema_hash": "sha256:6db1c4eaae5c3dae744bc35aebca18c6c4f43ddd5e9b8220e2c61be2a1ca4a68",
-      "response_schema_hash": "sha256:75873a2be783504c96ae6cbc668060084330ca22fb6b60789b87822faa4be932",
+      "response_schema_hash": "sha256:74c3517d5b0d2ffd8bac0a5804682be41c4e4490ce7d9d6d9133d4a00091718b",
       "summary": "Webhook Trigger",
       "tags": [
         "Autonomous Workforce"
@@ -4621,7 +4390,7 @@
       "operation_id": "list_clients_client_portal_clients_get",
       "path": "/client-portal/clients",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:b50507515e82baf87b40104b20c8d4f313f92648d0f8afac800bf959f4ce2ce9",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "List Clients",
       "tags": [
         "Client Portal"
@@ -4632,7 +4401,7 @@
       "operation_id": "create_client_client_portal_clients_post",
       "path": "/client-portal/clients",
       "request_schema_hash": "sha256:d2949e2fc43cc107ac98662befc72db65ae16e79a194401da3e388e8c449c461",
-      "response_schema_hash": "sha256:d099c85b840ac4a8fd3def74ec81271bf906f3c8c29ed5970a58540751420165",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Create Client",
       "tags": [
         "Client Portal"
@@ -4643,7 +4412,7 @@
       "operation_id": "delete_client_client_portal_clients__client_id__delete",
       "path": "/client-portal/clients/{client_id}",
       "request_schema_hash": "sha256:01db9e0fed4269968cb9d7821acb47b1c6d0d27980d5692017d7b119163220ec",
-      "response_schema_hash": "sha256:f60971f3105bec846b1f90596a34276d2e0c4b4fcae90c29a66f691025545ab8",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Delete Client",
       "tags": [
         "Client Portal"
@@ -4654,7 +4423,7 @@
       "operation_id": "get_client_client_portal_clients__client_id__get",
       "path": "/client-portal/clients/{client_id}",
       "request_schema_hash": "sha256:01db9e0fed4269968cb9d7821acb47b1c6d0d27980d5692017d7b119163220ec",
-      "response_schema_hash": "sha256:d20f65f57c16e215c526806d2dc80ea5a13dfea2d2dc68f1c71153015a9daf90",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Get Client",
       "tags": [
         "Client Portal"
@@ -4665,7 +4434,7 @@
       "operation_id": "update_client_client_portal_clients__client_id__patch",
       "path": "/client-portal/clients/{client_id}",
       "request_schema_hash": "sha256:ddf282e8b302b10a5c040343aa911250ce3e4a60d83a06f4c59d2ec5244758d3",
-      "response_schema_hash": "sha256:80815bae75bb2711a2ad98f17a6805bfcadb3bfb80f51f531534f94ed5740193",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Update Client",
       "tags": [
         "Client Portal"
@@ -4676,7 +4445,7 @@
       "operation_id": "list_reports_client_portal_reports_get",
       "path": "/client-portal/reports",
       "request_schema_hash": "sha256:60a200432e224f5bc6d20a6090f3c2d80b344efd1b8134f0ae492fc93b679164",
-      "response_schema_hash": "sha256:df0310b74342b069b0e35856f760107b69c46e5643a091d7c721c4b5f4cd131c",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "List Reports",
       "tags": [
         "Client Portal"
@@ -4687,7 +4456,7 @@
       "operation_id": "generate_report_client_portal_reports_post",
       "path": "/client-portal/reports",
       "request_schema_hash": "sha256:432d89e0ab390b1ea89a11d8e2a7cc55a0c039c3a5fe4766a6493264530599da",
-      "response_schema_hash": "sha256:46b09d141575f6cbeacc4abbf2b5da069d8c5538bf823953d7c2d4d8986df491",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Generate Report",
       "tags": [
         "Client Portal"
@@ -4698,7 +4467,7 @@
       "operation_id": "delete_report_client_portal_reports__report_id__delete",
       "path": "/client-portal/reports/{report_id}",
       "request_schema_hash": "sha256:0c6bdad69c3f859ee528043eb507f8918f0456dc13ccf323d180daf77a876103",
-      "response_schema_hash": "sha256:d8c0d4c316ecb968c9c0af5c12149b70107026a758fe3fb00a8082f5e601fa10",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Delete Report",
       "tags": [
         "Client Portal"
@@ -4709,7 +4478,7 @@
       "operation_id": "get_report_client_portal_reports__report_id__get",
       "path": "/client-portal/reports/{report_id}",
       "request_schema_hash": "sha256:0c6bdad69c3f859ee528043eb507f8918f0456dc13ccf323d180daf77a876103",
-      "response_schema_hash": "sha256:49955a4f6f32dc0f116136084b99e8010e0b2c901336d0683816e62efef84d19",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Get Report",
       "tags": [
         "Client Portal"
@@ -4720,7 +4489,7 @@
       "operation_id": "download_report_client_portal_reports__report_id__download_get",
       "path": "/client-portal/reports/{report_id}/download",
       "request_schema_hash": "sha256:0c6bdad69c3f859ee528043eb507f8918f0456dc13ccf323d180daf77a876103",
-      "response_schema_hash": "sha256:26146fd80cffd32d9238b7b63c34e6982de25a5882f2b4d75dc8ff8777c1504d",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Download Report",
       "tags": [
         "Client Portal"
@@ -4731,7 +4500,7 @@
       "operation_id": "list_schedules_client_portal_schedules_get",
       "path": "/client-portal/schedules",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:17730a575e6d6d8d07312a3a3918d918b088998345f5f3116412b61d4e1a4fef",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "List Schedules",
       "tags": [
         "Client Portal"
@@ -4742,7 +4511,7 @@
       "operation_id": "create_schedule_client_portal_schedules_post",
       "path": "/client-portal/schedules",
       "request_schema_hash": "sha256:08048f2d69512c8c81f7f74ae9582c010a2633a5ba70d3d9423aadf8f1f6b933",
-      "response_schema_hash": "sha256:710ed05e1d05a486f9c1cad4085761b99fb4e8e61f51679bc539b176f1a26fa7",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Create Schedule",
       "tags": [
         "Client Portal"
@@ -4753,7 +4522,7 @@
       "operation_id": "delete_schedule_client_portal_schedules__schedule_id__delete",
       "path": "/client-portal/schedules/{schedule_id}",
       "request_schema_hash": "sha256:709f81b9a74dc522e858fb401300b6979ae729801bc6d3d02f1c932a8c3ac11f",
-      "response_schema_hash": "sha256:f26fb9994c67d5711d5a992ed08227ec45cd3fa56962af9bf8711ba67dab2c42",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Delete Schedule",
       "tags": [
         "Client Portal"
@@ -4764,7 +4533,7 @@
       "operation_id": "create_share_link_client_portal_share_link_post",
       "path": "/client-portal/share-link",
       "request_schema_hash": "sha256:7f3ba16f151e5b2c775f4b897f2cebe053f86b0d70a62fa27cd1fa896c3bbce8",
-      "response_schema_hash": "sha256:9092d74a51a1c3628b881277981de772b3fdebc34f7475119077e762714888ed",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Create Share Link",
       "tags": [
         "Client Portal"
@@ -4775,7 +4544,7 @@
       "operation_id": "access_shared_report_client_portal_share_link__token__get",
       "path": "/client-portal/share-link/{token}",
       "request_schema_hash": "sha256:5ab1ddde0fe5423d282c7700d965d9e65590e04afbae41855372f17052cadfb0",
-      "response_schema_hash": "sha256:26146fd80cffd32d9238b7b63c34e6982de25a5882f2b4d75dc8ff8777c1504d",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Access Shared Report",
       "tags": [
         "Client Portal"
@@ -4786,7 +4555,7 @@
       "operation_id": "list_templates_client_portal_templates_get",
       "path": "/client-portal/templates",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:672158e004e709e3b5b6633e140c454e7b6dde33496aedf11ea7e15afcb75132",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "List Templates",
       "tags": [
         "Client Portal"
@@ -4797,7 +4566,7 @@
       "operation_id": "create_template_client_portal_templates_post",
       "path": "/client-portal/templates",
       "request_schema_hash": "sha256:2919c207b6dccc8b2b4c9bd0b8c22569cca141d3024d2b000df666f0ff0fade8",
-      "response_schema_hash": "sha256:89fa692e2a44545d507e7b073ecd429047cf76bf48f48497c63dbcd6a39d0b0f",
+      "response_schema_hash": "sha256:16ac7254f1692a10a83a6aabf08d42e0877925c4042213bd154966f374efb1e0",
       "summary": "Create Template",
       "tags": [
         "Client Portal"
@@ -6626,10 +6395,10 @@
       "operation_id": "get_ad_changes_eyeon_ad_changes_get",
       "path": "/eyeon/ad-changes",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:9349c502bb8f40f2ba85ee684eb35302ecea209caceb4692c899996045a00069",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Ad Changes",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6637,10 +6406,10 @@
       "operation_id": "list_alerts_eyeon_alerts_get",
       "path": "/eyeon/alerts",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:df8ef70016c98a24acd79fe20e94ecf6fc7dabf662b095b5cf7632390cf04e16",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "List Alerts",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6648,10 +6417,10 @@
       "operation_id": "configure_alert_eyeon_alerts_post",
       "path": "/eyeon/alerts",
       "request_schema_hash": "sha256:cc0c7dd705d648fe2593de33139d30171896d87a1e04a742965872d1213cc752",
-      "response_schema_hash": "sha256:b8c69bb5859748fc69e9132eb1cb8ddd8d806e839bb13bb2cac1e9df81dc1dd1",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Configure Alert",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6659,10 +6428,10 @@
       "operation_id": "get_backlink_changes_eyeon_backlink_changes_get",
       "path": "/eyeon/backlink-changes",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:70829def6969264aa8bb9ce2e8a24d4be690d27fd28e60014fad7b1955d81a0d",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Backlink Changes",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6670,10 +6439,10 @@
       "operation_id": "get_content_changes_eyeon_content_changes_get",
       "path": "/eyeon/content-changes",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:a01cc414466c68f0ec4942740bf3d47ad3f707ffab0c11dcd07e7a9a5d42c045",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Content Changes",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6681,10 +6450,10 @@
       "operation_id": "get_feed_eyeon_feed_get",
       "path": "/eyeon/feed",
       "request_schema_hash": "sha256:8648b25c7a4c6d338565fafa941c3d24807f04bf0771017f014bf29eeb26ae62",
-      "response_schema_hash": "sha256:137b40cc01fa48ee1d3bc03c06e5210bd99aaa0256a5ece9af865a39a87e4d51",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Feed",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6692,10 +6461,10 @@
       "operation_id": "get_monitor_feed_eyeon_feed__monitor_id__get",
       "path": "/eyeon/feed/{monitor_id}",
       "request_schema_hash": "sha256:486698dd2f342a367fc39ddad5403fa9182a2ab95462fcccc5ac5aef3afc03ae",
-      "response_schema_hash": "sha256:24a9bd132f7e8e031fd7cb7b9e46842fad012ce2e81f046a31de21a9770b90d0",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Monitor Feed",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6703,10 +6472,10 @@
       "operation_id": "get_keyword_changes_eyeon_keyword_changes_get",
       "path": "/eyeon/keyword-changes",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:8113201117bcffba7b0f5b74327b7bcba40f9c40ff5501a2ffd4771d6a5819d7",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Keyword Changes",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6714,10 +6483,10 @@
       "operation_id": "list_monitors_eyeon_monitors_get",
       "path": "/eyeon/monitors",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:3e0715533b509de8012a3ccf884965a48306b980652afae6b779b58d04cf47ad",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "List Monitors",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6725,10 +6494,10 @@
       "operation_id": "add_monitor_eyeon_monitors_post",
       "path": "/eyeon/monitors",
       "request_schema_hash": "sha256:7cdfe2bdba719fd8b31d6b25f8696256ca87d1cd55687ae182d252e45dba3058",
-      "response_schema_hash": "sha256:fdffffee83645359dd91b6c8eb201c399dda641a13bf37c70eb41e3baddf5db4",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Add Monitor",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6736,10 +6505,10 @@
       "operation_id": "delete_monitor_eyeon_monitors__monitor_id__delete",
       "path": "/eyeon/monitors/{monitor_id}",
       "request_schema_hash": "sha256:b5fc1463f28a5515ab0710df0ffadaee8214b9f450b24fbb298cc106f768c5c9",
-      "response_schema_hash": "sha256:48bb998b519040e33c93d9fd252a3e9418b9cfeca3d149f90114d03b021e4047",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Delete Monitor",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -6747,10 +6516,10 @@
       "operation_id": "get_summary_eyeon_summary_get",
       "path": "/eyeon/summary",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:81546501f41f7ce0ccf9c7a6497373dbe502701401fc062dd2777783567e647b",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Summary",
       "tags": [
-        "EyeOn Competitor Monitor"
+        "Competitor Activity Monitor"
       ]
     },
     {
@@ -8109,8 +7878,8 @@
       "method": "GET",
       "operation_id": "get_business_profile_local_heatmap_business_profile_get",
       "path": "/local-heatmap/business-profile",
-      "request_schema_hash": "sha256:6cccf03cdaaaced22ddf48b6066491733277a80d1be1de74523b87b6e6ebf0f0",
-      "response_schema_hash": "sha256:8eb212af43a795af841b9f61737893528d1d496e16bbeaac27746bc631dd7cfb",
+      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Business Profile",
       "tags": [
         "Local Heatmap"
@@ -8120,8 +7889,8 @@
       "method": "POST",
       "operation_id": "set_business_profile_local_heatmap_business_profile_post",
       "path": "/local-heatmap/business-profile",
-      "request_schema_hash": "sha256:84acd51828e5ffbcf1dca1ff0e6115af13519764996f6a2c90a3ff77a7f5a38f",
-      "response_schema_hash": "sha256:be3b91fbaaff9a6fb5903a0012e08096a1322ffb3bd67ed5611a22a17bbdb539",
+      "request_schema_hash": "sha256:22a09100226267faddcff5d622fce620606fd412696108373977d691ee1b801a",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Set Business Profile",
       "tags": [
         "Local Heatmap"
@@ -8131,8 +7900,8 @@
       "method": "GET",
       "operation_id": "compare_scans_local_heatmap_comparison_get",
       "path": "/local-heatmap/comparison",
-      "request_schema_hash": "sha256:4a9128f13ae16ba75ed1525f8302a7b5b9f517961baa3af2a7e56791396ba575",
-      "response_schema_hash": "sha256:7d0e58f25f46ab8de8c7cef37e23c947f77d84385fa08aa74217e94a38763307",
+      "request_schema_hash": "sha256:9acdcd82ad9cbbc120a972c0edcffeb6e0da95bba67ea246996c71a86552580f",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Compare Scans",
       "tags": [
         "Local Heatmap"
@@ -8142,8 +7911,8 @@
       "method": "GET",
       "operation_id": "get_history_local_heatmap_history_get",
       "path": "/local-heatmap/history",
-      "request_schema_hash": "sha256:6cccf03cdaaaced22ddf48b6066491733277a80d1be1de74523b87b6e6ebf0f0",
-      "response_schema_hash": "sha256:4c6ed7a30a56cce3fe735e7600304238cd5eb6b65eb7d2ba47e50eedd7a282d7",
+      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get History",
       "tags": [
         "Local Heatmap"
@@ -8153,8 +7922,8 @@
       "method": "GET",
       "operation_id": "get_results_local_heatmap_results__scan_id__get",
       "path": "/local-heatmap/results/{scan_id}",
-      "request_schema_hash": "sha256:efda2d47a7b71adc399e4cc2711bb71078e8741cc782079824e712a8fe680f05",
-      "response_schema_hash": "sha256:7a32bbf5a59ed3a5ce0a1be28b540f3369a69e7391f79958b7b9d7169c02dd41",
+      "request_schema_hash": "sha256:35eeeeacca5d83e2fe823568edaeaee7272e213ee3cca816818175e9477ffd95",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Results",
       "tags": [
         "Local Heatmap"
@@ -8164,8 +7933,8 @@
       "method": "GET",
       "operation_id": "list_scans_local_heatmap_scans_get",
       "path": "/local-heatmap/scans",
-      "request_schema_hash": "sha256:6cccf03cdaaaced22ddf48b6066491733277a80d1be1de74523b87b6e6ebf0f0",
-      "response_schema_hash": "sha256:5c45354a07805456b03e4aa5bdd7a4012511da596c62b0b7e54b5b9f3ecaae9a",
+      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "List Scans",
       "tags": [
         "Local Heatmap"
@@ -8175,8 +7944,8 @@
       "method": "POST",
       "operation_id": "create_scan_local_heatmap_scans_post",
       "path": "/local-heatmap/scans",
-      "request_schema_hash": "sha256:39789d36125340a9420a32e1a853932f8a354be818e73c34c15ddca0ec899926",
-      "response_schema_hash": "sha256:97ddbcae0bd4f53e245a01bb390d7e2d1bae2101f7c468d8df3e8df0d3ffca16",
+      "request_schema_hash": "sha256:159ab03c3c439629d965ba588bb44d94e36165094cd3cb3610b1bc723d84b0b1",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Create Scan",
       "tags": [
         "Local Heatmap"
@@ -8186,8 +7955,8 @@
       "method": "DELETE",
       "operation_id": "delete_scan_local_heatmap_scans__scan_id__delete",
       "path": "/local-heatmap/scans/{scan_id}",
-      "request_schema_hash": "sha256:efda2d47a7b71adc399e4cc2711bb71078e8741cc782079824e712a8fe680f05",
-      "response_schema_hash": "sha256:52c5565a27c6adaeedce3d170af71b6447de78fcd533b235d589ad11b525c6a7",
+      "request_schema_hash": "sha256:35eeeeacca5d83e2fe823568edaeaee7272e213ee3cca816818175e9477ffd95",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Delete Scan",
       "tags": [
         "Local Heatmap"
@@ -8197,8 +7966,8 @@
       "method": "GET",
       "operation_id": "get_scan_local_heatmap_scans__scan_id__get",
       "path": "/local-heatmap/scans/{scan_id}",
-      "request_schema_hash": "sha256:efda2d47a7b71adc399e4cc2711bb71078e8741cc782079824e712a8fe680f05",
-      "response_schema_hash": "sha256:8890e42ddbb1157b2eb9fead5a5558fff75e39e173a13e88a45bad43ea37dd5d",
+      "request_schema_hash": "sha256:35eeeeacca5d83e2fe823568edaeaee7272e213ee3cca816818175e9477ffd95",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Scan",
       "tags": [
         "Local Heatmap"
@@ -8208,8 +7977,8 @@
       "method": "POST",
       "operation_id": "run_rank_check_map_rank_tracker_check_post",
       "path": "/map-rank-tracker/check",
-      "request_schema_hash": "sha256:eccd51e1c1aee6c44fe150658487826d9c1e8f3b29158c9bfa69344968fa1708",
-      "response_schema_hash": "sha256:68c2a5d2b732fc24c9394c845532f9c261a8a5fe43b9a3306baa0487cf3fbdf5",
+      "request_schema_hash": "sha256:5230958d7c2427aa159537a4f5db051a29870bca778fd9f9cbb1ac20f25eac5f",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Run Rank Check",
       "tags": [
         "Map Rank Tracker"
@@ -8219,8 +7988,8 @@
       "method": "GET",
       "operation_id": "get_local_competitors_map_rank_tracker_competitors_get",
       "path": "/map-rank-tracker/competitors",
-      "request_schema_hash": "sha256:2eedf0017258a0e3c27a67521bd5170b07a35718871820c1a2d8354a9320bad9",
-      "response_schema_hash": "sha256:f6d2732627d564156f9dfaaf636e01a918904924fc40e1b068b20680c99b4fce",
+      "request_schema_hash": "sha256:b1b00ce899abaf1778812d4c47fa82c7cfafc564b09a9aa4baad25967e773ac0",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Local Competitors",
       "tags": [
         "Map Rank Tracker"
@@ -8230,8 +7999,8 @@
       "method": "GET",
       "operation_id": "get_grid_map_rank_tracker_grid_get",
       "path": "/map-rank-tracker/grid",
-      "request_schema_hash": "sha256:7ae5dfe4df2c73027575ac933ef2e7e8e6462a92ae25d5fd87e6939bc98fb97e",
-      "response_schema_hash": "sha256:fc55401a644cf10a83fd1a99daeb9f2ed43e4a1519c53413940528223507a565",
+      "request_schema_hash": "sha256:37afb902203833eba7250baa70ced26c8266ccc6888ea306029217a5ac749fd0",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Grid",
       "tags": [
         "Map Rank Tracker"
@@ -8241,8 +8010,8 @@
       "method": "GET",
       "operation_id": "get_heatmap_map_rank_tracker_heatmap__keyword_id__get",
       "path": "/map-rank-tracker/heatmap/{keyword_id}",
-      "request_schema_hash": "sha256:1a43928d07fb4684663038a7f0f18dc71a8a46015edce320081f9b2919039458",
-      "response_schema_hash": "sha256:703301202e795a93ac13dc4d6abd0e5b2c3be35eb0187dae89cfdb5897dddfbb",
+      "request_schema_hash": "sha256:6effb8bada0bedcf778d9ab7ee330e2c9588806da58245c791b1ca45e0fa6799",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Heatmap",
       "tags": [
         "Map Rank Tracker"
@@ -8252,8 +8021,8 @@
       "method": "GET",
       "operation_id": "get_history_map_rank_tracker_history__keyword_id__get",
       "path": "/map-rank-tracker/history/{keyword_id}",
-      "request_schema_hash": "sha256:3f3aa47f10c8c6c7250dfe08560657c2d7d9080baa5a5aa779d73ea09c9e8e4f",
-      "response_schema_hash": "sha256:ada197cb602dad4bc5e141af1088596ed09c4c50ffc939a7a2d5df156a09901f",
+      "request_schema_hash": "sha256:961a2c8022e5926b4f7510e73a43ccd9eeaa3f613010f8ae02a74b29a35646b4",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get History",
       "tags": [
         "Map Rank Tracker"
@@ -8263,8 +8032,8 @@
       "method": "POST",
       "operation_id": "add_keywords_map_rank_tracker_keywords_post",
       "path": "/map-rank-tracker/keywords",
-      "request_schema_hash": "sha256:69ca38a6adb9503c394dd3f77a82caeb647a5a19faf6c111b87b7578d378c40d",
-      "response_schema_hash": "sha256:0751d4fabd9ea4faa139b9f3fa621b3b051d76e7e3d20ee7c3699b5d788f5fb2",
+      "request_schema_hash": "sha256:abac375a43dfdb135e61ff83481cde9b5590134661c5f1a5f9bd29d2838c3018",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Add Keywords",
       "tags": [
         "Map Rank Tracker"
@@ -8274,8 +8043,8 @@
       "method": "GET",
       "operation_id": "list_keywords_map_rank_tracker_keywords__project_id__get",
       "path": "/map-rank-tracker/keywords/{project_id}",
-      "request_schema_hash": "sha256:800a1bb1f98b178b6c0eb8b5dc1d0a6c149d3d649f14196ac67587a11ae91363",
-      "response_schema_hash": "sha256:0ee9cc1dc9daefd2607ad3edc96646af250b5a48376dd386a67b0bd87fd02284",
+      "request_schema_hash": "sha256:7417f8ba2ba2465d71cd52e07bd4429686a07d471ece2255d15b941edb7205c6",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "List Keywords",
       "tags": [
         "Map Rank Tracker"
@@ -8285,8 +8054,8 @@
       "method": "GET",
       "operation_id": "list_projects_map_rank_tracker_projects_get",
       "path": "/map-rank-tracker/projects",
-      "request_schema_hash": "sha256:6cccf03cdaaaced22ddf48b6066491733277a80d1be1de74523b87b6e6ebf0f0",
-      "response_schema_hash": "sha256:db8adf5a8eacbe7d2db5285311a1595c86a540c55a821f30f467f8c4977a69a3",
+      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "List Projects",
       "tags": [
         "Map Rank Tracker"
@@ -8296,8 +8065,8 @@
       "method": "POST",
       "operation_id": "create_project_map_rank_tracker_projects_post",
       "path": "/map-rank-tracker/projects",
-      "request_schema_hash": "sha256:06d85a898bfb4f709b1ae6c1cfca00a20f329bfa665200c46b2e8ec09b1610bf",
-      "response_schema_hash": "sha256:33e709adf638076930044804680df6d5dcfeecb57d09888d9a706e24a91672e1",
+      "request_schema_hash": "sha256:c2f91f62b5d173dfd1ef93660593dbe66c140eeb7366686845eaaccb4d98aebf",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Create Project",
       "tags": [
         "Map Rank Tracker"
@@ -8307,8 +8076,8 @@
       "method": "DELETE",
       "operation_id": "delete_project_map_rank_tracker_projects__project_id__delete",
       "path": "/map-rank-tracker/projects/{project_id}",
-      "request_schema_hash": "sha256:800a1bb1f98b178b6c0eb8b5dc1d0a6c149d3d649f14196ac67587a11ae91363",
-      "response_schema_hash": "sha256:ccb0445c28fad6a998558b05ebec4b668bce5b9b8067630d67e4df58f9f07fde",
+      "request_schema_hash": "sha256:7417f8ba2ba2465d71cd52e07bd4429686a07d471ece2255d15b941edb7205c6",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Delete Project",
       "tags": [
         "Map Rank Tracker"
@@ -8318,8 +8087,8 @@
       "method": "GET",
       "operation_id": "get_results_map_rank_tracker_results__project_id__get",
       "path": "/map-rank-tracker/results/{project_id}",
-      "request_schema_hash": "sha256:800a1bb1f98b178b6c0eb8b5dc1d0a6c149d3d649f14196ac67587a11ae91363",
-      "response_schema_hash": "sha256:de60cf636c77043fe6dbfd2e84220682c539f2a5142c575832712bb345d4f17b",
+      "request_schema_hash": "sha256:7417f8ba2ba2465d71cd52e07bd4429686a07d471ece2255d15b941edb7205c6",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Results",
       "tags": [
         "Map Rank Tracker"
@@ -8418,7 +8187,7 @@
       "operation_id": "install_item_marketplace_install_post",
       "path": "/marketplace/install",
       "request_schema_hash": "sha256:3a3520734d0f79a9a2a9fdf5d4e4317db7638d6073cba3e71d76289bc8dfbd19",
-      "response_schema_hash": "sha256:a34e1cc003bf9019e90ad0cd30683ba92dcb91cb027801762ab7e479a91c1be0",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Install Item"
     },
     {
@@ -8426,7 +8195,7 @@
       "operation_id": "list_plugins_marketplace_plugins_get",
       "path": "/marketplace/plugins",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:6a32ec3f151d0ff5bd67e536936a1c7d65fd891f9b823dbe4305458dcffcc71c",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "List Plugins"
     },
     {
@@ -8434,7 +8203,7 @@
       "operation_id": "publish_item_marketplace_publish_post",
       "path": "/marketplace/publish",
       "request_schema_hash": "sha256:caaba1dc1c6c94c26cee8d5634f2987b5210e58aafb8367c18a27a5aeb3c433c",
-      "response_schema_hash": "sha256:788a453f53d22d8e814b1a87edfc109dcd0faf1b94cb4cf86f64cae9eb1ba4f1",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Publish Item"
     },
     {
@@ -8442,7 +8211,7 @@
       "operation_id": "list_themes_marketplace_themes_get",
       "path": "/marketplace/themes",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:d2c7b9aec41aca213e76800f4f252ae765fa0887ac6b3abe89bac734b9041fe7",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "List Themes"
     },
     {
@@ -8506,7 +8275,7 @@
       "operation_id": "list_media_jobs_media_jobs_get",
       "path": "/media/jobs",
       "request_schema_hash": "sha256:330897b1d3666f69156c4da69e70ec998e036d9cb551cad4c1315402802e09b1",
-      "response_schema_hash": "sha256:9a90ce82577eebce9eb067ef12a334777c125f2bb6af537399d7de107185f897",
+      "response_schema_hash": "sha256:8464ed2d8792cd5f342558c1f0761f9b96c7786cb2a92314e145af90500d83a3",
       "summary": "List Media Jobs"
     },
     {
@@ -8514,7 +8283,7 @@
       "operation_id": "create_media_job_media_jobs_post",
       "path": "/media/jobs",
       "request_schema_hash": "sha256:13ded1979c7f34f37a8347493ca1116d66c4214d93f2f423de4f1ca974e5449c",
-      "response_schema_hash": "sha256:33dfbcc3f26e0140900abc013b35f56cd3c57adca12dad20408546713cf3e9a6",
+      "response_schema_hash": "sha256:9ea2ad58b21a5de0b3686c4d9576435cb433b69ecbce63ca9a7d8aa3b4872113",
       "summary": "Create Media Job"
     },
     {
@@ -8522,7 +8291,7 @@
       "operation_id": "list_dlq_media_jobs_dlq_get",
       "path": "/media/jobs/dlq",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:d21967454533d1dc61903ed718798075d7c8a74e1fc4e1a3e28003967a8d928c",
+      "response_schema_hash": "sha256:8464ed2d8792cd5f342558c1f0761f9b96c7786cb2a92314e145af90500d83a3",
       "summary": "List Dlq"
     },
     {
@@ -8530,7 +8299,7 @@
       "operation_id": "media_jobs_stats_media_jobs_stats_get",
       "path": "/media/jobs/stats",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:0feaf1831377ca964af9d465d2ac754db890e58fb026fcf7dfa731f490553b0a",
+      "response_schema_hash": "sha256:8464ed2d8792cd5f342558c1f0761f9b96c7786cb2a92314e145af90500d83a3",
       "summary": "Media Jobs Stats"
     },
     {
@@ -8538,7 +8307,7 @@
       "operation_id": "cancel_media_job_media_jobs__job_id__delete",
       "path": "/media/jobs/{job_id}",
       "request_schema_hash": "sha256:f084e3746b763165ac419d817fd1e4341aac9f682ec9ce58aac21d3e2aae99d3",
-      "response_schema_hash": "sha256:4bfee3493109248712f2a2a157ed97e8da8bd8c778808991e2c12330ad18c9bf",
+      "response_schema_hash": "sha256:8464ed2d8792cd5f342558c1f0761f9b96c7786cb2a92314e145af90500d83a3",
       "summary": "Cancel Media Job"
     },
     {
@@ -8546,7 +8315,7 @@
       "operation_id": "get_media_job_media_jobs__job_id__get",
       "path": "/media/jobs/{job_id}",
       "request_schema_hash": "sha256:f084e3746b763165ac419d817fd1e4341aac9f682ec9ce58aac21d3e2aae99d3",
-      "response_schema_hash": "sha256:d51c02488ce5341db38fe401e75233798dca5c5959e5baba450ab79ddb40e567",
+      "response_schema_hash": "sha256:8464ed2d8792cd5f342558c1f0761f9b96c7786cb2a92314e145af90500d83a3",
       "summary": "Get Media Job"
     },
     {
@@ -8554,7 +8323,7 @@
       "operation_id": "job_audit_trail_media_jobs__job_id__audit_get",
       "path": "/media/jobs/{job_id}/audit",
       "request_schema_hash": "sha256:f084e3746b763165ac419d817fd1e4341aac9f682ec9ce58aac21d3e2aae99d3",
-      "response_schema_hash": "sha256:51267a27b18435dbcb68594d57160782389a23d853bcb9cd219f136989cc57c1",
+      "response_schema_hash": "sha256:8464ed2d8792cd5f342558c1f0761f9b96c7786cb2a92314e145af90500d83a3",
       "summary": "Job Audit Trail"
     },
     {
@@ -8562,7 +8331,7 @@
       "operation_id": "get_output_signed_url_media_jobs__job_id__output_url_post",
       "path": "/media/jobs/{job_id}/output-url",
       "request_schema_hash": "sha256:ea84d20f19ccb331dfda061c084830665956909b900d1dddbb6eab244d690f2a",
-      "response_schema_hash": "sha256:f91f3434ac2b3bfd4fc857c08fb02d8a346eaa26b73776367f3bc425f5ec2d4c",
+      "response_schema_hash": "sha256:9ea2ad58b21a5de0b3686c4d9576435cb433b69ecbce63ca9a7d8aa3b4872113",
       "summary": "Get Output Signed Url"
     },
     {
@@ -8570,7 +8339,7 @@
       "operation_id": "retry_media_job_media_jobs__job_id__retry_post",
       "path": "/media/jobs/{job_id}/retry",
       "request_schema_hash": "sha256:f084e3746b763165ac419d817fd1e4341aac9f682ec9ce58aac21d3e2aae99d3",
-      "response_schema_hash": "sha256:f239ae2654b5183cfd445ebb80a000ca7f172dffe99ffef249760f05288aa38a",
+      "response_schema_hash": "sha256:8464ed2d8792cd5f342558c1f0761f9b96c7786cb2a92314e145af90500d83a3",
       "summary": "Retry Media Job"
     },
     {
@@ -8578,7 +8347,7 @@
       "operation_id": "job_progress_stream_media_jobs__job_id__stream_get",
       "path": "/media/jobs/{job_id}/stream",
       "request_schema_hash": "sha256:122030fe30b1e192f947dd4a937d8e867e1f07c6657c631575b6192057e2dcd5",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:8464ed2d8792cd5f342558c1f0761f9b96c7786cb2a92314e145af90500d83a3",
       "summary": "Job Progress Stream"
     },
     {
@@ -8610,7 +8379,7 @@
       "operation_id": "sandbox_dispatch_media_sandbox_dispatch_post",
       "path": "/media/sandbox/dispatch",
       "request_schema_hash": "sha256:e34d1ae7e8d4ce2b738464a44f4c512a977aa1991bde49ffad8f346a0d2b084a",
-      "response_schema_hash": "sha256:834678d7e646d5c2f2a31d77f3a620efddc63da61e8852967b57986503fe2ba0",
+      "response_schema_hash": "sha256:9ea2ad58b21a5de0b3686c4d9576435cb433b69ecbce63ca9a7d8aa3b4872113",
       "summary": "Sandbox Dispatch"
     },
     {
@@ -9060,77 +8829,77 @@
       "method": "GET",
       "operation_id": "get_ad_targeting_one2target_ad_targeting_get",
       "path": "/one2target/ad-targeting",
-      "request_schema_hash": "sha256:1963aeda130fe9b1e158d8c70615105085279adb367e11d5e288f944151e0928",
-      "response_schema_hash": "sha256:8ecd1f290b9444ae2f9f7d1550821ebdc450a1e18e8175f7e14b524e1839fc16",
+      "request_schema_hash": "sha256:462824db87dec7eff65f3f36fce4bd9a7f9eb5a1338ee824dafec2474801cda0",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Ad Targeting",
       "tags": [
-        "One2Target Audience Analytics"
+        "Audience insights"
       ]
     },
     {
       "method": "GET",
       "operation_id": "get_audience_size_one2target_audience_size_get",
       "path": "/one2target/audience-size",
-      "request_schema_hash": "sha256:1963aeda130fe9b1e158d8c70615105085279adb367e11d5e288f944151e0928",
-      "response_schema_hash": "sha256:44be3ef36ec438d334438fbe709b315d31c9226ae6a6d7e8832e6622cc629a15",
+      "request_schema_hash": "sha256:462824db87dec7eff65f3f36fce4bd9a7f9eb5a1338ee824dafec2474801cda0",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Audience Size",
       "tags": [
-        "One2Target Audience Analytics"
+        "Audience insights"
       ]
     },
     {
       "method": "GET",
       "operation_id": "get_behaviour_one2target_behaviour_get",
       "path": "/one2target/behaviour",
-      "request_schema_hash": "sha256:1963aeda130fe9b1e158d8c70615105085279adb367e11d5e288f944151e0928",
-      "response_schema_hash": "sha256:9e8700c023762a14724e2db17be45d936c4a7b5dbcaa82f1febd03dac012d6c6",
+      "request_schema_hash": "sha256:462824db87dec7eff65f3f36fce4bd9a7f9eb5a1338ee824dafec2474801cda0",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Behaviour",
       "tags": [
-        "One2Target Audience Analytics"
+        "Audience insights"
       ]
     },
     {
       "method": "POST",
       "operation_id": "compare_audiences_one2target_compare_post",
       "path": "/one2target/compare",
-      "request_schema_hash": "sha256:12e9c8414eb67d49388abe4b85513b93f6848afdf53850926ebb08385b509330",
-      "response_schema_hash": "sha256:e499f59cd9d0101a09e06738c61cfc444140a884ba1c6233b62521a189d1d961",
+      "request_schema_hash": "sha256:b7e868d49ccfdf493689258d191bd3d9d150c9548590e617b8c33202fa8d214e",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Compare Audiences",
       "tags": [
-        "One2Target Audience Analytics"
+        "Audience insights"
       ]
     },
     {
       "method": "GET",
       "operation_id": "get_demographics_one2target_demographics_get",
       "path": "/one2target/demographics",
-      "request_schema_hash": "sha256:1963aeda130fe9b1e158d8c70615105085279adb367e11d5e288f944151e0928",
-      "response_schema_hash": "sha256:96bfcc04a7f614a58f6f3d1becca1a4b52a7b3508815e5d075740120b371d056",
+      "request_schema_hash": "sha256:462824db87dec7eff65f3f36fce4bd9a7f9eb5a1338ee824dafec2474801cda0",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Demographics",
       "tags": [
-        "One2Target Audience Analytics"
+        "Audience insights"
       ]
     },
     {
       "method": "GET",
       "operation_id": "get_interests_one2target_interests_get",
       "path": "/one2target/interests",
-      "request_schema_hash": "sha256:1963aeda130fe9b1e158d8c70615105085279adb367e11d5e288f944151e0928",
-      "response_schema_hash": "sha256:dc909df9c3421d622880f2ecfc93d1b6633e74599f461d0acaeaf2dd11e6ad0c",
+      "request_schema_hash": "sha256:462824db87dec7eff65f3f36fce4bd9a7f9eb5a1338ee824dafec2474801cda0",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Interests",
       "tags": [
-        "One2Target Audience Analytics"
+        "Audience insights"
       ]
     },
     {
       "method": "GET",
       "operation_id": "get_socioeconomics_one2target_socioeconomics_get",
       "path": "/one2target/socioeconomics",
-      "request_schema_hash": "sha256:1963aeda130fe9b1e158d8c70615105085279adb367e11d5e288f944151e0928",
-      "response_schema_hash": "sha256:6963f47a71f7f445f2c637ae0b53587ad871a721d0baf6f1bdb3640575f40130",
+      "request_schema_hash": "sha256:462824db87dec7eff65f3f36fce4bd9a7f9eb5a1338ee824dafec2474801cda0",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
       "summary": "Get Socioeconomics",
       "tags": [
-        "One2Target Audience Analytics"
+        "Audience insights"
       ]
     },
     {
@@ -9266,7 +9035,7 @@
       "operation_id": "platform_hybrid_stacks_ops_platform_hybrid_stacks_get",
       "path": "/ops/platform/hybrid-stacks",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:9a2877b4fd36789f2a00f98edf976c41c73bf8bb8d07111c40bbf5d75caed5a8",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Platform Hybrid Stacks"
     },
     {
@@ -9282,7 +9051,7 @@
       "operation_id": "platform_module_registry_ops_platform_module_registry_get",
       "path": "/ops/platform/module-registry",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:e7dcce7fe01ab203eb2d376877bf258972521db22446c3c5eaf9112a02cffb29",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Platform Module Registry"
     },
     {
@@ -10923,7 +10692,7 @@
       "operation_id": "create_project_rank_tracker_add_project_post",
       "path": "/rank-tracker/add-project",
       "request_schema_hash": "sha256:9fc9dcc3ccec2d21d5490243e9b370dc6d6d009275f0e43da5be2b8bee577f86",
-      "response_schema_hash": "sha256:6bd5f03ca94200e793ead41b15a3f8c6ef7bbc5eae9605e036fa31aea61654d3",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Create Project",
       "tags": [
         "Rank Tracker"
@@ -10934,7 +10703,7 @@
       "operation_id": "get_alerts_rank_tracker_alerts_get",
       "path": "/rank-tracker/alerts",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:fb7fd872994424a866548d535ac636686cc75450ce63c74523682b57e166a922",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Alerts",
       "tags": [
         "Rank Tracker"
@@ -10945,7 +10714,7 @@
       "operation_id": "set_alert_rank_tracker_alerts_set_post",
       "path": "/rank-tracker/alerts/set",
       "request_schema_hash": "sha256:3ab649c750a8a94591414c2de06c43ff0ae0bfb7ada81722b5a936da8d849bb5",
-      "response_schema_hash": "sha256:3450df97e00fcbd38bb29a3ed2a42437eb410a16793c996f2e35d8da7812eb7f",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Set Alert",
       "tags": [
         "Rank Tracker"
@@ -10956,7 +10725,7 @@
       "operation_id": "analytics_rank_tracker_analytics_get",
       "path": "/rank-tracker/analytics",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:8f2c9194abfdead12b0b69ddbb023d746c4cdd49c7877a23b1372a4c39238358",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Analytics",
       "tags": [
         "Rank Tracker"
@@ -10967,7 +10736,7 @@
       "operation_id": "list_competitors_rank_tracker_competitors_get",
       "path": "/rank-tracker/competitors",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:edc37179351b7f74fde1d50deecda1249174d2ad370e297333cc0792f86a85a7",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "List Competitors",
       "tags": [
         "Rank Tracker"
@@ -10978,7 +10747,7 @@
       "operation_id": "add_competitor_rank_tracker_competitors_post",
       "path": "/rank-tracker/competitors",
       "request_schema_hash": "sha256:672b072f9059440310a257df81889fedf6c8b072d56999315acae688d5937148",
-      "response_schema_hash": "sha256:82fa1424382e3b13ec8293bd0d41df617d6e45478b030d8a2756463f2de4e5a1",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Add Competitor",
       "tags": [
         "Rank Tracker"
@@ -10989,7 +10758,7 @@
       "operation_id": "remove_competitor_rank_tracker_competitors__competitor_id__delete",
       "path": "/rank-tracker/competitors/{competitor_id}",
       "request_schema_hash": "sha256:c12e64317425f5a545a04073cf45f8e40fe24a700acddf8f4255ea75cb946289",
-      "response_schema_hash": "sha256:1e0fa23873e9cb12124a988be1fd8ac039d18ad104a5da1961ee76b4bf48c11c",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Remove Competitor",
       "tags": [
         "Rank Tracker"
@@ -11000,7 +10769,7 @@
       "operation_id": "traffic_forecasts_rank_tracker_forecasts_get",
       "path": "/rank-tracker/forecasts",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:92a588d5bebfbfd443ea319c8f76cdaf0019fd3fca9f449471e4111f4b346bec",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Traffic Forecasts",
       "tags": [
         "Rank Tracker"
@@ -11011,7 +10780,7 @@
       "operation_id": "get_history_rank_tracker_history_get",
       "path": "/rank-tracker/history",
       "request_schema_hash": "sha256:b9b10ffb1805a1fae2bf265e9bded163d7b29d8cad28aa03fc13089ad9fa5650",
-      "response_schema_hash": "sha256:b005ccee9156b947c00a326ada3876086522dceea7bf827140e51fc83f804a06",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get History",
       "tags": [
         "Rank Tracker"
@@ -11021,8 +10790,8 @@
       "method": "POST",
       "operation_id": "keyword_research_content_gap_rank_tracker_keyword_research_content_gap_post",
       "path": "/rank-tracker/keyword-research/content-gap",
-      "request_schema_hash": "sha256:0da35c470ddcc1f635f29a5283913788c56cf62021ee6b7f0f346e743a45c169",
-      "response_schema_hash": "sha256:79c02bc1341c43eabd0136409c5ad57ed9a8e5eaa41ebf4bac6084851bf71086",
+      "request_schema_hash": "sha256:31ccc965d3e1c54c91586c08ee223a757d6f533ac643510b1cdbd3f366920958",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Keyword Research Content Gap",
       "tags": [
         "Rank Tracker"
@@ -11032,8 +10801,8 @@
       "method": "POST",
       "operation_id": "keyword_research_discover_rank_tracker_keyword_research_discover_post",
       "path": "/rank-tracker/keyword-research/discover",
-      "request_schema_hash": "sha256:bd3eda2dcd9be8be04bba658d17be62099a2629c17517858e703022002cbfc99",
-      "response_schema_hash": "sha256:d16f4a661c73d081c686324312bfb0dd2964809689f720add76ce12e70039225",
+      "request_schema_hash": "sha256:7721aea8f0091289cacf511f77ba2f039472554b8827821075cccddffae0e182",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Keyword Research Discover",
       "tags": [
         "Rank Tracker"
@@ -11044,7 +10813,7 @@
       "operation_id": "keyword_research_sources_rank_tracker_keyword_research_sources_get",
       "path": "/rank-tracker/keyword-research/sources",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:e3551de2456f4168d0ca1f11919928bd8269e990c63d543b1bd8d2c0647a7efc",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Keyword Research Sources",
       "tags": [
         "Rank Tracker"
@@ -11055,7 +10824,7 @@
       "operation_id": "keyword_research_vendors_rank_tracker_keyword_research_vendors_get",
       "path": "/rank-tracker/keyword-research/vendors",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:13b6ccf79cad6e2ddebec1890269ede930c52a14185ca898063c30de4cb85491",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Keyword Research Vendors",
       "tags": [
         "Rank Tracker"
@@ -11066,7 +10835,7 @@
       "operation_id": "lost_gained_rank_tracker_lost_gained_get",
       "path": "/rank-tracker/lost-gained",
       "request_schema_hash": "sha256:115fcb888f99e95ffb18bf0f3e47cb51dd429769a1dd9f91f15ddc36fa0d0aba",
-      "response_schema_hash": "sha256:2bfb513279a961e5b4dd18f4a8afc5b292e77b50bc60819d294548514d6ab3af",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Lost Gained",
       "tags": [
         "Rank Tracker"
@@ -11077,7 +10846,7 @@
       "operation_id": "oauth_google_ads_callback_rank_tracker_oauth_google_ads_callback_post",
       "path": "/rank-tracker/oauth/google-ads-callback",
       "request_schema_hash": "sha256:980e5c0ee4b49477347b7ac61969ebb8448d3920937cad6945b3127adf8c64f7",
-      "response_schema_hash": "sha256:03dfa7b58bc78f81df624142fab23326e381aa2f42c763b9f606570a8e4018aa",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Oauth Google Ads Callback",
       "tags": [
         "Rank Tracker"
@@ -11088,7 +10857,7 @@
       "operation_id": "oauth_gsc_callback_rank_tracker_oauth_gsc_callback_post",
       "path": "/rank-tracker/oauth/gsc-callback",
       "request_schema_hash": "sha256:980e5c0ee4b49477347b7ac61969ebb8448d3920937cad6945b3127adf8c64f7",
-      "response_schema_hash": "sha256:a8b58a57297d5a9dfa3bba0d8ca0bcf5bf2a92d5e55313d7373d9fd06c716026",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Oauth Gsc Callback",
       "tags": [
         "Rank Tracker"
@@ -11099,7 +10868,7 @@
       "operation_id": "get_positions_rank_tracker_positions_get",
       "path": "/rank-tracker/positions",
       "request_schema_hash": "sha256:06d2aab12065c61f631f3faa977bd905d14058950ed108baea0de1573f862dab",
-      "response_schema_hash": "sha256:7b9546a1927b17e1169b3c7717e1098f6e8e5ba64a783c0dc625b076146bb90d",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Positions",
       "tags": [
         "Rank Tracker"
@@ -11110,7 +10879,7 @@
       "operation_id": "check_serp_rank_tracker_positions_check_post",
       "path": "/rank-tracker/positions/check",
       "request_schema_hash": "sha256:ec935f37bfa7ec4b13c9c9c9a46f83fc062412d821954202992fbd762ef254e8",
-      "response_schema_hash": "sha256:57a9512c29764fda2e7efc0834029435a968f46cbe6cb949288e4d14aca68325",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Check Serp",
       "tags": [
         "Rank Tracker"
@@ -11121,7 +10890,7 @@
       "operation_id": "list_projects_rank_tracker_projects_get",
       "path": "/rank-tracker/projects",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:843553e9f6ab5572287b0c4990947f9585f05192a55968da25dc92404b27495e",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "List Projects",
       "tags": [
         "Rank Tracker"
@@ -11132,7 +10901,7 @@
       "operation_id": "remove_project_rank_tracker_projects__project_id__delete",
       "path": "/rank-tracker/projects/{project_id}",
       "request_schema_hash": "sha256:7417f8ba2ba2465d71cd52e07bd4429686a07d471ece2255d15b941edb7205c6",
-      "response_schema_hash": "sha256:ec9c43922a459fcb59ac281878283d76fc6fde895f7e6af1c578f0008476528b",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Remove Project",
       "tags": [
         "Rank Tracker"
@@ -11143,7 +10912,7 @@
       "operation_id": "provider_config_init_oauth_rank_tracker_provider_config_init_oauth_post",
       "path": "/rank-tracker/provider-config/init-oauth",
       "request_schema_hash": "sha256:bc3e997e98e141df158a186a7b6136b85670e3cd1a3ec591c2f8f920e57990bf",
-      "response_schema_hash": "sha256:3354138c91c7bd9a3a8cd1e4faaa16f4c200903f77789ae00f68d0234ac1c69f",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Provider Config Init Oauth",
       "tags": [
         "Rank Tracker"
@@ -11154,7 +10923,7 @@
       "operation_id": "provider_config_status_rank_tracker_provider_config_status_get",
       "path": "/rank-tracker/provider-config/status",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:df0b1dc834dfef71eece73cce754629e7d61e91715b3c38bb5d76d3e5d51180a",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Provider Config Status",
       "tags": [
         "Rank Tracker"
@@ -11165,7 +10934,7 @@
       "operation_id": "list_keywords_rank_tracker_tracked_keywords_get",
       "path": "/rank-tracker/tracked-keywords",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:12fc0b1fbe11ebf669f9198278227e58ca94de9f5505509e899c4e8a621dd418",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "List Keywords",
       "tags": [
         "Rank Tracker"
@@ -11176,7 +10945,7 @@
       "operation_id": "add_keyword_rank_tracker_tracked_keywords_post",
       "path": "/rank-tracker/tracked-keywords",
       "request_schema_hash": "sha256:a8459e0df5c0d4c9b591213d75736b17b1d2d810ab32b3273e689dcac9b3076c",
-      "response_schema_hash": "sha256:1bdcacbd035151e0d92f4d69f0bd11155e69bd0e1304bd0c94c4aa29da92f983",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Add Keyword",
       "tags": [
         "Rank Tracker"
@@ -11187,7 +10956,7 @@
       "operation_id": "remove_keyword_rank_tracker_tracked_keywords__keyword_id__delete",
       "path": "/rank-tracker/tracked-keywords/{keyword_id}",
       "request_schema_hash": "sha256:6effb8bada0bedcf778d9ab7ee330e2c9588806da58245c791b1ca45e0fa6799",
-      "response_schema_hash": "sha256:154a28c2929f23d6e947ab1e596d949cd3cdc7c4ebaa1a211a26c25d2f203da9",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Remove Keyword",
       "tags": [
         "Rank Tracker"
@@ -11198,7 +10967,7 @@
       "operation_id": "visibility_score_rank_tracker_visibility_score_get",
       "path": "/rank-tracker/visibility-score",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:13b3c9a221915b7011a8d55f39dfafb88202b54658d4e989e0637f8d7e70dc87",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Visibility Score",
       "tags": [
         "Rank Tracker"
@@ -11217,7 +10986,7 @@
       "operation_id": "list_reviews_reviews_get",
       "path": "/reviews",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:16ac56cbb91cd2d28fc7401d64a65d933cc8f0e5ea421fe9a65a9a0f3f250c48",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "List Reviews"
     },
     {
@@ -11225,7 +10994,7 @@
       "operation_id": "ingest_review_reviews_ingest_post",
       "path": "/reviews/ingest",
       "request_schema_hash": "sha256:7a25a299e1a91abaceea8d62e4aeb80e899a24912e675f18afda59d16d48e978",
-      "response_schema_hash": "sha256:ee7b7fed367ffaeb54313763b15735cfcc685ad626fc7691b24c2befb6533123",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Ingest Review"
     },
     {
@@ -11233,7 +11002,7 @@
       "operation_id": "get_reviews_summary_reviews_summary_get",
       "path": "/reviews/summary",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:3effbbfc1da1602dc3e0d8eec93400eade9b5ad1f816c5a027ff900f777511cf",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Reviews Summary"
     },
     {
@@ -11241,7 +11010,7 @@
       "operation_id": "respond_to_review_reviews__review_id__respond_post",
       "path": "/reviews/{review_id}/respond",
       "request_schema_hash": "sha256:fb06aebdf3bfec1ee5dd18728a404ff62936663ab527fbf4ff0e768c09195eb9",
-      "response_schema_hash": "sha256:94e5e3684696cbe12b0f99774eb7e90420484c17d24ce15d396c4319232fdf9d",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Respond To Review"
     },
     {
@@ -11279,7 +11048,7 @@
       "operation_id": "ahrefs_full_automation_search_everywhere_ahrefs_full_automation_post",
       "path": "/search-everywhere/ahrefs/full-automation",
       "request_schema_hash": "sha256:170112bc198254d70187ac54f642a456c16c2f6137e0c774834e8ccfb41358e1",
-      "response_schema_hash": "sha256:88041818d848fce427bcaff2f733afe64edf2d82a2dd806e4d4eaa650d8bee47",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Ahrefs Full Automation",
       "tags": [
         "Search Everywhere Automation"
@@ -11301,7 +11070,7 @@
       "operation_id": "ahrefs_production_gate_search_everywhere_ahrefs_production_gate_post",
       "path": "/search-everywhere/ahrefs/production-gate",
       "request_schema_hash": "sha256:9ff7edea0adc14ff29c84aad17d89b21473cccf1885eae24e600c3fa8b468887",
-      "response_schema_hash": "sha256:af7865e948fbd4710823441005e82e1a021fcc3f27950359a3cb5b378c9b4911",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Ahrefs Production Gate",
       "tags": [
         "Search Everywhere Automation"
@@ -11631,7 +11400,7 @@
       "operation_id": "brightedge_full_automation_search_everywhere_brightedge_full_automation_post",
       "path": "/search-everywhere/brightedge/full-automation",
       "request_schema_hash": "sha256:c512ce2853589c523bb3f04c3f5f17305abb5383ba55bd155ae399525472ff33",
-      "response_schema_hash": "sha256:fd4a9457b3498ff4c39b93055b639e07f2820ebcbf1606f7638c159f62b9154e",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Brightedge Full Automation",
       "tags": [
         "Search Everywhere Automation"
@@ -12038,7 +11807,7 @@
       "operation_id": "frase_full_automation_search_everywhere_frase_full_automation_post",
       "path": "/search-everywhere/frase/full-automation",
       "request_schema_hash": "sha256:fc3d34a5b4d59951faf55e75bc20a8034bf71759e505acec0a7ec0f1620e8691",
-      "response_schema_hash": "sha256:072a6ab9ca5d6cf44df200468ebcc9b31e71c0134f33d0436573b160edb7f58b",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Frase Full Automation",
       "tags": [
         "Search Everywhere Automation"
@@ -12060,7 +11829,7 @@
       "operation_id": "frase_production_gate_search_everywhere_frase_production_gate_post",
       "path": "/search-everywhere/frase/production-gate",
       "request_schema_hash": "sha256:428c3c6f58f7f49cfdaddc2a3ad219c97e73e20d9dd8078f16021cfafd94c277",
-      "response_schema_hash": "sha256:aa925eb23fa066ef1177e6897634299a2eb3715f3152f4a1e0012d3264c590dd",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Frase Production Gate",
       "tags": [
         "Search Everywhere Automation"
@@ -12489,7 +12258,7 @@
       "operation_id": "hootsuite_full_automation_search_everywhere_hootsuite_full_automation_post",
       "path": "/search-everywhere/hootsuite/full-automation",
       "request_schema_hash": "sha256:c512ce2853589c523bb3f04c3f5f17305abb5383ba55bd155ae399525472ff33",
-      "response_schema_hash": "sha256:b28c0366fffbb6bf9aa5ee2f3eaec143973700d6947c6cd39b1ab6c5134c2707",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Hootsuite Full Automation",
       "tags": [
         "Search Everywhere Automation"
@@ -12764,7 +12533,7 @@
       "operation_id": "hootsuite_wiring_apply_search_everywhere_hootsuite_wiring_apply_post",
       "path": "/search-everywhere/hootsuite/wiring/apply",
       "request_schema_hash": "sha256:4340a996ce6e6c8585ba6c0965868f94278848ff98aa08fab8577da336960676",
-      "response_schema_hash": "sha256:0c79faca5a4fc5ce1884904b32453ab7ce239ba58d79ff1a66986c5c4f4b0a14",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Hootsuite Wiring Apply",
       "tags": [
         "Search Everywhere Automation"
@@ -13424,7 +13193,7 @@
       "operation_id": "marketmuse_full_automation_search_everywhere_marketmuse_full_automation_post",
       "path": "/search-everywhere/marketmuse/full-automation",
       "request_schema_hash": "sha256:c512ce2853589c523bb3f04c3f5f17305abb5383ba55bd155ae399525472ff33",
-      "response_schema_hash": "sha256:9f75228b52954f259e0d8285ab1833a75821be67e0d502fdff7e6bd9dc81baa0",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Marketmuse Full Automation",
       "tags": [
         "Search Everywhere Automation"
@@ -14249,7 +14018,7 @@
       "operation_id": "semrush_full_automation_search_everywhere_semrush_full_automation_post",
       "path": "/search-everywhere/semrush/full-automation",
       "request_schema_hash": "sha256:c512ce2853589c523bb3f04c3f5f17305abb5383ba55bd155ae399525472ff33",
-      "response_schema_hash": "sha256:86fc8eb0db6ab1cfbfc14da15218cb3899cb71b7eb220bd2c203e2041d8ae7b6",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Semrush Full Automation",
       "tags": [
         "Search Everywhere Automation"
@@ -14271,7 +14040,7 @@
       "operation_id": "semrush_production_gate_search_everywhere_semrush_production_gate_post",
       "path": "/search-everywhere/semrush/production-gate",
       "request_schema_hash": "sha256:3297199f02c19b71f8cd0eb8c8eec4a00add12b0e34b1207b8fbb3a3b945586d",
-      "response_schema_hash": "sha256:0da951d6a04a400901dd85062299b9d51b203af4339a96533c77db2c65690239",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Semrush Production Gate",
       "tags": [
         "Search Everywhere Automation"
@@ -14700,7 +14469,7 @@
       "operation_id": "sitebulb_run_project_search_everywhere_sitebulb_projects__project_id__run_post",
       "path": "/search-everywhere/sitebulb/projects/{project_id}/run",
       "request_schema_hash": "sha256:c68c6e6657eab77425b6a2ea015f5a5a98e44fb745c48767be81ea8e2923eb7b",
-      "response_schema_hash": "sha256:a943a969d88765a8453b33b87e27e27b6edb88159bce867727e3f3606285b1fe",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Sitebulb Run Project",
       "tags": [
         "Search Everywhere Automation"
@@ -14777,7 +14546,7 @@
       "operation_id": "sitebulb_execute_schedules_search_everywhere_sitebulb_schedules_execute_post",
       "path": "/search-everywhere/sitebulb/schedules/execute",
       "request_schema_hash": "sha256:36bd5fa5d0c4fc0cfa9e835c3395c001e11d4176dc927450418f73ef057c51d8",
-      "response_schema_hash": "sha256:60fffd1dccbc61746a8835f6ea9306f0b270d83ec0ddfb46438431b7f3e52c41",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Sitebulb Execute Schedules",
       "tags": [
         "Search Everywhere Automation"
@@ -14821,7 +14590,7 @@
       "operation_id": "surfer_full_automation_search_everywhere_surfer_full_automation_post",
       "path": "/search-everywhere/surfer/full-automation",
       "request_schema_hash": "sha256:0d7267da449b9bbccf3967fb9bb35ac345597600d2f5bb42a47d21c820736ba8",
-      "response_schema_hash": "sha256:b06ebfad4cb01ec7760d4d876b85deab1329876d8b5ca9322f14e9eb3b39af7e",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Surfer Full Automation",
       "tags": [
         "Search Everywhere Automation"
@@ -14843,7 +14612,7 @@
       "operation_id": "surfer_production_gate_search_everywhere_surfer_production_gate_post",
       "path": "/search-everywhere/surfer/production-gate",
       "request_schema_hash": "sha256:a7a1add34a6d97394d029f861e8fbe5e87519db303bf196f38a97bebfc77757f",
-      "response_schema_hash": "sha256:48d66e35d2b2ca72071f6a27c7ec6c8b60e5bcd528d0d65faa51a3458126ad8f",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Surfer Production Gate",
       "tags": [
         "Search Everywhere Automation"
@@ -15969,7 +15738,7 @@
       "operation_id": "keyword_research_seo_platform_keywords_research_post",
       "path": "/seo-platform/keywords/research",
       "request_schema_hash": "sha256:24103dc2d0bcddf790030c8fdc26cb3ed1740b01d9430faf2cd27fd3c474ec1c",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Keyword Research",
       "tags": [
         "seo-platform"
@@ -15980,7 +15749,7 @@
       "operation_id": "keyword_research_async_seo_platform_keywords_research_async_post",
       "path": "/seo-platform/keywords/research/async",
       "request_schema_hash": "sha256:24103dc2d0bcddf790030c8fdc26cb3ed1740b01d9430faf2cd27fd3c474ec1c",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Keyword Research Async",
       "tags": [
         "seo-platform"
@@ -16035,7 +15804,7 @@
       "operation_id": "local_seo_optimize_seo_platform_local_optimize_post",
       "path": "/seo-platform/local/optimize",
       "request_schema_hash": "sha256:83d67bb2355e6fa7934f5bb2b2b2ad0fc0712674a47b814b15aef63cc656631b",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Local Seo Optimize",
       "tags": [
         "seo-platform"
@@ -16167,7 +15936,7 @@
       "operation_id": "performance_alert_events_seo_platform_performance_alerts_events_get",
       "path": "/seo-platform/performance/alerts/events",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Alert Events",
       "tags": [
         "seo-platform"
@@ -16178,7 +15947,7 @@
       "operation_id": "performance_audit_seo_platform_performance_audit_post",
       "path": "/seo-platform/performance/audit",
       "request_schema_hash": "sha256:388aaafccfbfdd4dbb05a13b56cc67fe26c2999132566cc205f2b32892f5199d",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Audit",
       "tags": [
         "seo-platform"
@@ -16189,7 +15958,7 @@
       "operation_id": "performance_auto_fix_seo_platform_performance_auto_fix_post",
       "path": "/seo-platform/performance/auto-fix",
       "request_schema_hash": "sha256:2ff8cf88268d7ced102d8919f2083a72489a1b4f229aabdf3f3f12f0fe9149fa",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Auto Fix",
       "tags": [
         "seo-platform"
@@ -16200,7 +15969,7 @@
       "operation_id": "performance_browser_profiles_seo_platform_performance_browser_profiles_get",
       "path": "/seo-platform/performance/browser-profiles",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Browser Profiles",
       "tags": [
         "seo-platform"
@@ -16211,7 +15980,7 @@
       "operation_id": "performance_capabilities_seo_platform_performance_capabilities_get",
       "path": "/seo-platform/performance/capabilities",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Capabilities",
       "tags": [
         "seo-platform"
@@ -16222,7 +15991,7 @@
       "operation_id": "performance_crux_history_seo_platform_performance_crux_history_get",
       "path": "/seo-platform/performance/crux/history",
       "request_schema_hash": "sha256:87ad1fb743f36f4c70074f2ccd3bb662c3ccc09d089d330fa5f8e301361fd0bc",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Crux History",
       "tags": [
         "seo-platform"
@@ -16233,7 +16002,7 @@
       "operation_id": "performance_history_seo_platform_performance_history_get",
       "path": "/seo-platform/performance/history",
       "request_schema_hash": "sha256:28f73840fd6e4cc573e66b94eb8824c0b567eebe021237e33b9b5fe4432c941d",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance History",
       "tags": [
         "seo-platform"
@@ -16244,7 +16013,7 @@
       "operation_id": "performance_monitor_create_seo_platform_performance_monitor_create_post",
       "path": "/seo-platform/performance/monitor/create",
       "request_schema_hash": "sha256:487badcd3577bd1b6e34bdcb16cc0bc76a8f064c06e4241e24476d8fc0c88a32",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Monitor Create",
       "tags": [
         "seo-platform"
@@ -16255,7 +16024,7 @@
       "operation_id": "performance_monitors_seo_platform_performance_monitors_get",
       "path": "/seo-platform/performance/monitors",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Monitors",
       "tags": [
         "seo-platform"
@@ -16266,7 +16035,7 @@
       "operation_id": "performance_monitor_run_seo_platform_performance_monitors__monitor_id__run_post",
       "path": "/seo-platform/performance/monitors/{monitor_id}/run",
       "request_schema_hash": "sha256:b5fc1463f28a5515ab0710df0ffadaee8214b9f450b24fbb298cc106f768c5c9",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Monitor Run",
       "tags": [
         "seo-platform"
@@ -16277,7 +16046,7 @@
       "operation_id": "performance_report_shared_seo_platform_performance_report_shared__share_token__get",
       "path": "/seo-platform/performance/report/shared/{share_token}",
       "request_schema_hash": "sha256:ab8f506642b778fd798fb4473b8fbd15ba17e1246c3f9e0a8702db224c3ddaac",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Report Shared",
       "tags": [
         "seo-platform"
@@ -16288,7 +16057,7 @@
       "operation_id": "performance_report_seo_platform_performance_report__analysis_id__get",
       "path": "/seo-platform/performance/report/{analysis_id}",
       "request_schema_hash": "sha256:1451e6890dcaeeceeef5144fa0d22ef6fa9a14c718e95e8ee096361069fe892d",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Report",
       "tags": [
         "seo-platform"
@@ -16299,7 +16068,7 @@
       "operation_id": "performance_report_share_seo_platform_performance_report__analysis_id__share_post",
       "path": "/seo-platform/performance/report/{analysis_id}/share",
       "request_schema_hash": "sha256:0cd9e5238be749537c53f947263c2bfe60324c2b9377a2da3f0ac6a2caaa4c84",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Report Share",
       "tags": [
         "seo-platform"
@@ -16310,7 +16079,7 @@
       "operation_id": "performance_reports_compare_seo_platform_performance_reports_compare_post",
       "path": "/seo-platform/performance/reports/compare",
       "request_schema_hash": "sha256:02d3d1931bb1b05604b9791814538c2b64c7c7a2e9f97f9a4ed4fafccbc5a228",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Reports Compare",
       "tags": [
         "seo-platform"
@@ -16321,7 +16090,7 @@
       "operation_id": "performance_rum_ingest_seo_platform_performance_rum_ingest_post",
       "path": "/seo-platform/performance/rum/ingest",
       "request_schema_hash": "sha256:f9242d66194540a6211c8203cdc8bfd047172fa627abfdc99ec87eea93c010f2",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Rum Ingest",
       "tags": [
         "seo-platform"
@@ -16332,7 +16101,7 @@
       "operation_id": "performance_rum_summary_seo_platform_performance_rum_summary_get",
       "path": "/seo-platform/performance/rum/summary",
       "request_schema_hash": "sha256:28f73840fd6e4cc573e66b94eb8824c0b567eebe021237e33b9b5fe4432c941d",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Rum Summary",
       "tags": [
         "seo-platform"
@@ -16343,7 +16112,7 @@
       "operation_id": "performance_test_locations_seo_platform_performance_test_locations_get",
       "path": "/seo-platform/performance/test-locations",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Test Locations",
       "tags": [
         "seo-platform"
@@ -16354,7 +16123,7 @@
       "operation_id": "performance_tests_create_seo_platform_performance_tests_post",
       "path": "/seo-platform/performance/tests",
       "request_schema_hash": "sha256:388aaafccfbfdd4dbb05a13b56cc67fe26c2999132566cc205f2b32892f5199d",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Tests Create",
       "tags": [
         "seo-platform"
@@ -16365,7 +16134,7 @@
       "operation_id": "performance_tests_status_seo_platform_performance_tests__test_id__get",
       "path": "/seo-platform/performance/tests/{test_id}",
       "request_schema_hash": "sha256:0bed268af86ec102a5d03099bfb81a5659e8ffe23547002047d0f5e58623f708",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Tests Status",
       "tags": [
         "seo-platform"
@@ -16376,7 +16145,7 @@
       "operation_id": "performance_vendors_seo_platform_performance_vendors_get",
       "path": "/seo-platform/performance/vendors",
       "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Performance Vendors",
       "tags": [
         "seo-platform"
@@ -16384,11 +16153,23 @@
     },
     {
       "method": "POST",
+      "operation_id": "planner_draft_seo_platform_planner_draft_post",
+      "path": "/seo-platform/planner/draft",
+      "request_schema_hash": "sha256:d5730f085f6a11bba38261f651dc22454afee9899ded214f32239345291fdd4a",
+      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "summary": "Create a review-only SEO workflow draft",
+      "tags": [
+        "seo-platform"
+      ]
+    },
+    {
+      "deprecated": true,
+      "method": "POST",
       "operation_id": "planner_execute_seo_platform_planner_execute_post",
       "path": "/seo-platform/planner/execute",
       "request_schema_hash": "sha256:d5730f085f6a11bba38261f651dc22454afee9899ded214f32239345291fdd4a",
       "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
-      "summary": "Planner Execute",
+      "summary": "Legacy endpoint; creates a review-only draft and executes no tasks",
       "tags": [
         "seo-platform"
       ]
@@ -16431,7 +16212,7 @@
       "operation_id": "rank_tracking_analyze_seo_platform_rank_tracking_analyze_post",
       "path": "/seo-platform/rank-tracking/analyze",
       "request_schema_hash": "sha256:d7a51ff6e279c0a930e40889a638d51cf86a369c25b37cdba55f2a85aac28836",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Rank Tracking Analyze",
       "tags": [
         "seo-platform"
@@ -16464,7 +16245,7 @@
       "operation_id": "review_reputation_analyze_seo_platform_reviews_analyze_post",
       "path": "/seo-platform/reviews/analyze",
       "request_schema_hash": "sha256:e9125fd1be6726144609a2b14ab0c310fc3e1dbf31888420191b6ca0eb7163e4",
-      "response_schema_hash": "sha256:5cacdebd37af5f68f6a0fd1db0f28a694aebe898ddc0acfe4da47e6a1c838887",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Review Reputation Analyze",
       "tags": [
         "seo-platform"
@@ -18133,6 +17914,14 @@
       ]
     },
     {
+      "method": "GET",
+      "operation_id": "list_social_listening_alert_rules_social_listening_rules_get",
+      "path": "/social/listening/rules",
+      "request_schema_hash": "sha256:63ab394e5772922d7877d515dc55bb9427fa1d25eeb64eea65fe4f09a07e96fe",
+      "response_schema_hash": "sha256:e2b66433e1f981e3422cb5a38cc103d7690811dae1992ebca0ce08eb22a09f4b",
+      "summary": "List Social Listening Alert Rules"
+    },
+    {
       "method": "POST",
       "operation_id": "create_social_listening_alert_rule_social_listening_rules_post",
       "path": "/social/listening/rules",
@@ -18594,7 +18383,7 @@
       "operation_id": "get_reviews_social_reviews_hub_get",
       "path": "/social/reviews/hub",
       "request_schema_hash": "sha256:07b985a186b33ea099652303544308f179a5051e4a4929131f83d62b1df6a958",
-      "response_schema_hash": "sha256:0c2fa24b40027bad6ab913b42d210cf77f3205ea871cfae1db98d99ea3cb205b",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Get Reviews",
       "tags": [
         "social_media",
@@ -18606,7 +18395,7 @@
       "operation_id": "ingest_review_social_reviews_ingest_post",
       "path": "/social/reviews/ingest",
       "request_schema_hash": "sha256:58c6a497ba6cc9669400eb11027ac0c4603d71faba290f04453892f31e28fa77",
-      "response_schema_hash": "sha256:bae1029fc18883702cebfbc6a4dc4e68c6bbf4de28ccace3a6e23988ef9ca164",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Ingest Review",
       "tags": [
         "social_media",
@@ -18618,7 +18407,7 @@
       "operation_id": "reply_to_review_social_reviews_replies__review_id__post",
       "path": "/social/reviews/replies/{review_id}",
       "request_schema_hash": "sha256:04025ecdf4e40b93ccd531393288166dba90d77e7bfa8c71f1818859144bab81",
-      "response_schema_hash": "sha256:b79b181065023e299d82e0f2293861e445c5ddd1c42cf21454b3fea13ffe4ced",
+      "response_schema_hash": "sha256:c1ce38637fc50012d4da700666de5c9b5df0950aca7e6bad9f188292feadf90c",
       "summary": "Reply To Review",
       "tags": [
         "social_media",
@@ -18872,7 +18661,7 @@
       "operation_id": "list_ugc_assets_social_ugc_get",
       "path": "/social/ugc",
       "request_schema_hash": "sha256:d320cc63ff21e36a1d21ff7bf7591c2ec114f3063bf1386f6b40803a26113ca7",
-      "response_schema_hash": "sha256:d13f6406c9797b83ea63e810bf92d88b0a5d0da75ba463a978e37692dfcf8185",
+      "response_schema_hash": "sha256:d5582bc6ca70c3942cfde7a0c60256f33f51eea6b0ff1f449caaef5aa72e515c",
       "summary": "List Ugc Assets"
     },
     {
@@ -18880,7 +18669,7 @@
       "operation_id": "batch_approve_ugc_social_ugc_batch_approve_post",
       "path": "/social/ugc/batch/approve",
       "request_schema_hash": "sha256:966103e94c830e419adbf443beb704c380bb80221b983d65ac980eb183e2596d",
-      "response_schema_hash": "sha256:3fb8fedfeea2c1d649e907ad1bc588cfa857d44ea604cca0615418b8651e2cbc",
+      "response_schema_hash": "sha256:d5582bc6ca70c3942cfde7a0c60256f33f51eea6b0ff1f449caaef5aa72e515c",
       "summary": "Batch Approve Ugc"
     },
     {
@@ -18888,7 +18677,7 @@
       "operation_id": "discover_ugc_assets_social_ugc_discover_post",
       "path": "/social/ugc/discover",
       "request_schema_hash": "sha256:966103e94c830e419adbf443beb704c380bb80221b983d65ac980eb183e2596d",
-      "response_schema_hash": "sha256:263a00a48a9a875dae0fbfce0615bf992749a973e33200b1f6741cb8a49dea9e",
+      "response_schema_hash": "sha256:d5582bc6ca70c3942cfde7a0c60256f33f51eea6b0ff1f449caaef5aa72e515c",
       "summary": "Discover Ugc Assets"
     },
     {
@@ -18896,7 +18685,7 @@
       "operation_id": "get_ugc_performance_social_ugc_performance_get",
       "path": "/social/ugc/performance",
       "request_schema_hash": "sha256:94119f0e58a7cb7df89abd14e4d36ff10973f08cb8f9ee4b2f0fd7481913a985",
-      "response_schema_hash": "sha256:695d9e2c6c85221e03653def26987019a0f0b7558e1e0a394b2c16b14fce4ae8",
+      "response_schema_hash": "sha256:d5582bc6ca70c3942cfde7a0c60256f33f51eea6b0ff1f449caaef5aa72e515c",
       "summary": "Get Ugc Performance"
     },
     {
@@ -18904,7 +18693,7 @@
       "operation_id": "approve_ugc_asset_social_ugc__asset_id__approve_patch",
       "path": "/social/ugc/{asset_id}/approve",
       "request_schema_hash": "sha256:f1cbffe8ef2758d2c11e02aaacebbc93b7a63cc14895dc49db44842d3068b922",
-      "response_schema_hash": "sha256:7bd721e6c93dbe8e177265774e85d8a0d268cea3b72d91d70a378245b6035ccc",
+      "response_schema_hash": "sha256:d5582bc6ca70c3942cfde7a0c60256f33f51eea6b0ff1f449caaef5aa72e515c",
       "summary": "Approve Ugc Asset"
     },
     {
@@ -18912,7 +18701,7 @@
       "operation_id": "republish_ugc_asset_social_ugc__asset_id__republish_post",
       "path": "/social/ugc/{asset_id}/republish",
       "request_schema_hash": "sha256:11f4ec5b4e32e0d89efafee8f9eae0f64f4652970977fff79f4b8e30b0e72152",
-      "response_schema_hash": "sha256:942907fbdfef9655aeecd1e901a7ddf1fd43f777047c6a363ebd98bf6d3c0f53",
+      "response_schema_hash": "sha256:d5582bc6ca70c3942cfde7a0c60256f33f51eea6b0ff1f449caaef5aa72e515c",
       "summary": "Republish Ugc Asset"
     },
     {
@@ -18920,7 +18709,7 @@
       "operation_id": "request_ugc_rights_social_ugc__asset_id__request_rights_post",
       "path": "/social/ugc/{asset_id}/request-rights",
       "request_schema_hash": "sha256:d5388e8f9de992f174a5727ab09016d853e0bafb75f737bbb2c717d2c2482d02",
-      "response_schema_hash": "sha256:3039a5fdc3f7daadc21166634ec109eae03277ffbaed4411fec13e91a0a164a4",
+      "response_schema_hash": "sha256:d5582bc6ca70c3942cfde7a0c60256f33f51eea6b0ff1f449caaef5aa72e515c",
       "summary": "Request Ugc Rights"
     },
     {
@@ -19071,7 +18860,7 @@
       "method": "POST",
       "operation_id": "create_tenant_profile_tenants_post",
       "path": "/tenants",
-      "request_schema_hash": "sha256:d0fc62acb0799fde6fe6789bfd786445a9081b68bea67b73396dd5a8ff2b3d5c",
+      "request_schema_hash": "sha256:78f71b05383c8d6ea3986602412d17d01977bdd9f471590756b08869603e5b15",
       "response_schema_hash": "sha256:74484209b4a2b3cd3dd3169aa71d41184a907656c193db43456832ea0926ed11",
       "summary": "Create Tenant Profile"
     },
@@ -19087,7 +18876,7 @@
       "method": "PATCH",
       "operation_id": "update_tenant_profile_tenants__tenant_id__patch",
       "path": "/tenants/{tenant_id}",
-      "request_schema_hash": "sha256:f2db09d757d361e014a4dd9aca343ed45349b0c7530a42f6e20ccb992ee64f05",
+      "request_schema_hash": "sha256:dbc5d60682a2084b20e1d0fab520c0dd1ed5c4e0e283d6c8cfb7ef1745027763",
       "response_schema_hash": "sha256:4b94ab715a18be02d46bb59c5e68dd43d17ff1f49271f4e9caab067efe37c225",
       "summary": "Update Tenant Profile"
     },

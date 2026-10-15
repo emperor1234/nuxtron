@@ -1,0 +1,333 @@
+.page {
+  width: min(100%, 1240px);
+  margin-inline: auto;
+}
+
+.notice,
+.warning,
+.validation {
+  padding: 14px 16px;
+  border: 1px solid var(--nx-info-line);
+  border-radius: var(--nx-radius);
+  background: var(--nx-info-soft);
+  color: var(--nx-info-ink);
+  line-height: 1.55;
+}
+
+.notice {
+  margin-bottom: 16px;
+}
+
+.notice strong {
+  margin-right: 4px;
+}
+
+.limitRow,
+.sectionHeader,
+.previewHeader,
+.formActions,
+.exportPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.limitRow {
+  align-items: stretch;
+  margin-bottom: 16px;
+}
+
+.limitRow > p {
+  margin: 0;
+  align-self: center;
+  color: var(--nx-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--nx-border-soft);
+  border-radius: var(--nx-radius-sm);
+  background: var(--nx-card);
+}
+
+.count strong {
+  color: var(--nx-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.formCard,
+.previewCard {
+  display: grid;
+  gap: 20px;
+}
+
+.sectionHeader {
+  align-items: flex-end;
+  border-bottom: 1px solid var(--nx-border-soft);
+  padding-bottom: 12px;
+}
+
+.sectionHeader > div {
+  display: grid;
+  gap: 4px;
+}
+
+.sectionHeader > p,
+.previewHeader p,
+.exportPanel > p,
+.fieldHint,
+.scopeNote,
+.sampleNote,
+.empty {
+  margin: 0;
+  color: var(--nx-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.sectionHeader code,
+.pathCell code {
+  overflow-wrap: anywhere;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.step {
+  color: var(--nx-brand);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.templateGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  align-items: start;
+}
+
+.templateGrid > :first-child,
+.fieldHint {
+  grid-column: 1 / -1;
+}
+
+.fieldHint {
+  margin-top: -8px;
+}
+
+.variableList {
+  display: grid;
+  gap: 12px;
+}
+
+.variableRow {
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(140px, 0.7fr) minmax(0, 1.4fr) auto;
+  gap: 12px;
+  align-items: end;
+  border: 1px solid var(--nx-border-soft);
+  border-radius: var(--nx-radius);
+}
+
+.variableRow legend {
+  padding: 0 6px;
+  color: var(--nx-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.valuesField {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.valuesField label,
+.reviewCheck {
+  color: var(--nx-ink-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.valuesField textarea {
+  width: 100%;
+  min-width: 0;
+  resize: vertical;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  background: var(--nx-card);
+  color: var(--nx-ink);
+  font: inherit;
+  line-height: 1.45;
+  padding: 9px 10px;
+}
+
+.removeButton {
+  min-width: 82px;
+}
+
+.formActions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.validation {
+  border-color: var(--nx-danger-line);
+  background: var(--nx-danger-soft);
+  color: var(--nx-danger-ink);
+}
+
+.validation ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.previewSection {
+  margin-top: 20px;
+}
+
+.previewHeader {
+  align-items: flex-start;
+}
+
+.previewHeader h2 {
+  margin: 5px 0 4px;
+  font-size: 19px;
+  line-height: 1.3;
+}
+
+.previewHeader > button {
+  flex: 0 0 auto;
+}
+
+.warning {
+  border-color: var(--nx-warning-line);
+  background: var(--nx-warning-soft);
+  color: var(--nx-warning-ink);
+}
+
+.sampleNote {
+  padding: 10px 12px;
+  border-left: 3px solid var(--nx-info);
+  background: var(--nx-info-soft);
+}
+
+.caption {
+  padding: 0 0 10px;
+  color: var(--nx-muted);
+  text-align: left;
+}
+
+.pathCell code {
+  display: block;
+  min-width: 140px;
+  color: var(--nx-ink);
+}
+
+.duplicate {
+  display: inline-block;
+  margin-top: 5px;
+  color: var(--nx-danger-ink);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.valueChip {
+  display: inline-block;
+  margin: 2px 5px 2px 0;
+  padding: 3px 7px;
+  border-radius: var(--nx-radius-pill);
+  background: var(--nx-neutral-soft);
+  color: var(--nx-ink-2);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  padding: 14px;
+}
+
+.exportPanel {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--nx-border-soft);
+}
+
+.exportPanel > p {
+  flex: 1 1 260px;
+}
+
+.reviewCheck {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  line-height: 1.5;
+}
+
+.reviewCheck input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  accent-color: var(--nx-brand);
+}
+
+.scopeNote {
+  margin: 10px 2px 0;
+}
+
+@media (max-width: 760px) {
+  .limitRow,
+  .sectionHeader,
+  .previewHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .limitRow {
+    gap: 10px;
+  }
+
+  .count {
+    justify-content: space-between;
+  }
+
+  .templateGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .templateGrid > :first-child,
+  .fieldHint {
+    grid-column: auto;
+  }
+
+  .variableRow {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .removeButton {
+    justify-self: start;
+  }
+
+  .previewHeader > button {
+    width: 100%;
+  }
+
+  .exportPanel > button {
+    width: 100%;
+  }
+
+  .previewCard :global(.table-wrap) {
+    overflow-x: auto;
+  }
+}

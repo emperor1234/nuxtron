@@ -34,7 +34,7 @@ except Exception:
     _PIL_AVAILABLE = False
 
 from ..deps import AuthContext, require_auth
-from ..redis_cache import get_redis
+from ..durable_jobs import create_job, mark_outbox_failed, mark_outbox_published, update_job
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +47,9 @@ BARK_WORKER_URL = os.getenv("BARK_WORKER_URL", "http://localhost:9012")
 RVC_WORKER_URL = os.getenv("RVC_WORKER_URL", "http://localhost:9013")
 VIDEO_WORKER_URL = os.getenv("VIDEO_WORKER_URL", "").strip()
 
-# ─── In-memory async job store ────────────────────────────────────────────────
-# Maps job_id -> {status, result, error}
+# Legacy local state is used only by development-only in-process adapters and is
+# never the source of truth for the API or Celery workers.
 _image_jobs: dict[str, dict[str, Any]] = {}
-_AI_JOB_STORE_PREFIX = "nuxtron:ai:job:"
-_AI_JOB_TTL_SECONDS = max(int(os.getenv("AI_JOB_TTL_SECONDS", "86400")), 600)
 _AI_TASK_NAME_BY_MEDIA = {
     "image": "nuxtron.tasks.ai.process_image",
     "text": "nuxtron.tasks.ai.process_text",
@@ -92,33 +90,74 @@ _ALLOWED_AUDIO_EXTENSIONS = {".mp3", ".wav"}
 
 
 async def _persist_ai_job(job_id: str, payload: dict[str, Any]) -> None:
+    """Persist a state transition for a legacy local adapter."""
     _image_jobs[job_id] = payload
-    client = await get_redis()
-    if client is None:
+    reference = str(payload.get("job_reference") or "")
+    if not reference:
         return
+    status = str(payload.get("status") or "pending")
+    if status not in {"running", "completed", "failed"}:
+        return
+    update_job(
+        reference,
+        status=status,
+        result={"content": payload.get("content"), "media_url": payload.get("media_url")},
+        error_message=str(payload.get("error")) if payload.get("error") else None,
+    )
+
+
+async def _run_local_and_persist(
+    job_id: str,
+    job_reference: str,
+    operation,
+    *args: Any,
+) -> None:
+    """Run a development adapter while keeping durable state authoritative."""
+    update_job(job_reference, status="running")
     try:
-        await client.setex(f"{_AI_JOB_STORE_PREFIX}{job_id}", _AI_JOB_TTL_SECONDS, json.dumps(payload, default=str))
+        await operation(*args)
+        state = _image_jobs.get(job_id, {})
+        succeeded = state.get("status") in {"success", "completed"}
+        update_job(
+            job_reference,
+            status="completed" if succeeded else "failed",
+            result={"content": state.get("content"), "media_url": state.get("media_url")},
+            error_message=str(state.get("error")) if state.get("error") else None,
+        )
+    except Exception as exc:
+        update_job(job_reference, status="failed", error_message=f"{type(exc).__name__}: {exc}")
+        raise
+
+
+async def _load_ai_job(job_id: str, tenant_id: str) -> dict[str, Any] | None:
+    try:
+        from sqlalchemy import select
+
+        from ..database import organization_scoped_session
+        from ..models import JobExecution
+        with organization_scoped_session(tenant_id) as session:
+            row = session.scalar(
+                select(JobExecution).where(
+                    JobExecution.tenant_id == tenant_id,
+                    JobExecution.job_id == job_id,
+                )
+            )
+            if row is None:
+                if os.getenv("ENVIRONMENT", "").strip().lower() != "production":
+                    legacy = _image_jobs.get(job_id)
+                    if legacy is not None and (not legacy.get("tenant_id") or legacy.get("tenant_id") == tenant_id):
+                        return dict(legacy)
+                return None
+            return {
+                "status": row.status,
+                "tenant_id": tenant_id,
+                **(row.result or {}),
+                "error": row.error_message,
+                **(row.job_params or {}),
+            }
     except Exception:
-        logger.debug("Failed to persist AI job %s to Redis", job_id, exc_info=True)
-
-
-async def _load_ai_job(job_id: str) -> dict[str, Any] | None:
-    if job_id in _image_jobs:
-        return _image_jobs[job_id]
-    client = await get_redis()
-    if client is None:
+        logger.debug("Failed to load durable AI job %s", job_id, exc_info=True)
         return None
-    try:
-        raw = await client.get(f"{_AI_JOB_STORE_PREFIX}{job_id}")
-        if not raw:
-            return None
-        decoded = json.loads(raw)
-        if isinstance(decoded, dict):
-            _image_jobs[job_id] = decoded
-            return decoded
-    except Exception:
-        logger.debug("Failed to load AI job %s from Redis", job_id, exc_info=True)
-    return None
 
 
 def _resolve_celery_runtime():
@@ -330,28 +369,57 @@ def create_ai_router(enforce_rate_limit, audit_log_memory, credit_ledger_memory)
                 "reservation_reference": reservation_reference,
                 "orchestration_plan": orchestration_plan,
             }
+            job_payload = {
+                **payload.model_dump(),
+                "orchestration_plan": orchestration_plan,
+                "estimated_credits": estimated_credits,
+                "reservation_reference": reservation_reference,
+                "tenant_id": auth.tenant_id,
+            }
+            job_reference = create_job(
+                tenant_id=auth.tenant_id,
+                job_id=job_id,
+                job_type=f"ai_generation:{payload.media_type}",
+                payload=job_payload,
+                task_name=_AI_TASK_NAME_BY_MEDIA[payload.media_type],
+                queue=_AI_QUEUE_BY_MEDIA[payload.media_type],
+                max_retries=1,
+                expires_seconds=_AI_EXPIRES_SECONDS_BY_MEDIA[payload.media_type],
+            )
+            job_record["job_reference"] = job_reference
             celery_app, _ = _resolve_celery_runtime()  # type: ignore[no-untyped-call]
             used_celery = False
             if celery_app is not None:
                 try:
                     celery_task = celery_app.send_task(
                         _AI_TASK_NAME_BY_MEDIA[payload.media_type],
-                        kwargs={
-                            "payload": payload.model_dump(),
-                        },
+                        kwargs={"job_reference": job_reference},
                         queue=_AI_QUEUE_BY_MEDIA[payload.media_type],
                         priority=_AI_PRIORITY_BY_MEDIA[payload.media_type],
                         expires=_AI_EXPIRES_SECONDS_BY_MEDIA[payload.media_type],
                     )
                     job_record["celery_task_id"] = celery_task.id
                     job_record["execution_mode"] = "celery"
+                    mark_outbox_published(job_reference, celery_task.id)
                     used_celery = True
                 except Exception:
-                    logger.exception("Failed to enqueue Celery AI job; falling back to in-process background task")
+                    logger.exception("Failed to enqueue durable Celery AI job")
+                    mark_outbox_failed(job_reference, "Celery dispatch failed")
 
             if not used_celery:
+                if os.getenv("ENVIRONMENT", "").strip().lower() == "production":
+                    update_job(job_reference, status="failed", error_message="Durable worker dispatch is unavailable.")
+                    return AIGenerationResponse(
+                        status="error",
+                        error="Background worker unavailable; no in-process fallback is permitted in production.",
+                        orchestration_plan=orchestration_plan,
+                        estimated_credits=estimated_credits,
+                    )
                 if payload.media_type == "image":
                     background_tasks.add_task(
+                        _run_local_and_persist,
+                        job_id,
+                        job_reference,
                         _run_image_job,
                         job_id,
                         payload,
@@ -363,6 +431,9 @@ def create_ai_router(enforce_rate_limit, audit_log_memory, credit_ledger_memory)
                     )
                 elif payload.media_type == "text":
                     background_tasks.add_task(
+                        _run_local_and_persist,
+                        job_id,
+                        job_reference,
                         _run_text_job,
                         job_id,
                         payload,
@@ -374,6 +445,9 @@ def create_ai_router(enforce_rate_limit, audit_log_memory, credit_ledger_memory)
                     )
                 elif payload.media_type == "video":
                     background_tasks.add_task(
+                        _run_local_and_persist,
+                        job_id,
+                        job_reference,
                         _run_video_job,
                         job_id,
                         payload,
@@ -385,6 +459,9 @@ def create_ai_router(enforce_rate_limit, audit_log_memory, credit_ledger_memory)
                     )
                 else:
                     background_tasks.add_task(
+                        _run_local_and_persist,
+                        job_id,
+                        job_reference,
                         _run_voice_job,
                         job_id,
                         payload,
@@ -397,7 +474,7 @@ def create_ai_router(enforce_rate_limit, audit_log_memory, credit_ledger_memory)
                     )
                 job_record["execution_mode"] = "in-process"
 
-            await _persist_ai_job(job_id, job_record)
+            _image_jobs[job_id] = job_record
             content_msg = f"{payload.media_type.capitalize()} generation started. Poll /ai/social-studio/job/{{job_id}} for result."
             audit_log_memory.append(
                 {
@@ -431,59 +508,10 @@ def create_ai_router(enforce_rate_limit, audit_log_memory, credit_ledger_memory)
         auth: Annotated[AuthContext, Depends(require_auth)],
     ) -> AIGenerationResponse:
         """Poll status of a background image generation job."""
-        job = await _load_ai_job(job_id)
+        job = await _load_ai_job(job_id, auth.tenant_id)
         if job is None:
             return AIGenerationResponse(status="error", error="Job not found.")
-        owner_tenant_id = str(job.get("tenant_id") or "").strip()
-        if owner_tenant_id and owner_tenant_id != auth.tenant_id:
-            return AIGenerationResponse(status="error", error="Job not found.")
-
-        if job.get("execution_mode") == "celery" and job.get("status") == "pending":
-            celery_app, async_result_cls = _resolve_celery_runtime()  # type: ignore[no-untyped-call]
-            task_id = str(job.get("celery_task_id") or "")
-            if celery_app is not None and async_result_cls is not None and task_id:
-                task_result = async_result_cls(task_id, app=celery_app)
-                if task_result.ready():
-                    if task_result.successful():
-                        result_payload = task_result.result or {}
-                        if not isinstance(result_payload, dict):
-                            result_payload = {"error": f"Unexpected task result type: {type(task_result.result).__name__}"}
-                        if result_payload.get("status") == "success":
-                            job = {
-                                **job,
-                                "status": "success",
-                                "content": result_payload.get("content"),
-                                "media_url": result_payload.get("media_url"),
-                            }
-                        else:
-                            _refund_reserved_credits(
-                                str(job.get("tenant_id", auth.tenant_id)),
-                                int(job.get("estimated_credits", 0)),
-                                str(job.get("reservation_reference", "")),
-                                credit_ledger_memory,
-                                ledger_lock,
-                            )
-                            job = {
-                                **job,
-                                "status": "error",
-                                "error": str(result_payload.get("error") or "AI job failed."),
-                            }
-                    else:
-                        _refund_reserved_credits(
-                            str(job.get("tenant_id", auth.tenant_id)),
-                            int(job.get("estimated_credits", 0)),
-                            str(job.get("reservation_reference", "")),
-                            credit_ledger_memory,
-                            ledger_lock,
-                        )
-                        job = {
-                            **job,
-                            "status": "error",
-                            "error": str(task_result.result or "AI worker task failed."),
-                        }
-                    await _persist_ai_job(job_id, job)
-
-        if job["status"] == "pending":
+        if job["status"] in {"queued", "running", "pending"}:
             return AIGenerationResponse(
                 status="pending",
                 job_id=job_id,
@@ -491,11 +519,19 @@ def create_ai_router(enforce_rate_limit, audit_log_memory, credit_ledger_memory)
                 orchestration_plan=job.get("orchestration_plan"),
                 estimated_credits=job.get("estimated_credits"),
             )
-        if job["status"] == "error":
+        if job["status"] in {"failed", "error"}:
             return AIGenerationResponse(
                 status="error",
                 job_id=job_id,
                 error=job.get("error"),
+                orchestration_plan=job.get("orchestration_plan"),
+                estimated_credits=job.get("estimated_credits"),
+            )
+        if job["status"] not in {"completed", "success"}:
+            return AIGenerationResponse(
+                status="pending",
+                job_id=job_id,
+                content="Still generating…",
                 orchestration_plan=job.get("orchestration_plan"),
                 estimated_credits=job.get("estimated_credits"),
             )

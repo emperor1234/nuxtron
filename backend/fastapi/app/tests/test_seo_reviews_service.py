@@ -1,54 +1,47 @@
-"""Unit tests for Reviews service (phase-h module 2)."""
+"""Fail-closed tests for provider-backed review reputation analysis."""
 
 from __future__ import annotations
 
+import asyncio
+from unittest.mock import AsyncMock
+
 import pytest
+from fastapi import HTTPException
 
 pytestmark = pytest.mark.no_legacy
 
-from backend.fastapi.app.seo_reviews_service import analyze_review_reputation, analyze_review_reputation_signals
+from backend.fastapi.app.seo_reviews_service import (  # noqa: E402
+    REVIEW_REPUTATION_UNAVAILABLE_DETAIL,
+    analyze_review_reputation,
+    raise_review_reputation_unavailable,
+)
 
 
-def test_heuristic_scales() -> None:
-    thin = analyze_review_reputation_signals(brand="Acme", reviews_text="", platforms=["google"], notes="")
-    rich = analyze_review_reputation_signals(
-        brand="Acme Pro",
-        reviews_text="Love the product quality. Great support. Terrible shipping was slow and broken packaging.",
-        platforms=["google", "trustpilot", "yelp"],
-        notes="Reputation mining with sentiment themes and response workflow notes",
-    )
-    assert rich["reputation_score"] != thin["reputation_score"] or len(rich["themes"]) >= len(thin["themes"])
-    assert thin["reputation_score"] < 100
+def test_review_reputation_unavailable_is_typed_501() -> None:
+    with pytest.raises(HTTPException) as raised:
+        raise_review_reputation_unavailable()
+
+    assert raised.value.status_code == 501
+    assert raised.value.detail == REVIEW_REPUTATION_UNAVAILABLE_DETAIL
+    assert raised.value.detail["code"] == "NOT_IMPLEMENTED"
 
 
-@pytest.mark.asyncio
-async def test_llm_and_heuristic() -> None:
-    async def _llm(_s: str, _u: str, **_k: object) -> dict:
-        return {"reputation_score": 72, "themes": []}
+def test_review_reputation_does_not_call_model_or_fabricate_counts() -> None:
+    model = AsyncMock(return_value={"reputation_score": 100, "review_summary": {"total_reviews": 99}})
 
-    assert (
-        await analyze_review_reputation(
-            brand="Acme",
-            reviews_text="Great product",
-            platforms=["google"],
-            notes="",
-            ollama_json_fn=_llm,
-            system_prompt="s",
-            clean_text_fn=lambda t, _m: t,
+    with pytest.raises(HTTPException) as raised:
+        asyncio.run(
+            analyze_review_reputation(
+                brand="Example",
+                reviews_text="A real review supplied by the user.",
+                platforms=["google"],
+                notes="",
+                ollama_json_fn=model,
+                system_prompt="must not be used",
+                clean_text_fn=lambda text, _limit: text,
+            )
         )
-    )["analysis_mode"] == "llm"
 
-    async def _down(_s: str, _u: str, **_k: object) -> dict:
-        return {"fallback": True}
-
-    assert (
-        await analyze_review_reputation(
-            brand="Acme",
-            reviews_text="Great product",
-            platforms=["google"],
-            notes="",
-            ollama_json_fn=_down,
-            system_prompt="s",
-            clean_text_fn=lambda t, _m: t,
-        )
-    )["analysis_mode"] == "heuristic"
+    assert raised.value.status_code == 501
+    assert raised.value.detail["code"] == "NOT_IMPLEMENTED"
+    model.assert_not_awaited()

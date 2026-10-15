@@ -103,17 +103,16 @@ class TestMediaLibrary:
             "storage_key": "uploads/raw-video-001.mp4",
             "media_type": "video",
         })
-        assert r.status_code in {200, 201}
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_list_media_jobs(self, client: TestClient) -> None:
         r = client.get("/media/jobs", headers=H)
-        assert r.status_code == 200
+        assert r.status_code == 501
 
     def test_list_media_dlq(self, client: TestClient) -> None:
         r = client.get("/media/jobs/dlq", headers=H)
-        # NOTE: /media/jobs/{job_id} (int) is registered before /media/jobs/dlq,
-        # so FastAPI tries to parse "dlq" as int and returns 422. Accept both.
-        assert r.status_code in {200, 422}
+        assert r.status_code == 501
 
 
 # ── Meetings ──────────────────────────────────────────────────────────────────
@@ -159,27 +158,31 @@ class TestMeetings:
 class TestMarketplace:
     def test_list_plugins(self, client: TestClient) -> None:
         r = client.get("/marketplace/plugins", headers=H)
-        assert r.status_code == 200
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_list_themes(self, client: TestClient) -> None:
         r = client.get("/marketplace/themes", headers=H)
-        assert r.status_code == 200
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_install(self, client: TestClient) -> None:
         r = client.post("/marketplace/install", headers=H, json={
-            "plugin_key": "seo-boost",
-            "version": "1.0.0",
+            "item_id": "plugin-001",
         })
-        assert r.status_code < 500
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_publish(self, client: TestClient) -> None:
         r = client.post("/marketplace/publish", headers=H, json={
             "name": "My Plugin",
-            "description": "A useful plugin.",
+            "description": "A valid payload for checking the marketplace unavailable contract.",
             "type": "plugin",
+            "category": "automation",
             "version": "1.0.0",
         })
-        assert r.status_code < 500
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
 
 # ── Linkinbio ─────────────────────────────────────────────────────────────────
@@ -308,33 +311,30 @@ class TestCompetitive:
 class TestReviews:
     def test_list_reviews(self, client: TestClient) -> None:
         r = client.get("/reviews", headers=H)
-        assert r.status_code == 200
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_reviews_summary(self, client: TestClient) -> None:
         r = client.get("/reviews/summary", headers=H)
-        assert r.status_code == 200
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_ingest_review(self, client: TestClient) -> None:
         r = client.post("/reviews/ingest", headers=H, json={
             "platform": "google",
-            "reviewer_name": "Happy Customer",
+            "reviewer": "Happy Customer",
             "rating": 5,
             "text": "Excellent service!",
         })
-        assert r.status_code < 500
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_respond_to_review(self, client: TestClient) -> None:
-        r = client.post("/reviews/ingest", headers=H, json={
-            "platform": "yelp",
-            "reviewer_name": "Satisfied User",
-            "rating": 4,
-            "text": "Good experience.",
-        })
-        rid = r.json().get("id", 1)
-        r2 = client.post(f"/reviews/{rid}/respond", headers=H, json={
+        r = client.post("/reviews/1/respond", headers=H, json={
             "response": "Thank you for your feedback!",
         })
-        assert r2.status_code < 500
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
 
 # ── Publishing / UTM ──────────────────────────────────────────────────────────

@@ -107,7 +107,9 @@ class TestRevAttrDbEnsureTables:
             with patch("psycopg.connect", return_value=mock_conn):
                 h = {"X-API-Key": "test-api-key", "X-Tenant-Id": "rev-db-report"}
                 r = client.get("/analytics/revenue-attribution/report", headers=h)
-                assert r.status_code in VALID
+                assert r.status_code == 200
+                assert r.json()["persistence_mode"] == "postgres"
+                assert r.json()["currency_totals"] == []
 
 
 class TestRevAttrReportBuilding:
@@ -165,63 +167,45 @@ class TestRevAttrReportBuilding:
 
 
 class TestRevAttrWebhooks:
-    """Lines 494-508: webhook signature verification."""
+    """Provider webhooks fail closed until signed per-workspace routing exists."""
 
     def test_stripe_webhook_valid(self, client: TestClient) -> None:
-        """Stripe webhook with valid payload (no signature env var → passes)."""
         r = client.post("/analytics/revenue-attribution/webhooks/stripe",
                         headers={"X-Tenant-Id": "rev-wh-tenant"},
-                        json={
-                            "type": "checkout.session.completed",
-                            "data": {
-                                "object": {
-                                    "id": "cs_test_001",
-                                    "amount_total": 9999,
-                                    "currency": "usd",
-                                }
-                            }
-                        })
-        assert r.status_code in VALID
+                        json={"type": "checkout.session.completed"})
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_stripe_webhook_invalid_sig(self, client: TestClient) -> None:
-        """Lines 494-497: Stripe webhook signature check when WEBHOOK_STRIPE_SECRET set."""
         with patch.dict(os.environ, {"WEBHOOK_STRIPE_SECRET": "whsec_test"}):
             r = client.post("/analytics/revenue-attribution/webhooks/stripe",
                             headers={"X-Tenant-Id": "rev-wh-tenant",
                                      "Stripe-Signature": "invalid_sig"},
                             json={"type": "checkout.session.completed"})
-            assert r.status_code in VALID
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_shopify_webhook(self, client: TestClient) -> None:
-        """Lines 500-503: Shopify webhook with env secret."""
         with patch.dict(os.environ, {"WEBHOOK_SHOPIFY_SECRET": "shopify_secret"}):
             r = client.post("/analytics/revenue-attribution/webhooks/shopify",
                             headers={"X-Tenant-Id": "rev-wh-tenant"},
-                            json={
-                                "id": 1234,
-                                "total_price": "49.99",
-                                "currency": "USD",
-                            })
-            assert r.status_code in VALID
+                            json={"id": 1234, "total_price": "49.99", "currency": "USD"})
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_woocommerce_webhook(self, client: TestClient) -> None:
-        """Lines 505-508: WooCommerce webhook with env secret."""
         with patch.dict(os.environ, {"WEBHOOK_WOOCOMMERCE_SECRET": "wc_secret"}):
             r = client.post("/analytics/revenue-attribution/webhooks/woocommerce",
                             headers={"X-Tenant-Id": "rev-wh-tenant"},
-                            json={
-                                "id": 567,
-                                "total": "120.00",
-                                "currency": "GBP",
-                            })
-            assert r.status_code in VALID
+                            json={"id": 567, "total": "120.00", "currency": "GBP"})
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_unknown_provider_webhook(self, client: TestClient) -> None:
-        """Unknown provider → 400."""
         r = client.post("/analytics/revenue-attribution/webhooks/paypal",
                         headers={"X-Tenant-Id": "rev-wh-tenant"},
                         json={"type": "payment.complete"})
-        assert r.status_code in VALID
+        assert r.status_code == 400
 
 
 class TestRevAttrStoreDirectUnit:

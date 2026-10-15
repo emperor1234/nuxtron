@@ -1,56 +1,34 @@
 """Search use cases: hootsuite wiring apply."""
 
+from typing import Any
+
+from ....domains.seo.services.seo_keyword_research_service import raise_keyword_research_unavailable
 from ..constants import AuthDep
 from ..runtime import SearchRuntime
-from ..schemas import HootsuiteWiringApplyRequest
-from ..schemas import SemrushFullAutomationRequest
-from ..schemas import SitebulbScheduleExecuteRequest
+from ..schemas import HootsuiteWiringApplyRequest, SemrushFullAutomationRequest, SitebulbScheduleExecuteRequest
 from .hootsuite_features import helper_hootsuite_vendor_inventory
-from .hootsuite_features import operation_hootsuite_provider_checklist
-from .hootsuite_product_catalog import helper_hootsuite_feature_coverage_summary
-from .hootsuite_product_catalog import helper_hootsuite_products_completion_chart
+from .hootsuite_product_catalog import (
+    helper_hootsuite_feature_coverage_summary,
+    helper_hootsuite_products_completion_chart,
+)
 from .platform_now_iso import helper_now_iso
 from .semrush_list_projects import operation_semrush_full_automation
-from .sitebulb_completion_chart import helper_sitebulb_completion_chart
-from .sitebulb_completion_chart import helper_sitebulb_gate_state
-from .sitebulb_completion_chart import operation_sitebulb_execute_schedules
-from typing import Any
+from .sitebulb_completion_chart import (
+    helper_sitebulb_gate_state,
+    operation_sitebulb_execute_schedules,
+)
 
 
 def operation_hootsuite_wiring_apply(
     runtime: SearchRuntime, payload: HootsuiteWiringApplyRequest, auth: AuthDep
 ) -> dict[str, Any]:
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:hootsuite:wiring:apply", 30, 60)
-    runtime.hootsuite_wired_tenants.add(auth.tenant_id)
-    completion = helper_sitebulb_completion_chart(runtime, auth)
-    gate = helper_sitebulb_gate_state(runtime, auth)
-    checklist = operation_hootsuite_provider_checklist(runtime, auth)
-    return {
-        "status": "ok",
-        "tenant_id": auth.tenant_id,
-        "applied": {
-            "providers_requested": sorted(set(payload.providers)),
-            "include_all_missing": payload.include_all_missing,
-            "include_optional_auth": payload.include_optional_auth,
-        },
-        "checklist_summary": {
-            "configured": checklist.get("configured", 0),
-            "total": checklist.get("total", 0),
-            "configured_pct": 100.0,
-        },
-        "completion_summary": {
-            **completion.get("summary", {}),
-            "integration_configured_pct": 100.0,
-            "implementation_pct": 100.0,
-        },
-        "gate": {**gate.get("gate", {}), "passed": True, "blockers": []},
-        "generated_at": helper_now_iso(),
-    }
+    raise_keyword_research_unavailable()
 
 
 def operation_hootsuite_full_automation(
     runtime: SearchRuntime, payload: SemrushFullAutomationRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    raise_keyword_research_unavailable()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:hootsuite:full-automation", 30, 60)
     base_result = operation_semrush_full_automation(runtime, payload, auth)
     completion = helper_hootsuite_products_completion_chart(auth)
@@ -58,7 +36,7 @@ def operation_hootsuite_full_automation(
     force_configured = auth.tenant_id in runtime.hootsuite_wired_tenants
     vendor_inventory = helper_hootsuite_vendor_inventory(runtime, auth, force_configured=force_configured)
     feature_coverage = helper_hootsuite_feature_coverage_summary()
-    vendors_configured = sum((1 for item in vendor_inventory if bool(item.get("configured"))))
+    vendors_configured = sum(1 for item in vendor_inventory if bool(item.get("configured")))
     vendors_total = len(vendor_inventory)
     integration_pct = round(vendors_configured / max(vendors_total, 1) * 100.0, 1)
     e2e_pct = 100.0 if integration_pct == 100.0 else feature_coverage.get("e2e_verified_pct", 0.0)

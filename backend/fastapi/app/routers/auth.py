@@ -18,6 +18,18 @@ from ..domains.identity.security_redis import fixed_window_increment, reset_coun
 
 # Type alias for dependency injection
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
+
+
+class AuthCapabilityUnavailableResponse(BaseModel):
+    detail: str
+
+
+AUTH_CAPABILITY_UNAVAILABLE_RESPONSES = {
+    501: {
+        'model': AuthCapabilityUnavailableResponse,
+        'description': 'This local authentication capability is unavailable in production; use the configured OIDC identity provider.',
+    }
+}
 SAML_DISABLED_MESSAGE = 'SAML is disabled.'
 JsonObject = dict[str, object]
 
@@ -26,13 +38,12 @@ JsonObject = dict[str, object]
 _RESERVED_JWT_CLAIMS = frozenset({'sub', 'tenant_id', 'roles', 'iat', 'exp', 'iss', 'jti'})
 
 
-def _reject_local_auth_in_production() -> None:
+def _reject_local_auth_in_production(
+    message: str = 'Local password authentication is disabled in production; use the configured OIDC identity flow.',
+) -> None:
     """Prevent local HS256 bootstrap flows from fabricating OIDC-incompatible sessions."""
     if _is_production_environment():
-        raise HTTPException(
-            status_code=501,
-            detail='Local password authentication is disabled in production; use the configured OIDC identity flow.',
-        )
+        raise HTTPException(status_code=501, detail=message)
 
 
 def _validate_relay_state(relay_state: str | None) -> str | None:
@@ -139,8 +150,11 @@ def _register_totp_routes(
     totp_verify: TotpVerifier,
     auth_security_memory: list[AuthSecurityRecord],
 ) -> None:
-    @router.post('/auth/totp/setup')
+    @router.post('/auth/totp/setup', responses=AUTH_CAPABILITY_UNAVAILABLE_RESPONSES)
     def auth_totp_setup(payload: TotpSetupRequest, auth: AuthDep) -> JsonObject:  # pyright: ignore[reportUnusedFunction]
+        _reject_local_auth_in_production(
+            'Local TOTP demonstration is disabled in production; enforce MFA through the configured OIDC provider.'
+        )
         enforce_rate_limit(f'{auth.tenant_id}:auth:totp:setup', limit=30, window_seconds=60)
         secret = totp_secret()
         issuer = payload.issuer.strip()
@@ -166,8 +180,11 @@ def _register_totp_routes(
             },
         }
 
-    @router.post('/auth/totp/verify')
+    @router.post('/auth/totp/verify', responses=AUTH_CAPABILITY_UNAVAILABLE_RESPONSES)
     def auth_totp_verify(payload: TotpVerifyRequest, auth: AuthDep) -> JsonObject:  # pyright: ignore[reportUnusedFunction]
+        _reject_local_auth_in_production(
+            'Local TOTP demonstration is disabled in production; enforce MFA through the configured OIDC provider.'
+        )
         enforce_rate_limit(f'{auth.tenant_id}:auth:totp:verify', limit=90, window_seconds=60)
         code = payload.code.strip()
         is_valid = totp_verify(payload.secret.strip(), code, window=payload.window)
@@ -198,10 +215,14 @@ def _register_jwt_routes(
     @router.post(
         '/auth/jwt/issue',
         responses={
+            **AUTH_CAPABILITY_UNAVAILABLE_RESPONSES,
             403: {'description': 'Cannot issue a token for another subject or with roles you do not hold.'},
         },
     )
     def auth_jwt_issue(payload: JwtIssueRequest, auth: AuthDep) -> JsonObject:  # pyright: ignore[reportUnusedFunction]
+        _reject_local_auth_in_production(
+            'Local HMAC JWT issuance is disabled in production; use the configured OIDC identity provider.'
+        )
         enforce_rate_limit(f'{auth.tenant_id}:auth:jwt:issue', limit=120, window_seconds=60)
 
         # A shared API key carries no user identity, so it must never be able to
@@ -289,8 +310,11 @@ def _register_jwt_routes(
             })
         return {'status': 'ok', 'tenant_id': auth.tenant_id, 'result': {'revoked': bool(auth.jti)}}
 
-    @router.post('/auth/jwt/verify')
+    @router.post('/auth/jwt/verify', responses=AUTH_CAPABILITY_UNAVAILABLE_RESPONSES)
     def auth_jwt_verify(payload: JwtVerifyRequest, auth: AuthDep) -> JsonObject:  # pyright: ignore[reportUnusedFunction]
+        _reject_local_auth_in_production(
+            'Local HMAC JWT verification is disabled in production; use the configured OIDC identity provider.'
+        )
         enforce_rate_limit(f'{auth.tenant_id}:auth:jwt:verify', limit=300, window_seconds=60)
         secret = _resolve_jwt_secret(_is_production_environment())
         if not secret:
@@ -320,6 +344,9 @@ def _register_jwt_routes(
 
 
 def _ensure_saml_enabled() -> None:
+    _reject_local_auth_in_production(
+        'Direct SAML sessions are disabled in production; configure enterprise SSO through the OIDC provider.'
+    )
     if not is_saml_enabled():
         raise HTTPException(status_code=503, detail=SAML_DISABLED_MESSAGE)
 
@@ -455,6 +482,7 @@ def _register_saml_routes(
         handlers.metadata,
         methods=['GET'],
         responses={
+            **AUTH_CAPABILITY_UNAVAILABLE_RESPONSES,
             503: {'description': SAML_DISABLED_MESSAGE},
             500: {'description': 'SAML metadata generation failed.'},
         },
@@ -464,6 +492,7 @@ def _register_saml_routes(
         handlers.login,
         methods=['GET'],
         responses={
+            **AUTH_CAPABILITY_UNAVAILABLE_RESPONSES,
             503: {'description': SAML_DISABLED_MESSAGE},
             500: {'description': 'SAML login URL generation failed.'},
         },
@@ -473,6 +502,7 @@ def _register_saml_routes(
         handlers.acs,
         methods=['POST'],
         responses={
+            **AUTH_CAPABILITY_UNAVAILABLE_RESPONSES,
             503: {'description': SAML_DISABLED_MESSAGE},
             401: {'description': 'SAML assertion validation failed.'},
             400: {'description': 'SAML assertion missing required tenant or subject mapping.'},
@@ -532,24 +562,25 @@ def _register_user_auth_routes(
         '/auth/register',
         handlers.register,
         methods=['POST'],
-        responses={409: {'description': 'Email already registered.'}},
+        responses={**AUTH_CAPABILITY_UNAVAILABLE_RESPONSES, 409: {'description': 'Email already registered.'}},
     )
     router.add_api_route(
         '/auth/login',
         handlers.login,
         methods=['POST'],
-        responses={401: {'description': 'Invalid credentials.'}},
+        responses={**AUTH_CAPABILITY_UNAVAILABLE_RESPONSES, 401: {'description': 'Invalid credentials.'}},
     )
     router.add_api_route(
         '/auth/password-reset/request',
         handlers.request_reset,
         methods=['POST'],
+        responses=AUTH_CAPABILITY_UNAVAILABLE_RESPONSES,
     )
     router.add_api_route(
         '/auth/password-reset/confirm',
         handlers.confirm_reset,
         methods=['POST'],
-        responses={400: {'description': 'Invalid or expired reset token.'}},
+        responses={**AUTH_CAPABILITY_UNAVAILABLE_RESPONSES, 400: {'description': 'Invalid or expired reset token.'}},
     )
 
 
@@ -848,8 +879,7 @@ class _UserAuthHandlers:
 
     @staticmethod
     def _client_ip(request: Request) -> str:
-        forwarded_for = (request.headers.get('X-Forwarded-For', '') or '').split(',')[0].strip()
-        return forwarded_for or (request.client.host if request.client else 'unknown')
+        return request.client.host if request.client and request.client.host else 'unknown'
 
     def request_reset(self, payload: PasswordResetRequestPayload, auth: AuthDep) -> JsonObject:
         _reject_local_auth_in_production()

@@ -25,6 +25,7 @@ import threading
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import create_engine, event, text
@@ -85,11 +86,19 @@ def _as_sqlalchemy_url(db_url: str) -> str:
 
 
 def _is_production_environment() -> bool:
-    return os.getenv('ENVIRONMENT', 'development').strip().lower() == 'production'
+    return _environment_name() == 'production'
+
+
+def _environment_name() -> str:
+    environment = os.getenv('ENVIRONMENT', '').strip().lower()
+    if environment not in {'development', 'test', 'production'}:
+        raise RuntimeError('ENVIRONMENT must be explicitly set to development, test, or production.')
+    return environment
 
 
 def _get_engine() -> Engine:
     """Create SQLAlchemy engine with connection pooling."""
+    _environment_name()
     db_url = _get_database_url()
 
     if not db_url:
@@ -176,6 +185,34 @@ def _get_session_factory() -> sessionmaker:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def _expected_alembic_heads() -> set[str]:
+    """Load migration heads from this service's Alembic configuration."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    config_path = Path(__file__).resolve().parents[1] / 'alembic.ini'
+    config = Config(str(config_path))
+    config.set_main_option('script_location', str(config_path.parent / 'alembic'))
+    return set(ScriptDirectory.from_config(config).get_heads())
+
+
+def _assert_current_alembic_revision(engine: Engine) -> None:
+    """Require the connected database to be at every current migration head."""
+    from sqlalchemy import inspect
+
+    with engine.connect() as connection:
+        if not inspect(connection).has_table('alembic_version'):
+            raise RuntimeError("No Alembic migration history found; run `alembic upgrade head` before startup.")
+        applied = set(connection.execute(text('SELECT version_num FROM alembic_version')).scalars().all())
+
+    expected = _expected_alembic_heads()
+    if not expected or applied != expected:
+        raise RuntimeError(
+            'Database migration revisions do not match the application heads '
+            f'(applied={sorted(applied)}, expected={sorted(expected)}).'
+        )
+
+
 def init_db() -> None:
     """Initialize database schema. Call on app startup.
 
@@ -202,21 +239,16 @@ def init_db() -> None:
         logger.info('Database initialization complete')
         return
 
-    from sqlalchemy import inspect as sa_inspect
-
-    if not sa_inspect(engine).has_table('alembic_version'):
-        message = (
-            'PostgreSQL is configured but no Alembic migration history was found '
-            "(no 'alembic_version' table). Run `alembic upgrade head` before "
-            'starting the app — schema is no longer auto-created against Postgres.'
-        )
+    try:
+        _assert_current_alembic_revision(engine)
+    except RuntimeError as exc:
         if _is_production_environment():
-            logger.critical(message)
-            raise RuntimeError(message)
-        logger.warning(message)
+            logger.critical(str(exc))
+            raise
+        logger.warning('Database schema is not at the current Alembic head: %s', exc)
         return
 
-    logger.info('Database schema is Alembic-managed; skipping create_all.')
+    logger.info('Database schema matches the current Alembic heads; skipping create_all.')
 
 
 @contextmanager

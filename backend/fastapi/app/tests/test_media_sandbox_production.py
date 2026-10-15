@@ -4,7 +4,7 @@ Production-grade E2E tests for the Sandboxed Media SaaS Pipeline.
 Tests cover all 16 endpoints (6 original + 6 new) and the three new
 sandbox security behaviours added in the production implementation:
   - Per-tenant concurrency cap (429 on overflow)
-  - Provider dispatch with credential-not-configured fallback
+  - Provider dispatch fails explicitly when credentials/output persistence are unavailable
   - IDOR prevention on raw-input delete
   - Audit trail completeness
   - Magic-byte validation with HMAC token
@@ -82,6 +82,11 @@ class _DynamicAuthHeaders(Mapping[str, str]):
 
     def get(self, key: str, default: str | None = None) -> str | None:
         return _auth_headers().get(key, default)
+
+def _assert_media_job_unavailable(response) -> None:
+    assert response.status_code == 501, response.text
+    assert response.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+
 
 # ---------------------------------------------------------------------------
 # App fixture — spin up a fresh isolated in-memory instance per test module
@@ -169,30 +174,8 @@ def queue_job(
 # ---------------------------------------------------------------------------
 
 class TestMediaJobsStats:
-    def test_stats_returns_200(self, client: TestClient) -> None:
-        res = client.get('/media/jobs/stats', headers=AUTH_HEADERS)
-        assert res.status_code == 200
-
-    def test_stats_has_required_keys(self, client: TestClient) -> None:
-        res = client.get('/media/jobs/stats', headers=AUTH_HEADERS)
-        body = res.json()
-        stats = body.get('stats') or body  # handle both wrapping styles
-        required = {'total_jobs', 'active_jobs', 'completed_jobs', 'failed_jobs', 'dlq_depth', 'concurrent_limit'}
-        assert required.issubset(stats.keys()), f'Missing keys: {required - stats.keys()}'
-
-    def test_stats_utilization_pct_is_number(self, client: TestClient) -> None:
-        res = client.get('/media/jobs/stats', headers=AUTH_HEADERS)
-        body = res.json()
-        stats = body.get('stats') or body
-        assert isinstance(stats.get('utilization_pct'), (int, float))
-
-    def test_stats_counts_are_non_negative(self, client: TestClient) -> None:
-        res = client.get('/media/jobs/stats', headers=AUTH_HEADERS)
-        body = res.json()
-        stats = body.get('stats') or body
-        for key in ('total_jobs', 'active_jobs', 'completed_jobs', 'failed_jobs', 'dlq_depth'):
-            assert stats[key] >= 0, f'{key} is negative'
-
+    def test_stats_are_unavailable_without_durable_jobs(self, client: TestClient) -> None:
+        _assert_media_job_unavailable(client.get('/media/jobs/stats', headers=AUTH_HEADERS))
 
 # ---------------------------------------------------------------------------
 # 2. GET /media/sandbox/config
@@ -222,6 +205,14 @@ class TestSandboxConfig:
         body = res.json()
         cfg = body.get('sandbox') or body
         assert 'execution_mode' in cfg
+        assert cfg['execution_mode'] == 'unavailable'
+        assert cfg['available_executors']['memory_fallback'] is False
+        assert cfg['job_processing']['available'] is False
+
+    def test_sandbox_does_not_advertise_any_executor(self, client: TestClient) -> None:
+        response = client.get('/media/sandbox/config', headers=AUTH_HEADERS)
+        cfg = response.json()['sandbox']
+        assert not any(cfg['available_executors'].values())
 
     def test_security_rules_have_enforced_flag(self, client: TestClient) -> None:
         res = client.get('/media/sandbox/config', headers=AUTH_HEADERS)
@@ -254,6 +245,7 @@ class TestMediaProviders:
         for p in providers:
             assert 'configured' in p, f'Provider {p.get("id")} missing "configured" field'
             assert isinstance(p['configured'], bool)
+            assert p['available'] is False
 
     def test_known_providers_present(self, client: TestClient) -> None:
         expected = {'cloudinary', 'mux', 'bunny', 'assemblyai', 'deepgram', 'adobe_pdf'}
@@ -322,81 +314,24 @@ class TestMagicByteValidation:
 # ---------------------------------------------------------------------------
 
 class TestQueueJob:
-    def test_queue_job_returns_201(self, client: TestClient) -> None:
-        res = client.post(
-            '/media/jobs',
-            json={'storage_key': f'raw-input/{TENANT}/img.jpg', 'media_type': 'image'},
-            headers=AUTH_HEADERS,
-        )
-        assert res.status_code in (201, 200, 429)  # 429 if concurrency cap reached
-
-    def test_queue_job_with_provider(self, client: TestClient) -> None:
-        res = client.post(
-            '/media/jobs',
-            json={
-                'storage_key': f'raw-input/{TENANT}/vid.mp4',
-                'media_type': 'video',
-                'provider': 'mux',
-            },
-            headers=AUTH_HEADERS,
-        )
-        assert res.status_code in (201, 200, 429)
-        if res.status_code in (201, 200):
-            body = res.json()
-            job = body.get('job') or body
-            assert job.get('provider') in ('mux', 'internal', None)
-
-    def test_invalid_media_type_returns_error(self, client: TestClient) -> None:
-        res = client.post(
-            '/media/jobs',
-            json={'storage_key': 'raw-input/x/f.xyz', 'media_type': 'unknown'},
-            headers=AUTH_HEADERS,
-        )
-        assert res.status_code in (400, 422)
-
+    @pytest.mark.parametrize(
+        'payload',
+        [
+            {'storage_key': f'raw-input/{TENANT}/img.jpg', 'media_type': 'image'},
+            {'storage_key': f'raw-input/{TENANT}/vid.mp4', 'media_type': 'video', 'provider': 'mux'},
+        ],
+    )
+    def test_create_job_fails_closed(self, client: TestClient, payload: dict[str, Any]) -> None:
+        _assert_media_job_unavailable(client.post('/media/jobs', json=payload, headers=AUTH_HEADERS))
 
 # ---------------------------------------------------------------------------
 # 6. GET /media/jobs + GET /media/jobs/{id}
 # ---------------------------------------------------------------------------
 
 class TestListAndGetJob:
-    def test_list_jobs_returns_200(self, client: TestClient) -> None:
-        res = client.get('/media/jobs', headers=AUTH_HEADERS)
-        assert res.status_code == 200
-
-    def test_list_jobs_returns_array(self, client: TestClient) -> None:
-        res = client.get('/media/jobs', headers=AUTH_HEADERS)
-        body = res.json()
-        jobs = body.get('jobs') or []
-        assert isinstance(jobs, list)
-
-    def test_get_nonexistent_job_returns_404(self, client: TestClient) -> None:
-        res = client.get('/media/jobs/999999', headers=AUTH_HEADERS)
-        assert res.status_code == 404
-
-    def test_get_job_returns_job_fields(self, client: TestClient) -> None:
-        # Queue a job first
-        r = client.post(
-            '/media/jobs',
-            json={'storage_key': f'raw-input/{TENANT}/gettest.jpg', 'media_type': 'image'},
-            headers=AUTH_HEADERS,
-        )
-        if r.status_code not in (200, 201):
-            pytest.skip('Could not queue job (concurrency limit)')
-        job_data = r.json()
-        job = job_data.get('job') or job_data
-        job_id = job.get('id')
-        if not job_id:
-            pytest.skip('Job ID not returned')
-
-        res = client.get(f'/media/jobs/{job_id}', headers=AUTH_HEADERS)
-        assert res.status_code == 200
-        body = res.json()
-        j = body.get('job') or body
-        assert 'status' in j
-        assert 'media_type' in j
-        assert 'created_at' in j
-
+    def test_list_and_get_fail_closed(self, client: TestClient) -> None:
+        _assert_media_job_unavailable(client.get('/media/jobs', headers=AUTH_HEADERS))
+        _assert_media_job_unavailable(client.get('/media/jobs/999999', headers=AUTH_HEADERS))
 
 # ---------------------------------------------------------------------------
 # 7. POST /media/sandbox/dispatch — all 6 providers (no creds mode)
@@ -413,12 +348,15 @@ class TestSandboxDispatch:
     ]
 
     @pytest.mark.parametrize('provider,media_type', PROVIDERS_AND_TYPES)
-    def test_dispatch_provider_no_creds_fallback(
+    def test_dispatch_provider_is_unavailable_before_creating_memory_job(
         self,
         client: TestClient,
         provider: str,
         media_type: str,
     ) -> None:
+        from backend.fastapi.app import memory_stores
+
+        jobs_before = len(memory_stores.media_jobs)
         res = client.post(
             '/media/sandbox/dispatch',
             json={
@@ -429,10 +367,41 @@ class TestSandboxDispatch:
             },
             headers=AUTH_HEADERS,
         )
-        # 200 → success; 429 → concurrency cap; 400 → unsupported (ok); 500 → real error
-        assert res.status_code in (200, 429, 400), (
-            f'Provider {provider}: unexpected status {res.status_code}: {res.text}'
+        assert res.status_code == 501, f'Provider {provider}: {res.text}'
+        assert res.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        assert len(memory_stores.media_jobs) == jobs_before
+
+    def test_provider_processing_ack_is_not_reported_as_completed(
+        self,
+        client: TestClient,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from backend.fastapi.app import memory_stores
+        from backend.fastapi.app.domains.content.media import providers
+
+        calls: list[str] = []
+
+        async def accepted_but_untracked(*_args, **_kwargs) -> dict[str, str]:
+            calls.append("called")
+            return {"provider": "mux", "status": "processing", "asset_id": "asset-not-tracked"}
+
+        monkeypatch.setitem(providers._PROVIDER_DISPATCH, "mux", accepted_but_untracked)
+        jobs_before = len(memory_stores.media_jobs)
+        res = client.post(
+            '/media/sandbox/dispatch',
+            json={
+                'storage_key': f'raw-input/{TENANT}/processing-test.mp4',
+                'media_type': 'video',
+                'provider': 'mux',
+                'operation': 'transcode',
+            },
+            headers=AUTH_HEADERS,
         )
+
+        assert res.status_code == 501, res.text
+        assert res.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        assert calls == []
+        assert len(memory_stores.media_jobs) == jobs_before
 
     def test_dispatch_unknown_provider_returns_400(self, client: TestClient) -> None:
         res = client.post(
@@ -572,215 +541,89 @@ class TestRawInputDelete:
 # ---------------------------------------------------------------------------
 
 class TestAuditTrail:
-    def test_audit_nonexistent_job_returns_404(self, client: TestClient) -> None:
-        res = client.get('/media/jobs/999999/audit', headers=AUTH_HEADERS)
-        assert res.status_code == 404
-
-    def test_audit_returns_trail_for_existing_job(self, client: TestClient) -> None:
-        # Queue a job
-        r = client.post(
-            '/media/jobs',
-            json={'storage_key': f'raw-input/{TENANT}/audit-test.jpg', 'media_type': 'image'},
-            headers=AUTH_HEADERS,
-        )
-        if r.status_code not in (200, 201):
-            pytest.skip('Could not queue job (concurrency limit)')
-        job_data = r.json()
-        job = job_data.get('job') or job_data
-        job_id = job.get('id')
-        if not job_id:
-            pytest.skip('No job_id returned')
-
-        res = client.get(f'/media/jobs/{job_id}/audit', headers=AUTH_HEADERS)
-        assert res.status_code == 200
-        body = res.json()
-        assert 'job' in body or 'audit_events' in body
-
+    def test_job_audit_requires_durable_job_store(self, client: TestClient) -> None:
+        _assert_media_job_unavailable(client.get('/media/jobs/999999/audit', headers=AUTH_HEADERS))
 
 # ---------------------------------------------------------------------------
 # 10. POST /media/jobs/{id}/output-url
 # ---------------------------------------------------------------------------
 
 class TestOutputUrl:
-    def test_output_url_nonexistent_job_returns_404(self, client: TestClient) -> None:
-        res = client.post('/media/jobs/999999/output-url', json={}, headers=AUTH_HEADERS)
-        assert res.status_code == 404
-
-    def test_output_url_for_complete_job(self, client: TestClient) -> None:
-        # Queue a job and wait briefly for it to complete
-        r = client.post(
-            '/media/jobs',
-            json={'storage_key': f'raw-input/{TENANT}/url-test.jpg', 'media_type': 'image'},
-            headers=AUTH_HEADERS,
-        )
-        if r.status_code not in (200, 201):
-            pytest.skip('Could not queue job')
-        job_data = r.json()
-        job = job_data.get('job') or job_data
-        job_id = job.get('id')
-        if not job_id:
-            pytest.skip('No job_id')
-
-        # Wait for processing (up to 10 seconds in fast test mode)
-        for _ in range(20):
-            status_res = client.get(f'/media/jobs/{job_id}', headers=AUTH_HEADERS)
-            j = (status_res.json().get('job') or status_res.json())
-            if j.get('status') == 'complete':
-                break
-            time.sleep(0.5)
-
-        res = client.post(
-            f'/media/jobs/{job_id}/output-url',
+    def test_output_url_never_uses_a_synthetic_cdn_signature(self, client: TestClient) -> None:
+        response = client.post(
+            '/media/jobs/999999/output-url',
             json={'expires_seconds': 300},
             headers=AUTH_HEADERS,
         )
-        # May be 400 if job never completed; that's acceptable for in-memory simulation
-        assert res.status_code in (200, 400, 404)
-        if res.status_code == 200:
-            body = res.json()
-            assert 'signed_url' in body
-            assert 'expires_at' in body
-            assert 'recommended_cdn_headers' in body
+        _assert_media_job_unavailable(response)
+        assert 'signed_url' not in response.json()
 
-    def test_output_url_expires_seconds_validation(self, client: TestClient) -> None:
-        # expires_seconds < 60 should be rejected
-        r = client.post(
-            '/media/jobs',
-            json={'storage_key': f'raw-input/{TENANT}/exp-test.jpg', 'media_type': 'image'},
+    def test_invalid_expiry_is_rejected_before_job_capability(self, client: TestClient) -> None:
+        response = client.post(
+            '/media/jobs/1/output-url',
+            json={'expires_seconds': 5},
             headers=AUTH_HEADERS,
         )
-        if r.status_code not in (200, 201):
-            pytest.skip('Could not queue job')
-        job_id = ((r.json().get('job') or r.json()).get('id'))
-        if not job_id:
-            pytest.skip('No job_id')
-
-        res = client.post(
-            f'/media/jobs/{job_id}/output-url',
-            json={'expires_seconds': 5},  # too low
-            headers=AUTH_HEADERS,
-        )
-        assert res.status_code in (400, 422)
-
+        assert response.status_code == 422
 
 # ---------------------------------------------------------------------------
 # 11. GET /media/jobs/dlq
 # ---------------------------------------------------------------------------
 
 class TestDLQ:
-    def test_dlq_returns_200(self, client: TestClient) -> None:
-        res = client.get('/media/jobs/dlq', headers=AUTH_HEADERS)
-        assert res.status_code == 200
-
-    def test_dlq_returns_list(self, client: TestClient) -> None:
-        res = client.get('/media/jobs/dlq', headers=AUTH_HEADERS)
-        body = res.json()
-        items = body.get('dlq') or []
-        assert isinstance(items, list)
-
+    def test_dead_letter_queue_requires_durable_job_store(self, client: TestClient) -> None:
+        _assert_media_job_unavailable(client.get('/media/jobs/dlq', headers=AUTH_HEADERS))
 
 # ---------------------------------------------------------------------------
 # 12. DELETE /media/jobs/{id} (cancel)
 # ---------------------------------------------------------------------------
 
 class TestCancelJob:
-    def test_cancel_nonexistent_job_returns_404(self, client: TestClient) -> None:
-        res = client.delete('/media/jobs/999999', headers=AUTH_HEADERS)
-        assert res.status_code == 404
-
-    def test_cancel_queued_job(self, client: TestClient) -> None:
-        r = client.post(
-            '/media/jobs',
-            json={'storage_key': f'raw-input/{TENANT}/cancel-test.jpg', 'media_type': 'image'},
-            headers=AUTH_HEADERS,
-        )
-        if r.status_code not in (200, 201):
-            pytest.skip('Could not queue job')
-        job_id = ((r.json().get('job') or r.json()).get('id'))
-        if not job_id:
-            pytest.skip('No job_id')
-
-        res = client.delete(f'/media/jobs/{job_id}', headers=AUTH_HEADERS)
-        # 200 → cancelled; 409 → already processing (race condition, acceptable)
-        assert res.status_code in (200, 409)
-
+    def test_cancel_requires_durable_job_store(self, client: TestClient) -> None:
+        _assert_media_job_unavailable(client.delete('/media/jobs/999999', headers=AUTH_HEADERS))
 
 # ---------------------------------------------------------------------------
 # 13. Concurrency cap — 429 enforcement
 # ---------------------------------------------------------------------------
 
 class TestConcurrencyCap:
-    def test_concurrency_limit_enforced(self, client: TestClient) -> None:
-        """
-        Submit MAX+1 jobs rapidly. At least one should return 429 once
-        all slots are filled. Uses a fresh tenant to avoid interference.
-        """
-        limit = int(os.getenv('MEDIA_MAX_CONCURRENT_PER_TENANT', '5'))
-        cap_tenant = f'concurrency-test-tenant-{int(time.time())}'
-        headers = _auth_headers(cap_tenant)
+    def test_create_requests_are_not_accepted_into_process_local_state(self, client: TestClient) -> None:
+        from backend.fastapi.app import memory_stores
 
-        responses = []
-        for i in range(limit + 2):
-            res = client.post(
+        count_before = len(memory_stores.media_jobs)
+        responses = [
+            client.post(
                 '/media/jobs',
-                json={'storage_key': f'raw-input/{cap_tenant}/f{i}.jpg', 'media_type': 'image'},
-                headers=headers,
+                json={'storage_key': f'raw-input/{TENANT}/request-{index}.jpg', 'media_type': 'image'},
+                headers=AUTH_HEADERS,
             )
-            responses.append(res.status_code)
-
-        status_counts = {}
-        for code in responses:
-            status_counts[code] = status_counts.get(code, 0) + 1
-
-        # At least some jobs should succeed and eventually a 429 appears
-        assert any(code in (200, 201) for code in responses), f'No jobs succeeded: {status_counts}'
-        # 429 may or may not appear (depends on processing speed), but the endpoint must not 500
-        assert all(code in (200, 201, 429) for code in responses), f'Unexpected status codes: {status_counts}'
-
+            for index in range(3)
+        ]
+        assert all(response.status_code == 501 for response in responses)
+        assert all(response.json()['detail']['code'] == 'NOT_IMPLEMENTED' for response in responses)
+        assert len(memory_stores.media_jobs) == count_before
 
 # ---------------------------------------------------------------------------
 # 14. End-to-end flow: validate → queue → stats → SSE → output-url
 # ---------------------------------------------------------------------------
 
 class TestEndToEndFlow:
-    def test_full_pipeline(self, client: TestClient) -> None:
-        """
-        End-to-end: validate magic bytes → queue job → poll stats → get audit trail.
-        (Presign step skipped — requires MinIO; SSE skipped — requires streaming client.)
-        """
-        # Step 1: validate magic bytes
-        val_res = client.post(
+    def test_validation_works_but_job_creation_is_honestly_unavailable(self, client: TestClient) -> None:
+        validation = client.post(
             '/media/validate-file',
             json={'first_bytes_b64': IMAGE_MAGIC_B64, 'expected_mime': 'image/jpeg'},
             headers=AUTH_HEADERS,
         )
-        assert val_res.status_code == 200
-        val_body = val_res.json()
-        token = val_body.get('validation_token')  # may be None if MEDIA_REQUIRE_VALIDATION_TOKEN=0
+        assert validation.status_code == 200
+        assert validation.json().get('validation_token')
 
-        # Step 2: queue job
-        job_payload: dict[str, Any] = {
-            'storage_key': f'raw-input/{TENANT}/e2e-test.jpg',
-            'media_type': 'image',
-        }
-        if token:
-            job_payload['validation_token'] = token
-
-        queue_res = client.post('/media/jobs', json=job_payload, headers=AUTH_HEADERS)
-        assert queue_res.status_code in (200, 201, 429)
-
-        if queue_res.status_code in (200, 201):
-            job_data = queue_res.json()
-            job = job_data.get('job') or job_data
-            job_id = job.get('id')
-            assert job_id is not None
-
-            # Step 3: stats reflect the new job
-            stats_res = client.get('/media/jobs/stats', headers=AUTH_HEADERS)
-            assert stats_res.status_code == 200
-            stats = stats_res.json().get('stats') or stats_res.json()
-            assert stats['total_jobs'] >= 1
-
-            # Step 4: audit trail available
-            audit_res = client.get(f'/media/jobs/{job_id}/audit', headers=AUTH_HEADERS)
-            assert audit_res.status_code == 200
+        creation = client.post(
+            '/media/jobs',
+            json={
+                'storage_key': f'raw-input/{TENANT}/e2e-test.jpg',
+                'media_type': 'image',
+                'validation_token': validation.json()['validation_token'],
+            },
+            headers=AUTH_HEADERS,
+        )
+        _assert_media_job_unavailable(creation)

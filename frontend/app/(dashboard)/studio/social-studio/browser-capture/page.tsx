@@ -6,13 +6,13 @@ import type { CSSProperties } from 'react';
 import { socialApi, type BrowserCapture, type SocialAccount } from '@/app/lib/social-api';
 
 const CAPTURE_DEFAULT = {
-  source_url: 'https://example.com/article',
-  title: 'Captured insight',
+  source_url: '',
+  title: '',
   selected_text: '',
   note: '',
   suggested_network: 'linkedin',
   screenshot_url: '',
-  tags: 'research;insight',
+  tags: '',
 };
 
 export default function BrowserCapturePage() {
@@ -130,6 +130,9 @@ export default function BrowserCapturePage() {
             Source URL
             <input
               style={styles.input}
+              type="url"
+              placeholder="https://"
+              required
               value={draft.source_url}
               onChange={(e) => setDraft((c) => ({ ...c, source_url: e.target.value }))}
             />
@@ -138,6 +141,8 @@ export default function BrowserCapturePage() {
             Title
             <input
               style={styles.input}
+              placeholder="Capture title"
+              required
               value={draft.title}
               onChange={(e) => setDraft((c) => ({ ...c, title: e.target.value }))}
             />

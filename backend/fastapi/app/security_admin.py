@@ -23,9 +23,6 @@ def require_super_admin_key(x_super_admin_key: str | None) -> None:
 
 
 def request_source_ip(request: Request) -> str:
-    forwarded_for = (request.headers.get('X-Forwarded-For', '') or '').split(',')[0].strip()
-    if forwarded_for:
-        return forwarded_for
     return request.client.host if request.client and request.client.host else ''
 
 

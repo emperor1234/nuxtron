@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiGet, apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { apiGet, apiSend } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
 
 type CommunityComment = {
   id: string;
@@ -42,7 +43,7 @@ const box = {
 } as const;
 
 export default function CommentRepliesPage() {
-  const [tenantId] = useState(DEFAULT_TENANT_ID || 'tenant-demo');
+  const [tenantId] = useState(resolveSessionTenant);
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('newest');
   const [comments, setComments] = useState<CommunityComment[]>([]);

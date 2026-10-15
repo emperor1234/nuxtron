@@ -490,7 +490,7 @@ class TestLocalOptimize:
 
     def test_local_optimize(self, client: TestClient) -> None:
         """POST /seo/local/optimize."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock) as model:
             r = client.post("/seo/local/optimize", headers=H, json={
                 "business_name": "Tech Solutions Ltd",
                 "category": "Software Company",
@@ -498,7 +498,8 @@ class TestLocalOptimize:
                 "website": "https://techsolutions.co.uk",
                 "description": "We provide enterprise software solutions for UK businesses.",
             })
-        assert r.status_code in VALID
+        assert r.status_code == 404
+        model.assert_not_awaited()
 
 
 class TestVideoOptimize:
@@ -521,15 +522,17 @@ class TestInternationalMultilingual:
     """Lines 3354+: international-multilingual/analyze route."""
 
     def test_international_multilingual(self, client: TestClient) -> None:
-        """POST /seo/international-multilingual/analyze."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
-            r = client.post("/seo/international-multilingual/analyze", headers=H, json={
+        """POST /seo-platform/international-multilingual/analyze."""
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as ollama:
+            r = client.post("/seo-platform/international-multilingual/analyze", headers=H, json={
                 "domain": "example.com",
                 "locales": ["en-US", "fr-FR", "de-DE", "es-ES"],
                 "current_hreflang_map": '<link rel="alternate" hreflang="en" href="https://example.com/en/">',
                 "notes": "Currently only English content available",
             })
-        assert r.status_code in VALID
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        ollama.assert_not_awaited()
 
 
 class TestSiteMigration:
@@ -549,16 +552,19 @@ class TestSiteMigration:
 
 
 class TestRevenueAttribution:
-    """Lines 3437+: revenue-attribution/analyze route."""
+    """Revenue-attribution analysis stays disabled until it reads recorded events."""
 
     def test_revenue_attribution(self, client: TestClient) -> None:
-        """POST /seo/revenue-attribution/analyze."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
-            r = client.post("/seo/revenue-attribution/analyze", headers=H, json={
-                "content": "Our SEO strategy generated 45% of all new customer acquisitions last quarter.",
-                "topic": "SEO revenue attribution",
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as ollama:
+            r = client.post("/seo-platform/revenue-attribution/analyze", headers=H, json={
+                "domain": "example.com",
+                "channels": ["organic_search"],
+                "conversion_events": ["order.paid"],
+                "revenue_window_days": 30,
             })
-        assert r.status_code in VALID
+        assert r.status_code == 501, r.text
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        ollama.assert_not_awaited()
 
 
 class TestGrowthPlaybooks:
@@ -578,13 +584,18 @@ class TestTrustRiskGovernance:
     """Lines 3518+: trust-risk-governance/analyze route."""
 
     def test_trust_risk_governance(self, client: TestClient) -> None:
-        """POST /seo/trust-risk-governance/analyze."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
-            r = client.post("/seo/trust-risk-governance/analyze", headers=H, json={
-                "content": "Trust signals in SEO include backlinks, EEAT, and user engagement metrics.",
-                "topic": "trust and risk in SEO",
+        """The customer assessment route fails closed without verified evidence sources."""
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as ollama:
+            r = client.post("/seo-platform/trust-risk-governance/analyze", headers=H, json={
+                "domain": "example.com",
+                "policy_scope": "seo-and-ai",
+                "controls": ["rbac"],
+                "incidents_last_90d": 0,
+                "notes": "Do not persist this test note.",
             })
-        assert r.status_code in VALID
+        assert r.status_code == 501, r.text
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        ollama.assert_not_awaited()
 
 
 class TestMultiChannelActivation:
@@ -627,16 +638,22 @@ class TestSeoAbTesting:
 
 
 class TestProgrammaticGenerate:
-    """Lines 3704+: programmatic/generate route."""
+    """Programmatic SEO server generation stays unavailable."""
 
     def test_programmatic_generate(self, client: TestClient) -> None:
-        """POST /seo/programmatic/generate."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
-            r = client.post("/seo/programmatic/generate", headers=H, json={
-                "content": "Programmatic SEO creates thousands of unique landing pages at scale.",
-                "topic": "programmatic SEO for SaaS",
+        """POST /seo-platform/programmatic/generate."""
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as ollama:
+            r = client.post("/seo-platform/programmatic/generate", headers=H, json={
+                "template_topic": "CRM city pages",
+                "page_count": 2,
+                "url_template": "/[city]/[service]",
+                "title_template": "[service] in [city]",
+                "meta_description_template": "Review [service] options in [city].",
+                "variables": {"city": ["Austin"], "service": ["CRM"]},
             })
-        assert r.status_code in VALID
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        ollama.assert_not_awaited()
 
 
 class TestEcommerceOptimize:
@@ -657,18 +674,19 @@ class TestPerformanceAudit:
 
     def test_performance_audit(self, client: TestClient) -> None:
         """POST /seo/performance/audit."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as model:
             r = client.post("/seo/performance/audit", headers=H, json={
                 "url": "https://example.com",
                 "content": "Current Core Web Vitals: LCP 3.2s, FID 150ms, CLS 0.15",
                 "topic": "performance optimization",
             })
-        assert r.status_code in VALID
+        assert r.status_code == 404
+        model.assert_not_awaited()
 
     def test_performance_history(self, client: TestClient) -> None:
         """GET /seo/performance/history."""
         r = client.get("/seo/performance/history", headers=H)
-        assert r.status_code in VALID
+        assert r.status_code == 404
 
 
 class TestAgentRun:
@@ -768,30 +786,35 @@ class TestUxAudit:
 
 
 class TestRagSearchQuery:
-    """Lines 4364+: rag-search/query route."""
+    """Remote RAG search is unavailable without a tenant-scoped source index."""
 
     def test_rag_search_query(self, client: TestClient) -> None:
-        """POST /seo/rag-search/query."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
-            r = client.post("/seo/rag-search/query", headers=H, json={
-                "query": "What are the best SEO practices for 2025?",
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as model:
+            r = client.post("/seo-platform/rag-search/query", headers=H, json={
+                "query": "SEO practices",
+                "site_domain": "example.org",
+                "content_corpus": "User-supplied text",
                 "top_k": 5,
             })
-        assert r.status_code in VALID
+        model.assert_not_awaited()
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
 
 class TestCompetitorAnalyze:
-    """Lines 4399+: competitor/analyze route."""
+    """Competitor scores stay unavailable until verified search data is connected."""
 
     def test_competitor_analyze(self, client: TestClient) -> None:
-        """POST /seo/competitor/analyze."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
-            r = client.post("/seo/competitor/analyze", headers=H, json={
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as model:
+            r = client.post("/seo-platform/competitor/analyze", headers=H, json={
                 "domain": "example.com",
-                "competitors": ["competitor1.com", "competitor2.com"],
-                "content": "Competitor analysis reveals gaps in content strategy and link profile.",
+                "competitors": ["competitor.example"],
+                "target_keyword": "workflow software",
+                "notes": "Only use verified observations.",
             })
-        assert r.status_code in VALID
+        assert r.status_code == 501, r.text
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        model.assert_not_awaited()
 
 
 class TestRealtimeMonitor:
@@ -895,31 +918,34 @@ class TestAnalyticsReport:
 
 
 class TestAgencyPlatform:
-    """Lines 4715+: agency-platform/analyze route."""
+    """Agency workspace health remains unavailable without verified source data."""
 
     def test_agency_platform(self, client: TestClient) -> None:
-        """POST /seo/agency-platform/analyze."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
-            r = client.post("/seo/agency-platform/analyze", headers=H, json={
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as model:
+            r = client.post("/seo-platform/agency-platform/analyze", headers=H, json={
                 "agency_name": "Digital Growth Agency",
-                "clients": ["client1.com", "client2.com"],
-                "focus_areas": ["keyword research", "content strategy"],
+                "workspaces": ["client-a", "client-b"],
+                "governance_focus": "roles, policies, audit evidence",
             })
-        assert r.status_code in VALID
+        assert r.status_code == 501, r.text
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        model.assert_not_awaited()
 
 
 class TestIntegrationsAutomation:
     """Lines 4749+: integrations-automation/analyze route."""
 
     def test_integrations_automation(self, client: TestClient) -> None:
-        """POST /seo/integrations-automation/analyze."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
-            r = client.post("/seo/integrations-automation/analyze", headers=H, json={
-                "integrations": ["Google Search Console", "GA4", "Ahrefs"],
-                "workflows": ["weekly rank tracking", "monthly content audit"],
-                "automation_goal": "reduce manual SEO reporting time by 80%",
+        """POST /seo-platform/integrations-automation/analyze is fail-closed."""
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as model:
+            r = client.post("/seo-platform/integrations-automation/analyze", headers=H, json={
+                "domain": "example.com",
+                "integrations": ["analytics"],
+                "automation_goals": ["reporting"],
             })
-        assert r.status_code in VALID
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        model.assert_not_awaited()
 
 
 class TestTopicalMap:
@@ -958,15 +984,12 @@ class TestReviewsAnalyze:
 
     def test_reviews_analyze(self, client: TestClient) -> None:
         """POST /seo/reviews/analyze."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock) as model:
             r = client.post("/seo/reviews/analyze", headers=H, json={
-                "brand": "example.com",
-                "reviews": [
-                    {"text": "Great service, very responsive team!", "rating": 5, "source": "Google"},
-                    {"text": "Average experience, could be better", "rating": 3, "source": "Trustpilot"},
-                ],
+                "brand": "example.com", "reviews_text": "Reviews supplied by the user.", "platforms": ["google"],
             })
-        assert r.status_code in VALID
+        assert r.status_code == 404
+        model.assert_not_awaited()
 
 
 class TestBrandVoiceRewrite:
@@ -987,27 +1010,34 @@ class TestPlannerExecute:
     """Lines 4949+: planner/execute route."""
 
     def test_planner_execute(self, client: TestClient) -> None:
-        """POST /seo/planner/execute."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
-            r = client.post("/seo/planner/execute", headers=H, json={
+        """The deprecated execute path returns a review-only SEO draft."""
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as planner_model:
+            r = client.post("/seo-platform/planner/execute", headers=H, json={
                 "goal": "Increase organic traffic by 50% in 6 months",
                 "domain": "example.com",
-                "budget": "medium",
-                "timeline_weeks": 24,
-                "focus_modules": ["keywords", "content", "technical"],
-                "dry_run": True,
+                "primary_keyword": "enterprise crm",
+                "market": "us",
             })
+        planner_model.assert_awaited_once()
         assert r.status_code in VALID
+        assert r.json()["status"] == "draft"
+        assert r.json()["analysis_mode"] == "heuristic"
+        assert "planner_score" not in r.json()
 
     def test_planner_execute_all_modules(self, client: TestClient) -> None:
-        """POST /seo/planner/execute-all-modules."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
-            r = client.post("/seo/planner/execute-all-modules", headers=H, json={
+        """The all-modules route fails closed without model work."""
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as planner_model:
+            r = client.post("/seo-platform/planner/execute-all-modules", headers=H, json={
                 "goal": "Complete SEO transformation for enterprise client",
                 "domain": "enterprise.com",
-                "dry_run": True,
+                "primary_keyword": "enterprise SEO",
+                "market": "us",
+                "include_groups": [],
+                "exclude_module_keys": [],
             })
-        assert r.status_code in VALID
+        planner_model.assert_not_awaited()
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
 
 class TestBacklinkIntelligence:
@@ -1029,13 +1059,14 @@ class TestRankTracking:
 
     def test_rank_tracking(self, client: TestClient) -> None:
         """POST /seo/rank-tracking/analyze."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock) as model:
             r = client.post("/seo/rank-tracking/analyze", headers=H, json={
                 "domain": "example.com",
                 "keywords": ["best CRM software", "CRM tools 2025", "customer relationship management"],
                 "date_range_days": 30,
             })
-        assert r.status_code in VALID
+        assert r.status_code == 404
+        model.assert_not_awaited()
 
 
 class TestContentCreationBlogging:
@@ -1073,7 +1104,7 @@ class TestPerformanceAutoFix:
 
     def test_performance_auto_fix(self, client: TestClient) -> None:
         """POST /seo/performance/auto-fix."""
-        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK):
+        with patch(OLLAMA_MOCK, new_callable=AsyncMock, return_value=_FALLBACK) as model:
             r = client.post("/seo/performance/auto-fix", headers=H, json={
                 "url": "https://example.com",
                 "issues": [
@@ -1082,4 +1113,5 @@ class TestPerformanceAutoFix:
                 ],
                 "auto_apply": False,
             })
-        assert r.status_code in VALID
+        assert r.status_code == 404
+        model.assert_not_awaited()

@@ -7,25 +7,8 @@ test.describe('AI Content Hub', () => {
     await page.goto('/studio/content-hub', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'AI Content Hub' })).toBeVisible();
 
-    await page.goto('/studio/growth-suite', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('heading', { name: 'AI Growth Suite' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Run full growth suite' })).toBeVisible();
-
     await page.goto('/studio/content-hub/brand-voice', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Brand Voice DNA' })).toBeVisible();
-  });
-
-  test('growth suite bootstrap and drill-downs work', async ({ page }) => {
-    await page.goto('/studio/growth-suite', { waitUntil: 'domcontentloaded' });
-
-    // Verify the page heading and the bootstrap CTA are present
-    await expect(page.getByRole('heading', { name: 'AI Growth Suite' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Run full growth suite' })).toBeVisible();
-
-    // Verify the CTA is actionable and the page remains stable after triggering bootstrap.
-    await page.getByRole('button', { name: 'Run full growth suite' }).click();
-    await expect(page).toHaveURL(/\/studio\/growth-suite$/);
-    await expect(page.getByRole('heading', { name: 'AI Growth Suite' })).toBeVisible();
   });
 
   test('brand voice create and feedback flow works', async ({ page }) => {

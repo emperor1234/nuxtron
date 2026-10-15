@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -23,6 +23,19 @@ from ..deps import AuthContext, require_auth
 from ..integrations.vendor_manager import get_vendor_manager
 
 logger = logging.getLogger(__name__)
+
+_SOCIAL_REVIEW_UNAVAILABLE_DETAIL = {
+    "code": "NOT_IMPLEMENTED",
+    "message": "Connected review-provider ingestion and durable review storage are not configured. No sample reviews or replies are returned.",
+}
+_SOCIAL_REVIEW_UNAVAILABLE_RESPONSE = {
+    "description": "Connected review-provider operations are unavailable.",
+    "content": {"application/json": {"example": {"detail": _SOCIAL_REVIEW_UNAVAILABLE_DETAIL}}},
+}
+
+
+def _raise_social_review_unavailable() -> NoReturn:
+    raise HTTPException(status_code=501, detail=_SOCIAL_REVIEW_UNAVAILABLE_DETAIL)
 
 
 # Keep a lightweight parity store so /api/v1/social content routes are usable
@@ -1555,7 +1568,7 @@ async def get_listening_results(
 # Review Management Routes
 # ============================================================================
 
-@router.get('/reviews/hub', tags=['Reviews'])
+@router.get('/reviews/hub', tags=['Reviews'], status_code=501, response_model=None, responses={501: _SOCIAL_REVIEW_UNAVAILABLE_RESPONSE})
 async def get_reviews(
     platform: str | None = None,
     min_rating: int = Query(1, ge=1, le=5),
@@ -1563,28 +1576,10 @@ async def get_reviews(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
 ) -> dict[str, Any]:
-    """
-    Get reviews from all connected review platforms.
-    
-    Supported platforms: Google My Business, Yelp, Trustpilot, TripAdvisor
-    """
-    replies = _parity_review_replies_store.get(tenant_id, [])
-    scoped_reviews = list(_parity_reviews_store.get(tenant_id, []))
-    if platform:
-        pkey = platform.strip().lower()
-        scoped_reviews = [item for item in scoped_reviews if str(item.get('platform', '')).lower() == pkey]
-    scoped_reviews = [item for item in scoped_reviews if int(item.get('rating', 0) or 0) >= min_rating]
-
-    return {
-        'reviews': scoped_reviews,
-        'platform': platform,
-        'min_rating': min_rating,
-        'days': days,
-        'reply_count': len(replies),
-    }
+    _raise_social_review_unavailable()
 
 
-@router.post('/reviews/ingest', tags=['Reviews'])
+@router.post('/reviews/ingest', tags=['Reviews'], status_code=501, response_model=None, responses={501: _SOCIAL_REVIEW_UNAVAILABLE_RESPONSE})
 async def ingest_review(
     platform: str,
     author: str,
@@ -1593,30 +1588,10 @@ async def ingest_review(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
 ) -> dict[str, Any]:
-    """Ingest a review from an external connector for centralized handling."""
-    normalized_platform = platform.strip().lower()
-    if rating < 1 or rating > 5:
-        raise HTTPException(status_code=422, detail='rating must be between 1 and 5')
-
-    review = {
-        'id': str(uuid.uuid4()),
-        'platform': normalized_platform,
-        'author': author.strip() or 'anonymous',
-        'rating': rating,
-        'text': text,
-        'sentiment': _simple_sentiment(text),
-        'created_at': datetime.utcnow().isoformat() + 'Z',
-    }
-    _parity_reviews_store.setdefault(tenant_id, []).append(review)
-    _persist_social_parity_state(db)
-
-    return {
-        'success': True,
-        'review': review,
-    }
+    _raise_social_review_unavailable()
 
 
-@router.post('/reviews/replies/{review_id}', tags=['Reviews'])
+@router.post('/reviews/replies/{review_id}', tags=['Reviews'], status_code=501, response_model=None, responses={501: _SOCIAL_REVIEW_UNAVAILABLE_RESPONSE})
 async def reply_to_review(
     review_id: str,
     platform: str,
@@ -1625,21 +1600,7 @@ async def reply_to_review(
     current_user: str = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id),
 ) -> dict[str, Any]:
-    """Reply to a review on any platform."""
-    reply = {
-        'id': str(uuid.uuid4()),
-        'review_id': review_id,
-        'platform': platform,
-        'reply_text': reply_text,
-        'replied_by': current_user,
-        'created_at': datetime.utcnow().isoformat() + 'Z',
-    }
-    _parity_review_replies_store.setdefault(tenant_id, []).append(reply)
-    _persist_social_parity_state(db)
-    return {
-        'success': True,
-        'reply': reply,
-    }
+    _raise_social_review_unavailable()
 
 
 # Integration/Credential Routes

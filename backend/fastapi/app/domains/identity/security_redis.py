@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from typing import Any
 
 try:
@@ -29,6 +30,8 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 _client: redis_sync.Redis | None = None
 _client_init_failed = False
+_retry_after_monotonic = 0.0
+_RETRY_INTERVAL_SECONDS = 5.0
 
 
 def get_sync_redis() -> redis_sync.Redis | None:
@@ -38,24 +41,51 @@ def get_sync_redis() -> redis_sync.Redis | None:
     retry on every call (avoids paying a connection-timeout cost per request
     when Redis is genuinely down).
     """
-    global _client, _client_init_failed  # noqa: PLW0603
+    global _client, _client_init_failed, _retry_after_monotonic  # noqa: PLW0603
     if redis_sync is None:
         _client_init_failed = True
-        logger.info("Sync Redis client is not installed; using in-process rate limiting.")
+        _retry_after_monotonic = time.monotonic() + _RETRY_INTERVAL_SECONDS
+        logger.warning("Sync Redis client is not installed; shared security counters are unavailable.")
         return None
     if _client is not None:
         return _client
-    if _client_init_failed:
+    now = time.monotonic()
+    if _client_init_failed and now < _retry_after_monotonic:
         return None
     try:
-        client = redis_sync.Redis.from_url(REDIS_URL, decode_responses=True, socket_connect_timeout=1)
+        client = redis_sync.Redis.from_url(
+            REDIS_URL,
+            decode_responses=True,
+            socket_connect_timeout=1,
+            socket_timeout=1,
+        )
         client.ping()
         _client = client
+        _client_init_failed = False
+        _retry_after_monotonic = 0.0
         return _client
-    except Exception as exc:
+    except Exception:
         _client_init_failed = True
-        logger.warning("Sync Redis unavailable — security counters will fail open: %s", exc)
+        _retry_after_monotonic = time.monotonic() + _RETRY_INTERVAL_SECONDS
+        logger.warning("Sync Redis unavailable; shared security counters are unavailable.")
         return None
+
+
+def security_redis_ready() -> bool:
+    """Return whether the shared Redis security-counter store answers a ping."""
+    global _client, _client_init_failed, _retry_after_monotonic  # noqa: PLW0603
+    client = get_sync_redis()
+    if client is None:
+        return False
+    try:
+        client.ping()
+        return True
+    except Exception:
+        _client = None
+        _client_init_failed = True
+        _retry_after_monotonic = time.monotonic() + _RETRY_INTERVAL_SECONDS
+        logger.warning("Sync Redis readiness probe failed; shared security counters are unavailable.")
+        return False
 
 
 def fixed_window_increment(key: str, *, limit: int, window_seconds: int) -> tuple[bool, int]:
@@ -78,7 +108,7 @@ def fixed_window_increment(key: str, *, limit: int, window_seconds: int) -> tupl
         count = int(count)
         return count <= limit, count
     except Exception:
-        logger.warning("Redis counter increment failed for key=%s", key, exc_info=True)
+        logger.warning("Redis counter increment failed; using the local limiter fallback.")
         return True, 0
 
 

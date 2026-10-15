@@ -1,0 +1,53 @@
+.unavailableCard {
+  border-color: var(--nx-warning-line);
+  background: var(--nx-warning-soft);
+}
+
+.headingRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.explanation,
+.manualNote {
+  color: var(--nx-ink-2);
+  line-height: 1.6;
+}
+
+.explanation {
+  max-width: 88ch;
+  margin: 16px 0 0;
+}
+
+.details {
+  max-width: 980px;
+  margin-top: 18px;
+}
+
+.requirements {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding-left: 22px;
+  line-height: 1.55;
+}
+
+.manualNote {
+  margin: 14px 0 0;
+  font-size: 0.875rem;
+}
+
+.manualNote a {
+  color: var(--nx-brand);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .headingRow {
+    flex-direction: column;
+  }
+}

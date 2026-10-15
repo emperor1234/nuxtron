@@ -99,7 +99,8 @@ class TestSEOAnalyze:
         r = client.post("/seo-platform/technical/audit", headers=H, json={
             "url": "https://example.com",
         })
-        assert r.status_code < 500
+        assert r.status_code == 501
+        assert r.json()['detail']['code'] == 'NOT_IMPLEMENTED'
 
     def test_schema_generate(self, client: TestClient) -> None:
         r = client.post("/seo-platform/schemas/generate", headers=H, json={
@@ -120,7 +121,8 @@ class TestSEOAnalyze:
             "business_name": "Test Business",
             "location": "New York, NY",
         })
-        assert r.status_code < 500
+        assert r.status_code == 501
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
 
     def test_eeat_score(self, client: TestClient) -> None:
         r = client.post("/seo-platform/eeat/score", headers=H, json={
@@ -159,7 +161,8 @@ class TestSEOAnalyze:
         r = client.post("/seo-platform/content-auditor/analyze", headers=H, json={
             "url": "https://example.com",
         })
-        assert r.status_code < 500
+        assert r.status_code == 501
+        assert r.json()['detail']['code'] == 'NOT_IMPLEMENTED'
 
     def test_aio_score(self, client: TestClient) -> None:
         r = client.post("/seo-platform/aio/score", headers=H, json={
@@ -310,11 +313,15 @@ class TestTenants:
         assert r.status_code == 200
 
     def test_create_tenant(self, client: TestClient) -> None:
-        r = client.post("/tenants", headers=H, json={
-            "display_name": "Test Tenant Corp",
-            "plan": "starter",
-        })
-        assert r.status_code in {200, 201, 409}
+        valid = client.post("/tenants", headers=H, json={"display_name": "Test Tenant Corp"})
+        assert valid.status_code in {200, 201, 409}
+
+        with_client_supplied_plan = client.post(
+            "/tenants",
+            headers=H,
+            json={"display_name": "Plan Escalation Attempt", "plan": "enterprise"},
+        )
+        assert with_client_supplied_plan.status_code == 422
 
 
 # ── Trust Center ──────────────────────────────────────────────────────────────
@@ -454,6 +461,15 @@ class TestPlaybooks:
             "config": {},
         })
         assert r2.status_code < 500
+
+    def test_activation_is_rejected_until_an_executor_exists(self, client: TestClient) -> None:
+        response = client.post("/playbooks/run", headers=H, json={
+            "playbook_id": "pb-builtin-001",
+            "dry_run": False,
+            "config": {},
+        })
+        assert response.status_code == 501
+        assert response.json()["detail"] == "Playbook execution is not configured. No steps were executed."
 
     def test_list_runs(self, client: TestClient) -> None:
         r = client.get("/playbooks/runs/list", headers=H)

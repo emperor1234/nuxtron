@@ -1,11 +1,11 @@
 import json
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Annotated, Literal
+from typing import Annotated
 
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..authz import require_role
 from ..deps import AuthContext, require_auth
@@ -17,16 +17,16 @@ JsonObject = dict[str, object]
 
 
 class TenantProfileCreateRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
     display_name: str = Field(min_length=2, max_length=180)
-    plan: Literal['starter', 'growth', 'pro', 'enterprise'] = 'starter'
-    status: Literal['active', 'suspended'] = 'active'
     settings: dict[str, object] = Field(default_factory=dict)
 
 
 class TenantProfileUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
     display_name: str | None = Field(default=None, min_length=2, max_length=180)
-    plan: Literal['starter', 'growth', 'pro', 'enterprise'] | None = None
-    status: Literal['active', 'suspended'] | None = None
     settings: dict[str, object] | None = None
 
 
@@ -53,13 +53,11 @@ def create_tenant_router(  # NOSONAR
                     cur.execute(
                         """
                         INSERT INTO tenant_profiles (tenant_id, display_name_cipher, display_name_preview, plan, status, settings_json)
-                        VALUES (%s, %s, %s, %s, %s, %s::jsonb)
+                        VALUES (%s, %s, %s, 'starter', 'active', %s::jsonb)
                         ON CONFLICT (tenant_id)
                         DO UPDATE SET
                             display_name_cipher = EXCLUDED.display_name_cipher,
                             display_name_preview = EXCLUDED.display_name_preview,
-                            plan = EXCLUDED.plan,
-                            status = EXCLUDED.status,
                             settings_json = EXCLUDED.settings_json,
                             updated_at = NOW()
                         RETURNING tenant_id, display_name_cipher, display_name_preview, plan, status, settings_json, created_at, updated_at
@@ -68,8 +66,6 @@ def create_tenant_router(  # NOSONAR
                             auth.tenant_id,
                             display_name_cipher,
                             display_name_preview,
-                            payload.plan,
-                            payload.status,
                             json.dumps(payload.settings),
                         ),
                     )
@@ -94,17 +90,25 @@ def create_tenant_router(  # NOSONAR
                 },
             }
 
-        tenant_profiles_memory[:] = [e for e in tenant_profiles_memory if e.get('tenant_id') != auth.tenant_id]
+        existing = next((entry for entry in tenant_profiles_memory if entry.get('tenant_id') == auth.tenant_id), None)
+        if existing is not None:
+            existing['display_name'] = payload.display_name
+            existing['display_name_cipher'] = display_name_cipher
+            existing['settings'] = payload.settings
+            existing['updated_at'] = datetime.now(UTC).isoformat()
+            return {'status': 'ok', 'tenant': existing}
+
+        now = datetime.now(UTC).isoformat()
         item: dict[str, object] = {
             'id': len(tenant_profiles_memory) + 1,
             'tenant_id': auth.tenant_id,
             'display_name': payload.display_name,
             'display_name_cipher': display_name_cipher,
-            'plan': payload.plan,
-            'status': payload.status,
+            'plan': 'starter',
+            'status': 'active',
             'settings': payload.settings,
-            'created_at': datetime.now(UTC).isoformat(),
-            'updated_at': datetime.now(UTC).isoformat(),
+            'created_at': now,
+            'updated_at': now,
             'persistence': 'memory-fallback',
             'encryption': 'application-level',
         }
@@ -175,8 +179,6 @@ def create_tenant_router(  # NOSONAR
                         display_name_cipher = encrypt_value(payload.display_name)
                         display_name_preview = payload.display_name[:64]
 
-                    plan = payload.plan or existing[2]
-                    status = payload.status or existing[3]
                     settings = payload.settings if payload.settings is not None else existing[4]
 
                     cur.execute(
@@ -184,8 +186,6 @@ def create_tenant_router(  # NOSONAR
                         UPDATE tenant_profiles
                         SET display_name_cipher = %s,
                             display_name_preview = %s,
-                            plan = %s,
-                            status = %s,
                             settings_json = %s::jsonb,
                             updated_at = NOW()
                         WHERE tenant_id = %s
@@ -194,8 +194,6 @@ def create_tenant_router(  # NOSONAR
                         (
                             display_name_cipher,
                             display_name_preview,
-                            plan,
-                            status,
                             json.dumps(settings),
                             tenant_id,
                         ),
@@ -228,10 +226,6 @@ def create_tenant_router(  # NOSONAR
         if payload.display_name is not None:
             entry['display_name'] = payload.display_name
             entry['display_name_cipher'] = encrypt_value(payload.display_name)
-        if payload.plan is not None:
-            entry['plan'] = payload.plan
-        if payload.status is not None:
-            entry['status'] = payload.status
         if payload.settings is not None:
             entry['settings'] = payload.settings
         entry['updated_at'] = datetime.now(UTC).isoformat()

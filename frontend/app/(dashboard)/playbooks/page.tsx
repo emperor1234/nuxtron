@@ -1,332 +1,231 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { apiGet, apiPost, resolveSessionTenant } from '@/app/lib/api-client';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { resolveSessionTenant } from '@/app/lib/api-client';
+import { apiGet } from '@/app/lib/platform-api';
+import { Badge, Button, Card, CardTitle, Field, FieldSelect, Page, PageHeader, TableWrap, tableClass } from '../_ui/kit';
+import {
+  filterPlaybooks,
+  formatPlaybookDate,
+  parsePlaybookCatalog,
+  parsePlaybookRuns,
+  playbookRunStatusLabel,
+  type PlaybookDefinition,
+  type PlaybookRun,
+} from './playbooks-model';
 
-type Json = Record<string, unknown>;
-
-function asString(v: unknown, fb = ''): string {
-  return typeof v === 'string' ? v : fb;
-}
-function asNumber(v: unknown, fb = 0): number {
-  return typeof v === 'number' ? v : fb;
-}
-function asArray(v: unknown): unknown[] {
-  return Array.isArray(v) ? v : [];
-}
-
-const VERTICAL_COLORS: Record<string, string> = {
-  ecommerce: 'var(--series-1)',
-  saas: 'var(--series-2)',
-  agency: 'var(--series-3)',
-  media: 'var(--series-4)',
-  fintech: 'var(--series-5)',
-  healthtech: 'var(--series-6)',
-  nonprofit: 'var(--series-7)',
-  education: 'var(--series-8)',
-  marketplace: 'var(--series-1)',
-  other: 'var(--muted)',
-};
+type LoadState = 'loading' | 'ready' | 'error';
 
 export default function PlaybooksPage() {
   const [tenantId] = useState(resolveSessionTenant);
-  const [playbooks, setPlaybooks] = useState<unknown[]>([]);
-  const [runs, setRuns] = useState<unknown[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [runMsg, setRunMsg] = useState('');
-  const [runningId, setRunningId] = useState('');
-  const [filterVertical, setFilterVertical] = useState('all');
-  const [selectedPlaybook, setSelectedPlaybook] = useState<Json | null>(null);
+  const [catalog, setCatalog] = useState<PlaybookDefinition[]>([]);
+  const [runs, setRuns] = useState<PlaybookRun[]>([]);
+  const [catalogState, setCatalogState] = useState<LoadState>('loading');
+  const [runsState, setRunsState] = useState<LoadState>('loading');
+  const [catalogError, setCatalogError] = useState('');
+  const [runsError, setRunsError] = useState('');
+  const [query, setQuery] = useState('');
+  const [vertical, setVertical] = useState('all');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const hasWorkspace = Boolean(tenantId);
 
-  async function load() {
-    setLoading(true);
-    setError('');
-    try {
-      const [pbData, runsData] = await Promise.all([
-        apiGet('/playbooks', tenantId),
-        apiGet('/playbooks/runs/list', tenantId),
-      ]);
-      setPlaybooks(asArray((pbData as Json).playbooks));
-      setRuns(asArray((runsData as Json).runs));
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setLoading(false);
+  const loadCatalog = useCallback(async () => {
+    if (!tenantId) {
+      setCatalogState('error');
+      setCatalogError('Sign in to a workspace to load playbook definitions.');
+      return;
     }
-  }
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setCatalogState('loading');
+    setCatalogError('');
+    try {
+      const response = await apiGet<unknown>('/playbooks', tenantId);
+      const parsed = parsePlaybookCatalog(response);
+      if (!parsed) throw new Error('The playbook service returned an invalid catalog.');
+      setCatalog(parsed);
+      setCatalogState('ready');
+    } catch (error) {
+      setCatalogError(error instanceof Error ? error.message : 'Could not load playbook definitions.');
+      setCatalogState('error');
+    }
   }, [tenantId]);
 
-  const verticals = [
-    'all',
-    ...Array.from(new Set(playbooks.map((p) => asString((p as Json).vertical)).filter(Boolean))),
-  ];
-
-  const filtered =
-    filterVertical === 'all' ? playbooks : playbooks.filter((p) => asString((p as Json).vertical) === filterVertical);
-
-  async function runPlaybook(playbookId: string, dryRun = true) {
-    setRunningId(playbookId);
-    setRunMsg('');
-    try {
-      const res = await apiPost('/playbooks/run', { playbook_id: playbookId, dry_run: dryRun, config: {} }, tenantId);
-      const r = res as Json;
-      setRunMsg(`${dryRun ? 'Preview' : 'Activated'}: ${asString((r.playbook as Json | null)?.name ?? r.run_id)}`);
-      await load();
-    } catch (e) {
-      setRunMsg(`Error: ${String(e)}`);
-    } finally {
-      setRunningId('');
+  const loadRuns = useCallback(async () => {
+    if (!tenantId) {
+      setRunsState('error');
+      setRunsError('Sign in to a workspace to load playbook history.');
+      return;
     }
+    setRunsState('loading');
+    setRunsError('');
+    try {
+      const response = await apiGet<unknown>('/playbooks/runs/list', tenantId);
+      const parsed = parsePlaybookRuns(response);
+      if (!parsed) throw new Error('The playbook history service returned an invalid response.');
+      setRuns(parsed);
+      setRunsState('ready');
+    } catch (error) {
+      setRunsError(error instanceof Error ? error.message : 'Could not load playbook history.');
+      setRunsState('error');
+    }
+  }, [tenantId]);
+
+  useEffect(() => {
+    const catalogTimer = window.setTimeout(() => void loadCatalog(), 0);
+    const runsTimer = window.setTimeout(() => void loadRuns(), 0);
+    return () => {
+      window.clearTimeout(catalogTimer);
+      window.clearTimeout(runsTimer);
+    };
+  }, [loadCatalog, loadRuns]);
+
+  const verticals = useMemo(
+    () => ['all', ...Array.from(new Set(catalog.map((item) => item.vertical.toLowerCase()).filter((value) => value !== 'all'))).sort()],
+    [catalog],
+  );
+  const filtered = useMemo(() => filterPlaybooks(catalog, query, vertical), [catalog, query, vertical]);
+
+  function refreshAll() {
+    void loadCatalog();
+    void loadRuns();
   }
 
   return (
-    <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '0.5rem' }}>Integration Playbooks</h1>
-      <p style={{ color: 'var(--neutral)', marginBottom: '1.5rem' }}>
-        10 prebuilt playbooks with measurable ROI targets — activate any in one click to start the Integration Flywheel.
-      </p>
+    <Page>
+      <PageHeader
+        title="Integration Playbooks"
+        subtitle="Browse plan templates and review their steps and integration requirements before adopting them."
+        actions={<Button type="button" onClick={refreshAll} disabled={!hasWorkspace || catalogState === 'loading' || runsState === 'loading'}>Refresh</Button>}
+      />
 
-      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', alignItems: 'center' }}>
-        <input
-          value={tenantId}
-          readOnly
-          placeholder="Tenant ID"
-          style={{
-            padding: '0.5rem 0.8rem',
-            borderRadius: 6,
-            border: '1px solid var(--line)',
-            background: 'var(--card)',
-            color: 'var(--text)',
-            minWidth: 200,
-          }}
-        />
-        <select
-          value={filterVertical}
-          onChange={(e) => setFilterVertical(e.target.value)}
-          style={{
-            padding: '0.5rem 0.8rem',
-            borderRadius: 6,
-            border: '1px solid var(--line)',
-            background: 'var(--card)',
-            color: 'var(--text)',
-          }}
-        >
-          {verticals.map((v) => (
-            <option key={v} value={v}>
-              {v === 'all' ? 'All verticals' : v.charAt(0).toUpperCase() + v.slice(1)}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={load}
-          disabled={loading}
-          style={{
-            padding: '0.5rem 1.2rem',
-            borderRadius: 6,
-            background: "var(--brand)",
-            color: 'var(--on-brand)',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          {loading ? 'Loading…' : 'Refresh'}
-        </button>
-      </div>
+      <Card>
+        <CardTitle>Execution status</CardTitle>
+        <div role="note" style={{ marginTop: 12, border: '1px solid var(--line)', borderRadius: 10, padding: 14, color: 'var(--muted)' }}>
+          This service currently stores playbook definitions and history records but has no step executor. Plan review below is informational only: it does not test integrations, schedule work, or activate automation. No ROI outcomes are measured here.
+        </div>
+      </Card>
 
-      {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem' }}>{error}</p>}
-      {runMsg && <p style={{ color: 'var(--brand)', marginBottom: '1rem', fontSize: '14px' }}>{runMsg}</p>}
-
-      {/* Playbook grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))',
-          gap: '1rem',
-          marginBottom: '2.5rem',
-        }}
-      >
-        {filtered.map((p, idx) => {
-          const pb = p as Json;
-          const roi = pb.roi_target as Json | undefined;
-          const vertColor = VERTICAL_COLORS[asString(pb.vertical)] ?? 'var(--muted)';
-          return (
-            <div
-              key={`${asString(pb.id)}-${idx}`}
-              style={{
-                background: 'var(--card)',
-                border: `1px solid ${pb.id === selectedPlaybook?.id ? 'var(--info)' : 'var(--line)'}`,
-                borderRadius: 10,
-                padding: '1.25rem',
-                transition: 'border-color 0.15s',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                <button
-                  onClick={() => setSelectedPlaybook(selectedPlaybook?.id === pb.id ? null : pb)}
-                  style={{
-                    fontWeight: 600,
-                    fontSize: '16px',
-                    margin: 0,
-                    background: 'none',
-                    border: 'none',
-                    color: 'inherit',
-                    cursor: 'pointer',
-                    padding: 0,
-                    textAlign: 'left',
-                  }}
-                >
-                  {asString(pb.name)}
-                </button>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: 16,
-                    background: vertColor + '22',
-                    color: vertColor,
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {asString(pb.vertical)}
-                </span>
+      <Card>
+        <CardTitle sub="Built-in entries are templates; workspace entries are saved definitions. These are plans, not measured performance.">Plan catalog</CardTitle>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 12, marginTop: 16 }}>
+          <Field
+            id="playbook-search"
+            label="Search playbooks"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Name, description, or integration"
+            disabled={catalogState !== 'ready'}
+          />
+          <FieldSelect
+            id="playbook-vertical"
+            label="Category"
+            value={vertical}
+            onChange={(event) => setVertical(event.target.value)}
+            disabled={catalogState !== 'ready'}
+          >
+            {verticals.map((value) => <option key={value} value={value}>{value === 'all' ? 'All categories' : value[0].toUpperCase() + value.slice(1)}</option>)}
+          </FieldSelect>
+        </div>
+        {catalogState === 'loading' ? <p role="status">Loading playbook definitions…</p> : null}
+        {catalogState === 'error' ? (
+          <div role="alert" style={{ marginTop: 12, color: 'var(--danger)' }}>
+            <p>{catalogError}</p>
+            <Button type="button" onClick={() => void loadCatalog()} disabled={!hasWorkspace}>Retry catalog</Button>
+          </div>
+        ) : null}
+        {catalogState === 'ready' ? (
+          <>
+            <p role="status" style={{ color: 'var(--muted)', marginTop: 14 }}>{filtered.length} matching {filtered.length === 1 ? 'plan' : 'plans'}</p>
+            {catalog.length === 0 ? (
+              <p style={{ color: 'var(--muted)' }}>No playbook definitions are available for this workspace.</p>
+            ) : filtered.length === 0 ? (
+              <p style={{ color: 'var(--muted)' }}>No playbooks match these search and category filters.</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 290px), 1fr))', gap: 14, marginTop: 14 }}>
+                {filtered.map((playbook) => {
+                  const isOpen = selectedId === playbook.id;
+                  const detailId = `playbook-plan-${playbook.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+                  return (
+                    <article key={playbook.id} style={{ border: '1px solid var(--line)', borderRadius: 12, padding: 16, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                        <h3 style={{ margin: 0, fontSize: 17 }}>{playbook.name}</h3>
+                        <Badge tone={playbook.builtIn ? 'brand' : 'neutral'}>{playbook.builtIn ? 'Built-in template' : 'Workspace plan'}</Badge>
+                      </div>
+                      <p style={{ color: 'var(--muted)', lineHeight: 1.5, margin: '10px 0' }}>{playbook.description || 'No description supplied.'}</p>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', color: 'var(--muted)', fontSize: 13 }}>
+                        <span>Category: {playbook.vertical}</span>
+                        {playbook.timeToValueDays !== null ? <span>Template setup estimate: {playbook.timeToValueDays} {playbook.timeToValueDays === 1 ? 'day' : 'days'}</span> : null}
+                      </div>
+                      <Button
+                        type="button"
+                        aria-expanded={isOpen}
+                        aria-controls={detailId}
+                        onClick={() => setSelectedId(isOpen ? null : playbook.id)}
+                        style={{ marginTop: 14 }}
+                      >
+                        {isOpen ? 'Hide plan details' : 'Review plan'}
+                      </Button>
+                      {isOpen ? (
+                        <section id={detailId} aria-label={`${playbook.name} plan details`} style={{ borderTop: '1px solid var(--line)', marginTop: 14, paddingTop: 14 }}>
+                          <h4 style={{ margin: '0 0 8px' }}>Planned steps</h4>
+                          {playbook.steps.length ? (
+                            <ol style={{ paddingLeft: 22, margin: 0, display: 'grid', gap: 6 }}>
+                              {playbook.steps.map((step, index) => <li key={`${playbook.id}-step-${index}`}>{step}</li>)}
+                            </ol>
+                          ) : <p style={{ color: 'var(--muted)' }}>No steps are defined.</p>}
+                          <h4 style={{ margin: '14px 0 8px' }}>Integration requirements</h4>
+                          {playbook.integrations.length ? (
+                            <ul style={{ display: 'flex', flexWrap: 'wrap', gap: 8, listStyle: 'none', padding: 0, margin: 0 }}>
+                              {playbook.integrations.map((integration) => <li key={`${playbook.id}-${integration}`}><Badge>{integration}</Badge></li>)}
+                            </ul>
+                          ) : <p style={{ color: 'var(--muted)' }}>No integrations are specified.</p>}
+                          <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 0 }}>This plan has not been validated against connected services and cannot be activated yet.</p>
+                        </section>
+                      ) : null}
+                    </article>
+                  );
+                })}
               </div>
-              <p style={{ color: 'var(--neutral)', fontSize: '13px', marginBottom: '0.75rem' }}>{asString(pb.description)}</p>
+            )}
+          </>
+        ) : null}
+      </Card>
 
-              {roi && (
-                <div style={{ fontSize: '13px', color: 'var(--success)', marginBottom: '0.5rem' }}>
-                  🎯 ROI target: {asNumber(roi.value)} {asString(roi.metric).replaceAll('_', ' ')}
-                </div>
-              )}
-              <div style={{ fontSize: '12px', color: 'var(--neutral)', marginBottom: '0.75rem' }}>
-                ⏱ Time to value: {asNumber(pb.time_to_value_days)} day(s)
-              </div>
-
-              {selectedPlaybook?.id === pb.id && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  <div style={{ fontSize: '13px', color: 'var(--neutral)', marginBottom: '0.5rem', fontWeight: 600 }}>
-                    Steps:
-                  </div>
-                  <ol style={{ paddingLeft: '1.2rem', margin: 0, fontSize: '13px', color: 'var(--neutral-line)' }}>
-                    {asArray(pb.steps).map((step, si) => (
-                      <li key={`${asString(step).slice(0, 30)}-${si}`} style={{ marginBottom: '0.2rem' }}>
-                        {asString(step)}
-                      </li>
-                    ))}
-                  </ol>
-                  <div style={{ fontSize: '12px', color: 'var(--neutral)', marginTop: '0.5rem' }}>
-                    Integrations:{' '}
-                    {asArray(pb.integrations)
-                      .map((i) => asString(i))
-                      .join(', ')}
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void runPlaybook(asString(pb.id), true);
-                      }}
-                      disabled={runningId === asString(pb.id)}
-                      style={{
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: 6,
-                        background: "var(--brand)",
-                        color: 'var(--on-brand)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                      }}
-                    >
-                      Preview
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void runPlaybook(asString(pb.id), false);
-                      }}
-                      disabled={runningId === asString(pb.id)}
-                      style={{
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: 6,
-                        background: 'var(--success-ink)',
-                        color: 'var(--on-status)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {runningId === asString(pb.id) ? 'Activating…' : '▶ Activate'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Recent runs */}
-      {runs.length > 0 && (
-        <section>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '1rem' }}>Recent Runs</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--line)', }}>
-                {['Playbook', 'Status', 'Dry Run', 'Steps', 'Date'].map((h) => (
-                  <th key={h} style={{ textAlign: 'left', padding: '0.4rem 0.6rem', color: 'var(--neutral)' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {runs.slice(0, 20).map((r, idx) => {
-                const run = r as Json;
-                return (
-                  <tr key={`${asString(run.id)}-${idx}`} style={{ borderBottom: '1px solid var(--line-soft)' }}>
-                    <td style={{ padding: '0.4rem 0.6rem' }}>{asString(run.playbook_name)}</td>
-                    <td
-                      style={{
-                        padding: '0.4rem 0.6rem',
-                        color: asString(run.status).includes('dry') ? 'var(--warning)' : 'var(--success)',
-                      }}
-                    >
-                      {asString(run.status)}
-                    </td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--neutral)' }}>
-                      {(() => {
-                        // NOSONAR
-                        if (run.dry_run === true) return 'true';
-                        if (run.dry_run === false) return 'false';
-                        return 'n/a';
-                      })()}
-                    </td>
-                    <td style={{ padding: '0.4rem 0.6rem' }}>
-                      {asNumber(run.steps_completed)}/{asNumber(run.steps_total)}
-                    </td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--neutral)', fontSize: '12px' }}>
-                      {asString(run.created_at).slice(0, 10)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </section>
-      )}
-    </main>
+      <Card>
+        <CardTitle sub="History may include preview records and older activation requests. A scheduled status does not mean steps ran.">Recent run records</CardTitle>
+        {runsState === 'loading' ? <p role="status">Loading run history…</p> : null}
+        {runsState === 'error' ? (
+          <div role="alert" style={{ marginTop: 12, color: 'var(--danger)' }}>
+            <p>{runsError}</p>
+            <Button type="button" onClick={() => void loadRuns()} disabled={!hasWorkspace}>Retry history</Button>
+          </div>
+        ) : null}
+        {runsState === 'ready' && runs.length === 0 ? <p style={{ color: 'var(--muted)', marginTop: 16 }}>No playbook run records are available for this workspace.</p> : null}
+        {runsState === 'ready' && runs.length > 0 ? (
+          <TableWrap>
+            <table className={tableClass}>
+              <caption className="sr-only">Playbook preview and activation request history</caption>
+              <thead><tr><th scope="col">Playbook</th><th scope="col">Request type</th><th scope="col">Service status</th><th scope="col">Steps</th><th scope="col">Recorded</th></tr></thead>
+              <tbody>
+                {runs.slice(0, 100).map((run) => {
+                  const progress = run.stepsCompleted === null || run.stepsTotal === null
+                    ? 'Unavailable'
+                    : `${run.stepsCompleted} of ${run.stepsTotal}`;
+                  return (
+                    <tr key={run.id}>
+                      <th scope="row">{run.playbookName || 'Unnamed plan'}</th>
+                      <td>{run.dryRun ? 'Preview record' : 'Activation request'}</td>
+                      <td>{playbookRunStatusLabel(run)}</td>
+                      <td>{progress}</td>
+                      <td>{formatPlaybookDate(run.createdAt) ?? 'Date unavailable'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </TableWrap>
+        ) : null}
+      </Card>
+    </Page>
   );
 }

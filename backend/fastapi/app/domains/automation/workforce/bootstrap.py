@@ -4,6 +4,8 @@ from __future__ import annotations
 from ....workforce_observability import MetricsCollector
 from ....workforce_persistence import WorkforceDB
 from .runtime import ContextRuntime
+from .capabilities import WORKFORCE_API_UNAVAILABLE_RESPONSES
+from .capabilities import require_workforce_api_available
 from collections.abc import Callable
 from fastapi import APIRouter
 from typing import Any
@@ -75,7 +77,12 @@ def create_autonomous_workforce_router(
     outcomes_memory: list[dict[str, Any]],
     audit_log_memory: list[dict[str, Any]],
 ) -> APIRouter:
-    router = APIRouter(prefix="/autonomous-workforce", tags=["Autonomous Workforce"])
+    router = APIRouter(
+        prefix="/autonomous-workforce",
+        tags=["Autonomous Workforce"],
+        dependencies=[Depends(require_workforce_api_available)],
+        responses=WORKFORCE_API_UNAVAILABLE_RESPONSES,
+    )
     _lock = threading.Lock()
     _metrics = MetricsCollector()
     _retry_queue: list[dict[str, Any]] = []

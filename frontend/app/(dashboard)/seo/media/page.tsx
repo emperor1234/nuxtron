@@ -1,269 +1,144 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import type { Route } from 'next';
-import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { useMemo, useState, type FormEvent } from 'react';
+import { Badge, Button, Card, CardTitle, Page, PageHeader } from '../../_ui/kit';
+import { mediaReviewCsv, parseMediaMarkup, type MediaAsset, type MediaKind, type MediaMarkupReview } from './media-markup-model';
+import styles from './media-markup.module.css';
 
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
+type AssetFilter = 'all' | MediaKind | 'with-findings';
 
-type MediaIssue = {
-  type: string;
-  element: string;
-  description: string;
-  fix: string;
-  impact: string;
-};
-
-type MediaSeoAuditResponse = {
-  analysis_id: string;
-  url: string;
-  media_seo_score: number;
-  total_images_estimated: number;
-  issues: MediaIssue[];
-  compression: {
-    average_size_kb: number;
-    optimizable_pct: number;
-    recommended_format: string;
-  };
-  schema_coverage: { image_objects_with_schema_pct: number };
-  video_seo: { has_video_sitemap: boolean; transcript_coverage_pct: number };
-  quick_wins: string[];
-  recommended_tools: string[];
-  cached?: boolean;
-  analysis_mode?: 'llm' | 'heuristic';
-  fallback?: boolean;
-};
-
-const IMPACT_COLORS: Record<string, string> = {
-  high: 'var(--danger)',
-  medium: 'var(--warning)',
-  low: 'var(--warning)',
-};
-
-export default function MediaSeoEnginePage() {
-  const [url, setUrl] = useState('https://example.com');
-  const [checkCompression, setCheckCompression] = useState(true);
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function MediaMarkupReviewPage() {
+  const [sourceLabel, setSourceLabel] = useState('');
+  const [markup, setMarkup] = useState('');
+  const [filter, setFilter] = useState<AssetFilter>('all');
+  const [review, setReview] = useState<MediaMarkupReview | null>(null);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<MediaSeoAuditResponse | null>(null);
 
-  const card = {
-    background: 'var(--bg-soft)',
-    border: '1px solid var(--line)',
-    borderRadius: 12,
-    padding: 16,
-  };
-
-  const input = {
-    width: '100%',
-    padding: '8px 10px',
-    borderRadius: 8,
-    border: '1px solid var(--line)',
-    background: 'var(--bg)',
-    color: 'var(--text)',
-    boxSizing: 'border-box' as const,
-  };
-
-  async function runAudit() {
-    setLoading(true);
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError('');
+    setReview(null);
     try {
-      const response = await apiSend<MediaSeoAuditResponse>(
-        '/seo-platform/media/audit',
-        'POST',
-        { url: url.trim(), check_compression: checkCompression, notes: notes.trim() },
-        DEFAULT_TENANT_ID
-      );
-      if (response?.fallback === true && response?.analysis_mode !== 'heuristic') {
-        throw new Error(
-          IS_STRICT_NO_MOCK_MODE
-            ? 'Live LLM backend is unavailable in strict no-mock mode.'
-            : 'Live LLM backend is unavailable in fail-closed mode.'
-        );
-      }
-      setResult(response);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Media SEO audit failed.');
-      setResult(null);
-    } finally {
-      setLoading(false);
+      setReview(parseMediaMarkup(markup));
+      setFilter('all');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not review the supplied markup.');
     }
   }
 
+  const visibleAssets = useMemo(() => {
+    if (!review) return [];
+    if (filter === 'with-findings') return review.assets.filter((asset) => asset.issues.length > 0);
+    if (filter === 'all') return review.assets;
+    return review.assets.filter((asset) => asset.kind === filter);
+  }, [filter, review]);
+
+  function exportCsv() {
+    if (!review) return;
+    const href = URL.createObjectURL(new Blob([mediaReviewCsv(review)], { type: 'text/csv;charset=utf-8' }));
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.download = 'media-markup-review.csv';
+    anchor.click();
+    URL.revokeObjectURL(href);
+  }
+
+  function renderFact(label: string, value: string | null) {
+    return <span key={label}>{label}: {value || 'not specified'}</span>;
+  }
+
+  function renderAsset(asset: MediaAsset, index: number) {
+    return (
+      <li className={styles.asset} key={asset.id}>
+        <div className={styles.assetTop}>
+          <h3 className={styles.assetTitle}>{asset.kind === 'image' ? 'Image' : 'Video'} element {index + 1}</h3>
+          <Badge tone={asset.issues.length ? 'danger' : 'success'}>
+            {asset.issues.length ? `${asset.issues.length} markup ${asset.issues.length === 1 ? 'check' : 'checks'}` : 'No markup issues identified'}
+          </Badge>
+        </div>
+        <div className={styles.source}>Source in supplied markup: <code>{asset.source || 'No src/srcset provided'}</code></div>
+        <div className={styles.facts}>
+          {asset.kind === 'image' ? <>
+            {renderFact('Alt', asset.alt === null ? null : asset.alt === '' ? '(empty)' : asset.alt)}
+            {renderFact('Width', asset.width)}
+            {renderFact('Height', asset.height)}
+            {renderFact('Loading', asset.loading)}
+          </> : <>
+            {renderFact('Captions/subtitles track', asset.hasCaptionsTrack === null ? null : asset.hasCaptionsTrack ? 'present' : 'not found')}
+            {renderFact('Poster', asset.hasPoster === null ? null : asset.hasPoster ? 'specified' : 'not specified')}
+            {renderFact('Accessible name', asset.hasAccessibleName === null ? null : asset.hasAccessibleName ? 'present' : 'not found')}
+          </>}
+        </div>
+        {asset.issues.length > 0 ? <ul className={styles.issues}>{asset.issues.map((issue) => <li key={issue}>{issue}</li>)}</ul> : <p className={styles.empty}>No markup checks were triggered for this element. This is not a full-page accessibility or SEO certification.</p>}
+      </li>
+    );
+  }
+
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
-      <div style={{ maxWidth: 980, margin: '0 auto' }}>
-        <Link href={'/seo' as Route} style={{ color: 'var(--brand)', textDecoration: 'none', fontSize: 13 }}>
-          ← Back to SEO Platform
-        </Link>
-        <h1 style={{ marginTop: 12, marginBottom: 6 }}>Image & Media SEO Engine</h1>
-        <p style={{ color: 'var(--muted)', marginTop: 0, marginBottom: 18 }}>
-          Audit alt text, image metadata, compression opportunities, and media search signals.
-        </p>
+    <Page>
+      <PageHeader
+        title="Media Markup Review"
+        subtitle="Inspect image and video attributes in HTML you provide. The sample is parsed locally in your browser."
+      />
 
-        <section style={{ ...card, marginBottom: 14, display: 'grid', gap: 10 }}>
-          <div>
-            <label htmlFor="media-url" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              URL
-            </label>
-            <input id="media-url" value={url} onChange={(e) => setUrl(e.target.value)} style={input} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input
-              id="media-compress"
-              type="checkbox"
-              checked={checkCompression}
-              onChange={(e) => setCheckCompression(e.target.checked)}
-            />
-            <label htmlFor="media-compress" style={{ fontSize: 13 }}>
-              Analyse compression opportunities
-            </label>
-          </div>
-          <div>
-            <label htmlFor="media-notes" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              Notes (optional)
-            </label>
-            <input
-              id="media-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              style={input}
-              placeholder="Focus areas..."
-            />
-          </div>
-          <button
-            onClick={runAudit}
-            disabled={loading}
-            style={{
-              padding: '10px 20px',
-              borderRadius: 8,
-              background: 'var(--brand)',
-              color: 'var(--on-brand)',
-              fontWeight: 700,
-              border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? 'Running Audit…' : 'Run Media SEO Audit'}
-          </button>
-          {error && <div style={{ color: 'var(--danger-line)', fontSize: 13 }}>{error}</div>}
+      <Card>
+        <Badge tone="neutral">Local review · no page fetch</Badge>
+        <p className={styles.scopeNote}>Paste the relevant HTML markup below. Nothing is sent to Nuxtron and no website or asset is fetched. Counts cover only the markup you provide; file size, compression, CSS background images, video sitemap, and transcript coverage are not measured here.</p>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <label className={styles.field} htmlFor="media-source-label">
+            <span>Page URL or source label <em>(optional context only; it will not be opened)</em></span>
+            <input id="media-source-label" type="text" value={sourceLabel} maxLength={500} onChange={(event) => setSourceLabel(event.target.value)} />
+          </label>
+          <label className={styles.field} htmlFor="media-markup">
+            <span>HTML markup sample <b aria-label="required">Required</b></span>
+            <textarea id="media-markup" value={markup} onChange={(event) => setMarkup(event.target.value)} rows={12} maxLength={1_000_000} required spellCheck={false} />
+            <small>Up to 1 MB. Include the image and video elements you want to review. Scripts are not executed; only markup attributes are inspected.</small>
+          </label>
+          {error && <p className={styles.error} role="alert">{error}</p>}
+          <Button type="submit" variant="primary">Review supplied markup</Button>
+        </form>
+      </Card>
+
+      {review && (
+        <section aria-label="Media markup review results">
+          <Card>
+            <CardTitle sub={sourceLabel.trim() ? `Context label: ${sourceLabel.trim()}` : 'Source: pasted markup only · no external page was requested'}>Observed markup</CardTitle>
+            <div className={styles.metrics}>
+              <div className={styles.metric}><span className={styles.metricName}>Images in sample</span><output aria-label="Images in supplied markup">{review.imageCount}</output></div>
+              <div className={styles.metric}><span className={styles.metricName}>Videos in sample</span><output aria-label="Videos in supplied markup">{review.videoCount}</output></div>
+              <div className={styles.metric}><span className={styles.metricName}>Images missing alt attribute</span><output aria-label="Images missing alt">{review.imagesMissingAlt}</output></div>
+              <div className={styles.metric}><span className={styles.metricName}>Images with empty alt to review</span><output aria-label="Images with empty alt">{review.imagesWithEmptyAltReview}</output></div>
+              <div className={styles.metric}><span className={styles.metricName}>Images without both dimensions</span><output aria-label="Images missing dimensions">{review.imagesMissingDimensions}</output></div>
+              <div className={styles.metric}><span className={styles.metricName}>Videos without captions/subtitles tracks</span><output aria-label="Videos without captions">{review.videosWithoutCaptions}</output></div>
+            </div>
+            <p className={styles.scopeNote}>Video sitemap and transcript coverage: not assessed from this markup sample. An empty result means no matching tags were found in the supplied text, not that the full website has none.</p>
+          </Card>
+
+          <Card>
+            <div className={styles.queueHeader}>
+              <CardTitle sub={`${review.findingCount} markup checks across ${review.assets.length} observed media elements`}>Asset review queue</CardTitle>
+              <label className={styles.filter} htmlFor="media-filter">
+                <span>Filter assets</span>
+                <select id="media-filter" value={filter} onChange={(event) => setFilter(event.target.value as AssetFilter)}>
+                  <option value="all">All supplied assets</option>
+                  <option value="image">Images</option>
+                  <option value="video">Videos</option>
+                  <option value="with-findings">Elements with markup checks</option>
+                </select>
+              </label>
+            </div>
+            {review.assets.length === 0 ? <p className={styles.empty}>No image or video elements were found in this supplied markup sample.</p> : visibleAssets.length === 0 ? <p className={styles.empty}>No supplied elements match this filter.</p> : (
+              <ol className={styles.assetList}>{visibleAssets.map((asset) => renderAsset(asset, review.assets.indexOf(asset)))}</ol>
+            )}
+            {review.assets.length > 0 && (
+              <div className={styles.exportRow}>
+                <p className={styles.scopeNote}>Export contains only values extracted from the supplied markup and local review notes.</p>
+                <Button type="button" onClick={exportCsv}>Export CSV</Button>
+              </div>
+            )}
+          </Card>
         </section>
-
-        {result && (
-          <>
-            {(result.analysis_mode || result.cached) && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
-                    {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
-                  </span>
-                )}
-                {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
-                )}
-              </div>
-            )}
-            <section style={{ ...card, marginBottom: 14 }}>
-              <h2 style={{ marginTop: 0, marginBottom: 10, fontSize: 15 }}>Media SEO Summary</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 180px), 1fr))', gap: 10 }}>
-                <div style={card}>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Media SEO Score</div>
-                  <div style={{ fontSize: 26, fontWeight: 800 }}>
-                    {result.media_seo_score}
-                    <span style={{ fontSize: 14 }}>/100</span>
-                  </div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Images Detected</div>
-                  <div style={{ fontSize: 26, fontWeight: 800 }}>{result.total_images_estimated}</div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Avg Size (KB)</div>
-                  <div style={{ fontSize: 26, fontWeight: 800 }}>{result.compression.average_size_kb}</div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Optimisable</div>
-                  <div style={{ fontSize: 26, fontWeight: 800 }}>{result.compression.optimizable_pct}%</div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Schema Coverage</div>
-                  <div style={{ fontSize: 26, fontWeight: 800 }}>
-                    {result.schema_coverage.image_objects_with_schema_pct}%
-                  </div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Best Format</div>
-                  <div style={{ fontSize: 20, fontWeight: 800 }}>
-                    {result.compression.recommended_format.toUpperCase()}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {result.issues.length > 0 && (
-              <section style={{ ...card, marginBottom: 14 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 10, fontSize: 15 }}>Issues ({result.issues.length})</h2>
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {result.issues.map((issue, i) => (
-                    <div
-                      key={`item-${i}`}
-                      style={{ ...card, borderLeft: `4px solid ${IMPACT_COLORS[issue.impact] ?? 'var(--info)'}` }}
-                    >
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            background: "var(--line-soft)",
-                            color: 'var(--muted)',
-                            borderRadius: 4,
-                            padding: '1px 5px',
-                          }}
-                        >
-                          {issue.type.replace(/_/g, ' ')}
-                        </span>
-                        <span
-                          style={{ fontSize: 10, fontWeight: 700, color: IMPACT_COLORS[issue.impact] ?? 'var(--info)' }}
-                        >
-                          {issue.impact} impact
-                        </span>
-                      </div>
-                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{issue.description}</div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>
-                        Element:{' '}
-                        <code style={{ background: 'var(--bg)', padding: '1px 4px', borderRadius: 4 }}>
-                          {issue.element}
-                        </code>
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--success)' }}>Fix: {issue.fix}</div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {result.quick_wins.length > 0 && (
-              <section style={{ ...card, marginBottom: 14 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>Quick Wins</h2>
-                <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  {result.quick_wins.map((w, i) => (
-                    <li key={`item-${i}`} style={{ fontSize: 13, marginBottom: 4 }}>
-                      {w}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+      )}
+    </Page>
   );
 }

@@ -2,7 +2,8 @@ import { PRODUCT_STORAGE_KEY, parseProductLine, type ProductLine } from '@/app/l
 
 export const PROXY_BASE_URL = '/api/fastapi';
 
-export const DEFAULT_TENANT_ID = (process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '').trim();
+const CONFIGURED_DEFAULT_TENANT_ID = (process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || '').trim();
+export const DEFAULT_TENANT_ID = process.env.NODE_ENV === 'production' ? '' : CONFIGURED_DEFAULT_TENANT_ID;
 export const STORAGE_TOKEN_KEY = 'nuxtron.jwt';
 export const STORAGE_TENANT_KEY = 'nuxtron.tenant';
 export const STORAGE_SUPER_ADMIN_KEY = 'nuxtron.superAdminKey';
@@ -79,11 +80,10 @@ function getSessionToken(): string {
 
 /**
  * Resolves the tenant scope for the current user from the authenticated
- * session, falling back to the configured default. Use this instead of a
- * user-editable tenant field so pages cannot pivot to another tenant's data
- * (A01: Broken Access Control).
+ * session. A configured default is allowed only outside production for local
+ * development; production requests must have an authenticated workspace.
  *
- * @returns The session tenant id, or `DEFAULT_TENANT_ID` when none is stored.
+ * @returns The session tenant id, or a non-production configured default.
  */
 export function resolveSessionTenant(): string {
   return getSessionTenant() || DEFAULT_TENANT_ID;
@@ -258,7 +258,7 @@ async function apiRequest( // NOSONAR
   const resolvedTenant = tenantId.trim() || getSessionTenant() || DEFAULT_TENANT_ID;
   if (!resolvedTenant) {
     throw new Error(
-      'Tenant id is required in strict no-mock mode. Set NEXT_PUBLIC_DEFAULT_TENANT_ID or provide tenantId.'
+      'Workspace context is required. Sign in or select a workspace before making this request.'
     );
   }
   const superAdminKey = getSuperAdminKey();

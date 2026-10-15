@@ -42,27 +42,27 @@ export const marketingHomepage: HomepageContent = {
 
   demo: {
     eyebrow: "Product tour",
-    title: "Your marketing week, on one screen.",
-    intro: "Follow the short tour, pause at any time, or select a view. Each panel is a real Nuxtron Marketing screen.",
+    title: "Your marketing workspace, without sample data.",
+    intro: "Explore the workspace structure in a sample-free preview. No scheduled content, engagement metrics, connected account data, or customer conversations are shown.",
+    disclaimer: "Empty preview states only. Connect authorized channels in your workspace to see real content and metrics.",
     views: [
       {
         id: "calendar",
         label: "Calendar",
         icon: "calendar",
         heading: "Content calendar",
-        subheading: "Week of 12 October · 5 channels",
+        subheading: "No connected schedule data",
         kpis: [
-          { label: "Scheduled", value: "24", delta: "+6" },
-          { label: "In review", value: "7" },
-          { label: "Published this week", value: "18", delta: "+3" },
+          { label: "Scheduled", value: "Not loaded" },
+          { label: "In review", value: "Not loaded" },
+          { label: "Published", value: "Not loaded" },
         ],
         list: {
-          label: "Up next",
+          label: "Data status",
           rows: [
-            { tag: "LinkedIn", text: "Product update carousel · Tue 09:00" },
-            { tag: "Instagram", text: "Customer story reel · Tue 12:30" },
-            { tag: "Newsletter", text: "October roundup · Wed 08:00" },
-            { tag: "X", text: "Launch thread · Thu 15:00" },
+            { tag: "Schedule", text: "No posts or drafts are included in this preview." },
+            { tag: "Source", text: "An authorized channel connection is required for account content." },
+            { tag: "Scope", text: "No publish action is available from this public preview." },
           ],
         },
       },
@@ -71,20 +71,18 @@ export const marketingHomepage: HomepageContent = {
         label: "Performance",
         icon: "chart",
         heading: "Channel performance",
-        subheading: "Last 28 days",
+        subheading: "No verified analytics loaded",
         kpis: [
-          { label: "Engagement rate", value: "4.2%", delta: "+0.6 pts" },
-          { label: "Link clicks", value: "3,918", delta: "+412" },
-          { label: "Followers gained", value: "1,206" },
+          { label: "Engagement", value: "Not available" },
+          { label: "Link clicks", value: "Not available" },
+          { label: "Audience change", value: "Not available" },
         ],
-        chart: {
-          label: "Engagements by channel",
-          bars: [
-            { label: "LinkedIn", value: 58 },
-            { label: "Instagram", value: 71 },
-            { label: "TikTok", value: 44 },
-            { label: "YouTube", value: 26 },
-            { label: "X", value: 19 },
+        list: {
+          label: "Data status",
+          rows: [
+            { tag: "Source", text: "No social analytics provider is connected in this preview." },
+            { tag: "Metrics", text: "No engagement or reach figures are estimated." },
+            { tag: "Compare", text: "Use verified, comparable periods before drawing conclusions." },
           ],
         },
       },
@@ -93,19 +91,18 @@ export const marketingHomepage: HomepageContent = {
         label: "Inbox",
         icon: "inbox",
         heading: "Smart inbox",
-        subheading: "Comments, mentions and messages from every channel",
+        subheading: "No connected conversations are shown",
         kpis: [
-          { label: "Open conversations", value: "38" },
-          { label: "Median first reply", value: "42 min", delta: "-11 min" },
-          { label: "Assigned to you", value: "9" },
+          { label: "Open conversations", value: "Not loaded" },
+          { label: "First reply time", value: "Not calculated" },
+          { label: "Assigned", value: "Not loaded" },
         ],
         list: {
-          label: "Needs a reply",
+          label: "Data status",
           rows: [
-            { tag: "Question", text: "Do you integrate with our CRM?" },
-            { tag: "Review", text: "New 4-star review on Google Business Profile" },
-            { tag: "Mention", text: "Tagged in a partner's launch post" },
-            { tag: "Question", text: "Is the webinar recording available?" },
+            { tag: "Messages", text: "No messages or comments have been loaded." },
+            { tag: "Reviews", text: "Review-provider feeds are not currently available." },
+            { tag: "Replies", text: "No sample conversations or sent replies are shown." },
           ],
         },
       },
@@ -114,18 +111,18 @@ export const marketingHomepage: HomepageContent = {
         label: "Studio",
         icon: "sparkles",
         heading: "Creative studio",
-        subheading: "Brand kit applied · 3 drafts",
+        subheading: "No generated assets or drafts loaded",
         kpis: [
-          { label: "Assets this month", value: "64" },
-          { label: "Awaiting approval", value: "5" },
-          { label: "Repurposed pieces", value: "17", delta: "+9" },
+          { label: "Assets", value: "Not loaded" },
+          { label: "Approvals", value: "Not loaded" },
+          { label: "Repurposed content", value: "Not loaded" },
         ],
         list: {
-          label: "Drafts",
+          label: "Data status",
           rows: [
-            { tag: "Reel", text: "30-second product walkthrough" },
-            { tag: "Carousel", text: "5 tips from the October guide" },
-            { tag: "Image", text: "Webinar announcement, 3 sizes" },
+            { tag: "Assets", text: "No sample creative assets are included." },
+            { tag: "Review", text: "No draft is represented as reviewed or approved." },
+            { tag: "Publish", text: "Nothing in this preview is published." },
           ],
         },
       },
@@ -274,9 +271,9 @@ export const marketingHomepage: HomepageContent = {
       {
         id: "inbox",
         icon: "inbox",
-        title: "Inbox and reviews",
-        summary: "Reply to comments, messages and reviews from one queue.",
-        bullets: ["Smart Inbox", "Review Management", "UGC Management"],
+        title: "Inbox and comments",
+        summary: "Reply to comments and messages from one queue.",
+        bullets: ["Smart Inbox", "Comment Replies"],
         link: { label: "See all features", href: "/features" },
       },
       {
@@ -308,7 +305,7 @@ export const marketingHomepage: HomepageContent = {
         icon: "users",
         title: "Team and approvals",
         summary: "Clear owners and sign-off before anything goes live.",
-        bullets: ["Content Approvals", "Workspace", "Workflow Orchestrator"],
+        bullets: ["Content Approvals", "Workspace", "Workflow Automation"],
         link: { label: "See all features", href: "/features" },
       },
     ],
@@ -348,8 +345,8 @@ export const marketingHomepage: HomepageContent = {
 
   agents: {
     eyebrow: "AI agents",
-    title: "Agents that keep the work moving.",
-    intro: "They handle the repetitive parts and stop for your approval where it matters.",
+    title: "AI tools and automations that keep work moving.",
+    intro: "Use workspace data to draft and optimize content, then configure repeatable workflows with explicit triggers and actions.",
     agents: [
       {
         id: "ira",
@@ -360,12 +357,12 @@ export const marketingHomepage: HomepageContent = {
         link: { label: "Meet IRA", href: START },
       },
       {
-        id: "orchestrator",
-        name: "Workflow Orchestrator",
-        role: "Guards automation",
-        body: "Puts an approval gate in front of high-impact automation, so nothing important publishes or changes without sign-off.",
-        actions: ["Require approval", "Apply a policy", "Follow a playbook"],
-        link: { label: "See the orchestrator", href: START },
+        id: "workflow-automation",
+        name: "Workflow Automation",
+        role: "Automates configured workspace tasks",
+        body: "Create workflows from explicit triggers and steps, then review their status and execution history in your workspace.",
+        actions: ["Choose a trigger", "Configure steps", "Review executions"],
+        link: { label: "Explore workflows", href: START },
       },
       {
         id: "agent-analytics",
@@ -392,7 +389,7 @@ export const marketingHomepage: HomepageContent = {
     },
     {
       q: "Can my team review posts before they go out?",
-      a: "Yes. Content Approvals routes each piece to a reviewer, and the Workflow Orchestrator can require sign-off before high-impact automation runs.",
+      a: "Yes. Content Approvals routes social content to reviewers before publishing. Workspace workflows separately automate the triggers and steps you configure.",
     },
     {
       q: "What's the difference between Nuxtron Marketing and Nuxtron SEO?",

@@ -1,318 +1,96 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import type { Route } from 'next';
-import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { useState, type FormEvent } from 'react';
+import { Badge, Button, Card, CardTitle, Page, PageHeader } from '../../_ui/kit';
+import { parseSecurityHeaderSample, securityHeaderReviewCsv, type SecurityHeaderReview } from './security-header-model';
+import styles from './security-header.module.css';
 
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
-
-type SecurityIssue = {
-  severity: string;
-  category: string;
-  description: string;
-  fix: string;
-};
-
-type SecuritySeoAuditResponse = {
-  analysis_id: string;
-  url: string;
-  security_seo_score: number;
-  https: { enabled: boolean; hsts: boolean; mixed_content_issues: number };
-  security_headers: { csp_present: boolean; x_frame_options: string; x_content_type: string };
-  cloaking_signals: { user_agent_cloaking: boolean; ip_cloaking: boolean; js_cloaking: boolean };
-  spam_signals: { hidden_text: boolean; keyword_stuffing: boolean; doorway_pages: boolean };
-  redirect_health: { chains_detected: number; chain_details: string[] };
-  issues: SecurityIssue[];
-  quick_wins: string[];
-  recommended_tools: string[];
-  cached?: boolean;
-  analysis_mode?: 'llm' | 'heuristic';
-  fallback?: boolean;
-};
-
-const SEVERITY_COLORS: Record<string, string> = {
-  critical: 'var(--danger)',
-  high: 'var(--warning)',
-  medium: 'var(--warning)',
-  low: 'var(--success)',
-};
-
-function StatusDot({ ok }: { ok: boolean }) {
-  return (
-    <span
-      style={{
-        display: 'inline-block',
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        background: ok ? 'var(--success)' : 'var(--danger)',
-        marginRight: 5,
-      }}
-    />
-  );
-}
-
-export default function SecuritySeoPage() {
-  const [url, setUrl] = useState('https://example.com');
-  const [checkCloaking, setCheckCloaking] = useState(true);
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function SecurityHeaderReviewPage() {
+  const [sourceLabel, setSourceLabel] = useState('');
+  const [sample, setSample] = useState('');
+  const [review, setReview] = useState<SecurityHeaderReview | null>(null);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<SecuritySeoAuditResponse | null>(null);
 
-  const card = {
-    background: 'var(--bg-soft)',
-    border: '1px solid var(--line)',
-    borderRadius: 12,
-    padding: 16,
-  };
-
-  const input = {
-    width: '100%',
-    padding: '8px 10px',
-    borderRadius: 8,
-    border: '1px solid var(--line)',
-    background: 'var(--bg)',
-    color: 'var(--text)',
-    boxSizing: 'border-box' as const,
-  };
-
-  async function runAudit() {
-    setLoading(true);
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError('');
+    setReview(null);
     try {
-      const response = await apiSend<SecuritySeoAuditResponse>(
-        '/seo-platform/security/audit',
-        'POST',
-        { url: url.trim(), check_cloaking: checkCloaking, notes: notes.trim() },
-        DEFAULT_TENANT_ID
-      );
-      if (response?.fallback === true && response?.analysis_mode !== 'heuristic') {
-        throw new Error(
-          IS_STRICT_NO_MOCK_MODE
-            ? 'Live LLM backend is unavailable in strict no-mock mode.'
-            : 'Live LLM backend is unavailable in fail-closed mode.'
-        );
-      }
-      setResult(response);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Security SEO audit failed.');
-      setResult(null);
-    } finally {
-      setLoading(false);
+      setReview(parseSecurityHeaderSample(sample));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not review the supplied header block.');
     }
   }
 
+  function exportCsv() {
+    if (!review) return;
+    const href = URL.createObjectURL(new Blob([securityHeaderReviewCsv(review)], { type: 'text/csv;charset=utf-8' }));
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.download = 'security-header-review.csv';
+    anchor.click();
+    URL.revokeObjectURL(href);
+  }
+
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
-      <div style={{ maxWidth: 980, margin: '0 auto' }}>
-        <Link href={'/seo' as Route} style={{ color: 'var(--brand)', textDecoration: 'none', fontSize: 13 }}>
-          ← Back to SEO Platform
-        </Link>
-        <h1 style={{ marginTop: 12, marginBottom: 6 }}>Security & SEO Health Monitor</h1>
-        <p style={{ color: 'var(--muted)', marginTop: 0, marginBottom: 18 }}>
-          Audit security posture, spam signals, cloaking detection, and SEO integrity.
-        </p>
+    <Page>
+      <PageHeader title="Security Header Review" subtitle="Inspect selected response-header values from a text sample you provide." />
+      <Card>
+        <Badge tone="neutral">Local review · no request sent</Badge>
+        <p className={styles.scopeNotice}>Paste response headers copied from an authorized source. The sample is parsed in this browser; no URL is opened and no network request is made. A header marked “not found in sample” may simply be absent from the text you pasted. This is not a vulnerability scan, security certification, or full SEO audit.</p>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <label className={styles.field} htmlFor="security-source-label">
+            <span>Response source label or URL <em>(optional context only; it will not be fetched)</em></span>
+            <input id="security-source-label" type="text" value={sourceLabel} maxLength={500} onChange={(event) => setSourceLabel(event.target.value)} />
+          </label>
+          <label className={styles.field} htmlFor="security-header-sample">
+            <span>Response header block <b>Required</b></span>
+            <textarea id="security-header-sample" value={sample} onChange={(event) => setSample(event.target.value)} rows={12} maxLength={128_000} required spellCheck={false} />
+            <small>Paste lines in “Header-Name: value” form, up to 128 KB. HTTP status lines are ignored. Values are displayed as supplied and are not judged for policy suitability.</small>
+          </label>
+          {error && <p className={styles.error} role="alert">{error}</p>}
+          <Button type="submit" variant="primary">Review pasted headers</Button>
+        </form>
+      </Card>
 
-        <section style={{ ...card, marginBottom: 14, display: 'grid', gap: 10 }}>
-          <div>
-            <label htmlFor="sec-url" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              URL
-            </label>
-            <input id="sec-url" value={url} onChange={(e) => setUrl(e.target.value)} style={input} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input
-              id="sec-cloaking"
-              type="checkbox"
-              checked={checkCloaking}
-              onChange={(e) => setCheckCloaking(e.target.checked)}
-            />
-            <label htmlFor="sec-cloaking" style={{ fontSize: 13 }}>
-              Include cloaking detection
-            </label>
-          </div>
-          <div>
-            <label htmlFor="sec-notes" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              Notes (optional)
-            </label>
-            <input
-              id="sec-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              style={input}
-              placeholder="Known issues or focus areas..."
-            />
-          </div>
-          <button
-            onClick={runAudit}
-            disabled={loading}
-            style={{
-              padding: '10px 20px',
-              borderRadius: 8,
-              background: 'var(--brand)',
-              color: 'var(--on-brand)',
-              fontWeight: 700,
-              border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? 'Running Audit…' : 'Run Security & SEO Audit'}
-          </button>
-          {error && <div style={{ color: 'var(--danger-line)', fontSize: 13 }}>{error}</div>}
+      {review && (
+        <section aria-label="Security header review results">
+          <Card>
+            <CardTitle sub={sourceLabel.trim() ? `Context label: ${sourceLabel.trim()}` : 'Evidence source: response-header text supplied by you'}>Observed header sample</CardTitle>
+            <div className={styles.stats}>
+              <div className={styles.stat}><span>Header lines parsed</span><output aria-label="Header lines parsed">{review.headerLinesCount}</output></div>
+              <div className={styles.stat}><span>Unique header names</span><output aria-label="Unique header names">{review.uniqueHeaderNames}</output></div>
+              <div className={styles.stat}><span>Unrecognized non-empty lines</span><output aria-label="Unrecognized lines">{review.ignoredLineCount}</output></div>
+            </div>
+            {review.headerLinesCount === 0 && <p className={styles.empty}>No valid header-name and value lines were found in the pasted block.</p>}
+          </Card>
+          <Card>
+            <CardTitle sub="Presence is reported only in the submitted sample; a full-page result or security pass/fail is not inferred.">Header observations</CardTitle>
+            <ul className={styles.checks}>
+              {review.observations.map((item) => (
+                <li className={styles.check} key={item.name}>
+                  <div className={styles.checkTop}>
+                    <h3 className={styles.checkName}>{item.name}</h3>
+                    <Badge tone="neutral">{item.foundInSample ? 'Present in sample' : 'Not found in sample'}</Badge>
+                  </div>
+                  {item.value !== null && <code className={styles.value}>{item.value}</code>}
+                </li>
+              ))}
+              <li className={styles.check}>
+                <div className={styles.checkTop}>
+                  <h3 className={styles.checkName}>CSP frame-ancestors directive</h3>
+                  <Badge tone="neutral">{review.frameAncestorsInSample ? 'Found in sample' : 'Not found in sample'}</Badge>
+                </div>
+              </li>
+            </ul>
+            <p className={styles.empty}>HTTPS enforcement, HSTS effectiveness, policy correctness, mixed content, redirects, cloaking, spam, and application vulnerabilities are not assessed by this local text review.</p>
+            <div className={styles.exportRow}>
+              <p className={styles.scopeNotice}>CSV export contains only the parsed sample values and presence observations.</p>
+              <Button type="button" onClick={exportCsv}>Export CSV</Button>
+            </div>
+          </Card>
         </section>
-
-        {result && (
-          <>
-            {(result.analysis_mode || result.cached) && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
-                    {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
-                  </span>
-                )}
-                {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
-                )}
-              </div>
-            )}
-            <section style={{ ...card, marginBottom: 14 }}>
-              <h2 style={{ marginTop: 0, marginBottom: 10, fontSize: 15 }}>
-                Security SEO Score: {result.security_seo_score}/100
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))', gap: 10 }}>
-                <div style={card}>
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}>HTTPS</div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={result.https.enabled} />
-                    HTTPS Enabled
-                  </div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={result.https.hsts} />
-                    HSTS
-                  </div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={result.https.mixed_content_issues === 0} />
-                    Mixed Content ({result.https.mixed_content_issues} issues)
-                  </div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Security Headers</div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={result.security_headers.csp_present} />
-                    Content-Security-Policy
-                  </div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={result.security_headers.x_frame_options !== 'Missing'} />
-                    X-Frame-Options: {result.security_headers.x_frame_options}
-                  </div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={result.security_headers.x_content_type === 'nosniff'} />
-                    X-Content-Type: {result.security_headers.x_content_type}
-                  </div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Cloaking Signals</div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={!result.cloaking_signals.user_agent_cloaking} />
-                    User-Agent Cloaking
-                  </div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={!result.cloaking_signals.ip_cloaking} />
-                    IP Cloaking
-                  </div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={!result.cloaking_signals.js_cloaking} />
-                    JS Cloaking
-                  </div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Spam Signals</div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={!result.spam_signals.hidden_text} />
-                    Hidden Text
-                  </div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={!result.spam_signals.keyword_stuffing} />
-                    Keyword Stuffing
-                  </div>
-                  <div style={{ fontSize: 13 }}>
-                    <StatusDot ok={!result.spam_signals.doorway_pages} />
-                    Doorway Pages
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {result.redirect_health.chains_detected > 0 && (
-              <section style={{ ...card, marginBottom: 14 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>
-                  Redirect Chains ({result.redirect_health.chains_detected})
-                </h2>
-                {result.redirect_health.chain_details.map((chain, i) => (
-                  <div key={`item-${i}`} style={{ fontSize: 13, marginBottom: 4, color: 'var(--danger-line)' }}>
-                    {chain}
-                  </div>
-                ))}
-              </section>
-            )}
-
-            {result.issues.length > 0 && (
-              <section style={{ ...card, marginBottom: 14 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 10, fontSize: 15 }}>Issues ({result.issues.length})</h2>
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {result.issues.map((issue, i) => (
-                    <div
-                      key={`item-${i}`}
-                      style={{ ...card, borderLeft: `4px solid ${SEVERITY_COLORS[issue.severity] ?? 'var(--info)'}` }}
-                    >
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                        <span
-                          style={{ fontSize: 10, fontWeight: 700, color: SEVERITY_COLORS[issue.severity] ?? 'var(--info)' }}
-                        >
-                          {issue.severity.toUpperCase()}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            background: "var(--line-soft)",
-                            color: 'var(--muted)',
-                            borderRadius: 4,
-                            padding: '1px 5px',
-                          }}
-                        >
-                          {issue.category}
-                        </span>
-                      </div>
-                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{issue.description}</div>
-                      <div style={{ fontSize: 12, color: 'var(--success)' }}>Fix: {issue.fix}</div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {result.quick_wins.length > 0 && (
-              <section style={{ ...card, marginBottom: 14 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>Quick Wins</h2>
-                <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  {result.quick_wins.map((w, i) => (
-                    <li key={`item-${i}`} style={{ fontSize: 13, marginBottom: 4 }}>
-                      {w}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+      )}
+    </Page>
   );
 }

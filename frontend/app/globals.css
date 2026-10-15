@@ -1730,6 +1730,96 @@ p {
   color: var(--muted);
 }
 
+.account-nav a[aria-current="page"] {
+  border-color: color-mix(in srgb, var(--brand) 44%, var(--line));
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.account-nav nav {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-form-groups {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-field-group {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.profile-field-group legend {
+  padding: 0 6px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.account-empty-state {
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--bg-soft);
+}
+
+.billing-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.billing-form-stack {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.billing-form-stack select {
+  min-height: 42px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 12px;
+  background: var(--bg-soft);
+  color: var(--text);
+  font: inherit;
+}
+
+.billing-price-review {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--brand-line);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--brand-soft);
+}
+
+.billing-plan-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.billing-plan-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--line-soft);
+  padding: 12px 0;
+}
+
+.billing-plan-row h3,
+.billing-plan-row p {
+  margin: 0;
+}
+
 .table-shell {
   overflow-x: auto;
 }
@@ -2748,16 +2838,14 @@ textarea:focus-visible {
 }
 
 .kpi-card {
-  background:
-    radial-gradient(circle at 88% 18%, rgba(236, 72, 153, 0.14), transparent 38%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(99, 102, 241, 0.08));
+  background: linear-gradient(145deg, var(--bg-soft), color-mix(in srgb, var(--brand-soft) 48%, var(--bg-soft)));
 }
 
 .kpi-label {
   text-transform: uppercase;
   font-size: 11px;
   letter-spacing: 0.12em;
-  color: #8fd5ff;
+  color: var(--brand-deep);
 }
 
 .dashboard-chart {
@@ -3473,4 +3561,29 @@ main :where(p, li, td, th, dd, dt, code, .break-anywhere) {
 @media (max-width:640px) {
   .nxScope :where(.trust-form-grid,.auth-grid-2,.metric-card-grid,.ai-widget-grid) { grid-template-columns: minmax(0,1fr); }
   .nxScope :where(.notification-panel) { position: fixed; top: 64px; left: 12px; right: 12px; width: auto; max-height: calc(100dvh - 90px); overflow-y: auto; }
+}
+
+
+.billing-result-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+@media (max-width: 900px) {
+  .billing-actions-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-plan-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .billing-result-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }

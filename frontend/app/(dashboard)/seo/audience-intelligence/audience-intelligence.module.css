@@ -1,0 +1,26 @@
+.explanation {
+  color: var(--nx-ink-2);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 14px 0;
+  max-width: 760px;
+}
+
+.scopeList {
+  color: var(--nx-ink-2);
+  display: grid;
+  font-size: 13px;
+  gap: 8px;
+  line-height: 1.5;
+  margin: 0 0 14px;
+  padding-left: 20px;
+}
+
+.availabilityNote {
+  border-left: 3px solid var(--nx-border);
+  color: var(--nx-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 2px 0 2px 12px;
+}

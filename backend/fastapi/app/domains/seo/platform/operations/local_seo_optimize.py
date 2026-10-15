@@ -1,94 +1,59 @@
 """Seo/Platform use cases: local seo optimize."""
 
-from ..services import extract_waterfall as provider_ollama_json
+from datetime import UTC, datetime
 from functools import partial
-from .....deps import AuthContext
-from .....deps import require_auth
+from typing import Annotated
+
+from fastapi import Depends, HTTPException
+from starlette.concurrency import run_in_threadpool
+
+from .....deps import AuthContext, require_auth
 from .....domains.seo.services.seo_ab_testing_service import analyze_seo_ab_testing
 from .....domains.seo.services.seo_cxao_service import analyze_cxao_experience
 from .....domains.seo.services.seo_growth_playbooks_service import analyze_growth_playbooks
-from .....domains.seo.services.seo_international_multilingual_service import analyze_international_multilingual
-from .....domains.seo.services.seo_local_seo_service import optimize_local_seo
+from .....domains.seo.services.seo_international_multilingual_service import (
+    raise_international_multilingual_unavailable,
+)
+from .....domains.seo.services.seo_local_seo_service import raise_local_seo_unavailable
 from .....domains.seo.services.seo_multi_channel_activation_service import analyze_multi_channel_activation
-from .....domains.seo.services.seo_programmatic_service import generate_programmatic_seo
-from .....domains.seo.services.seo_revenue_attribution_service import analyze_revenue_attribution
+from .....domains.seo.services.seo_performance_service import raise_performance_unavailable
+from .....domains.seo.services.seo_programmatic_service import raise_programmatic_seo_unavailable
 from .....domains.seo.services.seo_site_migration_service import analyze_site_migration
-from .....domains.seo.services.seo_trust_risk_governance_service import analyze_trust_risk_governance
 from .....domains.seo.services.seo_video_seo_service import optimize_video_seo
-from ..constants import _CXAO_SYS
-from ..constants import _GROWTH_PLAYBOOKS_SYS
-from ..constants import _INTERNATIONAL_MULTILINGUAL_SYS
-from ..constants import _LOCAL_SYS
-from ..constants import _MULTI_CHANNEL_ACTIVATION_SYS
-from ..constants import _PROGRAMMATIC_SYS
-from ..constants import _REVENUE_ATTRIBUTION_SYS
-from ..constants import _SEO_AB_TESTING_SYS
-from ..constants import _SITE_MIGRATION_SYS
-from ..constants import _TRUST_RISK_GOVERNANCE_SYS
-from ..constants import _VIDEO_SYS
+from ..constants import (
+    _CXAO_SYS,
+    _GROWTH_PLAYBOOKS_SYS,
+    _MULTI_CHANNEL_ACTIVATION_SYS,
+    _SEO_AB_TESTING_SYS,
+    _SITE_MIGRATION_SYS,
+    _VIDEO_SYS,
+)
 from ..runtime import ContextRuntime
-from ..schemas import CxaoReq
-from ..schemas import GrowthPlaybooksReq
-from ..schemas import InternationalMultilingualReq
-from ..schemas import LocalSEOReq
-from ..schemas import MultiChannelActivationReq
-from ..schemas import PerformanceAuditReq
-from ..schemas import ProgrammaticSEOReq
-from ..schemas import RevenueAttributionReq
-from ..schemas import SeoAbTestingReq
-from ..schemas import SiteMigrationReq
-from ..schemas import TrustRiskGovernanceReq
-from ..schemas import VideoSEOReq
+from ..schemas import (
+    CxaoReq,
+    GrowthPlaybooksReq,
+    InternationalMultilingualReq,
+    LocalSEOReq,
+    MultiChannelActivationReq,
+    PerformanceAuditReq,
+    ProgrammaticSEOReq,
+    RevenueAttributionReq,
+    SeoAbTestingReq,
+    SiteMigrationReq,
+    TrustRiskGovernanceReq,
+    VideoSEOReq,
+)
+from ..services import extract_waterfall as provider_ollama_json
 from ..services.get_shared_job_store import _clean
-from ..services.rollup_performance_rum import _rollup_performance_rum
-from .run_performance_audit import helper_run_performance_audit
-from .save_analysis import helper_list_analyses
 from .save_analysis import helper_save_analysis
-from .sync_job_store import helper_find_cached_analysis
-from .sync_job_store import helper_log
-from datetime import UTC
-from datetime import datetime
-from fastapi import Depends
-from starlette.concurrency import run_in_threadpool
-from typing import Annotated
+from .sync_job_store import helper_find_cached_analysis, helper_log
 
 
 async def execute_local_seo_optimize(
     runtime: ContextRuntime, req: LocalSEOReq, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    """Local SEO optimization: GMB, local keywords, citations, reviews."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:local", limit=15, window_seconds=60)
-    payload = req.model_dump()
-    cached = await run_in_threadpool(
-        partial(helper_find_cached_analysis, runtime), auth.tenant_id, "local_seo", payload
-    )
-    if cached is not None:
-        helper_log(
-            runtime,
-            auth.tenant_id,
-            "local_seo_optimize",
-            {"business": req.business_name, "cached": True, "analysis_id": cached["id"]},
-        )
-        return {
-            "analysis_id": cached["id"],
-            "cached": True,
-            **(cached["result"] if isinstance(cached["result"], dict) else {}),
-        }
-    result = await optimize_local_seo(
-        business_name=req.business_name,
-        category=req.category,
-        location=req.location,
-        website=req.website,
-        description=req.description,
-        ollama_json_fn=provider_ollama_json._ollama_json,
-        system_prompt=_LOCAL_SYS,
-        clean_text_fn=_clean,
-    )
-    analysis_id = await run_in_threadpool(
-        partial(helper_save_analysis, runtime), auth.tenant_id, "local_seo", payload, result
-    )
-    helper_log(runtime, auth.tenant_id, "local_seo_optimize", {"business": req.business_name, "cached": False})
-    return {"analysis_id": analysis_id, "cached": False, **result}
+    """Do not manufacture listing scores, search volumes, or citation evidence."""
+    raise_local_seo_unavailable()
 
 
 async def execute_video_seo_optimize(
@@ -132,40 +97,8 @@ async def execute_video_seo_optimize(
 async def execute_international_multilingual_analyze(
     runtime: ContextRuntime, req: InternationalMultilingualReq, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    """Analyze multilingual SEO readiness: hreflang, locale targeting, and regional gaps."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:international_multilingual", limit=12, window_seconds=60)
-    payload = req.model_dump()
-    cached = await run_in_threadpool(
-        partial(helper_find_cached_analysis, runtime), auth.tenant_id, "international_multilingual", payload
-    )
-    if cached is not None:
-        helper_log(
-            runtime,
-            auth.tenant_id,
-            "international_multilingual_analyze",
-            {"domain": req.domain, "cached": True, "analysis_id": cached["id"]},
-        )
-        return {
-            "analysis_id": cached["id"],
-            "cached": True,
-            **(cached["result"] if isinstance(cached["result"], dict) else {}),
-        }
-    result = await analyze_international_multilingual(
-        domain=req.domain,
-        locales=req.locales,
-        current_hreflang_map=req.current_hreflang_map,
-        notes=req.notes,
-        ollama_json_fn=provider_ollama_json._ollama_json,
-        system_prompt=_INTERNATIONAL_MULTILINGUAL_SYS,
-        clean_text_fn=_clean,
-    )
-    result["domain"] = req.domain
-    result["analyzed_at"] = datetime.now(UTC).isoformat()
-    analysis_id = await run_in_threadpool(
-        partial(helper_save_analysis, runtime), auth.tenant_id, "international_multilingual", payload, result
-    )
-    helper_log(runtime, auth.tenant_id, "international_multilingual_analyze", {"domain": req.domain, "cached": False})
-    return {"analysis_id": analysis_id, "cached": False, **result}
+    """Reject server-derived readiness claims until verified locale evidence is connected."""
+    raise_international_multilingual_unavailable()
 
 
 async def execute_site_migration_analyze(
@@ -209,44 +142,20 @@ async def execute_site_migration_analyze(
     return {"analysis_id": analysis_id, "cached": False, **result}
 
 
+_REVENUE_ATTRIBUTION_ANALYZE_UNAVAILABLE = {
+    "code": "NOT_IMPLEMENTED",
+    "message": (
+        "This analysis endpoint does not read workspace conversion or touchpoint records. Generated pipeline values "
+        "and revenue estimates are disabled; use the authenticated recorded-event report instead."
+    ),
+}
+
+
 async def execute_revenue_attribution_analyze(
     runtime: ContextRuntime, req: RevenueAttributionReq, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    """Attribute search and AI channel influence to pipeline and won revenue."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:revenue_attribution", limit=10, window_seconds=60)
-    payload = req.model_dump()
-    cached = await run_in_threadpool(
-        partial(helper_find_cached_analysis, runtime), auth.tenant_id, "revenue_attribution", payload
-    )
-    if cached is not None:
-        helper_log(
-            runtime,
-            auth.tenant_id,
-            "revenue_attribution_analyze",
-            {"domain": req.domain, "cached": True, "analysis_id": cached["id"]},
-        )
-        return {
-            "analysis_id": cached["id"],
-            "cached": True,
-            **(cached["result"] if isinstance(cached["result"], dict) else {}),
-        }
-    result = await analyze_revenue_attribution(
-        domain=req.domain,
-        channels=req.channels,
-        conversion_events=req.conversion_events,
-        revenue_window_days=req.revenue_window_days,
-        notes=req.notes,
-        ollama_json_fn=provider_ollama_json._ollama_json,
-        system_prompt=_REVENUE_ATTRIBUTION_SYS,
-        clean_text_fn=_clean,
-    )
-    result["domain"] = req.domain
-    result["analyzed_at"] = datetime.now(UTC).isoformat()
-    analysis_id = await run_in_threadpool(
-        partial(helper_save_analysis, runtime), auth.tenant_id, "revenue_attribution", payload, result
-    )
-    helper_log(runtime, auth.tenant_id, "revenue_attribution_analyze", {"domain": req.domain, "cached": False})
-    return {"analysis_id": analysis_id, "cached": False, **result}
+    """Reject unsupported revenue estimates that are not derived from recorded workspace events."""
+    raise HTTPException(status_code=501, detail=_REVENUE_ATTRIBUTION_ANALYZE_UNAVAILABLE)
 
 
 async def execute_growth_playbooks_analyze(
@@ -289,44 +198,21 @@ async def execute_growth_playbooks_analyze(
     return {"analysis_id": analysis_id, "cached": False, **result}
 
 
+_TRUST_RISK_GOVERNANCE_UNAVAILABLE = {
+    "code": "NOT_IMPLEMENTED",
+    "message": (
+        "Verified policy inventories, control states, incident records, and auditable evidence are not connected. "
+        "Governance/compliance scores, risk classifications, and recommendations are disabled; this API cannot "
+        "certify a workspace's posture."
+    ),
+}
+
+
 async def execute_trust_risk_governance_analyze(
     runtime: ContextRuntime, req: TrustRiskGovernanceReq, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    """Assess policy compliance, risk exposure, and governance controls for SEO + AI programs."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:trust_risk_governance", limit=10, window_seconds=60)
-    payload = req.model_dump()
-    cached = await run_in_threadpool(
-        partial(helper_find_cached_analysis, runtime), auth.tenant_id, "trust_risk_governance", payload
-    )
-    if cached is not None:
-        helper_log(
-            runtime,
-            auth.tenant_id,
-            "trust_risk_governance_analyze",
-            {"domain": req.domain, "cached": True, "analysis_id": cached["id"]},
-        )
-        return {
-            "analysis_id": cached["id"],
-            "cached": True,
-            **(cached["result"] if isinstance(cached["result"], dict) else {}),
-        }
-    result = await analyze_trust_risk_governance(
-        domain=req.domain,
-        policy_scope=req.policy_scope,
-        controls=req.controls,
-        incidents_last_90d=req.incidents_last_90d,
-        notes=req.notes,
-        ollama_json_fn=provider_ollama_json._ollama_json,
-        system_prompt=_TRUST_RISK_GOVERNANCE_SYS,
-        clean_text_fn=_clean,
-    )
-    result["domain"] = req.domain
-    result["analyzed_at"] = datetime.now(UTC).isoformat()
-    analysis_id = await run_in_threadpool(
-        partial(helper_save_analysis, runtime), auth.tenant_id, "trust_risk_governance", payload, result
-    )
-    helper_log(runtime, auth.tenant_id, "trust_risk_governance_analyze", {"domain": req.domain, "cached": False})
-    return {"analysis_id": analysis_id, "cached": False, **result}
+    """Keep unsupported governance assessments fail-closed until verified evidence sources exist."""
+    raise HTTPException(status_code=501, detail=_TRUST_RISK_GOVERNANCE_UNAVAILABLE)
 
 
 async def execute_multi_channel_activation_analyze(
@@ -478,59 +364,19 @@ async def execute_seo_ab_testing_analyze(
 
 
 async def execute_programmatic_seo(
-    runtime: ContextRuntime, req: ProgrammaticSEOReq, auth: Annotated[AuthContext, Depends(require_auth)]
-):
-    """Generate programmatic SEO page templates at scale."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:programmatic", limit=10, window_seconds=60)
-    payload = req.model_dump()
-    cached = await run_in_threadpool(
-        partial(helper_find_cached_analysis, runtime), auth.tenant_id, "programmatic", payload
-    )
-    if cached is not None:
-        helper_log(
-            runtime,
-            auth.tenant_id,
-            "programmatic_seo",
-            {"topic": req.template_topic or req.url_template, "cached": True, "analysis_id": cached["id"]},
-        )
-        return {
-            "analysis_id": cached["id"],
-            "cached": True,
-            **(cached["result"] if isinstance(cached["result"], dict) else {}),
-        }
-    result = await generate_programmatic_seo(
-        template_topic=req.template_topic,
-        variable_sets=req.variable_sets,
-        page_count=req.page_count,
-        url_template=req.url_template,
-        title_template=req.title_template,
-        meta_description_template=req.meta_description_template,
-        variables=req.variables,
-        ollama_json_fn=provider_ollama_json._ollama_json,
-        system_prompt=_PROGRAMMATIC_SYS,
-        clean_text_fn=_clean,
-    )
-    analysis_id = await run_in_threadpool(
-        partial(helper_save_analysis, runtime), auth.tenant_id, "programmatic", payload, result
-    )
-    helper_log(
-        runtime, auth.tenant_id, "programmatic_seo", {"topic": req.template_topic or req.url_template, "cached": False}
-    )
-    return {"analysis_id": analysis_id, "cached": False, **result}
+    _runtime: ContextRuntime, _req: ProgrammaticSEOReq, _auth: Annotated[AuthContext, Depends(require_auth)]
+) -> None:
+    """Reject synthetic server-side generation until evidence and publishing controls exist."""
+    raise_programmatic_seo_unavailable()
 
 
 async def execute_performance_audit(
     runtime: ContextRuntime, req: PerformanceAuditReq, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    """Run a GTmetrix-style synthetic performance audit summary."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:performance", limit=10, window_seconds=60)
-    return await helper_run_performance_audit(runtime, req, auth, source="manual")
+    raise_performance_unavailable()
 
 
 async def execute_performance_rum_summary(
     runtime: ContextRuntime, url: str, auth: Annotated[AuthContext, Depends(require_auth)]
 ):
-    """Return aggregated first-party RUM data for a URL."""
-    runtime.enforce_rate_limit(f"{auth.tenant_id}:seo:perf-rum-summary", limit=120, window_seconds=60)
-    rollup = _rollup_performance_rum(helper_list_analyses(runtime, auth.tenant_id, "performance_rum_event", 1000), url)
-    return {"url": url, "available": bool(rollup), "rollup": rollup}
+    raise_performance_unavailable()

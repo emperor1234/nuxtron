@@ -1,6 +1,5 @@
 /**
  * Typed API client for Social Media Production workflows
- * Mirrors ads-api.ts patterns for consistency
  */
 import { apiGet, apiSend } from './platform-api';
 
@@ -136,30 +135,6 @@ export interface BrowserCapture {
   created_at: string;
   updated_at: string;
   queued_post_id?: number;
-}
-
-export interface MobileDevice {
-  id: number;
-  device_id: string;
-  platform: 'ios' | 'android' | 'web' | string;
-  push_provider: 'fcm' | 'onesignal' | 'apns' | 'none' | string;
-  push_token?: string;
-  app_version?: string;
-  locale?: string;
-  timezone?: string;
-  last_seen_at: string;
-  created_at: string;
-}
-
-export interface MobileSyncBatch {
-  id: number;
-  device_id: string;
-  received: number;
-  applied: number;
-  rejected: number;
-  applied_items: Array<Record<string, unknown>>;
-  rejected_items: Array<Record<string, unknown>>;
-  created_at: string;
 }
 
 export interface InboxItem {
@@ -310,78 +285,6 @@ export interface ContactView {
   last_message_at: string;
   sentiment: string;
   networks: string[];
-}
-
-export interface ManychatTag {
-  id: number;
-  name: string;
-  color: string;
-  created_at: string;
-}
-
-export interface ManychatSegment {
-  id: number;
-  name: string;
-  description: string;
-  conditions: Array<Record<string, unknown>>;
-  created_at: string;
-}
-
-export interface ManychatFlow {
-  id: number;
-  name: string;
-  channel: string;
-  trigger_type: string;
-  trigger_value: string;
-  steps: Array<Record<string, unknown>>;
-  status: 'active' | 'paused' | 'draft' | string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ManychatBroadcast {
-  id: number;
-  name: string;
-  channel: string;
-  target_segment_ids: number[];
-  message: string;
-  status: 'scheduled' | 'sent' | 'draft' | string;
-  scheduled_for: string;
-  estimated_recipients: number;
-  created_at: string;
-  sent_at?: string;
-}
-
-export interface ManychatSequence {
-  id: number;
-  name: string;
-  channel: string;
-  steps: Array<Record<string, unknown>>;
-  enrollment_trigger: string;
-  created_at: string;
-}
-
-export interface ManychatKeyword {
-  id: number;
-  keyword: string;
-  channel: string;
-  reply_text: string;
-  assign_tag_ids: number[];
-  created_at: string;
-}
-
-export interface ManychatOverview {
-  counts: {
-    tags: number;
-    segments: number;
-    flows: number;
-    broadcasts: number;
-    sequences: number;
-    keywords: number;
-    automation_runs: number;
-  };
-  feature_matrix: Array<{ feature: string; status: string }>;
-  vendors: Array<{ vendor: string; products: string[]; use_case: string }>;
 }
 
 export interface SocialAIAgentTemplate {
@@ -1216,61 +1119,6 @@ export const socialApi = {
     return apiSend(`/social/extensions/browser/captures/${captureId}/queue`, 'POST', payload);
   },
 
-  async getMobileConfig(): Promise<{
-    offline_sync_enabled: boolean;
-    quick_post_enabled: boolean;
-    max_offline_events: number;
-    push_providers: string[];
-    api_base: string;
-    sync_endpoint: string;
-    quick_post_endpoint: string;
-  }> {
-    return apiGet('/social/mobile/config');
-  },
-
-  async registerMobileDevice(payload: {
-    device_id: string;
-    platform: 'ios' | 'android' | 'web';
-    push_provider?: 'fcm' | 'onesignal' | 'apns' | 'none';
-    push_token?: string;
-    app_version?: string;
-    locale?: string;
-    timezone?: string;
-  }): Promise<MobileDevice> {
-    const response = await apiSend<{ device: MobileDevice }>('/social/mobile/devices/register', 'POST', payload);
-    return response.device;
-  },
-
-  async listMobileDevices(): Promise<MobileDevice[]> {
-    const response = await apiGet<{ devices?: MobileDevice[] }>('/social/mobile/devices');
-    return response.devices || [];
-  },
-
-  async createMobileQuickPost(payload: {
-    account_id: number;
-    text: string;
-    media_urls?: string[];
-    network?: string;
-    publish_mode?: 'auto' | 'now' | 'draft';
-    publish_at?: string;
-  }): Promise<Record<string, unknown>> {
-    return apiSend('/social/mobile/quick-post', 'POST', payload);
-  },
-
-  async syncMobileOfflineEvents(payload: {
-    device_id: string;
-    events: Array<Record<string, unknown>>;
-  }): Promise<{ batch: MobileSyncBatch }> {
-    return apiSend('/social/mobile/sync', 'POST', payload);
-  },
-
-  async listMobileSyncBatches(limit = 50): Promise<MobileSyncBatch[]> {
-    const response = await apiGet<{ batches?: MobileSyncBatch[] }>(
-      `/social/mobile/sync/batches?limit=${encodeURIComponent(String(limit))}`
-    );
-    return response.batches || [];
-  },
-
   /**
    * Inbox: Engage with mentions, comments, and DMs
    */
@@ -1493,128 +1341,4 @@ export const socialApi = {
     return { success: true };
   },
 
-  /**
-   * Manychat parity: audience, flows, keywords, broadcasts, and sequences
-   */
-  async getManychatOverview(): Promise<ManychatOverview> {
-    return apiGet('/social/manychat/overview');
-  },
-
-  async listManychatTags(): Promise<ManychatTag[]> {
-    const response = await apiGet<{ items?: ManychatTag[] }>('/social/manychat/tags');
-    return response.items || [];
-  },
-
-  async createManychatTag(payload: { name: string; color?: string }): Promise<ManychatTag> {
-    const response = await apiSend<{ item: ManychatTag }>('/social/manychat/tags', 'POST', payload);
-    return response.item;
-  },
-
-  async listManychatSegments(): Promise<ManychatSegment[]> {
-    const response = await apiGet<{ items?: ManychatSegment[] }>('/social/manychat/segments');
-    return response.items || [];
-  },
-
-  async createManychatSegment(payload: {
-    name: string;
-    description?: string;
-    conditions?: Array<Record<string, unknown>>;
-  }): Promise<ManychatSegment> {
-    const response = await apiSend<{ item: ManychatSegment }>('/social/manychat/segments', 'POST', payload);
-    return response.item;
-  },
-
-  async listManychatFlows(): Promise<ManychatFlow[]> {
-    const response = await apiGet<{ items?: ManychatFlow[] }>('/social/manychat/flows');
-    return response.items || [];
-  },
-
-  async createManychatFlow(payload: {
-    name: string;
-    channel?: string;
-    trigger_type?: string;
-    trigger_value: string;
-    steps?: Array<Record<string, unknown>>;
-    status?: 'active' | 'paused' | 'draft';
-  }): Promise<ManychatFlow> {
-    const response = await apiSend<{ item: ManychatFlow }>('/social/manychat/flows', 'POST', payload);
-    return response.item;
-  },
-
-  async listManychatKeywords(): Promise<ManychatKeyword[]> {
-    const response = await apiGet<{ items?: ManychatKeyword[] }>('/social/manychat/keywords');
-    return response.items || [];
-  },
-
-  async createManychatKeyword(payload: {
-    keyword: string;
-    channel?: string;
-    reply_text: string;
-    assign_tag_ids?: number[];
-  }): Promise<ManychatKeyword> {
-    const response = await apiSend<{ item: ManychatKeyword }>('/social/manychat/keywords', 'POST', payload);
-    return response.item;
-  },
-
-  async listManychatBroadcasts(): Promise<ManychatBroadcast[]> {
-    const response = await apiGet<{ items?: ManychatBroadcast[] }>('/social/manychat/broadcasts');
-    return response.items || [];
-  },
-
-  async createManychatBroadcast(payload: {
-    name: string;
-    channel?: string;
-    target_segment_ids?: number[];
-    message: string;
-    scheduled_for?: string;
-  }): Promise<ManychatBroadcast> {
-    const response = await apiSend<{ item: ManychatBroadcast }>('/social/manychat/broadcasts', 'POST', payload);
-    return response.item;
-  },
-
-  async sendManychatBroadcast(broadcastId: number): Promise<ManychatBroadcast> {
-    const response = await apiSend<{ item: ManychatBroadcast }>(
-      `/social/manychat/broadcasts/${broadcastId}/send`,
-      'POST',
-      {}
-    );
-    return response.item;
-  },
-
-  async listManychatSequences(): Promise<ManychatSequence[]> {
-    const response = await apiGet<{ items?: ManychatSequence[] }>('/social/manychat/sequences');
-    return response.items || [];
-  },
-
-  async createManychatSequence(payload: {
-    name: string;
-    channel?: string;
-    steps?: Array<Record<string, unknown>>;
-    enrollment_trigger?: string;
-  }): Promise<ManychatSequence> {
-    const response = await apiSend<{ item: ManychatSequence }>('/social/manychat/sequences', 'POST', payload);
-    return response.item;
-  },
-
-  async enrollManychatSequence(payload: {
-    contact_handle: string;
-    sequence_id: number;
-  }): Promise<Record<string, unknown>> {
-    return apiSend('/social/manychat/sequences/enroll', 'POST', payload);
-  },
-
-  async assignManychatContactTag(payload: {
-    contact_handle: string;
-    tag_id: number;
-  }): Promise<Record<string, unknown>> {
-    return apiSend('/social/manychat/contacts/tag-assign', 'POST', payload);
-  },
-
-  async simulateManychatEvent(payload: {
-    channel?: string;
-    message_text: string;
-    contact_handle: string;
-  }): Promise<{ run: Record<string, unknown> }> {
-    return apiSend('/social/manychat/simulate-event', 'POST', payload);
-  },
 };

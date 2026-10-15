@@ -25,10 +25,10 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 
 from ..deps import require_auth
 from ..domains.identity.async_egress import outbound_async_request, resolve_outbound_target_async
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -189,39 +189,6 @@ TOOLS: list[dict[str, Any]] = [
         "env_secondary": "GSC_SITE_URL",
         "test_url": "https://searchconsole.googleapis.com/v1/sites",
         "docs_url": "https://developers.google.com/webmaster-tools",
-    },
-    {
-        "key": "lighthouse",
-        "display_name": "Google Lighthouse",
-        "category": "performance",
-        "tier": "free",
-        "cost_label": FREE_OPEN_SOURCE,
-        "why": "Core GTmetrix-style performance audits",
-        "env_key": "LIGHTHOUSE_CI_SERVER_URL",
-        "test_url": None,
-        "docs_url": "https://github.com/GoogleChrome/lighthouse",
-    },
-    {
-        "key": "playwright_cdp",
-        "display_name": "Playwright CDP Waterfall",
-        "category": "performance",
-        "tier": "free",
-        "cost_label": FREE_OPEN_SOURCE,
-        "why": "Waterfall + filmstrip via Chrome DevTools Protocol",
-        "env_key": "PLAYWRIGHT_CDP_ENABLED",
-        "test_url": None,
-        "docs_url": "https://playwright.dev/docs/api/class-cdpsession",
-    },
-    {
-        "key": "web_vitals",
-        "display_name": "Web Vitals RUM",
-        "category": "performance",
-        "tier": "free",
-        "cost_label": FREE_OPEN_SOURCE,
-        "why": "Real-user CWV collection (LCP/CLS/INP/TTFB)",
-        "env_key": "WEB_VITALS_ENABLED",
-        "test_url": None,
-        "docs_url": "https://github.com/GoogleChrome/web-vitals",
     },
     {
         "key": "opensearch",

@@ -23,6 +23,7 @@ WIRING_MODULES = frozenset({"context_registry.py"})
 # Declared bottom-up: Starlette stores ``user_middleware`` in reverse order of
 # registration, so this is the exact inverse of the ``add_middleware`` calls.
 EXPECTED_MIDDLEWARE_STACK = (
+    "TrustedProxyMiddleware",
     "CORSMiddleware",
     "TrustedHostMiddleware",
     "RequestTracingMiddleware",

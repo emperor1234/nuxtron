@@ -1,35 +1,24 @@
 import type { Metadata, Route } from "next";
 import Link from "next/link";
-import { ArrowUpRight, BarChart3, MapPin, ScanEye, Search, type LucideIcon } from "lucide-react";
-import { MENUS, RAIL_ITEMS, type FlyoutItem, type RailKey } from "../_shell/nav";
+import { ArrowUpRight, Search, type LucideIcon } from "lucide-react";
+import { MENUS, RAIL_ITEMS, type RailKey } from "../_shell/nav";
 import { Card, Page, PageHeader } from "../_ui/kit";
+import { getSeoShortcuts } from "./seo-home-model";
 import styles from "./seo-home.module.css";
 
 export const metadata: Metadata = {
   title: "SEO · Nuxtron",
-  description: "Your search and AI visibility tools, organised the way you work.",
+  description: "Find search, research, and AI visibility workflows by task.",
 };
 
 /** Sidebar sections that make up Nuxtron SEO, in sidebar order. */
 const SECTIONS: readonly { key: RailKey; Icon: LucideIcon; summary: string }[] = [
-  { key: "seo", Icon: Search, summary: "Audit the site, track rankings and research competitors." },
-  { key: "ai", Icon: ScanEye, summary: "See and improve how AI assistants describe your brand." },
-  { key: "traffic", Icon: BarChart3, summary: "Size the market and benchmark traffic." },
-  { key: "local", Icon: MapPin, summary: "Listings, reviews and local rankings." },
+  {
+    key: "seo",
+    Icon: Search,
+    summary: "Research markets, compare search periods, and manage content and AI-visibility workflows.",
+  },
 ];
-
-/** Shortcuts at the top of the page, looked up by their sidebar label. */
-const START_WITH = ["Site Audit", "Position Tracking", "AI Visibility Overview", "Domain Overview"];
-
-function findItem(label: string): FlyoutItem | undefined {
-  for (const menu of Object.values(MENUS)) {
-    for (const group of menu?.groups ?? []) {
-      const item = group.items.find((candidate) => candidate.label === label);
-      if (item) return item;
-    }
-  }
-  return undefined;
-}
 
 /**
  * SEO home. Built from the same navigation model as the sidebar
@@ -37,13 +26,13 @@ function findItem(label: string): FlyoutItem | undefined {
  * and the page can never drift from the menus.
  */
 export default function SeoHomePage() {
-  const shortcuts = START_WITH.map(findItem).filter((item): item is FlyoutItem => Boolean(item));
+  const shortcuts = getSeoShortcuts();
 
   return (
     <Page>
       <PageHeader
         title="SEO"
-        subtitle="Your search and AI visibility tools, organised the way you work."
+        subtitle="Find a search or AI-visibility workflow by the task you need to complete."
       />
 
       <section aria-labelledby="seo-start" className={styles.start}>
@@ -75,7 +64,7 @@ export default function SeoHomePage() {
               <div>
                 <h2 id={`seo-${key}`} className={styles.sectionTitle}>
                   {rail.label}
-                  <span className={styles.count}>{toolCount} tools</span>
+                  <span className={styles.count}>{toolCount} destinations</span>
                 </h2>
                 <p className={styles.sectionSummary}>{summary}</p>
               </div>

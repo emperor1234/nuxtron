@@ -12,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 H = {"X-API-Key": "test-api-key", "X-Tenant-Id": "test-tenant"}
-VALID = (200, 201, 202, 400, 401, 403, 404, 409, 422, 500, 503)
+VALID = (200, 201, 202, 400, 401, 403, 404, 409, 422, 500, 501, 503)
 
 # A tiny valid PNG in base64 (8x8 transparent PNG)
 TINY_PNG_B64 = (

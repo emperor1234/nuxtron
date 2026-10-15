@@ -2,16 +2,16 @@ import { chromium, devices } from 'playwright';
 
 const BASE = 'http://localhost:4173';
 const DEFAULT_PATHS = [
-  '/dashboard', '/finance-ops', '/crm', '/crm/abm', '/ai-analytics', '/ai-security',
-  '/content-generation', '/platform/ai-agent', '/platform/backend', '/seo', '/seo/performance',
-  '/seo/aeo', '/seo/geo', '/seo/llmo', '/seo/schemas', '/seo/programmatic', '/seo/ads-smart-schedule',
-  '/seo/backlink-intelligence', '/seo/keywords', '/seo/competitor', '/seo/local-heatmap', '/seo/technical',
-  '/seo/on-page', '/seo/sxo', '/seo/gxo', '/seo/ux', '/seo/client-portal', '/seo/semrush-command-center',
-  '/studio/social-studio', '/studio/rank-tracker', '/studio/editor', '/studio/social-studio/calendar',
-  '/studio/social-studio/analytics', '/studio/brand-kit', '/studio/content-hub', '/media-processing',
-  '/benchmarks', '/hubspot-e2e', '/billing', '/vendor-inventory-report',
-  '/outcome-graph', '/social-media-roi', '/siem', '/vse', '/workflows', '/disputes',
-  '/api-governance', '/ira-monitor', '/smart-inbox', '/social-listening', '/playbooks', '/platform-ops',
+  '/dashboard', '/crm', '/content-generation', '/seo',
+  '/seo/performance', '/seo/aeo', '/seo/geo', '/seo/llmo',
+  '/seo/schemas', '/seo/programmatic', '/seo/ads-smart-schedule', '/seo/backlink-intelligence',
+  '/seo/keywords', '/seo/competitor', '/seo/local-heatmap', '/seo/technical',
+  '/seo/on-page', '/seo/sxo', '/seo/gxo', '/seo/ux',
+  '/seo/client-portal', '/studio/social-studio', '/studio/rank-tracker', '/studio/editor',
+  '/studio/social-studio/calendar', '/studio/social-studio/analytics', '/studio/brand-kit', '/studio/content-hub',
+  '/media-processing', '/benchmarks', '/billing', '/social-media-roi',
+  '/workflows', '/disputes', '/smart-inbox',
+  '/social-listening', '/playbooks',
 ];
 const MOBILE_ONLY = process.argv.includes('--mobile');
 const PATHS = DEFAULT_PATHS;

@@ -1,32 +1,39 @@
 """Search use cases: frase provider checklist."""
 
+from typing import Any
+
 from ....deps import AuthContext
+from ....domains.seo.services.seo_keyword_research_service import raise_keyword_research_unavailable
 from ..constants import AuthDep
 from ..runtime import SearchRuntime
-from ..schemas import FraseEnvTemplateRequest
-from ..schemas import FraseFullAutomationRequest
-from ..schemas import FraseProductionGateRequest
-from ..schemas import FraseProviderBootstrapRequest
-from ..schemas import FraseProviderProbeRequest
-from ..schemas import SurferFullAutomationRequest
-from ..schemas import SurferProductionGateRequest
-from .platform_now_iso import helper_bootstrap_plan
-from .platform_now_iso import helper_now_iso
-from .surfer_parity_chart import helper_surfer_setup_playbook
-from .surfer_parity_chart import helper_surfer_strict_live_probe
-from .surfer_parity_chart import operation_surfer_full_automation
+from ..schemas import (
+    FraseEnvTemplateRequest,
+    FraseFullAutomationRequest,
+    FraseProductionGateRequest,
+    FraseProviderBootstrapRequest,
+    FraseProviderProbeRequest,
+    SurferFullAutomationRequest,
+    SurferProductionGateRequest,
+)
+from .platform_now_iso import helper_bootstrap_plan, helper_now_iso
+from .surfer_parity_chart import (
+    helper_surfer_setup_playbook,
+    helper_surfer_strict_live_probe,
+    operation_surfer_full_automation,
+)
 from .surfer_provider_probe_payload import helper_surfer_provider_requirements
-from .surfer_vendor_inventory import helper_surfer_env_template
-from .surfer_vendor_inventory import helper_surfer_run_provider_probes
-from .surfer_vendor_inventory import helper_surfer_vendor_inventory
-from .surfer_vendor_inventory import helper_surfer_wiring_plan
-from typing import Any
+from .surfer_vendor_inventory import (
+    helper_surfer_env_template,
+    helper_surfer_run_provider_probes,
+    helper_surfer_vendor_inventory,
+    helper_surfer_wiring_plan,
+)
 
 
 def operation_frase_provider_checklist(runtime: SearchRuntime, auth: AuthDep) -> dict[str, Any]:
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:frase:provider-checklist", 60, 60)
     checklist = helper_surfer_provider_requirements(runtime, auth)
-    configured = sum((1 for item in checklist if item["configured"]))
+    configured = sum(1 for item in checklist if item["configured"])
     total = len(checklist)
     return {
         "status": "ok",
@@ -166,10 +173,10 @@ def helper_frase_parity_chart(runtime: SearchRuntime, auth: AuthContext) -> dict
         },
     ]
     checklist = helper_surfer_provider_requirements(runtime, auth)
-    configured = sum((1 for item in checklist if item["configured"]))
+    configured = sum(1 for item in checklist if item["configured"])
     total = len(checklist)
     implementation_pct = round(
-        sum((1 for module in modules if module["implemented"])) / max(len(modules), 1) * 100.0, 1
+        sum(1 for module in modules if module["implemented"]) / max(len(modules), 1) * 100.0, 1
     )
     integration_pct = round(configured / max(total, 1) * 100.0, 1)
     return {
@@ -178,7 +185,7 @@ def helper_frase_parity_chart(runtime: SearchRuntime, auth: AuthContext) -> dict
         "frase_parity_chart": modules,
         "summary": {
             "modules_total": len(modules),
-            "modules_implemented": sum((1 for module in modules if module["implemented"])),
+            "modules_implemented": sum(1 for module in modules if module["implemented"]),
             "implementation_pct": implementation_pct,
             "integration_configured_units": configured,
             "integration_total_units": total,
@@ -230,6 +237,7 @@ def operation_frase_setup_playbook(runtime: SearchRuntime, auth: AuthDep) -> dic
 def operation_frase_full_automation(
     runtime: SearchRuntime, payload: FraseFullAutomationRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    raise_keyword_research_unavailable()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:frase:full-automation", 30, 60)
     base_result = operation_surfer_full_automation(
         runtime,
@@ -269,6 +277,7 @@ def operation_frase_full_automation(
 def operation_frase_production_gate(
     runtime: SearchRuntime, payload: FraseProductionGateRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    raise_keyword_research_unavailable()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:frase:production-gate", 30, 60)
     parity = helper_frase_parity_chart(runtime, auth)
     checklist = helper_surfer_provider_requirements(runtime, auth)
@@ -311,7 +320,7 @@ def operation_frase_production_gate(
         "parity_summary": parity.get("summary", {}),
         "strict_live_probe": strict_probe,
         "provider_checklist_summary": {
-            "configured": sum((1 for item in checklist if item["configured"])),
+            "configured": sum(1 for item in checklist if item["configured"]),
             "total": len(checklist),
             "missing_requirements": missing_requirements,
         },

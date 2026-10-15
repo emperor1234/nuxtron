@@ -12,6 +12,7 @@ const UPLOAD_COMPLETION_TIMEOUT_MS = 45000;
 type MediaScenario = 'complete' | 'failed' | 'inflight';
 
 async function mockMediaPipeline(page: import('@playwright/test').Page, scenario: MediaScenario) {
+  await page.addInitScript(() => localStorage.setItem('nuxtron.tenant', 'tenant-media-fixture'));
   const nowIso = new Date().toISOString();
   let currentMediaType = 'image';
   const queuedJob = {
@@ -45,13 +46,21 @@ async function mockMediaPipeline(page: import('@playwright/test').Page, scenario
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ status: 'ok', result: { presigned_url: null } }),
+      body: JSON.stringify({ status: 'ok', result: { presigned_url: 'https://storage.example.test/upload' } }),
+    });
+  });
+
+  await page.route('https://storage.example.test/upload', async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'PUT' },
+      body: '',
     });
   });
 
   await page.route('**/api/fastapi/media/jobs', async (route) => {
     if (route.request().method() !== 'POST') {
-      await route.continue();
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'ok', jobs: [] }) });
       return;
     }
     try {
@@ -68,6 +77,14 @@ async function mockMediaPipeline(page: import('@playwright/test').Page, scenario
         tenant_id: 'tenant-demo',
         job: { ...queuedJob, media_type: currentMediaType },
       }),
+    });
+  });
+
+  await page.route('**/api/fastapi/media/jobs/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ status: 'ok', stats: { total_jobs: 0, active_jobs: 0, completed_jobs: 0, failed_jobs: 0 } }),
     });
   });
 
@@ -180,7 +197,7 @@ async function mockMediaPipeline(page: import('@playwright/test').Page, scenario
 function uploader(page: import('@playwright/test').Page) {
   return page
     .locator('.media-uploader-card')
-    .filter({ has: page.getByRole('heading', { name: 'Sandboxed Media Processor' }) })
+    .filter({ has: page.getByRole('heading', { name: 'Media upload' }) })
     .first();
 }
 

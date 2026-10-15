@@ -1,14 +1,15 @@
 """Intelligence/Platform constants and configuration vocabulary."""
 
 from __future__ import annotations
-from .... import memory_stores
-from ....deps import AuthContext
-from ....deps import require_auth
-from collections import defaultdict
-from fastapi import Depends
-from typing import Annotated
-from typing import Any
+
 import time
+from collections import defaultdict
+from typing import Annotated, Any
+
+from fastapi import Depends
+
+from .... import memory_stores
+from ....deps import AuthContext, require_auth
 
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
@@ -92,16 +93,6 @@ _DEFAULT_AGENT_TOOLS: list[dict[str, Any]] = [
         "requires_confirmation": True,
         "is_active": True,
         "backend_endpoint": "/seo-platform/site-migration/analyze",
-    },
-    {
-        "key": "run_lighthouse_audit",
-        "display_name": "Lighthouse Audit",
-        "group_name": "Platform Tools",
-        "fn_signature": "run_lighthouse_audit(url_id)",
-        "risk_level": "low",
-        "requires_confirmation": False,
-        "is_active": True,
-        "backend_endpoint": "/seo-platform/performance/audit",
     },
     {
         "key": "create_brief",

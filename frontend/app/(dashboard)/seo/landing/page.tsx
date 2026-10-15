@@ -1,270 +1,219 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import type { Route } from 'next';
-import { apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
+import { useState, type FormEvent } from 'react';
+import { apiSend } from '@/app/lib/platform-api';
+import { resolveSessionTenant } from '@/app/lib/api-client';
+import { Badge, Button, Card, CardTitle, Page, PageHeader } from '../../_ui/kit';
+import { landingBriefMarkdown, parseLandingBrief, type LandingBrief } from './landing-brief-model';
+import styles from './landing-brief.module.css';
 
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
+const SCHEMA_OPTIONS = ['Product', 'FAQPage', 'Organization', 'Service', 'LocalBusiness'];
 
-type SchemaMarkup = { type: string; json_ld: Record<string, unknown> };
-type FaqPair = { question: string; answer: string };
-
-type LandingPageResponse = {
-  analysis_id: string;
-  product_name: string;
-  target_keyword: string;
-  landing_page_score: number;
-  hero: { headline: string; subheadline: string; cta: string };
-  schema_markup: SchemaMarkup[];
-  sections: string[];
-  faq_pairs: FaqPair[];
-  ab_test_variants: string[];
-  seo_meta: { title: string; description: string; canonical: string };
-  conversion_signals: string[];
-  recommended_tools: string[];
-  cached?: boolean;
-  analysis_mode?: 'llm' | 'heuristic';
-  fallback?: boolean;
-};
-
-export default function LandingPageBuilderPage() {
+export default function LandingPageBriefPage() {
   const [productName, setProductName] = useState('');
   const [targetKeyword, setTargetKeyword] = useState('');
-  const [audience, setAudience] = useState('general');
+  const [audience, setAudience] = useState('');
   const [notes, setNotes] = useState('');
+  const [schemaTypes, setSchemaTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<LandingPageResponse | null>(null);
+  const [brief, setBrief] = useState<LandingBrief | null>(null);
 
-  const card = {
-    background: 'var(--bg-soft)',
-    border: '1px solid var(--line)',
-    borderRadius: 12,
-    padding: 16,
-  };
+  function toggleSchema(type: string) {
+    setSchemaTypes((current) => current.includes(type) ? current.filter((item) => item !== type) : [...current, type]);
+  }
 
-  const input = {
-    width: '100%',
-    padding: '8px 10px',
-    borderRadius: 8,
-    border: '1px solid var(--line)',
-    background: 'var(--bg)',
-    color: 'var(--text)',
-    boxSizing: 'border-box' as const,
-  };
-
-  async function generate() {
-    if (!productName.trim() || !targetKeyword.trim()) {
-      setError('Product name and target keyword are required.');
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setBrief(null);
+    if (!productName.trim() || !targetKeyword.trim() || !audience.trim() || schemaTypes.length === 0) {
+      setError('Enter a product or brand, target keyword, audience, and at least one schema type.');
       return;
     }
+
     setLoading(true);
-    setError('');
     try {
-      const response = await apiSend<LandingPageResponse>(
+      const tenantId = resolveSessionTenant();
+      if (!tenantId) throw new Error('Workspace context is required before generating a brief.');
+      const response = await apiSend<unknown>(
         '/seo-platform/landing/generate',
         'POST',
         {
           product_name: productName.trim(),
           target_keyword: targetKeyword.trim(),
-          audience,
-          schema_types: ['Product', 'FAQPage'],
+          audience: audience.trim(),
+          schema_types: schemaTypes,
           notes: notes.trim(),
         },
-        DEFAULT_TENANT_ID
+        tenantId,
       );
-      if (response?.fallback === true && response?.analysis_mode !== 'heuristic') {
-        throw new Error(
-          IS_STRICT_NO_MOCK_MODE
-            ? 'Live LLM backend is unavailable in strict no-mock mode.'
-            : 'Live LLM backend is unavailable in fail-closed mode.'
-        );
-      }
-      setResult(response);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Landing page generation failed.');
-      setResult(null);
+      setBrief(parseLandingBrief(response));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Landing-page brief generation failed. Try again.');
     } finally {
       setLoading(false);
     }
   }
 
+  function exportBrief() {
+    if (!brief) return;
+    const markdown = landingBriefMarkdown(brief, productName.trim(), targetKeyword.trim());
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const href = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.download = 'landing-page-brief.md';
+    anchor.click();
+    URL.revokeObjectURL(href);
+  }
+
+  function listState(values: string[] | null, label: string) {
+    if (values === null) return <p className={styles.missing}>{label} was not returned by the generation service.</p>;
+    if (values.length === 0) return <p className={styles.missing}>The service returned no {label.toLowerCase()}.</p>;
+    return <ul className={styles.contentList}>{values.map((value, index) => <li key={`${value}-${index}`}>{value}</li>)}</ul>;
+  }
+
+  const provenanceLabel = brief?.analysisMode === 'heuristic'
+    ? 'Heuristic/template draft · not AI-generated'
+    : brief?.analysisMode === 'llm'
+      ? 'AI-generated draft · human review required'
+      : 'Generation provenance unavailable · review cautiously';
+
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
-      <div style={{ maxWidth: 980, margin: '0 auto' }}>
-        <Link href={'/seo' as Route} style={{ color: 'var(--brand)', textDecoration: 'none', fontSize: 13 }}>
-          ← Back to SEO Platform
-        </Link>
-        <h1 style={{ marginTop: 12, marginBottom: 6 }}>Landing Page Builder</h1>
-        <p style={{ color: 'var(--muted)', marginTop: 0, marginBottom: 18 }}>
-          Generate conversion-ready landing page briefs with JSON-LD schema, FAQ pairs, and A/B test variants.
-        </p>
+    <Page>
+      <PageHeader
+        title="Landing Page Brief"
+        subtitle="Generate a reviewable page outline and copy draft. This does not build, publish, or change a live page."
+      />
 
-        <section style={{ ...card, marginBottom: 14, display: 'grid', gap: 10 }}>
-          <div>
-            <label htmlFor="lp-product" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              Product / Brand Name <span style={{ color: 'var(--danger)' }}>*</span>
+      <Card className={styles.scopeNotice}>
+        <Badge tone="brand">Draft workflow</Badge>
+        <p>Review all generated claims and copy before use. Scores are not shown as performance evidence; this page does not crawl a website or measure conversions.</p>
+      </Card>
+
+      <Card>
+        <CardTitle sub="Choose the brief context and schema types explicitly. Nothing is prefilled.">
+          Describe the landing page
+        </CardTitle>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <div className={styles.inputGrid}>
+            <label className={styles.field} htmlFor="landing-product">
+              <span>Product or brand <b className={styles.required}>Required</b></span>
+              <input id="landing-product" value={productName} maxLength={200} required onChange={(event) => setProductName(event.target.value)} />
             </label>
-            <input
-              id="lp-product"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              style={input}
-              placeholder="e.g. Nuxtron AI Platform"
-            />
-          </div>
-          <div>
-            <label htmlFor="lp-keyword" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              Target Keyword <span style={{ color: 'var(--danger)' }}>*</span>
+            <label className={styles.field} htmlFor="landing-keyword">
+              <span>Target keyword <b className={styles.required}>Required</b></span>
+              <input id="landing-keyword" value={targetKeyword} maxLength={200} required onChange={(event) => setTargetKeyword(event.target.value)} />
             </label>
-            <input
-              id="lp-keyword"
-              value={targetKeyword}
-              onChange={(e) => setTargetKeyword(e.target.value)}
-              style={input}
-              placeholder="e.g. AI-powered SEO platform"
-            />
-          </div>
-          <div>
-            <label htmlFor="lp-audience" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              Target Audience
+            <label className={styles.field} htmlFor="landing-audience">
+              <span>Target audience <b className={styles.required}>Required</b></span>
+              <input id="landing-audience" value={audience} maxLength={200} required onChange={(event) => setAudience(event.target.value)} />
             </label>
-            <input
-              id="lp-audience"
-              value={audience}
-              onChange={(e) => setAudience(e.target.value)}
-              style={input}
-              placeholder="e.g. marketing agencies, SaaS teams"
-            />
-          </div>
-          <div>
-            <label htmlFor="lp-notes" style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-              Notes (optional)
+            <label className={styles.field} htmlFor="landing-notes">
+              <span>Context and differentiators <em className={styles.optional}>Optional</em></span>
+              <textarea id="landing-notes" rows={3} value={notes} maxLength={1000} onChange={(event) => setNotes(event.target.value)} />
+              <small>Only include claims that are approved and supportable.</small>
             </label>
-            <input
-              id="lp-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              style={input}
-              placeholder="Tone, USPs, competitors..."
-            />
           </div>
-          <button
-            onClick={generate}
-            disabled={loading}
-            style={{
-              padding: '10px 20px',
-              borderRadius: 8,
-              background: 'var(--brand)',
-              color: 'var(--on-brand)',
-              fontWeight: 700,
-              border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? 'Generating…' : 'Generate Landing Page Brief'}
-          </button>
-          {error && <div style={{ color: 'var(--danger-line)', fontSize: 13 }}>{error}</div>}
+
+          <fieldset className={styles.schemaOptions} aria-describedby="landing-schema-hint">
+            <legend className={styles.legend}>Schema types <b className={styles.required}>Choose at least one</b></legend>
+            <div className={styles.checks}>
+              {SCHEMA_OPTIONS.map((type) => (
+                <label className={styles.checkLabel} key={type}>
+                  <input type="checkbox" checked={schemaTypes.includes(type)} onChange={() => toggleSchema(type)} />
+                  <span>{type}</span>
+                </label>
+              ))}
+            </div>
+            <small id="landing-schema-hint">This creates a draft for review only. It is not validated or added to your website.</small>
+          </fieldset>
+
+          {error && <p className={styles.error} role="alert">{error}</p>}
+          {loading && <p className={styles.loading} role="status">Generating a brief from the details you supplied…</p>}
+          <Button type="submit" variant="primary" disabled={loading}>{loading ? 'Generating…' : 'Generate Landing Page Brief'}</Button>
+        </form>
+      </Card>
+
+      {brief && (
+        <section className={styles.results} aria-label="Generated landing page brief">
+          <Card className={styles.resultHeader}>
+            <div>
+              <CardTitle sub={`${productName.trim()} · ${targetKeyword.trim()}`}>Landing page brief</CardTitle>
+              <div className={styles.provenance}>
+                <Badge tone={brief.analysisMode === 'llm' ? 'brand' : brief.analysisMode === 'heuristic' ? 'neutral' : 'danger'}>{provenanceLabel}</Badge>
+                {brief.cached && <Badge tone="neutral">Cached response</Badge>}
+              </div>
+            </div>
+            <Button type="button" onClick={exportBrief}>Export Markdown brief</Button>
+          </Card>
+
+          <Card>
+            <CardTitle sub="Suggested copy only — this CTA does not navigate or submit a live form.">Hero draft</CardTitle>
+            <h2 className={styles.heroHeadline}>{brief.hero.headline || 'No headline returned'}</h2>
+            <p className={styles.heroSubheadline}>{brief.hero.subheadline || 'No supporting copy returned'}</p>
+            <div className={styles.ctaCopy}>
+              <small>Suggested CTA copy</small>
+              <strong>{brief.hero.cta || 'No CTA copy returned'}</strong>
+            </div>
+          </Card>
+
+          <Card>
+            <CardTitle sub="Text returned by the generation service; canonical and metadata suggestions require review.">SEO metadata draft</CardTitle>
+            <ul className={styles.metaList}>
+              <li><span className={styles.metaLabel}>Title</span><span className={styles.metaValue}>{brief.seoMeta.title || 'Not returned'}</span></li>
+              <li><span className={styles.metaLabel}>Description</span><span className={styles.metaValue}>{brief.seoMeta.description || 'Not returned'}</span></li>
+              <li><span className={styles.metaLabel}>Canonical suggestion</span><code className={styles.metaValue}>{brief.seoMeta.canonical || 'Not returned'}</code></li>
+            </ul>
+          </Card>
+
+          <Card>
+            <CardTitle sub="The service can omit this field; omitted data is not represented as an empty list.">Page outline</CardTitle>
+            {listState(brief.sections, 'Page outline')}
+          </Card>
+
+          <Card>
+            <CardTitle sub="Questions and answers are drafts, not verified product facts.">FAQ draft</CardTitle>
+            {brief.faqPairs === null ? <p className={styles.missing}>FAQ pairs were not returned by the generation service.</p> : brief.faqPairs.length === 0 ? <p className={styles.missing}>The service returned no FAQ pairs.</p> : (
+              <div className={styles.faqList}>
+                {brief.faqPairs.map((faq, index) => (
+                  <article className={styles.faqItem} key={`${faq.question}-${index}`}>
+                    <h3 className={styles.faqQuestion}>{faq.question}</h3>
+                    <p className={styles.faqAnswer}>{faq.answer}</p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card>
+            <CardTitle sub="Alternative headline drafts; performance has not been tested.">Headline variants</CardTitle>
+            {listState(brief.variants, 'Headline variants')}
+          </Card>
+
+          <Card>
+            <CardTitle sub="These are suggested elements, not observed conversion signals or measured outcomes.">Suggested conversion elements</CardTitle>
+            {listState(brief.conversionSignals, 'Suggested conversion elements')}
+          </Card>
+
+          <Card>
+            <CardTitle sub="JSON-LD content is shown as escaped text and is not published or validated here.">Schema drafts</CardTitle>
+            {brief.schemaMarkup === null ? <p className={styles.missing}>Schema markup was not returned by the generation service.</p> : brief.schemaMarkup.length === 0 ? <p className={styles.missing}>The service returned no schema drafts.</p> : (
+              <div className={styles.schemaList}>
+                {brief.schemaMarkup.map((schema, index) => (
+                  <details className={styles.schemaItem} key={`${schema.type}-${index}`}>
+                    <summary>{schema.type} JSON-LD draft</summary>
+                    <pre>{JSON.stringify(schema.jsonLd, null, 2)}</pre>
+                  </details>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <p className={styles.limitNote}>Before publishing, verify factual, legal, brand, SEO, canonical, and structured-data requirements. No live page or website settings were changed.</p>
         </section>
-
-        {result && (
-          <>
-            {(result.analysis_mode || result.cached) && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                {result.analysis_mode && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: result.analysis_mode === 'llm' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: result.analysis_mode === 'llm' ? 'var(--success)' : 'var(--muted)' }}>
-                    {result.analysis_mode === 'llm' ? 'LLM analysis' : 'Heuristic analysis'}
-                  </span>
-                )}
-                {result.cached && (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(56,189,248,0.12)', color: 'var(--info)' }}>Cached result</span>
-                )}
-              </div>
-            )}
-            <section style={{ ...card, marginBottom: 14 }}>
-              <h2 style={{ marginTop: 0, marginBottom: 6, fontSize: 15 }}>Hero Section</h2>
-              <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>{result.hero.headline}</div>
-              <div style={{ color: 'var(--muted)', marginBottom: 10 }}>{result.hero.subheadline}</div>
-              <span
-                style={{
-                  padding: '8px 20px',
-                  borderRadius: 8,
-                  background: 'var(--brand)',
-                  color: 'var(--on-brand)',
-                  fontWeight: 700,
-                  fontSize: 14,
-                }}
-              >
-                {result.hero.cta}
-              </span>
-            </section>
-
-            <section style={{ ...card, marginBottom: 14 }}>
-              <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>SEO Meta</h2>
-              <div style={{ fontSize: 13, marginBottom: 4 }}>
-                <strong>Title:</strong> {result.seo_meta.title}
-              </div>
-              <div style={{ fontSize: 13, marginBottom: 4 }}>
-                <strong>Description:</strong> {result.seo_meta.description}
-              </div>
-              <div style={{ fontSize: 13 }}>
-                <strong>Canonical:</strong> {result.seo_meta.canonical}
-              </div>
-            </section>
-
-            {result.faq_pairs.length > 0 && (
-              <section style={{ ...card, marginBottom: 14 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>FAQ Pairs ({result.faq_pairs.length})</h2>
-                {result.faq_pairs.map((faq, i) => (
-                  <div key={`item-${i}`} style={{ marginBottom: 10 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 3 }}>Q: {faq.question}</div>
-                    <div style={{ fontSize: 13, color: 'var(--muted)' }}>A: {faq.answer}</div>
-                  </div>
-                ))}
-              </section>
-            )}
-
-            {result.ab_test_variants.length > 0 && (
-              <section style={{ ...card, marginBottom: 14 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>A/B Test Variants</h2>
-                {result.ab_test_variants.map((v, i) => (
-                  <div key={`item-${i}`} style={{ ...card, marginBottom: 6, fontSize: 13 }}>
-                    {v}
-                  </div>
-                ))}
-              </section>
-            )}
-
-            {result.schema_markup.length > 0 && (
-              <section style={{ ...card, marginBottom: 14 }}>
-                <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>Schema Markup Types</h2>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {result.schema_markup.map((s, i) => (
-                    <span
-                      key={`item-${i}`}
-                      style={{
-                        fontSize: 12,
-                        borderRadius: 999,
-                        padding: '4px 10px',
-                        background: 'var(--bg)',
-                        border: '1px solid var(--line)',
-                      }}
-                    >
-                      {s.type}
-                    </span>
-                  ))}
-                </div>
-              </section>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+      )}
+    </Page>
   );
 }

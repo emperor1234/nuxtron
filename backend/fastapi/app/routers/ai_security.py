@@ -161,9 +161,6 @@ def create_ai_security_router(  # NOSONAR
             raise HTTPException(status_code=401, detail='Invalid super admin key.')
 
     def _request_source_ip(request: Request) -> str:
-        forwarded_for = (request.headers.get('X-Forwarded-For', '') or '').split(',')[0].strip()
-        if forwarded_for:
-            return forwarded_for
         return request.client.host if request.client and request.client.host else ''
 
     def _source_ip_allowed(source_ip: str, allowlist: list[str]) -> bool:

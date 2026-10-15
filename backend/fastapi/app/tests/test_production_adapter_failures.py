@@ -163,7 +163,8 @@ def test_media_output_requires_real_production_presigner(production, monkeypatch
     monkeypatch.setattr(storage, "_minio_presign", None)
     with pytest.raises(HTTPException) as caught:
         append_audit.execute_get_output_signed_url(runtime, 9, MediaOutputUrlRequest(), production)
-    assert caught.value.status_code == 503
+    assert caught.value.status_code == 501
+    assert caught.value.detail["code"] == "NOT_IMPLEMENTED"
 
 
 def test_n8n_private_webhook_target_fails_closed_before_network(production, monkeypatch):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from ..constants import AuthDep
+from ..capabilities import require_workforce_execution_available
 from ..runtime import ContextRuntime
 from ..schemas import KnowledgeDocRequest
 from ..schemas import MissionDecisionRequest
@@ -103,6 +104,7 @@ def execute_create_schedule(runtime: ContextRuntime, payload: ScheduleRequest, a
 async def execute_run_due_schedules(
     runtime: ContextRuntime, auth: AuthDep, limit: Annotated[int, Query(ge=1, le=200)] = 20
 ) -> dict[str, Any]:
+    require_workforce_execution_available()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:workforce:runner:tick", 30, 60)
     now = datetime.now(UTC)
     due: list[dict[str, Any]] = []
@@ -268,6 +270,7 @@ async def execute_webhook_trigger(
     runtime: ContextRuntime, payload: WebhookTriggerRequest, auth: AuthDep, request: Request
 ) -> dict[str, Any]:
     """Trigger mission creation from external webhook event."""
+    require_workforce_execution_available()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:workforce:webhook:trigger", 120, 60)
     mission_id = str(uuid.uuid4())
     now = helper_now_iso()

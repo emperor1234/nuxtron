@@ -1,21 +1,26 @@
 """Seo/Platform HTTP adapters beginning with health."""
 
-from .....deps import AuthContext
-from .....deps import require_auth
-from ..operations.ahrefs_parity import execute_ahrefs_parity
-from ..operations.ahrefs_parity import execute_get_module_detail
-from ..operations.ahrefs_parity import execute_keyword_research
-from ..operations.ahrefs_parity import execute_keyword_research_async
-from ..operations.ahrefs_parity import execute_seo_ai_core_analyze
-from ..operations.save_analysis import execute_audit_modules
-from ..operations.save_analysis import execute_health
-from ..operations.save_analysis import execute_list_modules
-from ..runtime import ContextRuntime
-from ..schemas import KeywordResearchReq
-from ..schemas import SeoAiCoreReq
-from fastapi import APIRouter
-from fastapi import Depends
 from typing import Annotated
+
+from fastapi import APIRouter, Depends
+
+from .....deps import AuthContext, require_auth
+from .....domains.seo.services.seo_keyword_research_service import KEYWORD_RESEARCH_UNAVAILABLE_DETAIL
+from ..operations.ahrefs_parity import (
+    execute_ahrefs_parity,
+    execute_get_module_detail,
+    execute_keyword_research,
+    execute_keyword_research_async,
+    execute_seo_ai_core_analyze,
+)
+from ..operations.save_analysis import execute_audit_modules, execute_health, execute_list_modules
+from ..runtime import ContextRuntime
+from ..schemas import KeywordResearchReq, SeoAiCoreReq
+
+_KEYWORD_RESEARCH_501_RESPONSE = {
+    "description": "Verified keyword research providers are not connected.",
+    "content": {"application/json": {"example": {"detail": KEYWORD_RESEARCH_UNAVAILABLE_DETAIL}}},
+}
 
 
 def register(router: APIRouter, runtime: ContextRuntime):
@@ -44,10 +49,10 @@ def register(router: APIRouter, runtime: ContextRuntime):
     async def seo_ai_core_analyze(req: SeoAiCoreReq, auth: Annotated[AuthContext, Depends(require_auth)]):
         return await execute_seo_ai_core_analyze(runtime, req, auth)
 
-    @router.post("/keywords/research")
+    @router.post("/keywords/research", status_code=501, response_model=None, responses={501: _KEYWORD_RESEARCH_501_RESPONSE})
     async def keyword_research(req: KeywordResearchReq, auth: Annotated[AuthContext, Depends(require_auth)]):
         return await execute_keyword_research(runtime, req, auth)
 
-    @router.post("/keywords/research/async")
+    @router.post("/keywords/research/async", status_code=501, response_model=None, responses={501: _KEYWORD_RESEARCH_501_RESPONSE})
     async def keyword_research_async(req: KeywordResearchReq, auth: Annotated[AuthContext, Depends(require_auth)]):
         return await execute_keyword_research_async(runtime, req, auth)

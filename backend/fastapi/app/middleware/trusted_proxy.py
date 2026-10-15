@@ -84,8 +84,49 @@ class TrustedProxyMiddleware(BaseHTTPMiddleware):
             return False
         return any(peer_ip in net for net in self._trusted_networks)
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # type: ignore[override]
+    def _forwarded_client_ip(self, request: Request) -> str | None:
+        """Resolve a client from a trusted proxy chain, never from a direct caller."""
+        client = request.client
+        if client is None:
+            return None
         if not self._peer_is_trusted_proxy(request):
+            return client.host
+
+        raw_chain = request.headers.get('x-forwarded-for', '').strip()
+        if not raw_chain:
+            return client.host
+        parts = [part.strip() for part in raw_chain.split(',')]
+        if len(parts) > 10 or any(not part for part in parts):
+            return client.host
+        try:
+            chain = [ipaddress.ip_address(part) for part in parts]
+            resolved = ipaddress.ip_address(client.host)
+        except ValueError:
+            return client.host
+
+        # X-Forwarded-For is ordered client-to-proxy. Walk from the direct
+        # peer toward the client, skipping only explicitly trusted proxies.
+        for forwarded_ip in reversed(chain):
+            resolved = forwarded_ip
+            if not any(forwarded_ip in network for network in self._trusted_networks):
+                break
+        return str(resolved)
+
+    async def dispatch(self, request: Request, call_next) -> Response:  # type: ignore[override]
+        trusted_peer = self._peer_is_trusted_proxy(request)
+        if trusted_peer:
+            client = request.client
+            resolved_ip = self._forwarded_client_ip(request)
+            if client is not None and resolved_ip is not None:
+                request.scope['client'] = (resolved_ip, client.port)
+
+            # Downstream code must use the normalized ASGI peer, not parse a
+            # forwarding header independently with subtly different rules.
+            mutable_headers = request.headers.mutablecopy()
+            if 'x-forwarded-for' in mutable_headers:
+                del mutable_headers['x-forwarded-for']
+            request.scope['headers'] = mutable_headers.raw
+        else:
             mutable_headers = request.headers.mutablecopy()
             stripped: list[str] = []
             for header in _SECURITY_SENSITIVE_HEADERS:

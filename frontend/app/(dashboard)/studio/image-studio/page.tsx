@@ -36,7 +36,7 @@ async function toDataUrl(file: File): Promise<string> {
 }
 
 export default function ImageStudioPage() {
-  const [tenantId] = useState(() => resolveSessionTenant() || 'tenant-demo');
+  const [tenantId] = useState(resolveSessionTenant);
   const [operation, setOperation] = useState<ImageEditOperation>('select-subject');
   const [imageData, setImageData] = useState('');
   const [maskData, setMaskData] = useState('');

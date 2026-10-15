@@ -23,8 +23,6 @@ import {
   Sparkles,
   TrendingUp,
   UserRound,
-  Users,
-  Workflow,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -70,11 +68,8 @@ type SocialOpsModuleId =
   | 'kpi'
   | 'approvals'
   | 'inbox'
-  | 'ugc'
   | 'browser_capture'
-  | 'mobile'
-  | 'optimization'
-  | 'manychat';
+  | 'optimization';
 
 type SocialOpsModule = {
   id: SocialOpsModuleId;
@@ -190,6 +185,15 @@ function toDisplayText(value: unknown, fallback = ''): string {
   return fallback;
 }
 
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 function parseInboxMessageId(value: string): number | null {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : null;
@@ -216,11 +220,11 @@ function resolveInboxMessageId(previous: string, items: InboxListItem[]): string
 type ProviderHealth = { name: string; status: string };
 
 type WorkspaceOverview = {
-  creditBalance: number;
-  pendingTopups: number;
-  walletBalanceUsd: number;
-  recentTransactions: number;
-  providers: ProviderHealth[];
+  creditBalance: number | null;
+  pendingTopups: number | null;
+  walletBalanceUsd: number | null;
+  recentTransactions: number | null;
+  providers: ProviderHealth[] | null;
 };
 
 type ProviderPlan = {
@@ -309,13 +313,6 @@ type CopyVariation = {
   estimated_ctr: number;
 };
 
-type HubspotFeature = {
-  id: string;
-  title: string;
-  summary: string;
-  href: string;
-};
-
 type ABTestingSession = {
   id: string;
   name: string;
@@ -364,22 +361,6 @@ type BrandKit = {
   brand_voice?: string;
   industry?: string;
   created_at: string;
-};
-
-type VoiceoverStyle = {
-  name: string;
-  gender: string;
-  language: string;
-  accent: string;
-  tone: string;
-};
-
-type VoiceoverConfig = {
-  enabled: boolean;
-  style: VoiceoverStyle;
-  speed: number;
-  pitch: number;
-  emotion?: string;
 };
 
 type PerformancePrediction = {
@@ -600,32 +581,6 @@ const EDIT_TOOL_OPTIONS = [
   'Voice polish',
   'Thumbnail frame',
 ];
-const HUBSPOT_FEATURES: HubspotFeature[] = [
-  {
-    id: 'crm',
-    title: 'HubSpot CRM sync',
-    summary: 'Sync leads and deal context for campaign personalization in social workflows.',
-    href: '/hubspot-e2e#hubspot-product-completion',
-  },
-  {
-    id: 'automation',
-    title: 'Marketing Automation',
-    summary: 'Connect campaign outcomes to automation flows and lifecycle stages.',
-    href: '/hubspot-e2e#how-it-works',
-  },
-  {
-    id: 'academy',
-    title: 'HubSpot setup guide',
-    summary: 'Operational docs for campaign setup, contacts, and reporting best practices.',
-    href: '/hubspot-e2e#validation-boundaries',
-  },
-  {
-    id: 'api',
-    title: 'HubSpot API docs',
-    summary: 'Use API docs to wire custom sync, attribution, and event ingestion.',
-    href: '/hubspot-e2e',
-  },
-];
 /** One icon per studio module, replacing the emoji the tiles used to carry. */
 const STUDIO_MODULE_ICONS: Record<string, LucideIcon> = {
   music: Music,
@@ -652,11 +607,8 @@ const OPS_MODULE_ICONS: Record<string, LucideIcon> = {
   kpi: TrendingUp,
   approvals: CheckCircle2,
   inbox: MessagesSquare,
-  ugc: Users,
   browser_capture: Globe,
-  mobile: Smartphone,
   optimization: Zap,
-  manychat: Workflow,
 };
 
 function ModuleGlyph({ icons, id }: { icons: Record<string, LucideIcon>; id: string }) {
@@ -686,101 +638,98 @@ const MODULE_PRESETS: Record<string, ModulePreset> = {
     channels: ['YouTube', 'Instagram', 'TikTok'],
     brandRules: ['Brand-safe', 'Premium finish'],
     editTools: ['Voice polish', 'Hook rewrite'],
-    prompt: 'Compose a premium launch hook, an ambient bed, and a branded sonic signature with cutdown variations.',
+
   },
   'sound-design': {
     complexity: 'standard',
     channels: ['YouTube', 'Instagram'],
     brandRules: ['Brand-safe', 'Copyright-safe'],
     editTools: ['Voice polish', 'Background cleanup'],
-    prompt: 'Design cinematic SFX layers and transitions for social content intros, product reveals, and CTA moments.',
+
   },
   'faceless-video': {
     complexity: 'advanced',
     channels: ['TikTok', 'YouTube', 'Instagram'],
     brandRules: ['Performance-first', 'Platform-native'],
     editTools: ['Caption sync', 'Hook rewrite', 'Thumbnail frame'],
-    prompt:
-      'Create a faceless explainer sequence with a 3-second hook, visual pacing markers, and channel-specific edits.',
+
   },
   ar: {
     complexity: 'advanced',
     channels: ['Instagram', 'TikTok'],
     brandRules: ['Platform-native', 'Premium finish'],
     editTools: ['Color grade', 'Auto resize'],
-    prompt: 'Generate an AR activation concept with overlays, interaction cues, and a mobile-first export strategy.',
+
   },
   vr: {
     complexity: 'advanced',
     channels: ['YouTube', 'Blog'],
     brandRules: ['Premium finish', 'Brand-safe'],
     editTools: ['Color grade', 'Background cleanup'],
-    prompt: 'Build an immersive VR world storyboard with scene transitions, narrative beats, and launch teaser edits.',
+
   },
   hologram: {
     complexity: 'advanced',
     channels: ['YouTube', 'Instagram'],
     brandRules: ['Premium finish', 'Brand-safe'],
     editTools: ['Color grade', 'Caption sync'],
-    prompt: 'Produce a hologram-style stage loop package including projection-safe layers and speaking overlays.',
+
   },
   'short-video': {
     complexity: 'standard',
     channels: ['TikTok', 'Instagram', 'YouTube'],
     brandRules: ['Performance-first', 'Platform-native'],
     editTools: ['Caption sync', 'Hook rewrite', 'Auto resize'],
-    prompt: 'Generate short-form videos with high-retention hooks, rapid cuts, and CTA-driven endings.',
+
   },
   reels: {
     complexity: 'standard',
     channels: ['Instagram', 'TikTok', 'YouTube'],
     brandRules: ['Platform-native', 'Performance-first'],
     editTools: ['Thumbnail frame', 'Caption sync', 'Auto resize'],
-    prompt: 'Create reel-native edits with trend-aware pacing, loop endings, and alternate hook variants.',
+
   },
   images: {
     complexity: 'standard',
     channels: ['Instagram', 'Pinterest', 'LinkedIn'],
     brandRules: ['Brand-safe', 'Premium finish'],
     editTools: ['Color grade', 'Background cleanup'],
-    prompt: 'Generate premium campaign stills with product clarity, brand color consistency, and alternate crops.',
+
   },
   slides: {
     complexity: 'simple',
     channels: ['Instagram', 'LinkedIn', 'Blog'],
     brandRules: ['Brand-safe', 'Platform-native'],
     editTools: ['Slide sequencing', 'Caption sync'],
-    prompt: 'Build a carousel slide sequence with narrative flow, strong opening frame, and concise panel copy.',
+
   },
   blogs: {
     complexity: 'standard',
     channels: ['Blog', 'Email', 'LinkedIn'],
     brandRules: ['Brand-safe', 'Copyright-safe'],
     editTools: ['Hook rewrite', 'Caption sync'],
-    prompt: 'Draft a long-form blog with thought-leadership tone, data-backed sections, and repurposable snippets.',
+
   },
   avatars: {
     complexity: 'advanced',
     channels: ['YouTube', 'Instagram', 'LinkedIn'],
     brandRules: ['Brand-safe', 'Premium finish'],
     editTools: ['Color grade', 'Voice polish'],
-    prompt: 'Design a branded avatar presenter kit with pose variants, expression set, and visual style guardrails.',
+
   },
   templates: {
     complexity: 'simple',
     channels: ['Instagram', 'LinkedIn', 'Email'],
     brandRules: ['Brand-safe', 'Performance-first'],
     editTools: ['Auto resize', 'Thumbnail frame'],
-    prompt:
-      'Create reusable template systems for recurring campaigns with locked brand zones and editable text blocks.',
+
   },
   editing: {
     complexity: 'standard',
     channels: ['Instagram', 'TikTok', 'YouTube'],
     brandRules: ['Platform-native', 'Premium finish'],
     editTools: ['Auto resize', 'Caption sync', 'Color grade', 'Background cleanup'],
-    prompt:
-      'Run an editing pass for social delivery: resize, caption, color-balance, and export platform-ready variants.',
+
   },
 };
 const SOCIAL_OPS_MODULES: SocialOpsModule[] = [
@@ -817,34 +766,16 @@ const SOCIAL_OPS_MODULES: SocialOpsModule[] = [
   { id: 'approvals', title: 'Approval Pipeline', summary: 'Run smart approval chains before publication.', icon: '✅' },
   { id: 'inbox', title: 'Smart Inbox', summary: 'Engage replies and comments with AI-assisted actions.', icon: '💬' },
   {
-    id: 'ugc',
-    title: 'UGC Management',
-    summary: 'Review creator assets, manage rights approvals, and republish approved content.',
-    icon: '🎞️',
-  },
-  {
     id: 'browser_capture',
     title: 'Browser Capture',
     summary: 'Capture web research, screenshots, and notes into queued posts.',
     icon: '🧭',
   },
   {
-    id: 'mobile',
-    title: 'Mobile Ops',
-    summary: 'Register devices, draft from mobile, and sync offline actions.',
-    icon: '📲',
-  },
-  {
     id: 'optimization',
     title: 'AI Optimization',
     summary: 'Predict top slots, score variants, and generate performance-driven captions.',
     icon: '🧠',
-  },
-  {
-    id: 'manychat',
-    title: 'Manychat Automations',
-    summary: 'Build flows, keywords, broadcasts, and drip sequences with audience tags.',
-    icon: '🧩',
   },
 ];
 const SOCIAL_OPS_ACCENT_BY_ID: Record<SocialOpsModuleId, string> = {
@@ -855,11 +786,8 @@ const SOCIAL_OPS_ACCENT_BY_ID: Record<SocialOpsModuleId, string> = {
   kpi: 'var(--series-5)',
   approvals: 'var(--series-6)',
   inbox: 'var(--series-7)',
-  ugc: 'var(--series-8)',
   browser_capture: 'var(--series-1)',
-  mobile: 'var(--series-2)',
   optimization: 'var(--series-3)',
-  manychat: 'var(--series-4)',
 };
 
 const SOCIAL_OPS_ROUTE_BY_MODULE_ID: Record<SocialOpsModuleId, string> = {
@@ -870,11 +798,8 @@ const SOCIAL_OPS_ROUTE_BY_MODULE_ID: Record<SocialOpsModuleId, string> = {
   kpi: 'social-analytics',
   approvals: 'social-approvals',
   inbox: 'social-inbox',
-  ugc: 'social-ugc',
   browser_capture: 'social-studio/browser-capture',
-  mobile: 'social-studio/mobile',
   optimization: 'social-studio/optimization',
-  manychat: 'social-studio/manychat',
 };
 
 const SOCIAL_OPS_MODULE_ID_BY_ROUTE_SEGMENT: Partial<Record<string, SocialOpsModuleId>> = Object.fromEntries(
@@ -964,7 +889,6 @@ type ModulePreset = {
   channels: string[];
   brandRules: string[];
   editTools: string[];
-  prompt: string;
 };
 
 type CommandShortcutsConfig = {
@@ -983,7 +907,7 @@ function useCommandShortcuts({
   triggerShortcutAction,
 }: CommandShortcutsConfig) {
   useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
+    function onKeyDown(event: globalThis.KeyboardEvent) {
       if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
       const tagName = target?.tagName?.toLowerCase();
@@ -1395,7 +1319,7 @@ async function generateAction(args: {
   try {
     const formData = buildFormData();
     const result = await new Promise<{ statusCode: number; body: GenerationResponse }>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
+      const xhr = new globalThis.XMLHttpRequest();
       xhr.open('POST', '/api/fastapi/ai/social-studio/generate');
       xhr.setRequestHeader('X-Tenant-Id', tenantId);
       xhr.upload.onprogress = (event) => {
@@ -1474,9 +1398,7 @@ export default function SocialStudioPage() {
   const checkoutButtonRef = useRef<HTMLButtonElement | null>(null);
   const [tenantId] = useState(resolveSessionTenant);
   const [selectedCategoryId, setSelectedCategoryId] = useState(STUDIO_CATEGORIES[0].id);
-  const [prompt, setPrompt] = useState(
-    'Build a flagship launch sequence with crisp hooks, premium visuals, and reusable outputs.'
-  );
+  const [prompt, setPrompt] = useState('');
   const [complexity, setComplexity] = useState<Complexity>('auto');
   const [targetChannels, setTargetChannels] = useState<string[]>(['Instagram', 'TikTok', 'YouTube']);
   const [brandRules, setBrandRules] = useState<string[]>(['Brand-safe', 'Performance-first']);
@@ -1488,11 +1410,11 @@ export default function SocialStudioPage() {
   const [uploadProgress, setUploadProgress] = useState<UploadProgressState>({ image: 0, video: 0, audio: 0 });
   const [uploadLoadedBytes, setUploadLoadedBytes] = useState<UploadProgressState>({ image: 0, video: 0, audio: 0 });
   const [overview, setOverview] = useState<WorkspaceOverview>({
-    creditBalance: 0,
-    pendingTopups: 0,
-    walletBalanceUsd: 0,
-    recentTransactions: 0,
-    providers: [],
+    creditBalance: null,
+    pendingTopups: null,
+    walletBalanceUsd: null,
+    recentTransactions: null,
+    providers: null,
   });
   const [plan, setPlan] = useState<OrchestrationPlan | null>(null);
   const [generated, setGenerated] = useState<GeneratedAsset[]>([]);
@@ -2065,28 +1987,33 @@ export default function SocialStudioPage() {
     ]);
 
     const nextOverview: WorkspaceOverview = {
-      creditBalance: 0,
-      pendingTopups: 0,
-      walletBalanceUsd: 0,
-      recentTransactions: 0,
-      providers: [],
+      creditBalance: null,
+      pendingTopups: null,
+      walletBalanceUsd: null,
+      recentTransactions: null,
+      providers: null,
     };
 
     if (usageResult.status === 'fulfilled') {
-      nextOverview.creditBalance = Number(usageResult.value.credit_balance || 0);
-      nextOverview.pendingTopups = Number(usageResult.value.pending_credit_topups || 0);
+      nextOverview.creditBalance = toFiniteNumber(usageResult.value.credit_balance);
+      nextOverview.pendingTopups = toFiniteNumber(usageResult.value.pending_credit_topups);
     }
 
     if (walletResult.status === 'fulfilled') {
-      nextOverview.walletBalanceUsd = Number(walletResult.value.wallet?.available_balance_usd || 0);
-      nextOverview.recentTransactions = (walletResult.value.wallet?.recent_transactions || []).length;
+      nextOverview.walletBalanceUsd = toFiniteNumber(walletResult.value.wallet?.available_balance_usd);
+      nextOverview.recentTransactions = Array.isArray(walletResult.value.wallet?.recent_transactions)
+        ? walletResult.value.wallet.recent_transactions.length
+        : null;
     }
 
     if (healthResult.status === 'fulfilled') {
-      nextOverview.providers = Object.entries(healthResult.value).map(([name, providerStatus]) => ({
-        name,
-        status: typeof providerStatus?.status === 'string' ? providerStatus.status : 'unknown',
-      }));
+      const health = healthResult.value;
+      nextOverview.providers = health && typeof health === 'object'
+        ? Object.entries(health).map(([name, providerStatus]) => ({
+            name,
+            status: typeof providerStatus?.status === 'string' ? providerStatus.status : 'unknown',
+          }))
+        : null;
     }
 
     setOverview(nextOverview);
@@ -2102,12 +2029,6 @@ export default function SocialStudioPage() {
     const frame = requestAnimationFrame(() => setIsPageReady(true));
     return () => cancelAnimationFrame(frame);
   }, []);
-
-  useEffect(() => {
-    setPrompt((previous) =>
-      previous.trim() ? previous : `Create ${selectedCategory.title.toLowerCase()} assets for our next campaign.`
-    );
-  }, [selectedCategory]);
 
   // Restore persisted density + category once on mount. Runs a single time
   // (empty deps) rather than re-syncing on every route change — the
@@ -2151,7 +2072,6 @@ export default function SocialStudioPage() {
         setTargetChannels(preset.channels);
         setBrandRules(preset.brandRules);
         setEditTools(preset.editTools);
-        setPrompt(preset.prompt);
       }
     }
   }
@@ -3046,22 +2966,6 @@ export default function SocialStudioPage() {
     };
   }
 
-  function activateModule(category: StudioCategory) {
-    const preset = MODULE_PRESETS[category.id];
-    setSelectedCategoryId(category.id);
-    if (preset) {
-      setComplexity(preset.complexity);
-      setTargetChannels(preset.channels);
-      setBrandRules(preset.brandRules);
-      setEditTools(preset.editTools);
-      setPrompt(preset.prompt);
-    } else {
-      setPrompt(`Create ${category.title.toLowerCase()} assets for our next campaign.`);
-    }
-    setLastError('');
-    addActivity(`${category.title} module activated and configured.`, 'info');
-  }
-
   function buildFormData() {
     const payload = buildRequestPayload();
     const formData = new FormData();
@@ -3096,7 +3000,7 @@ export default function SocialStudioPage() {
     appendFilesToZone(zone, Array.from(fileList || []));
   }
 
-  function handleUploadDrop(zone: UploadZone, event: DragEvent<HTMLLabelElement>) {
+  function handleUploadDrop(zone: UploadZone, event: DragEvent<globalThis.HTMLLabelElement>) {
     event.preventDefault();
     setUploadDragZone(null);
     appendFilesToZone(zone, Array.from(event.dataTransfer.files || []));
@@ -4936,27 +4840,6 @@ export default function SocialStudioPage() {
           ) : null}
         </section>
 
-        <section className="card hubspot-hub">
-          <div className="widget-head">
-            <div>
-              <h3>HubSpot integration</h3>
-              <p className="muted">
-                Connect your HubSpot CRM, automation and attribution to Social Studio.
-              </p>
-            </div>
-            <span className="suggestion-chip">Integration</span>
-          </div>
-          <div className="hubspot-grid">
-            {HUBSPOT_FEATURES.map((feature) => (
-              <a key={feature.id} href={feature.href} target="_blank" rel="noreferrer" className="hubspot-link-card">
-                <strong>{feature.title}</strong>
-                <span>{feature.summary}</span>
-                <em>Open link ↗</em>
-              </a>
-            ))}
-          </div>
-        </section>
-
         {lastError ? (
           <section className="card alert-card">
             <strong>Studio alert</strong>
@@ -4982,6 +4865,7 @@ export default function SocialStudioPage() {
                   rows={7}
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
+                  placeholder="Describe the audience, message, outcome, and constraints for this asset."
                   style={{ ...inputStyle, resize: 'vertical' }}
                 />
               </div>
@@ -5001,10 +4885,12 @@ export default function SocialStudioPage() {
                     <option value="advanced">Advanced</option>
                   </select>
                 </div>
-                <div className="field">
-                  <label htmlFor="social-studio-tenant">Tenant</label>
-                  <input id="social-studio-tenant" value={tenantId} readOnly style={{ ...inputStyle, opacity: 0.8 }} />
-                </div>
+                <p
+                  className="muted"
+                  style={{ alignSelf: 'end', margin: 0 }}
+                >
+                  Requests use your signed-in workspace.
+                </p>
               </div>
 
               <div className="field">
@@ -5710,7 +5596,9 @@ export default function SocialStudioPage() {
 
             <section className="card block">
               <h3>Provider health</h3>
-              {overview.providers.length === 0 ? (
+              {overview.providers === null ? (
+                <p className="muted">Provider health is currently unavailable.</p>
+              ) : overview.providers.length === 0 ? (
                 <p className="muted">Provider health has not been reported yet.</p>
               ) : (
                 <div className="stack">
@@ -7176,7 +7064,6 @@ export default function SocialStudioPage() {
         .social-studio-page.page-loading .preview-stage-card,
         .social-studio-page.page-loading .command-rail,
         .social-studio-page.page-loading .social-ops-hub,
-        .social-studio-page.page-loading .hubspot-hub,
         .social-studio-page.page-loading .predis-panels-section {
           transition:
             opacity 180ms ease,
@@ -7462,60 +7349,6 @@ export default function SocialStudioPage() {
           gap: 12px;
           border: 1px solid color-mix(in oklab, var(--module-accent-2, var(--success)) 26%, var(--line));
           background: var(--card);
-        }
-
-        .hubspot-hub {
-          display: grid;
-          gap: 12px;
-          border: 1px solid color-mix(in oklab, var(--warning) 24%, var(--line));
-          background: var(--card);
-        }
-
-        .hubspot-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-          gap: 12px;
-        }
-
-        .hubspot-link-card {
-          border: 1px solid color-mix(in oklab, var(--warning) 35%, var(--line));
-          border-radius: 12px;
-          padding: 12px;
-          display: grid;
-          gap: 8px;
-          text-decoration: none;
-          color: inherit;
-          background: rgba(255, 255, 255, 0.02);
-          transition:
-            border-color 160ms ease,
-            transform 160ms ease,
-            box-shadow 180ms ease;
-        }
-
-        .hubspot-link-card:hover,
-        .hubspot-link-card:focus-visible {
-          transform: translateY(-2px);
-          border-color: var(--warning);
-          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
-        }
-
-        .hubspot-link-card strong {
-          font-size: 13px;
-          color: var(--warning);
-        }
-
-        .hubspot-link-card span {
-          font-size: 12px;
-          color: var(--muted);
-          line-height: 1.45;
-        }
-
-        .hubspot-link-card em {
-          font-style: normal;
-          font-size: 11px;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          color: var(--warning);
         }
 
         .ops-inline-error {
@@ -8825,7 +8658,6 @@ export default function SocialStudioPage() {
         }
 
         .social-ops-hub,
-        .hubspot-hub,
         .command-rail {
           content-visibility: auto;
           contain-intrinsic-size: 780px;

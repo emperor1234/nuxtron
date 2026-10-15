@@ -1,67 +1,49 @@
-"""Unit tests for Rank Tracking service (phase-i module 5)."""
+"""Fail-closed tests for provider-backed Rank Tracking."""
 
 from __future__ import annotations
 
+import asyncio
+from unittest.mock import AsyncMock
+
 import pytest
+from fastapi import HTTPException
 
 pytestmark = pytest.mark.no_legacy
 
-from backend.fastapi.app.seo_rank_tracking_service import analyze_rank_tracking, analyze_rank_tracking_signals
+from backend.fastapi.app.seo_rank_tracking_service import (  # noqa: E402
+    RANK_TRACKING_UNAVAILABLE_DETAIL,
+    analyze_rank_tracking,
+    raise_rank_tracking_unavailable,
+)
 
 
-def test_heuristic_scales() -> None:
-    thin = analyze_rank_tracking_signals(
-        domain="example.com",
-        tracked_keywords=["seo"],
-        historical_lookback_days=30,
-        include_competitor_tracking=False,
-        competitor_domains=[],
-        notes="",
-    )
-    rich = analyze_rank_tracking_signals(
-        domain="acme.example.com",
-        tracked_keywords=["enterprise seo", "seo automation", "rank tracking platform", "technical seo audit"],
-        historical_lookback_days=180,
-        include_competitor_tracking=True,
-        competitor_domains=["comp1.com", "comp2.com"],
-        notes="Rank tracking volatility review with competitor movement analysis notes",
-    )
-    assert rich["tracking_score"] > thin["tracking_score"]
-    assert thin["tracking_score"] < 100
+def test_unavailable_error_is_typed_501() -> None:
+    with pytest.raises(HTTPException) as raised:
+        raise_rank_tracking_unavailable()
+
+    assert raised.value.status_code == 501
+    assert raised.value.detail == RANK_TRACKING_UNAVAILABLE_DETAIL
+    assert raised.value.detail["code"] == "NOT_IMPLEMENTED"
 
 
-@pytest.mark.asyncio
-async def test_llm_and_heuristic() -> None:
-    async def _llm(_s: str, _u: str, **_k: object) -> dict:
-        return {"tracking_score": 69, "ranking_history": []}
+def test_rank_analysis_fails_before_calling_model() -> None:
+    model = AsyncMock(return_value={"tracking_score": 97, "ranking_history": []})
 
-    assert (
-        await analyze_rank_tracking(
-            domain="example.com",
-            tracked_keywords=["seo tools"],
-            historical_lookback_days=90,
-            include_competitor_tracking=False,
-            competitor_domains=[],
-            notes="",
-            ollama_json_fn=_llm,
-            system_prompt="s",
-            clean_text_fn=lambda t, _m: t,
+    with pytest.raises(HTTPException) as raised:
+        asyncio.run(
+            analyze_rank_tracking(
+                domain="example.com",
+                tracked_keywords=["seo tools"],
+                historical_lookback_days=90,
+                include_competitor_tracking=True,
+                competitor_domains=["other.example"],
+                notes="",
+                ollama_json_fn=model,
+                system_prompt="must not be used",
+                clean_text_fn=lambda text, _limit: text,
+            )
         )
-    )["analysis_mode"] == "llm"
 
-    async def _down(_s: str, _u: str, **_k: object) -> dict:
-        return {"fallback": True}
-
-    assert (
-        await analyze_rank_tracking(
-            domain="example.com",
-            tracked_keywords=["seo tools"],
-            historical_lookback_days=90,
-            include_competitor_tracking=False,
-            competitor_domains=[],
-            notes="",
-            ollama_json_fn=_down,
-            system_prompt="s",
-            clean_text_fn=lambda t, _m: t,
-        )
-    )["analysis_mode"] == "heuristic"
+    assert raised.value.status_code == 501
+    assert raised.value.detail["code"] == "NOT_IMPLEMENTED"
+    model.assert_not_awaited()

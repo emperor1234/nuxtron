@@ -1,0 +1,62 @@
+.card {
+  max-width: 900px;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.statusRow > span:last-child {
+  color: var(--nx-ink-2);
+  font-size: 0.82rem;
+}
+
+.explanation {
+  max-width: 78ch;
+  color: var(--nx-ink-2);
+  line-height: 1.65;
+}
+
+.evidenceList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.evidenceList li {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-surface);
+}
+
+.evidenceList li span {
+  color: var(--nx-ink-2);
+  line-height: 1.5;
+}
+
+.disclaimer {
+  margin: 20px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--nx-border);
+  color: var(--nx-ink-2);
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .evidenceList {
+    grid-template-columns: 1fr;
+  }
+}

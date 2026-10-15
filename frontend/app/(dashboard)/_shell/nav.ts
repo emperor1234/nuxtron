@@ -1,24 +1,12 @@
 /**
- * Dashboard navigation model — mirrors the approved reference.
- * The icon rail lists top-level sections; each section (except Home) opens a
- * flyout whose items are grouped *by function*. Rail sections link to a valid
- * base route; flyout groups organise the tools within that section.
+ * Customer dashboard navigation. Keep the primary rail small and task-oriented;
+ * less-used routes remain discoverable through the route search and product hubs.
  */
 
 import type { Route } from "next";
 import type { ProductLine } from "@/app/lib/product-line";
 
-export type RailKey =
-  | "dashboard"
-  | "seo"
-  | "ai"
-  | "traffic"
-  | "local"
-  | "content"
-  | "social"
-  | "studio"
-  | "apps"
-  | "settings";
+export type RailKey = "dashboard" | "seo" | "social" | "studio" | "apps" | "settings";
 
 export type FlyoutItem = { label: string; href: Route };
 export type FlyoutGroup = { label: string; items: FlyoutItem[] };
@@ -28,73 +16,54 @@ export type RailItem = {
   key: RailKey;
   label: string;
   href: Route;
-  /** Additional route families owned by this rail section. */
+  /** Additional route families owned by this section. */
   matchPrefixes?: readonly string[];
-  /** Whether clicking opens a function-grouped flyout. */
   hasMenu: boolean;
-  /**
-   * Which product line owns this section. A user signed in to one product
-   * only sees its sections plus the "shared" ones; proxy.ts enforces the same
-   * split server-side so a deep link cannot reach the other product's pages.
-   */
   product: ProductLine | "shared";
 };
 
 export const RAIL_ITEMS: readonly RailItem[] = [
   { key: "dashboard", product: "shared", label: "Home", href: "/dashboard", hasMenu: false },
-  { key: "seo", product: "seo", label: "SEO", href: "/seo", hasMenu: true },
-  { key: "ai", product: "seo", label: "AI", href: "/seo/seo-ai", hasMenu: true },
-  { key: "traffic", product: "seo", label: "Traffic", href: "/seo/analytics", hasMenu: true },
-  { key: "local", product: "seo", label: "Local", href: "/seo/local-seo", hasMenu: true },
   {
-    key: "content", product: "marketing",
-    label: "Content",
-    href: "/content-generation",
+    key: "seo",
+    product: "seo",
+    label: "SEO",
+    href: "/seo",
+    matchPrefixes: ["/ai-visibility-dashboard", "/ai-search-impact-calculator", "/benchmarks", "/competitive-benchmarking"],
     hasMenu: true,
   },
-  // Social points at the Studio suite (25 pages) rather than /seo/social (1).
   {
-    key: "social", product: "marketing",
+    key: "social",
+    product: "marketing",
     label: "Social",
     href: "/studio/social-studio",
+    matchPrefixes: ["/social-media-roi", "/social-listening"],
     hasMenu: true,
   },
-  // Studio had no rail entry at all, stranding 34 pages with no way in.
   {
-    key: "studio", product: "marketing",
+    key: "studio",
+    product: "marketing",
     label: "Studio",
     href: "/studio",
-    matchPrefixes: ["/vse"],
+    matchPrefixes: ["/content-generation", "/ads-generation", "/media-processing"],
     hasMenu: true,
   },
   {
-    key: "apps", product: "shared",
-    label: "Operations",
+    key: "apps",
+    product: "shared",
+    label: "Business",
     href: "/crm",
-    matchPrefixes: [
-      "/crm",
-      "/workflows",
-      "/smart-inbox",
-      "/disputes",
-      "/finance-ops",
-      "/outcome-graph",
-      "/vendor-inventory-report",
-      "/siem",
-      "/trust-center",
-      "/ai-security",
-      "/platform-ops",
-      "/platform",
-      "/api-governance",
-    ],
+    matchPrefixes: ["/crm", "/workflows", "/smart-inbox", "/disputes", "/trust-center"],
     hasMenu: true,
   },
 ];
 
 export const SETTINGS_ITEM: RailItem = {
-  key: "settings", product: "shared",
-  label: "Settings",
-  href: "/account/settings",
-  matchPrefixes: ["/account", "/billing", "/white-label"],
+  key: "settings",
+  product: "shared",
+  label: "Account",
+  href: "/account",
+  matchPrefixes: ["/account", "/billing"],
   hasMenu: true,
 };
 
@@ -106,174 +75,73 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
     title: "SEO",
     groups: [
       {
-        label: "Site Performance",
+        label: "Site health",
         items: [
-          { label: "Site Audit", href: seo("technical") },
-          { label: "Position Tracking", href: seo("rank-tracking") },
+          { label: "Technical SEO Audit", href: seo("technical") },
           { label: "Log File Analyzer", href: seo("log-file") },
+          { label: "Security Header Review", href: seo("security") },
         ],
       },
       {
-        label: "AEO & AI search",
-        items: [
-          {
-            label: "SEO / AEO / GEO Audit",
-            href: "/seo-aeo-geo-audit-tool",
-          },
-          { label: "AI SEO Analysis", href: "/seo-analysis" },
-        ],
-      },
-      {
-        label: "Competitive Analysis",
+        label: "Research & visibility",
         items: [
           { label: "Domain Overview", href: seo("domain-overview") },
-          { label: "Organic Research", href: seo("keywords") },
-          { label: "Top Pages", href: seo("performance") },
-          { label: "Keyword Gap", href: seo("planner") },
-          { label: "Keyword Strategy Builder", href: seo("growth-playbooks") },
-        ],
-      },
-      {
-        label: "Link Building",
-        items: [
-          { label: "Backlinks", href: seo("backlink-intelligence") },
-          { label: "Link Building Tool", href: seo("linkbuilding") },
-        ],
-      },
-      {
-        label: "Content",
-        items: [
-          { label: "SEO Writing Assistant", href: seo("writer") },
-          { label: "Content Brief", href: seo("content-brief") },
-        ],
-      },
-    ],
-  },
-  ai: {
-    title: "AI Visibility",
-    groups: [
-      {
-        label: "Research & optimize",
-        items: [
-          { label: "AI Visibility Overview", href: seo("seo-ai") },
-          {
-            label: "AI Visibility Dashboard",
-            href: "/ai-visibility-dashboard",
-          },
-          {
-            label: "AI Search Impact",
-            href: "/ai-search-impact-calculator",
-          },
+          { label: "Keyword Data Review", href: seo("keywords") },
+          { label: "Rank Position Review", href: seo("rank-tracking") },
           { label: "Competitor Research", href: seo("competitor") },
+          { label: "Corpus Search Preview", href: seo("rag-search") },
           { label: "Prompt Research", href: seo("prompt-research") },
+          { label: "AI Visibility", href: seo("seo-ai") },
+          { label: "AI Visibility Dashboard", href: "/ai-visibility-dashboard" },
+          { label: "AI Search Impact", href: "/ai-search-impact-calculator" },
+          { label: "Audience Intelligence", href: seo("audience-intelligence") },
           { label: "Brand Performance", href: seo("brand-voice") },
         ],
       },
       {
-        label: "Create",
-        items: [
-          { label: "AI Content Generator", href: "/content-generation" },
-          { label: "Image Studio", href: "/media-processing" },
-        ],
-      },
-      {
-        label: "Optimize",
-        items: [
-          { label: "Answer Engine Optimization", href: seo("aeo") },
-          { label: "A/B Test Lab", href: seo("seo-ab-testing") },
-        ],
-      },
-      {
-        label: "Automate",
-        items: [
-          {
-            label: "Campaign Autopilot",
-            href: seo("cross-network-campaign-orchestrator"),
-          },
-          { label: "Smart Scheduler", href: seo("ads-smart-schedule") },
-          { label: "Auto Reports", href: seo("client-portal") },
-        ],
-      },
-      {
-        label: "Insights",
-        items: [
-          { label: "Trend Predictor", href: "/ai-analytics" },
-          { label: "Audience Intelligence", href: seo("audience-intelligence") },
-        ],
-      },
-    ],
-  },
-  traffic: {
-    title: "Traffic & Market",
-    groups: [
-      {
-        label: "Market Analysis",
+        label: "Market & research",
         items: [
           { label: "Market Explorer", href: seo("market-explorer") },
-          { label: "Traffic Analytics", href: seo("analytics") },
-        ],
-      },
-      {
-        label: "Benchmarking",
-        items: [
           { label: "Industry Benchmarks", href: "/benchmarks" },
-          { label: "Growth Quadrant", href: "/competitive-benchmarking" },
+          { label: "Competitive Benchmarking", href: "/competitive-benchmarking" },
           { label: "Trending Now", href: seo("news-discover") },
         ],
       },
-    ],
-  },
-  local: {
-    title: "Local",
-    groups: [
       {
-        label: "Local SEO",
+        label: "Analytics & history",
         items: [
-          { label: "Listing Management", href: seo("local-seo") },
-          { label: "Map Rank Tracker", href: seo("map-rank-tracker") },
-          { label: "Review Management", href: seo("reviews") },
+          { label: "Traffic Analytics", href: seo("analytics") },
+          { label: "Analysis History", href: seo("history") },
         ],
       },
       {
-        label: "Business Profile",
-        items: [{ label: "Local Heatmap", href: seo("local-heatmap") }],
-      },
-    ],
-  },
-  content: {
-    title: "Content",
-    groups: [
-      {
-        label: "Plan",
-        items: [{ label: "Content Brief", href: seo("content-brief") }],
+        label: "International SEO",
+        items: [{ label: "Hreflang & Locale Review", href: seo("international-multilingual") }],
       },
       {
-        label: "Create",
+        label: "Optimize & automate",
+        items: [
+          { label: "Answer Engine Optimization", href: seo("aeo") },
+          { label: "SEO Workflow Planner", href: seo("planner") },
+          { label: "Programmatic SEO Draft Preview", href: seo("programmatic") },
+          { label: "A/B Test Lab", href: seo("seo-ab-testing") },
+          { label: "Growth Playbooks", href: seo("growth-playbooks") },
+        ],
+      },
+      {
+        label: "Content & links",
         items: [
           { label: "SEO Writing Assistant", href: seo("writer") },
-          {
-            label: "Content Templates",
-            href: seo("content-creation-blogging"),
-          },
-        ],
-      },
-      {
-        label: "Optimize",
-        items: [
-          { label: "On-Page Checker", href: seo("on-page") },
-          { label: "Readability Score", href: seo("content-auditor") },
-        ],
-      },
-      {
-        label: "Distribute",
-        items: [
-          { label: "Social Poster", href: seo("social") },
+          { label: "Content Brief", href: seo("content-brief") },
+          { label: "Social Share Preview", href: seo("social") },
+          { label: "Backlink Intelligence", href: seo("backlink-intelligence") },
+          { label: "Link Building", href: seo("linkbuilding") },
         ],
       },
     ],
   },
   social: {
-    title: "Social Media",
+    title: "Social",
     groups: [
       {
         label: "Publish",
@@ -292,28 +160,25 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
           { label: "Smart Inbox", href: studio("social-studio/inbox") },
           { label: "Comment Replies", href: studio("social-studio/community") },
           { label: "Content Approvals", href: studio("social-studio/approvals") },
-          { label: "Review Management", href: studio("social-studio/reviews") },
-          { label: "UGC Management", href: studio("social-studio/ugc") },
         ],
       },
       {
-        label: "Analyze",
+        label: "Listen & measure",
         items: [
-          { label: "Analytics & KPIs", href: studio("social-studio/analytics") },
+          { label: "Social Analytics", href: studio("social-studio/analytics") },
           { label: "Audience Insights", href: studio("social-studio/audience") },
-          { label: "Social Media ROI", href: "/social-media-roi" },
-          { label: "Social Listening", href: studio("social-studio/listening") },
+          { label: "Social Listening", href: "/social-listening" },
           { label: "Monitoring Streams", href: studio("social-studio/streams") },
           { label: "Social Trends", href: studio("social-studio/trends") },
+          { label: "Social Media ROI", href: "/social-media-roi" },
         ],
       },
       {
-        label: "Advertise & Grow",
+        label: "Grow",
         items: [
           { label: "Paid Social Ads", href: studio("social-studio/ads") },
-          { label: "Ads Calendar", href: seo("ads-calendar") },
           { label: "Influencer CRM", href: studio("social-studio/influencers") },
-          { label: "Link In Bio", href: studio("social-studio/link-in-bio") },
+          { label: "Link in Bio", href: studio("social-studio/link-in-bio") },
           { label: "Employee Advocacy", href: studio("social-studio/advocacy") },
         ],
       },
@@ -325,62 +190,57 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
       {
         label: "Create",
         items: [
+          { label: "Content Generator", href: "/content-generation" },
           { label: "Editor", href: studio("editor") },
-          { label: "AI Image Studio", href: studio("image-studio") },
+          { label: "AI Copywriter", href: studio("copywriter") },
+          { label: "Image Studio", href: studio("image-studio") },
+          { label: "Product Photoshoot", href: studio("image-direction") },
           { label: "Short Video Factory", href: studio("short-video-factory") },
           { label: "Reels Factory", href: studio("reels-factory") },
+          { label: "Faceless Video Engine", href: studio("faceless-video-engine") },
           { label: "Avatar Builder", href: studio("avatar-builder") },
-          { label: "AI Copywriter", href: studio("copywriter") },
+          { label: "Paid Ad Creative", href: "/ads-generation" },
+          { label: "Media Processing", href: "/media-processing" },
         ],
       },
       {
-        label: "Brand",
+        label: "Brand & content",
         items: [
-          { label: "Brand Hub", href: studio("brands") },
+          { label: "Brands", href: studio("brands") },
           { label: "Brand Kit", href: studio("brand-kit") },
-          { label: "Brand Voice DNA", href: studio("content-hub/brand-voice") },
+          { label: "Brand Voice", href: studio("content-hub/brand-voice") },
+          { label: "Brand Hierarchy", href: studio("content-hub/brand-hierarchy") },
+          { label: "Content Hub", href: studio("content-hub") },
+          { label: "Repurpose Content", href: studio("content-hub/repurpose") },
           { label: "Template System", href: studio("template-system") },
         ],
       },
       {
-        label: "Growth",
+        label: "Grow",
         items: [
-          { label: "AI Content Hub", href: studio("content-hub") },
-          { label: "AI Growth Suite", href: studio("growth-suite") },
-          { label: "Viral Content Engine", href: "/vse" },
-          { label: "Rank Tracker", href: studio("rank-tracker") },
-          {
-            label: "Backlink Intelligence",
-            href: studio("backlink-intelligence"),
-          },
+          { label: "Backlink Intelligence", href: studio("backlink-intelligence") },
           { label: "Answer Engine Hub", href: studio("answer-engine") },
-          { label: "Content Repurposer", href: studio("content-hub/repurpose") },
+          { label: "Keyword Intelligence", href: studio("content-hub/word-cloud") },
+          { label: "Multilingual Ads", href: studio("multilingual-ads") },
         ],
       },
       {
-        label: "Operate",
+        label: "Operate & measure",
         items: [
           { label: "Workspace", href: studio("workspace") },
-          {
-            label: "Workflow Orchestrator",
-            href: studio("workflow-orchestrator"),
-          },
-          { label: "Team & Roles", href: studio("team") },
-        ],
-      },
-      {
-        label: "Measure",
-        items: [
-          { label: "Platform Analytics", href: studio("analytics") },
+          { label: "Team", href: studio("team") },
+          { label: "Studio Analytics", href: studio("analytics") },
           { label: "Agent Analytics", href: studio("agent-analytics") },
-          { label: "A/B Testing Engine", href: studio("content-hub/ab-testing") },
-          { label: "ROI Forecaster", href: studio("content-hub/roi-forecast") },
+          { label: "Intelligence", href: studio("intelligence") },
+          { label: "A/B Testing", href: studio("content-hub/ab-testing") },
+          { label: "ROI Forecast", href: studio("content-hub/roi-forecast") },
+          { label: "CDN Analytics", href: studio("cdn-analytics") },
         ],
       },
     ],
   },
   apps: {
-    title: "Operations",
+    title: "Business",
     groups: [
       {
         label: "Customer operations",
@@ -388,52 +248,32 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
           { label: "CRM", href: "/crm" },
           { label: "Workflows", href: "/workflows" },
           { label: "Customer Inbox", href: "/smart-inbox" },
-        ],
-      },
-      {
-        label: "Finance & governance",
-        items: [
-          { label: "Finance Ops", href: "/finance-ops" },
           { label: "Disputes", href: "/disputes" },
-          { label: "Outcome Graph", href: "/outcome-graph" },
-          { label: "Vendor Inventory", href: "/vendor-inventory-report" },
         ],
       },
       {
-        label: "Trust & security",
+        label: "Partnerships",
         items: [
-          { label: "Trust Center", href: "/trust-center" },
-          { label: "SIEM", href: "/siem" },
-          { label: "AI Security", href: "/ai-security" },
-          { label: "Platform Operations", href: "/platform-ops" },
+          { label: "Referral Program", href: "/affiliate" },
+          { label: "Partner Performance", href: "/affiliate/dashboard" },
         ],
       },
       {
-        label: "Platform",
-        items: [
-          { label: "App Center", href: "/platform" },
-          { label: "Integrations", href: seo("integrations-automation") },
-          { label: "API Access", href: "/api-governance" },
-        ],
+        label: "Trust",
+        items: [{ label: "Trust Center", href: "/trust-center" }],
       },
     ],
   },
   settings: {
-    title: "Settings",
+    title: "Account",
     groups: [
       {
         label: "Account",
         items: [
+          { label: "Account Overview", href: "/account" },
           { label: "Profile", href: "/account/profile" },
+          { label: "Orders", href: "/account/orders" },
           { label: "Billing & Plans", href: "/billing" },
-          { label: "Team Members", href: "/account" },
-        ],
-      },
-      {
-        label: "Preferences",
-        items: [
-          { label: "Notifications", href: "/account/settings" },
-          { label: "White label", href: "/white-label" },
         ],
       },
     ],

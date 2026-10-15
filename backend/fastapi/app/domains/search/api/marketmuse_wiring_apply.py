@@ -1,20 +1,25 @@
 """Search HTTP operations beginning with marketmuse wiring apply."""
 
-from ..constants import AuthDep
-from ..operations.marketmuse_product_catalog import operation_marketmuse_create_project
-from ..operations.marketmuse_product_catalog import operation_marketmuse_create_schedule
-from ..operations.marketmuse_product_catalog import operation_marketmuse_get_run
-from ..operations.marketmuse_product_catalog import operation_marketmuse_list_projects
-from ..operations.marketmuse_product_catalog import operation_marketmuse_list_runs
-from ..operations.marketmuse_product_catalog import operation_marketmuse_run_project
-from ..operations.marketmuse_vendor_inventory import operation_marketmuse_full_automation
-from ..operations.marketmuse_vendor_inventory import operation_marketmuse_wiring_apply
-from ..runtime import SearchRuntime
-from ..schemas import SemrushFullAutomationRequest
-from ..schemas import SitebulbScheduleCreateRequest
-from ..schemas import SliceWiringApplyRequest
-from fastapi import APIRouter
 from typing import Any
+
+from fastapi import APIRouter
+
+from ..constants import AuthDep
+from ..operations.marketmuse_product_catalog import (
+    operation_marketmuse_create_project,
+    operation_marketmuse_create_schedule,
+    operation_marketmuse_get_run,
+    operation_marketmuse_list_projects,
+    operation_marketmuse_list_runs,
+    operation_marketmuse_run_project,
+)
+from ..operations.marketmuse_vendor_inventory import (
+    operation_marketmuse_full_automation,
+    operation_marketmuse_wiring_apply,
+)
+from ..runtime import SearchRuntime
+from ..schemas import SemrushFullAutomationRequest, SitebulbScheduleCreateRequest, SliceWiringApplyRequest
+from .keyword_unavailable_response import KEYWORD_RESEARCH_501_RESPONSE
 
 
 def register(router: APIRouter, runtime: SearchRuntime):
@@ -23,7 +28,7 @@ def register(router: APIRouter, runtime: SearchRuntime):
     def marketmuse_wiring_apply(payload: SliceWiringApplyRequest, auth: AuthDep) -> dict[str, Any]:
         return operation_marketmuse_wiring_apply(runtime, payload, auth)
 
-    @router.post("/marketmuse/full-automation")
+    @router.post("/marketmuse/full-automation", status_code=501, response_model=None, responses={501: KEYWORD_RESEARCH_501_RESPONSE})
     def marketmuse_full_automation(payload: SemrushFullAutomationRequest, auth: AuthDep) -> dict[str, Any]:
         return operation_marketmuse_full_automation(runtime, payload, auth)
 

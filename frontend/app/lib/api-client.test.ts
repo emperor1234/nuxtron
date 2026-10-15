@@ -117,7 +117,8 @@ describe('api-client network helpers', () => {
 
   it('apiGet requires tenant id when neither argument nor session tenant is set', async () => {
     vi.mocked(fetch).mockResolvedValue(makeFetchResponse({}));
-    await expect(apiGet('/path')).rejects.toThrow('Tenant id is required in strict no-mock mode');
+    await expect(apiGet('/path')).rejects.toThrow('Workspace context is required');
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('apiPost sends POST with body', async () => {

@@ -31,6 +31,7 @@ _TENANT = "tenant-integration"
 
 
 def _make_jwt(claims: dict, secret: str = _JWT_SECRET, expired: bool = False) -> str:
+    claims = {"sub": "integration-admin", "roles": ["admin"], **claims}
     header = base64.urlsafe_b64encode(b'{"alg":"HS256","typ":"JWT"}').rstrip(b"=").decode()
     if expired:
         claims = {**claims, "exp": int(time.time()) - 3600}
@@ -116,6 +117,26 @@ class TestTokenOnlyPolicy:
 
     def test_kpi_requires_bearer(self, client, token) -> None:
         resp = client.get("/api-governance/kpi", headers=_bearer(token))
+        assert resp.status_code == 200
+
+    def test_member_bearer_cannot_access_api_governance(self, client) -> None:
+        member_token = _make_jwt({"tenant_id": _TENANT, "sub": "member-1", "roles": ["user"]})
+        resp = client.get("/api-governance/kpi", headers=_bearer(member_token))
+        assert resp.status_code == 403
+
+    def test_oidc_admin_bearer_is_accepted(self, client) -> None:
+        from backend.fastapi.app.deps import AuthContext, require_auth
+
+        client.app.dependency_overrides[require_auth] = lambda: AuthContext(
+            tenant_id=_TENANT,
+            auth_mode="oidc_bearer",
+            subject="oidc-admin-1",
+            roles=["admin"],
+        )
+        try:
+            resp = client.get("/api-governance/kpi")
+        finally:
+            client.app.dependency_overrides.pop(require_auth, None)
         assert resp.status_code == 200
 
     def test_expired_token_rejected(self, client, expired_token) -> None:

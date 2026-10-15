@@ -1,28 +1,34 @@
 """Search use cases: sitebulb completion chart."""
 
+from typing import Any
+
 from ....deps import AuthContext
+from ....domains.seo.services.seo_keyword_research_service import raise_keyword_research_unavailable
 from ..constants import AuthDep
 from ..runtime import SearchRuntime
-from ..schemas import SemrushFullAutomationRequest
-from ..schemas import SemrushProductionGateRequest
-from ..schemas import SitebulbEnvTemplateRequest
-from ..schemas import SitebulbProjectRunRequest
-from ..schemas import SitebulbRemediationBundleRequest
-from ..schemas import SitebulbScheduleExecuteRequest
+from ..schemas import (
+    SemrushFullAutomationRequest,
+    SemrushProductionGateRequest,
+    SitebulbEnvTemplateRequest,
+    SitebulbProjectRunRequest,
+    SitebulbRemediationBundleRequest,
+    SitebulbScheduleExecuteRequest,
+)
 from .platform_now_iso import helper_now_iso
 from .platform_search_vendors import helper_provider_requirements
 from .platform_strict_live_probe import helper_strict_live_probe
 from .semrush_list_projects import operation_semrush_full_automation
-from .sitebulb_project_lookup import helper_sitebulb_env_template
-from .sitebulb_project_lookup import helper_sitebulb_issue_chart
-from .sitebulb_project_lookup import helper_sitebulb_preflight_report
-from .sitebulb_project_lookup import helper_sitebulb_project_lookup
-from typing import Any
+from .sitebulb_project_lookup import (
+    helper_sitebulb_env_template,
+    helper_sitebulb_issue_chart,
+    helper_sitebulb_preflight_report,
+    helper_sitebulb_project_lookup,
+)
 
 
 def helper_sitebulb_completion_chart(runtime: SearchRuntime, auth: AuthContext) -> dict[str, Any]:
     checklist = helper_provider_requirements()
-    configured = sum((1 for item in checklist if item.get("configured")))
+    configured = sum(1 for item in checklist if item.get("configured"))
     total = len(checklist)
     strict_probe = helper_strict_live_probe(runtime, auth, SemrushProductionGateRequest())
     strict_probe_ok = strict_probe.get("status") == "passed"
@@ -35,8 +41,8 @@ def helper_sitebulb_completion_chart(runtime: SearchRuntime, auth: AuthContext) 
         {"module": "vendor_inventory_and_exports", "implemented": True, "e2e_verified": True},
         {"module": "strict_live_production_gate", "implemented": True, "e2e_verified": strict_probe_ok},
     ]
-    implemented = sum((1 for item in modules if item["implemented"]))
-    verified = sum((1 for item in modules if item["e2e_verified"]))
+    implemented = sum(1 for item in modules if item["implemented"])
+    verified = sum(1 for item in modules if item["e2e_verified"])
     return {
         "status": "ok",
         "tenant_id": auth.tenant_id,
@@ -58,7 +64,7 @@ def helper_sitebulb_completion_chart(runtime: SearchRuntime, auth: AuthContext) 
 def helper_sitebulb_gate_progress(runtime: SearchRuntime, auth: AuthContext) -> dict[str, Any]:
     checklist = helper_provider_requirements()
     total = len(checklist)
-    configured = sum((1 for item in checklist if item.get("configured")))
+    configured = sum(1 for item in checklist if item.get("configured"))
     base_pct = round(configured / max(total, 1) * 100.0, 1)
     staged: list[dict[str, Any]] = []
     running_configured = configured
@@ -79,7 +85,7 @@ def helper_sitebulb_gate_progress(runtime: SearchRuntime, auth: AuthContext) -> 
             }
         )
     strict_probe = helper_strict_live_probe(runtime, auth, SemrushProductionGateRequest())
-    strict_probe_ready_path = any((str(row.get("priority")) == "P0" for row in staged))
+    strict_probe_ready_path = any(str(row.get("priority")) == "P0" for row in staged)
     return {
         "status": "ok",
         "tenant_id": auth.tenant_id,
@@ -99,6 +105,7 @@ def helper_sitebulb_gate_progress(runtime: SearchRuntime, auth: AuthContext) -> 
 def operation_sitebulb_run_project(
     runtime: SearchRuntime, project_id: str, payload: SitebulbProjectRunRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    raise_keyword_research_unavailable()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:sitebulb:runs:create", 30, 60)
     project = helper_sitebulb_project_lookup(runtime, auth.tenant_id, project_id)
     seed_keyword = payload.seed_keyword or str(project.get("default_seed_keyword") or "social media management")
@@ -130,7 +137,7 @@ def operation_sitebulb_run_project(
     issues = helper_sitebulb_issue_chart(
         automation_result=automation_result, strict_probe=strict_probe, checklist=checklist
     )
-    run_id = f"sbrun-{auth.tenant_id}-{sum((1 for r in runtime.sitebulb_runs_memory if r.get('tenant_id') == auth.tenant_id)) + 1}"
+    run_id = f"sbrun-{auth.tenant_id}-{sum(1 for r in runtime.sitebulb_runs_memory if r.get('tenant_id') == auth.tenant_id) + 1}"
     run_record = {
         "id": run_id,
         "tenant_id": auth.tenant_id,
@@ -207,6 +214,7 @@ def helper_sitebulb_gate_state(runtime: SearchRuntime, auth: AuthContext) -> dic
 def operation_sitebulb_execute_schedules(
     runtime: SearchRuntime, payload: SitebulbScheduleExecuteRequest, auth: AuthDep
 ) -> dict[str, Any]:
+    raise_keyword_research_unavailable()
     runtime.enforce_rate_limit(f"{auth.tenant_id}:search-everywhere:sitebulb:schedules:execute", 20, 60)
     schedules = [
         s for s in runtime.sitebulb_schedules_memory if s.get("tenant_id") == auth.tenant_id and bool(s.get("enabled"))

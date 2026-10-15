@@ -36,10 +36,6 @@ const CATEGORIES = [
     items: ["Slack", "Gmail", "Outlook", "Twilio", "Zendesk"],
   },
   {
-    title: "Reviews & reputation",
-    items: ["Google Reviews", "Trustpilot", "Yelp", "G2"],
-  },
-  {
     title: "Security & infrastructure",
     items: ["SAML SSO", "SIEM webhook export", "Audit-log export (S3/GCS)"],
   },

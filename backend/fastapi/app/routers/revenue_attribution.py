@@ -17,7 +17,7 @@ from typing import Annotated, Any
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import psycopg
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..deps import AuthContext, require_auth
@@ -191,6 +191,10 @@ class _RevenueAttributionStore:
         self._lock = threading.Lock()
         self._db_init_lock = threading.Lock()
         self._db_initialized = False
+
+    @property
+    def persistence_mode(self) -> str:
+        return "postgres" if self._db_ready_fn() else "process-memory"
 
     def ensure_tables(self) -> None:
         if not self._db_ready_fn() or self._db_initialized:
@@ -625,20 +629,6 @@ class _RevenueAttributionStore:
         return touchpoints, conversions
 
 
-def _resolve_tenant_id(x_tenant_id: str | None, payload: dict[str, Any]) -> str:
-    if x_tenant_id and x_tenant_id.strip():
-        return x_tenant_id.strip()
-    payload_tenant = str(payload.get("tenant_id") or "").strip()
-    if payload_tenant:
-        return payload_tenant
-    metadata = payload.get("metadata")
-    if isinstance(metadata, dict):
-        metadata_tenant = str(metadata.get("tenant_id") or "").strip()
-        if metadata_tenant:
-            return metadata_tenant
-    return "tenant-demo"
-
-
 def _verify_provider_signature(provider_lc: str, headers: Any, raw_body: bytes) -> None:
     if provider_lc == "stripe":
         secret = os.getenv("WEBHOOK_STRIPE_SECRET", "").strip()
@@ -668,24 +658,42 @@ def _build_report_response(
     touchpoints: dict[str, dict[str, Any]],
     conversions: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    total_revenue = 0.0
-    attributed_revenue = 0.0
-    by_post: dict[str, float] = {}
-    by_channel: dict[str, float] = {}
+    currency_buckets: dict[str, dict[str, Any]] = {}
+    by_post: dict[tuple[str, str], float] = {}
+    by_channel: dict[tuple[str, str], float] = {}
     conversion_rows: list[dict[str, Any]] = []
 
     for conv in conversions:
         amount = float(conv.get("amount") or 0)
-        total_revenue += amount
-        keys = [str(k) for k in conv.get("touchpoint_keys", []) if str(k) in touchpoints]
+        currency = str(conv.get("currency") or "").strip().upper()
+        currency_supported = bool(re.fullmatch(r"[A-Z]{3}", currency))
+        bucket = currency_buckets.setdefault(
+            currency,
+            {
+                "currency": currency or None,
+                "currency_supported": currency_supported,
+                "conversions": 0,
+                "tracked_conversions": 0,
+                "revenue": 0.0,
+                "attributed_revenue": 0.0,
+                "unattributed_revenue": 0.0,
+            },
+        )
+        bucket["conversions"] += 1
+        bucket["revenue"] += amount
+        candidates = conv.get("touchpoint_keys")
+        keys = [str(key) for key in candidates if str(key) in touchpoints] if isinstance(candidates, list) else []
 
         if not keys:
+            bucket["unattributed_revenue"] += amount
             conversion_rows.append(
                 {
                     "conversion_id": conv.get("id"),
                     "provider": conv.get("provider"),
                     "external_order_id": conv.get("external_order_id"),
                     "amount": amount,
+                    "currency": currency or None,
+                    "currency_supported": currency_supported,
                     "touchpoints": [],
                     "shapley": {},
                 }
@@ -694,14 +702,17 @@ def _build_report_response(
 
         post_ids = [str(touchpoints[k].get("post_id") or k) for k in keys]
         post_contrib = _shapley_contributions(post_ids, amount)
-        attributed_revenue += amount
+        bucket["tracked_conversions"] += 1
+        bucket["attributed_revenue"] += amount
         for post_id, value in post_contrib.items():
-            by_post[post_id] = by_post.get(post_id, 0.0) + value
+            key = (currency, post_id)
+            by_post[key] = by_post.get(key, 0.0) + value
 
         channel_keys = [str(touchpoints[k].get("source") or touchpoints[k].get("platform") or "unknown") for k in keys]
         channel_contrib = _shapley_contributions(channel_keys, amount)
         for channel, value in channel_contrib.items():
-            by_channel[channel] = by_channel.get(channel, 0.0) + value
+            key = (currency, channel)
+            by_channel[key] = by_channel.get(key, 0.0) + value
 
         conversion_rows.append(
             {
@@ -709,43 +720,93 @@ def _build_report_response(
                 "provider": conv.get("provider"),
                 "external_order_id": conv.get("external_order_id"),
                 "amount": amount,
+                "currency": currency or None,
+                "currency_supported": currency_supported,
                 "touchpoints": keys,
                 "shapley": {k: round(v, 2) for k, v in post_contrib.items()},
             }
         )
 
-    top_posts = [
-        {"post_id": post_id, "attributed_revenue": round(revenue, 2)}
-        for post_id, revenue in sorted(by_post.items(), key=lambda item: item[1], reverse=True)
-    ]
+    currency_totals: list[dict[str, Any]] = []
+    for currency, bucket in sorted(currency_buckets.items()):
+        supported = bool(bucket["currency_supported"])
+        currency_totals.append(
+            {
+                "currency": bucket["currency"],
+                "currency_supported": supported,
+                "conversions": bucket["conversions"],
+                "tracked_conversions": bucket["tracked_conversions"],
+                "revenue": round(bucket["revenue"], 2) if supported else None,
+                "attributed_revenue": round(bucket["attributed_revenue"], 2) if supported else None,
+                "unattributed_revenue": round(bucket["unattributed_revenue"], 2) if supported else None,
+            }
+        )
+
+    currency_codes = sorted(
+        str(item["currency"]) for item in currency_totals if item["currency_supported"] and item["currency"]
+    )
+    if not currency_totals:
+        currency_status = "none"
+    elif len(currency_totals) == 1 and currency_totals[0]["currency_supported"]:
+        currency_status = "single"
+    elif len(currency_totals) == 1:
+        currency_status = "unsupported"
+    else:
+        currency_status = "mixed"
+
+    single_currency = currency_totals[0] if currency_status == "single" else None
+    totals: dict[str, Any] = {
+        "conversions": len(conversions),
+        "tracked_conversions": sum(int(item["tracked_conversions"]) for item in currency_totals),
+        "currency": single_currency["currency"] if single_currency else None,
+        "revenue": single_currency["revenue"] if single_currency else (0.0 if not currency_totals else None),
+        "attributed_revenue": (
+            single_currency["attributed_revenue"] if single_currency else (0.0 if not currency_totals else None)
+        ),
+        "unattributed_revenue": (
+            single_currency["unattributed_revenue"] if single_currency else (0.0 if not currency_totals else None)
+        ),
+    }
+
     channels = [
-        {"channel": channel, "attributed_revenue": round(revenue, 2)}
-        for channel, revenue in sorted(by_channel.items(), key=lambda item: item[1], reverse=True)
+        {
+            "channel": channel,
+            "currency": currency or None,
+            "currency_supported": bool(re.fullmatch(r"[A-Z]{3}", currency)),
+            "attributed_revenue": round(revenue, 2) if re.fullmatch(r"[A-Z]{3}", currency) else None,
+        }
+        for (currency, channel), revenue in sorted(by_channel.items(), key=lambda item: (item[0][0], -item[1]))
+    ]
+    top_posts = [
+        {
+            "post_id": post_id,
+            "currency": currency or None,
+            "currency_supported": bool(re.fullmatch(r"[A-Z]{3}", currency)),
+            "attributed_revenue": round(revenue, 2) if re.fullmatch(r"[A-Z]{3}", currency) else None,
+        }
+        for (currency, post_id), revenue in sorted(by_post.items(), key=lambda item: (item[0][0], -item[1]))
     ]
 
     return {
         "status": "ok",
         "tenant_id": tenant_id,
         "window_days": window_days,
-        "totals": {
-            "conversions": len(conversions),
-            "tracked_conversions": sum(1 for c in conversion_rows if c.get("touchpoints")),
-            "revenue": round(total_revenue, 2),
-            "attributed_revenue": round(attributed_revenue, 2),
-            "unattributed_revenue": round(total_revenue - attributed_revenue, 2),
-        },
+        "currency_status": currency_status,
+        "currency_codes": currency_codes,
+        "currency_totals": currency_totals,
+        "totals": totals,
         "channels": channels,
         "top_posts": top_posts,
         "conversions": conversion_rows[:100],
     }
 
 
-def _roi_metrics(revenue: float, spend: float) -> dict[str, float]:
+def _roi_metrics(revenue: float, spend: float) -> dict[str, float | None]:
     safe_revenue = round(float(revenue), 2)
     safe_spend = round(float(spend), 2)
     net = round(safe_revenue - safe_spend, 2)
-    roas = round((safe_revenue / safe_spend), 4) if safe_spend > 0 else 0.0
-    roi_pct = round(((safe_revenue - safe_spend) / safe_spend) * 100.0, 2) if safe_spend > 0 else 0.0
+    roas = round((safe_revenue / safe_spend), 4) if safe_spend > 0 else None
+    roi_pct = round(((safe_revenue - safe_spend) / safe_spend) * 100.0, 2) if safe_spend > 0 else None
     return {
         "revenue": safe_revenue,
         "spend": safe_spend,
@@ -762,6 +823,7 @@ def _build_social_roi_summary(
     touchpoints: dict[str, dict[str, Any]],
     conversions: list[dict[str, Any]],
     spend_rows: list[dict[str, Any]],
+    persistence_mode: str,
 ) -> dict[str, Any]:
     report = _build_report_response(
         tenant_id=tenant_id,
@@ -771,6 +833,21 @@ def _build_social_roi_summary(
     )
     attributed_revenue = float(report.get("totals", {}).get("attributed_revenue") or 0.0)
     total_spend = sum(float(row.get("amount") or 0.0) for row in spend_rows)
+    currency_values = [
+        str(record.get("currency") or "").strip().upper()
+        for record in [*conversions, *spend_rows]
+        if str(record.get("currency") or "").strip()
+    ]
+    currency_codes = sorted({currency for currency in currency_values if re.fullmatch(r"[A-Z]{3}", currency)})
+    invalid_currency_count = sum(1 for currency in currency_values if not re.fullmatch(r"[A-Z]{3}", currency))
+    if not currency_values:
+        currency_status = "none"
+    elif invalid_currency_count:
+        currency_status = "unsupported"
+    elif len(currency_codes) == 1:
+        currency_status = "single"
+    else:
+        currency_status = "mixed"
 
     spend_by_channel: dict[str, float] = {}
     spend_by_campaign: dict[str, float] = {}
@@ -818,26 +895,39 @@ def _build_social_roi_summary(
     channels.sort(key=lambda item: item.get("revenue", 0.0), reverse=True)
     campaigns.sort(key=lambda item: item.get("revenue", 0.0), reverse=True)
 
+    totals: dict[str, Any] = {
+        **_roi_metrics(attributed_revenue, total_spend),
+        "conversions": report.get("totals", {}).get("conversions", 0),
+        "tracked_conversions": report.get("totals", {}).get("tracked_conversions", 0),
+        "touchpoints": len(touchpoints),
+        "spend_entries": len(spend_rows),
+        "tracking_coverage_pct": round(
+            (
+                float(report.get("totals", {}).get("tracked_conversions") or 0)
+                / float(report.get("totals", {}).get("conversions") or 1)
+            )
+            * 100.0,
+            2,
+        )
+        if float(report.get("totals", {}).get("conversions") or 0) > 0
+        else 0.0,
+    }
+    if currency_status != "single":
+        for key in ("revenue", "spend", "net_profit", "roas", "roi_pct"):
+            totals[key] = None
+        for row in [*channels, *campaigns]:
+            for key in ("revenue", "spend", "net_profit", "roas", "roi_pct"):
+                row[key] = None
+
     return {
         "status": "ok",
         "tenant_id": tenant_id,
         "window_days": window_days,
-        "totals": {
-            **_roi_metrics(attributed_revenue, total_spend),
-            "tracked_conversions": report.get("totals", {}).get("tracked_conversions", 0),
-            "touchpoints": len(touchpoints),
-            "spend_entries": len(spend_rows),
-            "tracking_coverage_pct": round(
-                (
-                    float(report.get("totals", {}).get("tracked_conversions") or 0)
-                    / float(report.get("totals", {}).get("conversions") or 1)
-                )
-                * 100.0,
-                2,
-            )
-            if float(report.get("totals", {}).get("conversions") or 0) > 0
-            else 0.0,
-        },
+        "persistence_mode": persistence_mode,
+        "currency_status": currency_status,
+        "currency_codes": currency_codes,
+        "invalid_currency_records": invalid_currency_count,
+        "totals": totals,
         "channels": channels,
         "campaigns": campaigns,
         "attribution": {
@@ -858,7 +948,12 @@ def _register_touchpoint_routes(
     def create_touchpoint(payload: RevenueTouchpointRequest, auth: AuthDep) -> dict[str, Any]:
         enforce_rate_limit(f"{auth.tenant_id}:revenue:touchpoints:create", 180, 60)
         touchpoint = store.create_touchpoint(auth.tenant_id, payload)
-        return {"status": "ok", "tenant_id": auth.tenant_id, "touchpoint": touchpoint}
+        return {
+            "status": "ok",
+            "tenant_id": auth.tenant_id,
+            "persistence_mode": store.persistence_mode,
+            "touchpoint": touchpoint,
+        }
 
     @router.get("/analytics/revenue-attribution/touchpoints")
     def list_touchpoints(
@@ -903,57 +998,26 @@ def _register_webhook_routes(
     store: _RevenueAttributionStore,
     enforce_rate_limit: Callable[[str, int, int], None],
 ) -> None:
+    _PROVIDER_WEBHOOKS_UNAVAILABLE = {
+        "code": "NOT_IMPLEMENTED",
+        "message": (
+            "Provider webhooks are disabled until signed per-workspace credentials and trusted tenant routing are "
+            "available. This endpoint does not accept or store webhook payloads."
+        ),
+    }
+
     @router.post(
         "/analytics/revenue-attribution/webhooks/{provider}",
         responses={
-            400: {"description": "Invalid provider or payload."},
-            401: {"description": "Invalid provider webhook signature."},
+            400: {"description": "Unknown provider."},
+            501: {"description": "Per-workspace signed webhook routing is not implemented."},
         },
     )
-    async def ingest_provider_webhook(
-        provider: str,
-        request: Request,
-        x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-Id")] = None,
-    ) -> dict[str, Any]:
+    def ingest_provider_webhook(provider: str) -> dict[str, Any]:
         provider_lc = provider.strip().lower()
         if provider_lc not in _PROVIDER_SET:
             raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}.")
-
-        enforce_rate_limit(f"public:revenue:webhook:{provider_lc}", 600, 60)
-        raw_body = await request.body()
-        _verify_provider_signature(provider_lc, request.headers, raw_body)
-
-        try:
-            payload = json.loads(raw_body.decode("utf-8")) if raw_body else {}
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {exc}") from exc
-
-        tenant_id = _resolve_tenant_id(x_tenant_id, payload)
-        external_order_id, amount, currency, event_type, customer_ref, inferred_touchpoints = _extract_conversion(
-            provider_lc, payload
-        )
-
-        if amount <= 0:
-            return {
-                "status": "ignored",
-                "tenant_id": tenant_id,
-                "reason": "non-positive amount",
-                "provider": provider_lc,
-                "external_order_id": external_order_id,
-            }
-
-        record = store.persist_conversion(
-            tenant_id=tenant_id,
-            provider=provider_lc,
-            external_order_id=external_order_id,
-            amount=amount,
-            currency=currency,
-            event_type=event_type,
-            customer_ref=customer_ref,
-            touchpoint_keys=inferred_touchpoints,
-            raw_payload=payload,
-        )
-        return {"status": "accepted", "tenant_id": tenant_id, "conversion": record}
+        raise HTTPException(status_code=501, detail=_PROVIDER_WEBHOOKS_UNAVAILABLE)
 
 
 def _register_report_route(
@@ -969,12 +1033,14 @@ def _register_report_route(
     ) -> dict[str, Any]:
         enforce_rate_limit(f"{auth.tenant_id}:revenue:report", 120, 60)
         touchpoints, conversions = store.load_report_data(auth.tenant_id, window_days)
-        return _build_report_response(
+        report = _build_report_response(
             tenant_id=auth.tenant_id,
             window_days=window_days,
             touchpoints=touchpoints,
             conversions=conversions,
         )
+        report["persistence_mode"] = store.persistence_mode
+        return report
 
 
 def _register_social_roi_routes(
@@ -987,7 +1053,7 @@ def _register_social_roi_routes(
     def record_spend(payload: SocialSpendRequest, auth: AuthDep) -> dict[str, Any]:
         enforce_rate_limit(f"{auth.tenant_id}:social-roi:spend:create", 180, 60)
         item = store.record_spend(auth.tenant_id, payload)
-        return {"status": "ok", "tenant_id": auth.tenant_id, "spend": item}
+        return {"status": "ok", "tenant_id": auth.tenant_id, "persistence_mode": store.persistence_mode, "spend": item}
 
     @router.get("/analytics/social-roi/spend")
     def list_spend(
@@ -997,7 +1063,13 @@ def _register_social_roi_routes(
     ) -> dict[str, Any]:
         enforce_rate_limit(f"{auth.tenant_id}:social-roi:spend:list", 180, 60)
         items = store.list_spend(auth.tenant_id, limit, offset)
-        return {"status": "ok", "tenant_id": auth.tenant_id, "count": len(items), "items": items}
+        return {
+            "status": "ok",
+            "tenant_id": auth.tenant_id,
+            "persistence_mode": store.persistence_mode,
+            "count": len(items),
+            "items": items,
+        }
 
     @router.post("/analytics/social-roi/calculator")
     def roi_calculator(payload: SocialRoiCalculatorRequest, auth: AuthDep) -> dict[str, Any]:
@@ -1038,6 +1110,7 @@ def _register_social_roi_routes(
             touchpoints=touchpoints,
             conversions=conversions,
             spend_rows=spend_rows,
+            persistence_mode=store.persistence_mode,
         )
 
 

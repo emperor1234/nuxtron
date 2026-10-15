@@ -410,8 +410,30 @@ GET_ROUTES = [
 
 @pytest.mark.parametrize("path", GET_ROUTES)
 def test_get_not_server_error(client: TestClient, path: str) -> None:
-    """GET endpoint returns a non-crash response (< 500, 503 allowed for probes)."""
+    """GET endpoint returns a non-crash response or its documented unavailable capability."""
     r = client.get(path, headers=HEADERS)
+    if path.startswith("/ads-control-tower/"):
+        assert r.status_code == 501, f"GET {path} returned {r.status_code}: {r.text[:200]}"
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        return
+    if path.startswith("/social/ugc"):
+        assert r.status_code == 501, f"GET {path} returned {r.status_code}: {r.text[:200]}"
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        return
+    if path in {
+        "/media/jobs",
+        "/media/jobs/dlq",
+        "/media/jobs/1",
+        "/ops/platform/hybrid-stacks",
+        "/ops/platform/module-registry",
+        "/marketplace/plugins",
+        "/marketplace/themes",
+        "/reviews",
+        "/reviews/summary",
+    }:
+        assert r.status_code == 501, f"GET {path} returned {r.status_code}: {r.text[:200]}"
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        return
     assert r.status_code < 500 or r.status_code == 503, (
         f"GET {path} returned unexpected {r.status_code}: {r.text[:200]}"
     )

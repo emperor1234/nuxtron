@@ -3,6 +3,7 @@ from collections.abc import Callable
 from fastapi import APIRouter, Depends
 
 from ..deps import require_auth
+from ..services.social_reviews import REVIEW_DATA_UNAVAILABLE_RESPONSE
 
 JsonObject = dict[str, object]
 
@@ -22,6 +23,7 @@ def create_content_integrations_router(
     list_social_listening_mentions = handlers['list_social_listening_mentions']
     get_social_listening_summary = handlers['get_social_listening_summary']
     create_social_listening_alert_rule = handlers['create_social_listening_alert_rule']
+    list_social_listening_alert_rules = handlers['list_social_listening_alert_rules']
     list_social_listening_alerts = handlers['list_social_listening_alerts']
     get_social_listening_clusters = handlers['get_social_listening_clusters']
     ingest_review = handlers['ingest_review']
@@ -66,14 +68,27 @@ def create_content_integrations_router(
     router.add_api_route('/social/listening/ingest', ingest_social_listening_mention, methods=['POST'])
     router.add_api_route('/social/listening/mentions', list_social_listening_mentions, methods=['GET'])
     router.add_api_route('/social/listening/summary', get_social_listening_summary, methods=['GET'])
+    router.add_api_route('/social/listening/rules', list_social_listening_alert_rules, methods=['GET'])
     router.add_api_route('/social/listening/rules', create_social_listening_alert_rule, methods=['POST'])
     router.add_api_route('/social/listening/alerts', list_social_listening_alerts, methods=['GET'])
     router.add_api_route('/social/listening/clusters', get_social_listening_clusters, methods=['GET'])
 
-    router.add_api_route('/reviews/ingest', ingest_review, methods=['POST'])
-    router.add_api_route('/reviews', list_reviews, methods=['GET'])
-    router.add_api_route('/reviews/{review_id}/respond', respond_to_review, methods=['POST'])
-    router.add_api_route('/reviews/summary', get_reviews_summary, methods=['GET'])
+    router.add_api_route(
+        '/reviews/ingest', ingest_review, methods=['POST'], status_code=501, response_model=None,
+        responses={501: REVIEW_DATA_UNAVAILABLE_RESPONSE},
+    )
+    router.add_api_route(
+        '/reviews', list_reviews, methods=['GET'], status_code=501, response_model=None,
+        responses={501: REVIEW_DATA_UNAVAILABLE_RESPONSE},
+    )
+    router.add_api_route(
+        '/reviews/{review_id}/respond', respond_to_review, methods=['POST'], status_code=501, response_model=None,
+        responses={501: REVIEW_DATA_UNAVAILABLE_RESPONSE},
+    )
+    router.add_api_route(
+        '/reviews/summary', get_reviews_summary, methods=['GET'], status_code=501, response_model=None,
+        responses={501: REVIEW_DATA_UNAVAILABLE_RESPONSE},
+    )
 
     router.add_api_route('/email/contacts', create_email_contact, methods=['POST'])
     router.add_api_route('/email/contacts', list_email_contacts, methods=['GET'])

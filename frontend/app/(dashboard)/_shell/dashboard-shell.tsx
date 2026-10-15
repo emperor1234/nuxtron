@@ -9,7 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { Route } from "next";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -88,8 +88,11 @@ function primaryAction(product: ProductLine | null): { href: Route; label: strin
 function matchKey(path: string): RailKey {
   let best: RailKey = "dashboard";
   let length = -1;
-  for (const item of ALL_RAILS)
-    for (const prefix of [item.href, ...(item.matchPrefixes ?? [])]) {
+  for (const item of ALL_RAILS) {
+    const menuRoutes = MENUS[item.key]?.groups.flatMap((group) =>
+      group.items.map((entry) => entry.href),
+    ) ?? [];
+    for (const prefix of [item.href, ...(item.matchPrefixes ?? []), ...menuRoutes]) {
       if (
         (path === prefix || path.startsWith(`${prefix}/`)) &&
         prefix.length > length
@@ -98,6 +101,7 @@ function matchKey(path: string): RailKey {
         length = prefix.length;
       }
     }
+  }
   return best;
 }
 
@@ -109,9 +113,12 @@ export default function DashboardShell({
   fontClassName?: string;
 }) {
   const pathname = usePathname() || "/dashboard";
-  const router = useRouter();
   const activeKey = matchKey(pathname);
-  const [expanded, setExpanded] = useState<RailKey | null>(null);
+  const [expandedOverride, setExpandedOverride] = useState<{
+    pathname: string;
+    key: RailKey | null;
+  } | null>(null);
+  const expanded = expandedOverride?.pathname === pathname ? expandedOverride.key : activeKey;
   const [mobile, setMobile] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const searchTrigger = useRef<HTMLButtonElement>(null);
@@ -195,32 +202,52 @@ export default function DashboardShell({
             return (
               <div key={item.key}>
                 {item.hasMenu ? (
-                  <button
-                    type="button"
-                    className={`${styles.railItem} ${activeKey === item.key ? styles.railItemActive : ""}`}
-                    aria-expanded={isExpanded}
-                    aria-current={activeKey === item.key ? "location" : undefined}
-                    aria-controls={`${scope}-nav-${item.key}`}
-                    onClick={() => {
-                      setExpanded(isExpanded ? null : item.key);
-                      if (!isExpanded) router.push(item.href);
-                    }}
-                  >
-                    <Icon size={18} aria-hidden="true" />
-                    <span>{item.label}</span>
-                    <ChevronDown
-                      size={13}
-                      className={styles.chevron}
-                      aria-hidden="true"
-                    />
-                  </button>
+                  <div className={styles.railItemRow}>
+                    <Link
+                      href={item.href}
+                      className={`${styles.railItem} ${activeKey === item.key ? styles.railItemActive : ""}`}
+                      aria-current={
+                        pathname === item.href
+                          ? "page"
+                          : activeKey === item.key
+                            ? "location"
+                            : undefined
+                      }
+                      onClick={() => {
+                        setExpandedOverride({ pathname, key: item.key });
+                        setMobile(false);
+                      }}
+                    >
+                      <Icon size={18} aria-hidden="true" />
+                      <span>{item.label}</span>
+                    </Link>
+                    <button
+                      type="button"
+                      className={styles.railDisclosure}
+                      aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.label} navigation`}
+                      aria-expanded={isExpanded}
+                      aria-controls={`${scope}-nav-${item.key}`}
+                      onClick={() =>
+                        setExpandedOverride({
+                          pathname,
+                          key: isExpanded ? null : item.key,
+                        })
+                      }
+                    >
+                      <ChevronDown
+                        size={14}
+                        className={styles.chevron}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </div>
                 ) : (
                   <Link
                     href={item.href}
                     className={`${styles.railItem} ${activeKey === item.key ? styles.railItemActive : ""}`}
                     aria-current={pathname === item.href ? "page" : undefined}
                     onClick={() => {
-                      setExpanded(null);
+                      setExpandedOverride({ pathname, key: null });
                       setMobile(false);
                     }}
                   >
@@ -228,10 +255,11 @@ export default function DashboardShell({
                     <span>{item.label}</span>
                   </Link>
                 )}
-                {isExpanded && section && (
+                {section && (
                   <div
                     id={`${scope}-nav-${item.key}`}
                     className={styles.subnav}
+                    hidden={!isExpanded}
                   >
                     {section.groups.map((group) => (
                       <div key={group.label}>

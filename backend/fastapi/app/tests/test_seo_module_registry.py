@@ -212,11 +212,7 @@ class TestAhrefsCoreToolParity:
             assert len(row["vendors"]) > 0
 
     def test_ahrefs_parity_contract_matches_frontend_catalog_and_routes(self):
-        """
-        Permanent drift guard:
-        every backend Ahrefs parity row must be represented in frontend catalog
-        and have a concrete frontend route file.
-        """
+        """Available parity rows require frontend routes; removed placeholders stay unavailable."""
         result = audit_ahrefs_core_tool_parity()
         catalog_pairs = _frontend_catalog_ahrefs_pairs()
         catalog_routes = {route for route, _ in catalog_pairs}
@@ -224,11 +220,22 @@ class TestAhrefsCoreToolParity:
 
         assert result["missing_parity_modules"] == []
         assert result["missing_counterparts"] == []
+        assert result["fully_covered_tools"] == 0
+        assert set(result["unavailable_parity_modules"]) == {
+            str(row["parity_module_key"])
+            for row in result["rows"]
+            if row["implementation_status"] == "unavailable"
+        }
 
         for row in result["rows"]:
             route_path = str(row["route_path"])
             parity_module_key = str(row["parity_module_key"])
-            assert route_path in catalog_routes
-            assert parity_module_key in catalog_modules
-            assert _frontend_route_file_exists(route_path)
-            assert float(row["coverage_pct"]) == 100.0
+            if row["implementation_status"] == "available":
+                assert route_path in catalog_routes
+                assert parity_module_key in catalog_modules
+                assert _frontend_route_file_exists(route_path)
+                assert float(row["coverage_pct"]) == 100.0
+            else:
+                assert row["parity_module_implemented"] is False
+                assert float(row["coverage_pct"]) == 0.0
+                assert parity_module_key not in catalog_modules

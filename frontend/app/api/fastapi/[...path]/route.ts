@@ -450,29 +450,6 @@ function adsControlTowerGenericFallback(context: FallbackContext): NextResponse 
       callback_path: `/ads-control-tower/connectors/${b}/oauth/callback`,
     });
   }
-  if (context.method === 'POST' && a === 'connectors' && b && c === 'oauth' && context.path[4] === 'callback') {
-    return json({
-      status: 'ok',
-      connector: {
-        id: `connector-${b}`,
-        tenant_id: context.tenantId,
-        platform: b,
-        status: 'connected',
-        connected: true,
-        account_name: 'Fallback Account',
-        account_id: 'fallback-account',
-        scopes: [],
-        token_fingerprint: null,
-        refresh_token_present: false,
-        credit_currency: 'USD',
-        credit_total: 0,
-        credit_remaining: 0,
-        last_sync_at: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    });
-  }
   if (context.method === 'DELETE' && a === 'connectors' && b) {
     return json({
       status: 'ok',

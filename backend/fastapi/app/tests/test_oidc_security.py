@@ -203,3 +203,48 @@ def test_organization_resolver_fails_closed_when_mapping_is_required(monkeypatch
     with pytest.raises(HTTPException) as exc_info:
         organization_identity.resolve_external_organization("org-acme")
     assert exc_info.value.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_production_oidc_requires_explicit_mfa_verification_claim(
+    oidc_settings, private_key, jwks_loader, monkeypatch
+):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("AUTH0_MFA_VERIFIED_CLAIM", "https://nuxtron.com/mfa_verified")
+    claims = {
+        "iss": f"{oidc_settings.issuer}/",
+        "aud": [oidc_settings.audience],
+        "sub": "auth0|alice",
+        "organization_id": "org-acme",
+        "exp": int(time.time()) + 300,
+        "jti": "jti-mfa-missing",
+    }
+
+    with pytest.raises(oidc.OIDCVerificationError, match="multi-factor"):
+        await oidc.verify_oidc_jwt(_token(private_key, claims), oidc_settings)
+
+    claims["https://nuxtron.com/mfa_verified"] = False
+    with pytest.raises(oidc.OIDCVerificationError, match="multi-factor"):
+        await oidc.verify_oidc_jwt(_token(private_key, claims), oidc_settings)
+
+
+@pytest.mark.asyncio
+async def test_production_oidc_accepts_only_true_auth0_mfa_assertion(
+    oidc_settings, private_key, jwks_loader, monkeypatch
+):
+    claim_name = "https://id.nuxtron.example/claims/mfa_verified"
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("AUTH0_MFA_VERIFIED_CLAIM", claim_name)
+    claims = {
+        "iss": f"{oidc_settings.issuer}/",
+        "aud": [oidc_settings.audience],
+        "sub": "auth0|alice",
+        "organization_id": "org-acme",
+        claim_name: True,
+        "exp": int(time.time()) + 300,
+        "jti": "jti-mfa-verified",
+    }
+
+    verified = await oidc.verify_oidc_jwt(_token(private_key, claims), oidc_settings)
+
+    assert verified[claim_name] is True

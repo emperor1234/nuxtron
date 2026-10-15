@@ -130,8 +130,7 @@ def _model_quality(provider: str, model: str) -> float:
 
 
 def _extract_ip_hash(request: Request) -> str:
-    forwarded_for = (request.headers.get("X-Forwarded-For", "") or "").split(",")[0].strip()
-    client_host = forwarded_for or (request.client.host if request.client else "")
+    client_host = request.client.host if request.client else ""
     return hashlib.sha256(client_host.encode("utf-8")).hexdigest()[:16] if client_host else ""
 
 
