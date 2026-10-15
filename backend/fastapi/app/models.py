@@ -11,7 +11,7 @@ import sys
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -418,6 +418,66 @@ class JobOutbox(BaseTenantModel):
     available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     last_error: Mapped[str | None] = mapped_column(Text, default=None)
+
+
+class ContentApprovalConfig(BaseTenantModel):
+    """Per-tenant approval chain applied to newly submitted content."""
+
+    __tablename__ = 'content_approval_configs'
+    __table_args__ = (Index('uq_content_approval_configs_tenant', 'tenant_id', unique=True),)
+
+    levels: Mapped[list[str]] = mapped_column(JsonField, default=list)
+    require_all_levels: Mapped[bool] = mapped_column(default=True)
+    expiry_hours: Mapped[int] = mapped_column(default=48)
+
+
+class ContentApprovalRequest(BaseTenantModel):
+    """A scheduled post awaiting sign-off; levels are snapshotted at submission."""
+
+    __tablename__ = 'content_approval_requests'
+    __table_args__ = (
+        Index('ix_content_approval_requests_tenant_status', 'tenant_id', 'status'),
+        Index('ix_content_approval_requests_tenant_post', 'tenant_id', 'scheduled_post_id'),
+        Index(
+            'uq_content_approval_requests_pending_post',
+            'tenant_id',
+            'scheduled_post_id',
+            unique=True,
+            postgresql_where=text("status = 'pending'"),
+            sqlite_where=text("status = 'pending'"),
+        ),
+    )
+
+    scheduled_post_id: Mapped[int] = mapped_column(nullable=False)
+    platform: Mapped[str] = mapped_column(String(40), nullable=False)
+    content_preview: Mapped[str] = mapped_column(Text, nullable=False)
+    campaign_tag: Mapped[str | None] = mapped_column(String(80), default=None)
+    requested_by: Mapped[str] = mapped_column(String(120), nullable=False)
+    requested_by_subject: Mapped[str] = mapped_column(String(255), default='')
+    status: Mapped[str] = mapped_column(String(20), default='pending')
+    approval_levels: Mapped[list[str]] = mapped_column(JsonField, default=list)
+    approvals_received: Mapped[list[str]] = mapped_column(JsonField, default=list)
+    require_all_levels: Mapped[bool] = mapped_column(default=True)
+    due_at: Mapped[str | None] = mapped_column(String(40), default=None)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, default=None)
+    rejected_by: Mapped[str | None] = mapped_column(String(80), default=None)
+
+
+class ContentApprovalComment(BaseTenantModel):
+    """Reviewer decision note attached to an approval request."""
+
+    __tablename__ = 'content_approval_comments'
+    __table_args__ = (Index('ix_content_approval_comments_tenant_request', 'tenant_id', 'request_id'),)
+
+    request_id: Mapped[int] = mapped_column(
+        ForeignKey('content_approval_requests.id', ondelete='CASCADE'), nullable=False
+    )
+    reviewer_role: Mapped[str] = mapped_column(String(80), nullable=False)
+    reviewer_subject: Mapped[str] = mapped_column(String(255), default='')
+    decision: Mapped[str] = mapped_column(String(20), nullable=False)
+    comment: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class BillingSubscription(BaseTenantModel):

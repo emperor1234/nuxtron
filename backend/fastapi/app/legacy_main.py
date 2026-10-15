@@ -37,6 +37,7 @@ from .rate_limiter import (
     reset_rate_limits_for_tests as reset_rate_limits_for_tests,
 )
 from .routers.autonomous_workforce import run_autonomous_workforce_watchdog
+from .routers.content_approval import count_approval_requests as _count_content_approval_requests
 from .routers.ira import run_ira_watchdog
 from .security import (
     get_password_pepper as get_password_pepper,
@@ -186,9 +187,6 @@ _analytics_rollups_memory = memory_stores.analytics_rollups
 _notification_preferences_memory = memory_stores.notification_preferences
 _notification_delivery_receipts_memory = memory_stores.notification_delivery_receipts
 # ADDED: Hootsuite-parity modules — content approval, media library, employee advocacy
-_content_approval_requests_memory = memory_stores.content_approval_requests
-_content_approval_comments_memory = memory_stores.content_approval_comments
-_content_approval_configs_memory = memory_stores.content_approval_configs
 _media_library_assets_memory = memory_stores.media_library_assets
 _media_library_folders_memory = memory_stores.media_library_folders
 _media_library_tags_memory = memory_stores.media_library_tags
@@ -2477,7 +2475,7 @@ def _strict_no_mock_module_store_counts(tenant_id: str) -> dict[str, int]:
         'scheduled_posts': len([item for item in _scheduled_posts_memory if str(item.get('tenant_id', '')) == tenant_id]),
         'social_accounts': len([item for item in _social_accounts_memory if str(item.get('tenant_id', '')) == tenant_id]),
         'smart_inbox_messages': len([item for item in _smart_inbox_messages_memory if str(item.get('tenant_id', '')) == tenant_id]),
-        'content_approval_requests': len([item for item in _content_approval_requests_memory if str(item.get('tenant_id', '')) == tenant_id]),
+        'content_approval_requests': _count_content_approval_requests(tenant_id),
         'social_listening': len([item for item in _social_listening_memory if str(item.get('tenant_id', '')) == tenant_id]),
         'reviews': len([item for item in _reviews_memory if str(item.get('tenant_id', '')) == tenant_id]),
         'influencers': len([item for item in _influencers_memory if str(item.get('tenant_id', '')) == tenant_id]),

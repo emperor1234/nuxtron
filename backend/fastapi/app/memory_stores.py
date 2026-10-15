@@ -260,11 +260,6 @@ white_label_events: StoreList = _create_store()
 media_jobs: StoreList = _create_store()
 media_jobs_dlq: StoreList = _create_store()  # dead-letter queue for failed jobs
 
-# ── Content Approval Workflows (Hootsuite §4.5) ──────────
-# ADDED: multi-level approval chain before social post publishing
-content_approval_requests: StoreList = _create_store()   # approval requests (pending/approved/rejected)
-content_approval_comments: StoreList = _create_store()   # inline reviewer comments per request
-content_approval_configs: StoreList = _create_store()    # per-tenant approval chain configurations
 
 # ── Media Library (Hootsuite §4.3) ───────────────────────
 # ADDED: centralised asset repository with folder org + AI tagging

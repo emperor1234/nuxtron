@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 
 os.environ.setdefault('NUXTRON_SKIP_STARTUP_DB_INIT', '1')
@@ -12,6 +14,21 @@ import pytest
 from fastapi.testclient import TestClient
 
 H = {'X-API-Key': os.getenv('FASTAPI_API_KEY', 'test-api-key'), 'X-Tenant-Id': 'test-sw-enterprise'}
+
+
+@contextmanager
+def _acting_as(client: TestClient, *roles: str) -> Iterator[None]:
+    """Authenticate as a bearer user holding ``roles`` in the test tenant."""
+    from backend.fastapi.app.deps import AuthContext, require_auth
+
+    app = client.app
+    app.dependency_overrides[require_auth] = lambda: AuthContext(
+        tenant_id=H['X-Tenant-Id'], auth_mode='bearer_jwt', subject=f"reviewer-{'-'.join(roles)}", roles=list(roles)
+    )
+    try:
+        yield
+    finally:
+        app.dependency_overrides.pop(require_auth, None)
 
 
 @pytest.fixture(scope='module')
@@ -760,11 +777,20 @@ def test_multi_level_approval_governance_flow(client: TestClient) -> None:
     pending_requests = pending_response.json().get('requests', [])
     assert any(str(item.get('id')) == request_id for item in pending_requests)
 
-    first_approval = client.post(f'/social/approvals/{request_id}/approve?approver=legal', headers=H)
+    # Naming a level in the query string is not enough: the caller must hold it.
+    key_only_approval = client.post(f'/social/approvals/{request_id}/approve?approver=legal', headers=H)
+    assert key_only_approval.status_code == 403
+    with _acting_as(client, 'brand'):
+        wrong_role = client.post(f'/social/approvals/{request_id}/approve?approver=legal', headers=H)
+    assert wrong_role.status_code == 403
+
+    with _acting_as(client, 'legal'):
+        first_approval = client.post(f'/social/approvals/{request_id}/approve?approver=legal', headers=H)
     assert first_approval.status_code == 200
     assert first_approval.json().get('status') == 'pending'
 
-    second_approval = client.post(f'/social/approvals/{request_id}/approve?approver=brand', headers=H)
+    with _acting_as(client, 'brand'):
+        second_approval = client.post(f'/social/approvals/{request_id}/approve?approver=brand', headers=H)
     assert second_approval.status_code == 200
     assert second_approval.json().get('status') == 'approved'
 
@@ -804,11 +830,19 @@ def test_multi_level_approval_governance_flow(client: TestClient) -> None:
     assert create_approval.status_code == 200
     manual_request_id = str(create_approval.json().get('request', {}).get('id'))
 
-    reject_response = client.post(
+    outsider_reject = client.post(
         f'/social/approvals/{manual_request_id}/reject',
         headers=H,
-        json={'reason': 'Brand safety policy check failed.'},
+        json={'reason': 'Not on the approval chain.'},
     )
+    assert outsider_reject.status_code == 403
+
+    with _acting_as(client, 'ops'):
+        reject_response = client.post(
+            f'/social/approvals/{manual_request_id}/reject',
+            headers=H,
+            json={'reason': 'Brand safety policy check failed.'},
+        )
     assert reject_response.status_code == 200
 
     queue_after_reject = client.get('/social/queue?status=all&limit=200', headers=H)
@@ -818,6 +852,44 @@ def test_multi_level_approval_governance_flow(client: TestClient) -> None:
     assert rejected_post is not None
     assert rejected_post.get('status') == 'rejected'
     assert rejected_post.get('approval_status') == 'rejected'
+
+
+def test_auto_publish_approval_hands_post_to_publisher(client: TestClient) -> None:
+    accounts = client.get('/social/accounts', headers=H).json().get('accounts', [])
+    if not accounts:
+        connect = client.post(
+            '/social/accounts/connect',
+            headers=H,
+            json={'network': 'linkedin', 'account_name': 'Auto Publish', 'handle': 'auto_publish', 'account_type': 'business'},
+        )
+        assert connect.status_code == 200
+        accounts = client.get('/social/accounts', headers=H).json().get('accounts', [])
+    staged = client.post(
+        '/social/autopilot/publish',
+        headers=H,
+        json={
+            'account_id': int(accounts[0]['id']),
+            'headline': 'Auto publish after approval',
+            'caption': 'Released by the publisher once legal signs off.',
+            'publish_mode': 'draft',
+            'requires_approval': True,
+            'approval_levels': ['legal'],
+            'auto_publish_on_approval': True,
+        },
+    )
+    assert staged.status_code == 200
+    request_id = str(staged.json()['approval_request']['id'])
+    post_id = str(staged.json()['post']['id'])
+
+    with _acting_as(client, 'legal'):
+        approved = client.post(f'/social/approvals/{request_id}/approve?approver=legal', headers=H)
+    assert approved.status_code == 200
+    assert approved.json().get('status') == 'approved'
+
+    queue = client.get('/social/queue?status=all&limit=200', headers=H).json().get('queue', [])
+    post = next(item for item in queue if str(item.get('id')) == post_id)
+    # Approval releases the post; only a real provider call may mark it published.
+    assert post.get('status') == 'scheduled'
 
 
 def test_production_readiness_endpoint(client: TestClient) -> None:

@@ -1,5 +1,6 @@
 """Social use cases: list hashtag groups."""
 
+from ....authz import has_any_role
 from ....domains.social.persistence import _SocialWorkspaceState
 from ....domains.social.persistence import _sw_audit
 from ....domains.social.schemas import ApprovalCreateRequest
@@ -445,7 +446,13 @@ def operation_approve_request(
     st: _SocialWorkspaceState, router: APIRouter, request_id: str, auth: AuthDep, approver: str = "approver"
 ) -> dict[str, Any]:
     st.enforce_rate_limit(f"{auth.tenant_id}:approvals:approve", 180, 60)
+    # ``approver`` names the approval level being signed off. The caller must
+    # hold that role on their verified token; a query string cannot grant it.
     approver_value = approver.strip().lower() or "approver"
+    if not has_any_role(auth, approver_value):
+        raise _sw_http_error(
+            status_code=403, detail=f"You do not hold the '{approver_value}' role required to sign off this level."
+        )
     with st.lock:
         req = next(
             (
@@ -464,11 +471,13 @@ def operation_approve_request(
                 "postId": str(req.get("post_id")),
                 "status": req.get("status"),
             }
+        required = [str(v).lower() for v in req.get("approval_levels") or req.get("approvers") or []]
+        if required and approver_value not in required:
+            raise _sw_http_error(status_code=422, detail=f"'{approver_value}' is not an approval level on this request.")
         approvals = [str(v).lower() for v in req.get("approvals_received", [])]
         if approver_value not in approvals:
             approvals.append(approver_value)
         req["approvals_received"] = approvals
-        required = [str(v).lower() for v in req.get("approval_levels") or req.get("approvers") or []]
         all_approved = all((level in approvals for level in required)) if required else bool(approvals)
         post = next(
             (
@@ -482,14 +491,10 @@ def operation_approve_request(
             req["status"] = "approved"
             req["approved_at"] = datetime.now(UTC).isoformat()
             if post is not None:
-                publish_at_raw = str(post.get("publish_at") or "")
-                publish_now = False
-                try:
-                    publish_now = bool(publish_at_raw) and datetime.fromisoformat(publish_at_raw) <= datetime.now(UTC)
-                except Exception:
-                    publish_now = False
+                # Approval only releases the post to the publisher. Marking it
+                # "published" here would claim a network post that never happened.
                 if req.get("auto_publish_on_approve"):
-                    post["status"] = "published" if publish_now else "scheduled"
+                    post["status"] = "scheduled"
                 else:
                     post["status"] = "approved"
                 post["approval_status"] = "approved"
@@ -521,6 +526,11 @@ def operation_reject_request(
         )
         if req is None:
             raise _sw_http_error(status_code=404, detail="Approval request not found.")
+        if req.get("status") != "pending":
+            raise _sw_http_error(status_code=400, detail=f"Request is already in '{req.get('status')}' state.")
+        levels = [str(v).lower() for v in req.get("approval_levels") or req.get("approvers") or []]
+        if not has_any_role(auth, *levels):
+            raise _sw_http_error(status_code=403, detail="Only a reviewer on this request's approval chain can reject it.")
         req["status"] = "rejected"
         req["rejection_reason"] = payload.reason.strip()
         req["rejected_at"] = datetime.now(UTC).isoformat()

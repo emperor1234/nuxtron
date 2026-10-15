@@ -551,9 +551,6 @@ def register_all_routers(app: FastAPI) -> None:
         create_content_approval_router(
             enforce_rate_limit=lg._enforce_rate_limit,
             audit_log_memory=lg._audit_log_memory,
-            approval_requests_memory=lg._content_approval_requests_memory,
-            approval_comments_memory=lg._content_approval_comments_memory,
-            approval_configs_memory=lg._content_approval_configs_memory,
         )
     )
 
