@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { ArrowRight, Database, KeyRound, Lock, ScrollText, ShieldCheck, Users } from 'lucide-react';
 import TrustClient from './TrustClient';
 
 export const metadata: Metadata = {

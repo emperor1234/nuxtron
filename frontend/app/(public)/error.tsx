@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 /** Route-group error boundary for marketing/public pages. */
 export default function PublicError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    // eslint-disable-next-line no-console
+     
     console.error('[public-error]', error.digest ?? error.message);
   }, [error]);
 
@@ -23,7 +23,7 @@ export default function PublicError({ error, reset }: { error: Error & { digest?
         minHeight: '50vh',
       }}
     >
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>This page couldn't load</h2>
+      <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>This page couldn&apos;t load</h2>
       <p style={{ color: 'var(--muted)', maxWidth: '32rem' }}>Something went wrong. Try again, or head back home.</p>
       <div style={{ display: 'flex', gap: '0.75rem' }}>
         <button

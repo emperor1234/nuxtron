@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports, no-undef -- plain Node script */
 const http = require('node:http');
 
 const port = 4101;

@@ -113,6 +113,8 @@ export default function TranslationStudioPage() {
   }
 
   useEffect(() => {
+    // Loads the page's lists once on mount; the setState calls happen after awaits.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadBootstrapData();
   }, []);
 

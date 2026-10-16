@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { ArrowRight, TrendingUp } from 'lucide-react';
 import CaseStudiesClient from './CaseStudiesClient';
 
 export const metadata: Metadata = {

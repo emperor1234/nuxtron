@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { BLOG_POSTS, getPostBySlug } from '../posts';
+import { BLOG_POSTS } from '../posts';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { usePathname } from "next/navigation";
 
-const ACCOUNT_LINKS = [
+const ACCOUNT_LINKS: Array<{ href: Route; label: string }> = [
   { href: '/account', label: 'Overview' },
   { href: '/account/profile', label: 'Personal Details' },
   { href: '/account/orders', label: 'Orders' },

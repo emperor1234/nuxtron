@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { GET, POST, __test__ } from './route';
+import { __test__ } from '../gateway';
+import { GET, POST } from './route';
 
 afterEach(() => {
   vi.unstubAllEnvs();

@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { ArrowRight, Globe, HeartHandshake, Rocket, Users } from 'lucide-react';
 import CareersClient from './CareersClient';
 
 export const metadata: Metadata = {

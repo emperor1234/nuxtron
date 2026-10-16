@@ -15,7 +15,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
   useEffect(() => {
     // TODO: replace with a real error tracker (e.g. Sentry) once a DSN is
     // provisioned — see backend fallback payload's `sentry_enabled: false`.
-    // eslint-disable-next-line no-console
+     
     console.error('[global-error]', error.digest ?? error.message);
   }, [error]);
 
