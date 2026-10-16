@@ -152,14 +152,6 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "keywords": []
   },
   {
-    "route": "/seo-analysis",
-    "title": "Content Check",
-    "section": "seo",
-    "group": "Strategy & operations",
-    "description": "Quick SEO check of a page or draft.",
-    "keywords": []
-  },
-  {
     "route": "/seo/aeo",
     "title": "Answer Engine (AEO)",
     "section": "seo",
@@ -882,5 +874,6 @@ export const ROUTE_ALIASES: Readonly<Record<string, string>> = {
   "/studio/content-hub/roi-forecast": "/studio",
   "/studio/content-hub/ab-testing": "/studio",
   "/studio/content-hub": "/studio",
-  "/studio/intelligence": "/studio"
+  "/studio/intelligence": "/studio",
+  "/seo-analysis": "/seo/on-page"
 };

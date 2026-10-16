@@ -641,6 +641,10 @@
     {
       "from": "/studio/intelligence",
       "to": "/studio"
+    },
+    {
+      "from": "/seo-analysis",
+      "to": "/seo/on-page"
     }
   ]
 }

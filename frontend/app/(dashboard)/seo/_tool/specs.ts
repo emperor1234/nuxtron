@@ -78,6 +78,19 @@ export const SEO_TOOLS: Record<string, ToolSpec> = {
       { name: "content", label: "Page content", kind: "textarea", rows: 10, max: 10000, placeholder: "Paste the page copy", hint: "Measurements are computed from the text you paste." },
     ],
   },
+  planner: {
+    slug: "planner",
+    title: "SEO Planner",
+    summary: "Turn a goal into a step-by-step SEO plan for your domain.",
+    endpoint: "/seo-platform/planner/draft",
+    fields: [
+      { name: "goal", label: "Goal", kind: "textarea", rows: 3, required: true, max: 500, placeholder: "Grow organic sign-ups for the pricing page" },
+      { name: "domain", label: "Domain", kind: "text", max: 200, placeholder: "example.com" },
+      { name: "primary_keyword", label: "Primary keyword", kind: "text", max: 200 },
+      { name: "market", label: "Market", kind: "text", max: 80, placeholder: "United Kingdom" },
+    ],
+    submitLabel: "Draft plan",
+  },
   writer: {
     slug: "writer",
     title: "AI Article Writer",

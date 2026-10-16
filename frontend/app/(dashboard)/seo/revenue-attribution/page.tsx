@@ -1,208 +1,89 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { resolveSessionTenant } from '@/app/lib/api-client';
-import { apiGet } from '@/app/lib/platform-api';
-import { Badge, Button, Card, CardTitle, FieldSelect, Page, PageHeader } from '../../_ui/kit';
-import { parseRevenueAttributionReport, type RevenueReport } from './report-model';
-import styles from './revenue-attribution.module.css';
+import { useState, type FormEvent } from "react";
+import { Plus } from "lucide-react";
+import { apiGet, apiSend } from "@/app/lib/platform-api";
+import { Button, Callout, DataTable, EmptyState, ErrorState, Field, FormActions, Kpi, KpiGrid, Modal, Page, PageHeader, Section, type Column } from "../../_ui/kit";
+import { formatCurrency, formatNumber } from "../../_ui/format";
+import { ResourceView, useResource, useTenant } from "../../_ui/use-resource";
 
-const WINDOW_OPTIONS = [30, 90, 180, 365] as const;
+type Channel = { channel?: string; platform?: string; conversions?: number; revenue?: number; attributed_revenue?: number };
+type Report = { window_days: number; currency_totals: Array<{ currency: string; revenue: number }>; totals: { conversions: number; tracked_conversions: number; revenue: number; attributed_revenue: number; unattributed_revenue: number; currency: string | null }; channels: Channel[] };
 
-function formatCount(value: number): string {
-  return new Intl.NumberFormat().format(value);
-}
+function Form({ title, endpoint, fields, build, open, onOpenChange, onDone }: { title: string; endpoint: string; fields: Array<{ key: string; label: string; hint?: string; numeric?: boolean }>; build: (v: Record<string, string>) => Record<string, unknown>; open: boolean; onOpenChange: (open: boolean) => void; onDone: () => void }) {
+  const tenant = useTenant();
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [failure, setFailure] = useState<unknown>(null);
+  const [busy, setBusy] = useState(false);
 
-function formatAmount(value: number | null, currency: string | null, supported: boolean): string {
-  if (!supported || !currency || value === null) return 'Amount withheld';
-  return `${new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)} ${currency}`;
-}
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const found: Record<string, string> = {};
+    for (const field of fields) {
+      const value = (values[field.key] ?? "").trim();
+      if (!value) found[field.key] = `${field.label} is required.`;
+      else if (field.numeric && Number.isNaN(Number(value))) found[field.key] = "Enter a number.";
+    }
+    setErrors(found);
+    if (Object.keys(found).length) return;
+    setBusy(true);
+    setFailure(null);
+    try {
+      await apiSend(endpoint, "POST", build(values), tenant);
+      setValues({});
+      onOpenChange(false);
+      onDone();
+    } catch (caught) {
+      setFailure(caught);
+    } finally {
+      setBusy(false);
+    }
+  }
 
-function currencyLabel(currency: string | null, supported: boolean): string {
-  if (!currency) return 'Unspecified currency';
-  return supported ? currency : `Unrecognized code: ${currency}`;
+  return (
+    <Modal open={open} onOpenChange={onOpenChange} title={title}>
+      <form onSubmit={submit} noValidate style={{ display: "grid", gap: 16 }}>
+        {fields.map((field) => <Field key={field.key} label={field.label} hint={field.hint} error={errors[field.key]} value={values[field.key] ?? ""} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} />)}
+        {failure ? <ErrorState error={failure} title="Not saved" /> : null}
+        <FormActions><Button onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" variant="primary" loading={busy}>Save</Button></FormActions>
+      </form>
+    </Modal>
+  );
 }
 
 export default function RevenueAttributionPage() {
-  const [windowDays, setWindowDays] = useState<number>(30);
-  const [report, setReport] = useState<RevenueReport | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
-  const activeRequest = useRef(0);
-  const workspaceRef = useRef('');
-
-  const loadReport = useCallback(async () => {
-    const requestId = ++activeRequest.current;
-    const workspaceId = resolveSessionTenant();
-    if (!workspaceId) {
-      workspaceRef.current = '';
-      setReport(null);
-      setRefreshedAt(null);
-      setError('Workspace context is required. Sign in or select a workspace to view recorded revenue events.');
-      setLoading(false);
-      return;
-    }
-
-    if (workspaceRef.current && workspaceRef.current !== workspaceId) {
-      setReport(null);
-      setRefreshedAt(null);
-    }
-    workspaceRef.current = workspaceId;
-    setLoading(true);
-    setError('');
-
-    try {
-      const raw = await apiGet<unknown>(
-        `/analytics/revenue-attribution/report?window_days=${windowDays}`,
-        workspaceId,
-        { cache: false }
-      );
-      const nextReport = parseRevenueAttributionReport(raw);
-      if (requestId !== activeRequest.current) return;
-      setReport(nextReport);
-      setRefreshedAt(new Date().toISOString());
-    } catch {
-      if (requestId !== activeRequest.current) return;
-      setError('Could not load the recorded revenue report. Retry the request; no generated or sample totals are shown.');
-    } finally {
-      if (requestId === activeRequest.current) setLoading(false);
-    }
-  }, [windowDays]);
-
-  useEffect(() => {
-    let active = true;
-    window.queueMicrotask(() => {
-      if (active) void loadReport();
-    });
-    return () => {
-      active = false;
-      activeRequest.current += 1;
-    };
-  }, [loadReport]);
-
-  const persistenceIsTemporary = report?.persistence_mode === 'process-memory';
-
+  const resource = useResource<Report>((tenant) => apiGet<Report>("/analytics/revenue-attribution/report", tenant), []);
+  const [touch, setTouch] = useState(false);
+  const [sale, setSale] = useState(false);
+  const columns: Column<Channel>[] = [
+    { key: "channel", header: "Channel", strong: true, render: (row) => row.channel ?? row.platform ?? "—" },
+    { key: "conv", header: "Conversions", numeric: true, render: (row) => formatNumber(row.conversions), sortValue: (row) => row.conversions ?? 0 },
+    { key: "rev", header: "Attributed revenue", numeric: true, render: (row) => formatCurrency(row.attributed_revenue ?? row.revenue ?? 0), sortValue: (row) => row.attributed_revenue ?? row.revenue ?? 0 },
+  ];
   return (
-    <Page>
-      <PageHeader
-        title="Revenue Attribution"
-        subtitle="Recorded conversions linked to tracked Nuxtron touchpoints; no modeled or causal lift estimate."
-        actions={(
-          <Button variant="ghost" onClick={() => void loadReport()} disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh report'}
-          </Button>
+    <Page width="wide">
+      <PageHeader title="Revenue Attribution" subtitle="Tie orders back to the posts and campaigns that sent the visitor." actions={<><Button onClick={() => setTouch(true)}>Record a tracked link</Button><Button variant="primary" icon={<Plus size={15} aria-hidden="true" />} onClick={() => setSale(true)}>Record an order</Button></>} />
+      <ResourceView resource={resource} isEmpty={(data) => data.totals.conversions === 0 && data.channels.length === 0} empty={<EmptyState title="No orders recorded" description="Record the tracked links you publish, then the orders that follow, to see revenue by channel." action={<Button variant="primary" onClick={() => setSale(true)}>Record an order</Button>} />}>
+        {(data) => (
+          <>
+            <KpiGrid>
+              <Kpi label="Orders" value={formatNumber(data.totals.conversions)} hint={`Last ${data.window_days} days`} />
+              <Kpi label="Revenue" value={formatCurrency(data.totals.revenue, data.totals.currency ?? "USD")} />
+              <Kpi label="Attributed" value={formatCurrency(data.totals.attributed_revenue, data.totals.currency ?? "USD")} />
+              <Kpi label="Not attributed" value={formatCurrency(data.totals.unattributed_revenue, data.totals.currency ?? "USD")} />
+            </KpiGrid>
+            <Section title="By channel"><DataTable columns={columns} rows={data.channels} getKey={(row, index) => row.channel ?? row.platform ?? index} caption="Revenue by channel" /></Section>
+          </>
         )}
-      />
-
-      <Card className={styles.controls}>
-        <FieldSelect
-          id="revenue-attribution-window"
-          label="Reporting window"
-          value={windowDays}
-          onChange={(event) => setWindowDays(Number(event.currentTarget.value))}
-        >
-          {WINDOW_OPTIONS.map((days) => <option key={days} value={days}>Last {days} days</option>)}
-        </FieldSelect>
-        <p className={styles.sourceNote}>
-          Source: authenticated workspace conversion records and tracked touchpoints. Provider webhooks are paused until signed per-workspace routing is available.
-        </p>
-      </Card>
-
-      {loading && !report ? <p className={styles.status} role="status">Loading recorded conversion activity…</p> : null}
-      {error ? <p className={styles.error} role="alert">{error}</p> : null}
-
-      {report ? (
-        <>
-          <div className={styles.provenance} role="status">
-            <Badge tone={persistenceIsTemporary ? 'neutral' : 'success'}>
-              {persistenceIsTemporary ? 'Temporary process-memory data' : 'PostgreSQL-backed data'}
-            </Badge>
-            <span>{refreshedAt ? `Updated ${new Date(refreshedAt).toLocaleTimeString()}` : 'Update time unavailable'}</span>
-            {error ? <span className={styles.staleNotice}>Showing the last successful report; refresh failed.</span> : null}
-          </div>
-
-          {persistenceIsTemporary ? (
-            <p className={styles.persistenceWarning}>
-              These records are held in process memory and may be lost when the service restarts; they are not confirmed as durable.
-            </p>
-          ) : null}
-
-          {report.totals.conversions === 0 ? (
-            <Card className={styles.emptyState}>
-              <CardTitle sub={`No authenticated conversion records were returned for the last ${report.window_days} days.`}>
-                No recorded conversion activity
-              </CardTitle>
-              <p className={styles.secondaryText}>
-                Revenue is not estimated from domain names, channel labels, or notes. This report will populate only when conversion events and tracked touchpoints are recorded for this workspace.
-              </p>
-            </Card>
-          ) : (
-            <>
-              <section className={styles.countGrid} aria-label="Recorded conversion counts">
-                <Card className={styles.metricCard}>
-                  <span className={styles.metricLabel}>Recorded conversions</span>
-                  <strong className={styles.metricValue}>{formatCount(report.totals.conversions)}</strong>
-                  <span className={styles.metricHint}>In the last {report.window_days} days</span>
-                </Card>
-                <Card className={styles.metricCard}>
-                  <span className={styles.metricLabel}>With tracked touchpoints</span>
-                  <strong className={styles.metricValue}>{formatCount(report.totals.tracked_conversions)}</strong>
-                  <span className={styles.metricHint}>Linked to one or more stored Nuxtron touchpoints</span>
-                </Card>
-              </section>
-
-              <section className={styles.reportSection} aria-labelledby="revenue-by-currency-title">
-                <CardTitle sub="Currency buckets are kept separate. No exchange-rate conversion or cross-currency total is applied.">
-                  <span id="revenue-by-currency-title">Revenue by currency</span>
-                </CardTitle>
-                <div className={styles.currencyGrid}>
-                  {report.currency_totals.map((item) => (
-                    <Card className={styles.currencyCard} key={item.currency ?? 'unspecified-currency'}>
-                      <div className={styles.currencyHeading}>
-                        <strong>{currencyLabel(item.currency, item.currency_supported)}</strong>
-                        <span>{formatCount(item.conversions)} conversions</span>
-                      </div>
-                      {item.currency_supported && item.currency ? (
-                        <dl className={styles.moneyList}>
-                          <div><dt>Recorded revenue</dt><dd>{formatAmount(item.revenue, item.currency, true)}</dd></div>
-                          <div><dt>Attributed to tracked touchpoints</dt><dd>{formatAmount(item.attributed_revenue, item.currency, true)}</dd></div>
-                          <div><dt>Not linked to tracked touchpoints</dt><dd>{formatAmount(item.unattributed_revenue, item.currency, true)}</dd></div>
-                        </dl>
-                      ) : (
-                        <p className={styles.secondaryText}>Amounts are hidden because this record group has no supported three-letter currency code.</p>
-                      )}
-                    </Card>
-                  ))}
-                </div>
-              </section>
-
-              <Card className={styles.reportSection}>
-                <CardTitle sub="Only recorded touchpoint-source labels are shown; detailed order identifiers and customer references are omitted.">
-                  Channel attribution
-                </CardTitle>
-                {report.channels.length > 0 ? (
-                  <ul className={styles.channelList}>
-                    {report.channels.map((item, index) => (
-                      <li key={`${item.currency ?? 'unspecified'}-${item.channel}-${index}`}>
-                        <span className={styles.channelName}>{item.channel}</span>
-                        <span className={styles.channelCurrency}>{currencyLabel(item.currency, item.currency_supported)}</span>
-                        <strong>{formatAmount(item.attributed_revenue, item.currency, item.currency_supported)}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className={styles.secondaryText}>No tracked touchpoints are associated with the recorded conversions in this window.</p>
-                )}
-              </Card>
-
-              <p className={styles.methodNote}>
-                Attribution is an even allocation across each conversion’s distinct recorded touchpoints. It describes the event ledger; it does not establish incremental lift or prove that a channel caused a conversion.
-              </p>
-            </>
-          )}
-        </>
-      ) : null}
+      </ResourceView>
+      <Callout tone="info">Only orders you record or that a connected store sends are counted.</Callout>
+      <Form open={touch} onOpenChange={setTouch} onDone={resource.reload} title="Record a tracked link" endpoint="/analytics/revenue-attribution/touchpoints"
+        fields={[{ key: "post_id", label: "Post or asset ID" }, { key: "platform", label: "Platform" }, { key: "campaign", label: "Campaign" }, { key: "destination_url", label: "Destination URL", hint: "Include the https:// part." }]}
+        build={(v) => ({ post_id: v.post_id.trim(), platform: v.platform.trim(), campaign: v.campaign.trim(), destination_url: v.destination_url.trim() })} />
+      <Form open={sale} onOpenChange={setSale} onDone={resource.reload} title="Record an order" endpoint="/analytics/revenue-attribution/conversions/ingest"
+        fields={[{ key: "provider", label: "Store or provider" }, { key: "order", label: "Order ID" }, { key: "amount", label: "Amount", numeric: true }]}
+        build={(v) => ({ provider: v.provider.trim(), external_order_id: v.order.trim(), amount: Number(v.amount) })} />
     </Page>
   );
 }

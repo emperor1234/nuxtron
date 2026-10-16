@@ -139,7 +139,6 @@ export const MENUS: Partial<Record<RailKey, FlyoutMenu>> = {
           { label: "Multi-Channel Activation", href: seo("multi-channel-activation"), description: "Reuse SEO content across channels." },
           { label: "Autonomous Agent", href: seo("agent"), description: "Plan an SEO run and review the proposed steps." },
           { label: "Revenue Attribution", href: seo("revenue-attribution"), description: "Attribute revenue to organic channels." },
-          { label: "Content Check", href: "/seo-analysis", description: "Quick SEO check of a page or draft." },
           { label: "Benchmarks", href: "/benchmarks", description: "Compare your results against benchmarks." },
           { label: "Competitive Benchmarking", href: "/competitive-benchmarking", description: "Record and compare competitor observations." },
           { label: "Analysis History", href: seo("history"), description: "Every analysis you have run." },
