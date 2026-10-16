@@ -43,7 +43,7 @@ class TestBrandKitCoverage:
         assert "writing_rules" in bk
         assert "knowledge_base_count" in bk
         # Default primary color
-        assert bk["colors"]["primary"] == "#3B82F6"
+        assert bk["colors"]["primary"] == "#2563C9"
 
     # ------------------------------------------------------------------
     # PATCH /colors

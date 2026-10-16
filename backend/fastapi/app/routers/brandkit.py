@@ -42,12 +42,12 @@ _lock = threading.Lock()
 
 _DEFAULT_KIT: dict[str, Any] = {
     "colors": {
-        "primary": "#3B82F6",
-        "secondary": "#22C55E",
-        "accent": "#A855F7",
-        "background": "#0D1117",
-        "text": "#ECEDEE",
-        "muted": "#8A92A4",
+        "primary": "#2563C9",
+        "secondary": "#22CDEA",
+        "accent": "#0B1330",
+        "background": "#FFFFFF",
+        "text": "#0B1330",
+        "muted": "#5B6480",
     },
     "fonts": {
         "heading": {"family": "Inter", "weight": "700", "size_px": 32},

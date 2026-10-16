@@ -4823,7 +4823,7 @@
       "method": "PUT",
       "operation_id": "configure_approval_chain_content_approval_config_put",
       "path": "/content/approval/config",
-      "request_schema_hash": "sha256:e8016dbb87610931c22b4599822b7febdb52d4470b1849bde8110c0efa62022b",
+      "request_schema_hash": "sha256:83ba3882eae5bae546c85f7c26d00006adcc5c497d2ceed42242aa8794f6e68a",
       "response_schema_hash": "sha256:a88301742cfb2260ddbec20d7eece41f8e17c717bf09fdf07db89a2d8776ec04",
       "summary": "Configure Approval Chain"
     },
@@ -4839,7 +4839,7 @@
       "method": "POST",
       "operation_id": "submit_for_approval_content_approval_requests_post",
       "path": "/content/approval/requests",
-      "request_schema_hash": "sha256:90030b605fad1eaecef4b3c902691183187edc90c7a00f8f112f52190be2a393",
+      "request_schema_hash": "sha256:c24086c2197643fe7a493a46f945a344f76f3a2e32d4e1bd485506cedd5b3f97",
       "response_schema_hash": "sha256:ca9a1501503b48c31f535315f992edabe2a733a941e351375d54cec47a88ea21",
       "summary": "Submit For Approval"
     },
@@ -4855,7 +4855,7 @@
       "method": "POST",
       "operation_id": "decide_approval_content_approval_requests__request_id__decision_post",
       "path": "/content/approval/requests/{request_id}/decision",
-      "request_schema_hash": "sha256:c3abd58cb380bee548d47c3e48b22d2ce256dac035fa9ef515c13e144191a1d1",
+      "request_schema_hash": "sha256:711a0881f5d07f39e2ee1f54bec5aea96d39a1332a1810451d54fa8b06e68510",
       "response_schema_hash": "sha256:77f582615c9f2f03d5e602f6180cde896230be2e7263b9f8bbbcb36a78c49657",
       "summary": "Decide Approval"
     },

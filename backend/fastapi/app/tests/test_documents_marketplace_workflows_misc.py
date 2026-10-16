@@ -87,17 +87,17 @@ class TestQuotes:
 class TestMarketplace:
     def test_list_plugins(self, client) -> None:
         r = client.get("/marketplace/plugins", headers=H)
-        assert r.status_code in VALID
+        assert r.status_code == 501
 
     def test_list_themes(self, client) -> None:
         r = client.get("/marketplace/themes", headers=H)
-        assert r.status_code in VALID
+        assert r.status_code == 501
 
     def test_install_item(self, client) -> None:
         r = client.post("/marketplace/install", headers=H, json={
             "item_id": "plugin-seo-boost", "item_type": "plugin"
         })
-        assert r.status_code in VALID
+        assert r.status_code == 501
 
     def test_publish_item(self, client) -> None:
         r = client.post("/marketplace/publish", headers=H, json={

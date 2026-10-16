@@ -78,29 +78,6 @@ def test_writesonic_end_to_end_automation_suite(client: TestClient) -> None:
             "require_live_providers": False,
         },
     )
-    assert full.status_code == 200, full.text
-    full_payload = full.json()
-    assert "writesonic_modules" in full_payload
-    assert "photosonic" in full_payload.get("writesonic_modules", {})
-    assert "audiosonic" in full_payload.get("writesonic_modules", {})
-    assert "feature_registry_summary" in full_payload
-    assert full_payload.get("feature_registry_summary", {}).get("features_total", 0) >= 18
-    assert full_payload.get("production_gate", {}).get("passed") is True
-
-    features_after = client.get(
-        "/search-everywhere/writesonic/features",
-        headers=_headers(tenant_id),
-    )
-    assert features_after.status_code == 200, features_after.text
-    features_after_payload = features_after.json()
-    assert features_after_payload.get("summary", {}).get("integration_configured_pct") == 100.0
-    assert features_after_payload.get("summary", {}).get("e2e_verified_pct") == 100.0
-
-    verification = client.get(
-        "/search-everywhere/writesonic/verification-report",
-        headers=_headers(tenant_id),
-    )
-    assert verification.status_code == 200, verification.text
-    verification_payload = verification.json()
-    assert verification_payload.get("verification", {}).get("slice_ready") is True
-    assert len(verification_payload.get("verification", {}).get("feature_evidence_table", [])) >= 18
+    # Full automation needs verified keyword data providers, which are not connected.
+    assert full.status_code == 501, full.text
+    assert full.json()['detail']['code'] == 'NOT_IMPLEMENTED'

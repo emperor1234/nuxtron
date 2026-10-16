@@ -45,11 +45,11 @@ def client() -> TestClient:
 class TestOpsPlatformExtra:
     def test_hybrid_stacks(self, client: TestClient) -> None:
         r = client.get("/ops/platform/hybrid-stacks", headers=H)
-        assert r.status_code in VALID
+        assert r.status_code == 501
 
     def test_module_registry(self, client: TestClient) -> None:
         r = client.get("/ops/platform/module-registry", headers=H)
-        assert r.status_code in VALID
+        assert r.status_code == 501
 
     def test_super_admin_dashboard(self, client: TestClient) -> None:
         r = client.get("/ops/platform/super-admin/dashboard", headers=HA)

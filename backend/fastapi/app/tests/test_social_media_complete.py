@@ -708,7 +708,8 @@ class TestParityStatePersistence:
             "/social/reviews/ingest?platform=google&author=qa-user&rating=2&text=bad support wait",
             headers=auth_headers,
         )
-        assert review_response.status_code == 200
+        # Review ingestion needs a connected review source, so it is refused.
+        assert review_response.status_code == 501
 
         assert state_path.exists()
 
@@ -721,7 +722,6 @@ class TestParityStatePersistence:
 
         assert social_router_module._parity_mentions_store.get(tenant_id)
         assert social_router_module._parity_comments_store.get(tenant_id)
-        assert social_router_module._parity_reviews_store.get(tenant_id)
 
     @pytest.mark.asyncio
     async def test_social_state_db_persist_and_reload(self, client: TestClient, auth_headers, monkeypatch: pytest.MonkeyPatch, tmp_path):

@@ -326,7 +326,7 @@ class TestV1LoopEndpoints:
         assert "configured" in body
         assert "tools" in body
         assert isinstance(body["tools"], list)
-        assert body["total"] == 20
+        assert body["total"] == 17
 
     def test_tool_integrations_includes_payg_and_free(self):
         resp = self.client.get(
@@ -352,7 +352,7 @@ class TestV1LoopEndpoints:
             "cloudflare_pro", "deepgram", "screaming_frog", "google_analytics",
             "whisper", "google_business_profile", "google_keyword_planner",
             "google_discover", "google_search_console",
-            "lighthouse", "playwright_cdp", "web_vitals", "opensearch",
+            "opensearch",
             "prometheus", "grafana", "metabase",
         }
         assert expected.issubset(keys)

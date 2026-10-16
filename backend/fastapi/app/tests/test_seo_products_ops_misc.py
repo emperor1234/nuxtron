@@ -155,7 +155,7 @@ class TestSEOAnalyze:
         r = client.post("/seo-platform/performance/audit", headers=H, json={
             "url": "https://example.com",
         })
-        assert r.status_code < 500
+        assert r.status_code == 501
 
     def test_content_auditor(self, client: TestClient) -> None:
         r = client.post("/seo-platform/content-auditor/analyze", headers=H, json={
