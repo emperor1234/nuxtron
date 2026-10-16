@@ -11,6 +11,7 @@ Tracks brand mentions across AI search engines:
 Complete end-to-end implementation with real API calls.
 """
 
+from ..provider_urls import openai_url, anthropic_url
 import asyncio
 import logging
 import os
@@ -182,7 +183,7 @@ async def fetch_chatgpt_mentions(
         for query in queries:
             try:
                 response = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
+                    openai_url("/chat/completions"),
                     headers={
                         "Authorization": f"Bearer {api_key}",
                         "Content-Type": "application/json",
@@ -328,7 +329,7 @@ async def fetch_claude_mentions(
         for query in queries:
             try:
                 response = await client.post(
-                    "https://api.anthropic.com/v1/messages",
+                    anthropic_url("/messages"),
                     headers={
                         "x-api-key": api_key,
                         "anthropic-version": "2023-06-01",

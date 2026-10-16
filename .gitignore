@@ -47,3 +47,4 @@
 **/.env.*
 !**/.env.*.example
 !**/*.env.template
+.nuxtron-state/

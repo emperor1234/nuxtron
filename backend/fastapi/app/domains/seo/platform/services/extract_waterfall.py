@@ -29,6 +29,7 @@ import copy
 import hashlib
 import httpx
 import json
+import os
 import time
 
 
@@ -258,6 +259,57 @@ async def _run_free_performance_stack(req: PerformanceAuditReq) -> dict[str, Any
     }
 
 
+async def _hosted_json(system: str, user: str, timeout_seconds: float | None = None) -> dict[str, Any] | None:
+    """Ask the configured hosted model (OpenAI, else Anthropic) for a JSON object.
+
+    Returns None when no hosted key is set or the call fails, so the caller can try
+    the local model next. A reply that is not a JSON object also counts as a failure.
+    """
+    from .....provider_urls import anthropic_url, openai_url
+
+    if os.getenv("SEO_LLM_PROVIDER", "").strip().lower() == "ollama":
+        return None
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    timeout = OLLAMA_TIMEOUT if timeout_seconds is None else max(1.0, float(timeout_seconds))
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            if openai_key:
+                r = await client.post(
+                    openai_url("/chat/completions"),
+                    headers={"Authorization": f"Bearer {openai_key}"},
+                    json={
+                        "model": os.getenv("SEO_HOSTED_MODEL", "").strip() or os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+                        "response_format": {"type": "json_object"},
+                        "temperature": 0.3,
+                    },
+                )
+                r.raise_for_status()
+                raw = r.json()["choices"][0]["message"]["content"]
+            elif anthropic_key:
+                r = await client.post(
+                    anthropic_url("/messages"),
+                    headers={"x-api-key": anthropic_key, "anthropic-version": "2023-06-01"},
+                    json={
+                        "model": os.getenv("SEO_HOSTED_MODEL", "").strip() or os.getenv("ANTHROPIC_MODEL", "claude-3-5-haiku-latest"),
+                        "max_tokens": 4096,
+                        "temperature": 0.3,
+                        "system": system + "\nReply with one JSON object and nothing else.",
+                        "messages": [{"role": "user", "content": user}],
+                    },
+                )
+                r.raise_for_status()
+                raw = "".join(part.get("text", "") for part in r.json().get("content", []))
+            else:
+                return None
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else None
+    except Exception as exc:
+        logger.warning("Hosted SEO model call failed: %s", exc)
+        return None
+
+
 async def _ollama_json(
     system: str, user: str, model: str = SEO_DEFAULT_MODEL, timeout_seconds: float | None = None
 ) -> dict[str, Any]:
@@ -265,6 +317,9 @@ async def _ollama_json(
     Call Ollama chat API and parse JSON from the response.
     Returns a dict; falls back to {"error": reason, "fallback": True} on failure.
     """
+    hosted = await _hosted_json(system, user, timeout_seconds)
+    if hosted is not None:
+        return hosted
     payload = {
         "model": model,
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],

@@ -1,3 +1,4 @@
+from ...provider_urls import openai_url, anthropic_url
 import os
 import time
 from collections.abc import Callable
@@ -141,7 +142,7 @@ class AIBrainModelLayer:
         started = time.perf_counter()
         with httpx.Client(timeout=25.0) as client:
             response = client.post(
-                "https://api.openai.com/v1/chat/completions",
+                openai_url("/chat/completions"),
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": APPLICATION_JSON},
                 json=payload,
             )
@@ -172,7 +173,7 @@ class AIBrainModelLayer:
         started = time.perf_counter()
         with httpx.Client(timeout=25.0) as client:
             response = client.post(
-                "https://api.anthropic.com/v1/messages",
+                anthropic_url("/messages"),
                 headers={
                     "x-api-key": api_key,
                     "anthropic-version": "2023-06-01",

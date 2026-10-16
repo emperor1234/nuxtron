@@ -10,6 +10,7 @@ Usage:
     response = llm.invoke(prompt="Extract entities...", temperature=0.1)
 """
 
+from .provider_urls import openai_url, anthropic_url
 import asyncio
 import logging
 import time
@@ -193,7 +194,7 @@ class OpenAIProvider(BaseLLMProvider):
             messages.append({"role": "user", "content": prompt})
 
             response = await self.client.post(
-                "https://api.openai.com/v1/chat/completions",
+                openai_url("/chat/completions"),
                 json={
                     "model": self.config.model,
                     "messages": messages,
@@ -248,7 +249,7 @@ class AnthropicProvider(BaseLLMProvider):
             start_time = time.time()
 
             response = await self.client.post(
-                "https://api.anthropic.com/v1/messages",
+                anthropic_url("/messages"),
                 json={
                     "model": self.config.model,
                     "max_tokens": max_tokens,

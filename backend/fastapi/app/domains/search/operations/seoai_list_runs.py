@@ -1,5 +1,6 @@
 """Search use cases: seoai list runs."""
 
+from ....provider_urls import openai_url
 from ..constants import AuthDep
 from ..runtime import SearchRuntime
 from ..schemas import SemrushFullAutomationRequest
@@ -113,7 +114,7 @@ def operation_seoai_shopify_magic_sidekick(
         assist_text = "Generated assistant summary unavailable."
         if openai_key:
             openai_resp = client.post(
-                "https://api.openai.com/v1/chat/completions",
+                openai_url("/chat/completions"),
                 headers={"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"},
                 json={
                     "model": "gpt-4o-mini",

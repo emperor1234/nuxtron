@@ -232,7 +232,9 @@ def _sw_run_ai_assistant_text(action: str, text: str, platform: str, tone: str) 
         user_prompt = prompt_map.get(action, f"Improve this social media post: {sanitized_text}")
         try:
             resp = httpx.post(
-                OPENAI_CHAT_COMPLETIONS_URL,
+                (os.getenv("OPENAI_BASE_URL", "").strip().rstrip("/") + "/chat/completions")
+                if os.getenv("OPENAI_BASE_URL", "").strip()
+                else OPENAI_CHAT_COMPLETIONS_URL,
                 headers={"Authorization": f"Bearer {openai_key}", "Content-Type": JSON_CONTENT_TYPE},
                 json={
                     "model": "gpt-4o",
@@ -242,9 +244,12 @@ def _sw_run_ai_assistant_text(action: str, text: str, platform: str, tone: str) 
                 },
                 timeout=15.0,
             )
-            candidate = str(
-                resp.json().get("choices", [{}])[0].get("message", {}).get("content", sanitized_text)
-            ).strip()
+            if not resp.is_success:
+                # A rejected key or an outage must not come back as "your text, rewritten".
+                raise _sw_http_error(status_code=503, detail="The AI writing assistant is not available right now (the provider rejected the request).")
+            candidate = str(resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")).strip()
+            if not candidate:
+                raise _sw_http_error(status_code=503, detail="The AI provider returned no text.")
             output_safety = _sw_ai_output_guard("ai_assistant", candidate, safety)
             if output_safety["blocked"]:
                 raise _sw_http_error(status_code=502, detail="AI assistant output blocked by LLM Guard.")

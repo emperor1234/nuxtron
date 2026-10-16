@@ -45,6 +45,11 @@ from ..transparent_encryption import te_decrypt
 JsonObject = dict[str, object]
 
 
+def _provider_base_url(env_name: str, default: str) -> str:
+    """Operator-set endpoint for an OpenAI- or Anthropic-compatible gateway."""
+    return (os.getenv(env_name, "").strip() or default).rstrip("/")
+
+
 def _is_production_environment() -> bool:
     return os.getenv("ENVIRONMENT", "development").strip().lower() == "production"
 
@@ -607,7 +612,7 @@ def _ai_generate_openai(payload: object, auth: AuthContext, created_at: str) -> 
         started = time.perf_counter()
         with httpx.Client(timeout=20.0) as client:
             response = client.post(
-                "https://api.openai.com/v1/chat/completions",
+                f"{_provider_base_url('OPENAI_BASE_URL', 'https://api.openai.com/v1')}/chat/completions",
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": CONTENT_TYPE_JSON},
                 json={
                     "model": model,
@@ -668,7 +673,7 @@ def _ai_generate_anthropic(payload: object, auth: AuthContext, created_at: str) 
         started = time.perf_counter()
         with httpx.Client(timeout=20.0) as client:
             response = client.post(
-                "https://api.anthropic.com/v1/messages",
+                f"{_provider_base_url('ANTHROPIC_BASE_URL', 'https://api.anthropic.com/v1')}/messages",
                 headers={"x-api-key": api_key, "anthropic-version": "2023-06-01", "Content-Type": CONTENT_TYPE_JSON},
                 json=body,
             )

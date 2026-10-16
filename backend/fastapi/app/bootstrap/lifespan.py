@@ -19,6 +19,7 @@ from typing import Protocol, cast
 
 from fastapi import FastAPI
 
+from .. import process_store_persistence as store_persistence
 from ..config import validate_startup_security
 from ..database import close_db
 from ..production_middleware import StructuredLogger, validate_environment
@@ -139,6 +140,10 @@ async def application_lifespan(_app: FastAPI) -> AsyncIterator[None]:
     try:
         logger.info('FastAPI Application Starting')
         await _initialize_runtime_state(steps, logger)
+        if store_persistence.enabled():
+            restored = await asyncio.to_thread(store_persistence.get_persistence().restore)
+            store_persistence.get_persistence().start()
+            logger.info('Restored process store snapshots', stores=restored)
         workers = _start_background_workers(steps)
         logger.info('FastAPI Application Started Successfully', version='2.1.0')
     except Exception as ex:
@@ -154,5 +159,7 @@ async def application_lifespan(_app: FastAPI) -> AsyncIterator[None]:
     finally:
         logger.info('FastAPI Application Shutting Down')
         await _stop_background_workers(steps, workers, logger)
+        if store_persistence.enabled():
+            await asyncio.to_thread(store_persistence.get_persistence().stop)
         await _release_runtime_state(logger)
         logger.info('Cleanup complete')

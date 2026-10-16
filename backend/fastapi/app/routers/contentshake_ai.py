@@ -27,6 +27,7 @@ POST /contentshake/keyword-brief             – Generate keyword-focused brief
 """
 
 from __future__ import annotations
+from ..provider_urls import openai_url
 
 import base64
 import hashlib
@@ -86,7 +87,7 @@ def _openai_generate(prompt: str) -> str | None:
     try:
         with httpx.Client(timeout=120) as client:
             r = client.post(
-                "https://api.openai.com/v1/chat/completions",
+                openai_url("/chat/completions"),
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
                 json={
                     "model": "gpt-4o-mini",

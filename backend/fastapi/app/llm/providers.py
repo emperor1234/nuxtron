@@ -15,6 +15,7 @@ This layer handles:
 - Caching
 """
 
+from ..provider_urls import openai_url, anthropic_url
 import asyncio
 import hashlib
 import json
@@ -156,7 +157,7 @@ class OpenAIProvider(BaseLLMProvider):
             await self._check_rate_limit()
             
             response = await self.client.post(
-                "https://api.openai.com/v1/chat/completions",
+                openai_url("/chat/completions"),
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
@@ -232,7 +233,7 @@ class ClaudeProvider(BaseLLMProvider):
             await self._check_rate_limit()
             
             response = await self.client.post(
-                "https://api.anthropic.com/v1/messages",
+                anthropic_url("/messages"),
                 headers={
                     "x-api-key": self.api_key,
                     "anthropic-version": "2023-06-01",
