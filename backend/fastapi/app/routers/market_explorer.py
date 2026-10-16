@@ -31,6 +31,7 @@ from typing import Annotated, Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
+from ._provider_required import provider_required
 from pydantic import BaseModel, Field
 
 from ..deps import AuthContext, require_auth
@@ -38,7 +39,7 @@ from ..deps import AuthContext, require_auth
 logger = logging.getLogger(__name__)
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
-router = APIRouter(prefix="/market-explorer", tags=["Market Explorer"])
+router = APIRouter(prefix="/market-explorer", tags=["Market Explorer"], dependencies=[provider_required("A verified market-traffic provider is not connected, so Market Explorer is disabled rather than estimated.")])
 _lock = threading.Lock()
 
 # ── SimilarWeb helpers ────────────────────────────────────────────────────────

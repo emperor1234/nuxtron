@@ -8,7 +8,7 @@ import styles from "./hero-dashboard.module.css";
  * records, connected-account metrics, or fabricated business outcomes appear.
  */
 
-export type RailSection = "home" | "seo" | "ai" | "content" | "social" | "studio";
+export type RailSection = "home" | "seo" | "social" | "studio" | "apps";
 
 export type DashboardView = {
   id: string;
@@ -95,80 +95,62 @@ function PlainKpi({ label, value, caption, i }: { label: string; value: string; 
 export const SEO_VIEWS: readonly DashboardView[] = [
   homeView("seo"),
   {
-    id: "ai-visibility",
-    section: "ai",
-    item: "AI Visibility Overview",
-    breadcrumb: ["AI", "Research & optimize", "AI Visibility Overview"],
-    path: "seo/seo-ai",
-    title: "AI Visibility",
-    subtitle: "No verified observations are loaded in this sample-free preview.",
+    id: "aeo",
+    section: "seo",
+    item: "Answer Engine (AEO)",
+    breadcrumb: ["SEO", "AI search visibility", "Answer Engine (AEO)"],
+    path: "seo/aeo",
+    title: "Answer Engine Optimization",
+    subtitle: "Paste content and a topic; results are AI guidance, not search-engine data.",
     render: () => (
       <div className={styles.row2}>
-        <Card i={0} title="Prompt evidence" aside={<span className={styles.muted}>No source data</span>}>
-          <p className={styles.muted}>Connected observations and user-provided prompt evidence would appear here. No prompt counts or citation results are fabricated.</p>
-        </Card>
-        <Card i={1} title="Answer share" aside={<span className={styles.muted}>Not calculated</span>}>
-          <p className={styles.muted}>Share-of-answer metrics require verified, comparable source observations; none are shown in this preview.</p>
-        </Card>
-      </div>
-    ),
-  },
-  {
-    id: "keywords",
-    section: "seo",
-    item: "Rank Position Review",
-    breadcrumb: ["SEO", "Research & visibility", "Rank Position Review"],
-    path: "seo/rank-tracking",
-    title: "Rank Position Review",
-    subtitle: "Review positions from an export you provide; processing stays in your browser.",
-    render: () => (
-      <Card i={0} title="Position export" aside={<span className={styles.muted}>Browser-local · no file loaded</span>}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Keyword</th>
-              <th>Position</th>
-              <th>Observed date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={3} className={styles.muted}>No export loaded</td>
-            </tr>
-          </tbody>
-        </table>
-        <p className={styles.muted}>Choose a CSV to review supplied positions. No live provider data or forecasts are shown.</p>
-      </Card>
-    ),
-  },
-  {
-    id: "traffic-analytics",
-    section: "seo",
-    item: "Traffic Analytics",
-    breadcrumb: ["SEO", "Market & research", "Traffic Analytics"],
-    path: "seo/analytics",
-    title: "Traffic Analytics",
-    subtitle: "Compare two periods using values you supply; no analytics provider is connected.",
-    render: () => (
-      <div className={styles.row2}>
-        <Card i={0} title="Comparison source" aside={<span className={styles.muted}>Not supplied</span>}>
-          <p className={styles.muted}>Choose an export or report you trust, then enter two period labels and the observed values.</p>
-        </Card>
-        <Card i={1} title="Metrics in scope" aside={<span className={styles.muted}>Manual input</span>}>
+        <Card i={0} title="Inputs" aside={<span className={styles.muted}>Nothing submitted</span>}>
           <ul className={styles.issues}>
-            {[
-              "Clicks and impressions",
-              "Click-through rate",
-              "Average position",
-            ].map((metric) => (
-              <li key={metric}>
+            {["Content to analyse", "Topic", "Questions to answer"].map((field) => (
+              <li key={field}>
                 <span className={styles.chip} data-status="mentioned">Input</span>
-                <span className={styles.issueText}>{metric}</span>
+                <span className={styles.issueText}>{field}</span>
               </li>
             ))}
           </ul>
         </Card>
+        <Card i={1} title="Results" aside={<span className={styles.muted}>No analysis run</span>}>
+          <p className={styles.muted}>Scores, snippet opportunities and quick wins appear here after you run an analysis. Each result states whether an AI model produced it.</p>
+        </Card>
       </div>
+    ),
+  },
+  {
+    id: "on-page",
+    section: "seo",
+    item: "On-Page Optimizer",
+    breadcrumb: ["SEO", "Content & on-page", "On-Page Optimizer"],
+    path: "seo/on-page",
+    title: "On-Page Optimizer",
+    subtitle: "Measure keyword use, word count and readability in the copy you paste.",
+    render: () => (
+      <Card i={0} title="Measurements" aside={<span className={styles.muted}>No page analysed</span>}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Measure</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              ["Keyword density", "Computed from your text"],
+              ["Word count", "Computed from your text"],
+              ["Readability", "Computed from your text"],
+            ].map(([measure, source]) => (
+              <tr key={measure}>
+                <td>{measure}</td>
+                <td className={styles.muted}>{source}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
     ),
   },
 ];
@@ -203,10 +185,10 @@ export const MARKETING_VIEWS: readonly DashboardView[] = [
   {
     id: "inbox",
     section: "social",
-    item: "Smart Inbox",
-    breadcrumb: ["Social", "Engage", "Smart Inbox"],
+    item: "Social Inbox",
+    breadcrumb: ["Social", "Engage", "Social Inbox"],
     path: "studio/social-studio/inbox",
-    title: "Smart Inbox",
+    title: "Social Inbox",
     subtitle: "No connected messages or comments are displayed in this preview.",
     render: () => (
       <div className={styles.inbox}>
@@ -222,10 +204,10 @@ export const MARKETING_VIEWS: readonly DashboardView[] = [
   {
     id: "studio",
     section: "studio",
-    item: "AI Image Studio",
-    breadcrumb: ["Studio", "Create", "AI Image Studio"],
+    item: "Image Studio",
+    breadcrumb: ["Studio", "Create", "Image Studio"],
     path: "studio/image-studio",
-    title: "AI Image Studio",
+    title: "Image Studio",
     subtitle: "No generated or approved assets are shown in this preview.",
     render: () => (
       <Card i={0} title="Creative assets" aside={<span className={styles.muted}>No assets loaded</span>}>

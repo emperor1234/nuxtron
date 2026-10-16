@@ -233,49 +233,6 @@ class TestLinkinbio:
 
 # ── Influencer ────────────────────────────────────────────────────────────────
 
-class TestInfluencer:
-    def test_list_campaigns(self, client: TestClient) -> None:
-        r = client.get("/influencer/campaigns", headers=H)
-        assert r.status_code == 200
-
-    def test_create_campaign(self, client: TestClient) -> None:
-        r = client.post("/influencer/campaigns", headers=H, json={
-            "name": "Summer Promo",
-            "budget": 5000.0,
-            "target_niche": "fitness",
-        })
-        assert r.status_code in {200, 201}
-
-    def test_search_influencers(self, client: TestClient) -> None:
-        r = client.post("/influencer/search", headers=H, json={
-            "niche": "fitness",
-            "min_followers": 10000,
-            "max_followers": 1000000,
-        })
-        assert r.status_code < 500
-
-    def test_fraud_check(self, client: TestClient) -> None:
-        r = client.post("/influencer/fraud-check", headers=H, json={
-            "influencer_id": "inf-001",
-            "profile_url": "https://instagram.com/influencer",
-        })
-        assert r.status_code < 500
-
-    def test_outreach(self, client: TestClient) -> None:
-        r = client.post("/influencer/outreach", headers=H, json={
-            "influencer_id": "inf-001",
-            "message": "We'd love to work with you!",
-            "campaign_id": 1,
-        })
-        assert r.status_code < 500
-
-    def test_analytics(self, client: TestClient) -> None:
-        r = client.get("/influencer/analytics", headers=H)
-        assert r.status_code == 200
-
-
-# ── Competitive ───────────────────────────────────────────────────────────────
-
 class TestCompetitive:
     def test_list_profiles(self, client: TestClient) -> None:
         r = client.get("/competitive/profiles", headers=H)

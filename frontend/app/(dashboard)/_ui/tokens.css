@@ -94,9 +94,9 @@
    unstyled now matches the kit. Buttons that wrap a block layout (a whole
    clickable card, a tile) are excluded so they keep their own shape.
    --------------------------------------------------------------------------- */
-.nxScope :where(button, [type='button'], [type='submit'], [type='reset']):not(
+:where(.nxScope :is(button, [type='button'], [type='submit'], [type='reset']):not(
     :has(> div, > article, > section, > figure, > ul, > ol, > table, > h1, > h2, > h3, > h4)
-  ) {
+  )) {
   font: inherit;
   font-weight: 600;
   line-height: 1.2;
@@ -115,7 +115,7 @@
     background-color 120ms ease,
     border-color 120ms ease;
 }
-.nxScope :where(button, [type='button'], [type='submit']):not(:has(> div, > article, > section)):hover:not(:disabled) {
+:where(.nxScope :is(button, [type='button'], [type='submit']):not(:has(> div, > article, > section)):hover:not(:disabled)) {
   background: var(--nx-neutral-soft);
   border-color: var(--nx-ink-2);
 }

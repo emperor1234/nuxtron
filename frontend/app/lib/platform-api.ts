@@ -88,6 +88,37 @@ function handleUnauthorized(): void {
   }
 }
 
+/** Failure from the backend, carrying the HTTP status and machine code so pages can tell "not configured" from "broken". */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(message: string, status: number, code = '') {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
+/** Turns FastAPI's `detail` (string, `{code, message}`, or validation list) into one readable sentence. */
+function describeFailure(data: unknown, status: number): { message: string; code: string } {
+  const detail = (data as { detail?: unknown } | null)?.detail;
+  if (typeof detail === 'string' && detail.trim()) return { message: detail, code: '' };
+  if (detail && typeof detail === 'object' && !Array.isArray(detail)) {
+    const { message, code } = detail as { message?: unknown; code?: unknown };
+    if (typeof message === 'string' && message.trim()) {
+      return { message, code: typeof code === 'string' ? code : '' };
+    }
+  }
+  if (Array.isArray(detail) && detail.length > 0) {
+    const first = detail[0] as { loc?: unknown[]; msg?: unknown };
+    const field = Array.isArray(first?.loc) ? String(first.loc[first.loc.length - 1] ?? '') : '';
+    if (typeof first?.msg === 'string') return { message: field ? `${field}: ${first.msg}` : first.msg, code: 'validation' };
+  }
+  return { message: `Request failed (${status})`, code: '' };
+}
+
 async function parseResponseBody(res: Response): Promise<unknown> {
   const contentType = res.headers.get('content-type') || '';
   const raw = await res.text();
@@ -107,10 +138,9 @@ function inflightKey(method: string, path: string, tenantId: string, payload?: u
   return `${method}:${tenantId}:${path}:${payloadPart}`;
 }
 
+/** AI-backed routes can run longer than CRUD; the gateway allows them 60s, so the browser waits slightly longer. */
 function getRequestTimeoutMs(path: string): number {
-  if (path === '/seo-platform/performance/audit') {
-    return 120000;
-  }
+  if (path.startsWith('/seo-platform/') || path.startsWith('/ai/') || path.startsWith('/content/generate')) return 75000;
   return API_TIMEOUT_MS;
 }
 
@@ -215,9 +245,11 @@ export async function apiGet<T>(
       cache: 'no-store',
     });
     const data = (await parseResponseBody(res)) as Record<string, unknown>;
-    const detail = typeof data?.detail === 'string' ? data.detail : `Request failed: ${res.status}`;
     if (res.status === 401) handleUnauthorized();
-    if (!res.ok) throw new Error(detail);
+    if (!res.ok) {
+      const failure = describeFailure(data, res.status);
+      throw new ApiError(failure.message, res.status, failure.code);
+    }
     const typed = data as T;
     if (shouldCache) setCachedResponse(key, typed);
     return typed;
@@ -255,9 +287,11 @@ export async function apiSend<T>(
       body: payload === undefined ? undefined : JSON.stringify(payload),
     });
     const data = (await parseResponseBody(res)) as Record<string, unknown>;
-    const detail = typeof data?.detail === 'string' ? data.detail : `Request failed: ${res.status}`;
     if (res.status === 401) handleUnauthorized();
-    if (!res.ok) throw new Error(detail);
+    if (!res.ok) {
+      const failure = describeFailure(data, res.status);
+      throw new ApiError(failure.message, res.status, failure.code);
+    }
     const typed = data as T;
     invalidateTenantGetCache(resolvedTenantId);
     if (shouldUseResponseCache) setCachedResponse(cacheKey, typed);

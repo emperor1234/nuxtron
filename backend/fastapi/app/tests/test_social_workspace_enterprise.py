@@ -39,84 +39,47 @@ def client() -> TestClient:
 
 
 def test_reviews_flow(client: TestClient) -> None:
+    # Reviews come from a connected review provider; a workspace with none has none.
     list_response = client.get('/social/reviews', headers=H)
     assert list_response.status_code == 200
-    list_payload = list_response.json()
-    assert isinstance(list_payload.get('reviews'), list)
-    reviews = list_payload['reviews']
-    assert len(reviews) >= 1
-
-    review_id = reviews[0]['id']
+    assert list_response.json()['reviews'] == []
 
     reply_response = client.post(
-        f'/social/reviews/{review_id}/reply',
+        '/social/reviews/999/reply',
         headers=H,
         json={'reply_text': 'Thanks for sharing this. We are resolving it now.'},
     )
-    assert reply_response.status_code == 200
-    assert reply_response.json()['review']['status'] == 'responded'
-
-    status_response = client.patch(
-        f'/social/reviews/{review_id}/status',
-        headers=H,
-        json={'status': 'resolved'},
-    )
-    assert status_response.status_code == 200
-    assert status_response.json()['review']['status'] == 'resolved'
-
-    case_response = client.post(
-        '/social/care/cases',
-        headers=H,
-        json={
-            'source_review_id': review_id,
-            'priority': 'high',
-            'owner': 'social-care',
-        },
-    )
-    assert case_response.status_code == 200
-    assert case_response.json()['case']['source_review_id'] == review_id
+    assert reply_response.status_code == 404
+    assert client.patch('/social/reviews/999/status', headers=H, json={'status': 'resolved'}).status_code == 404
 
     list_cases = client.get('/social/care/cases', headers=H)
     assert list_cases.status_code == 200
-    assert isinstance(list_cases.json().get('cases'), list)
+    assert list_cases.json().get('cases') == []
 
 
 def test_influencer_flow(client: TestClient) -> None:
+    # No sample influencers are created for a workspace.
     list_response = client.get('/social/influencers', headers=H)
     assert list_response.status_code == 200
-    items = list_response.json().get('items', [])
-    assert isinstance(items, list)
-    assert len(items) >= 1
+    assert list_response.json().get('items') == []
 
     search_response = client.post(
         '/social/influencers/search',
         headers=H,
-        json={
-            'query': 'saas',
-            'platform': 'instagram',
-            'min_followers': 1000,
-        },
+        json={'query': 'saas', 'platform': 'instagram', 'min_followers': 1000},
     )
     assert search_response.status_code == 200
-    assert isinstance(search_response.json().get('items'), list)
+    assert search_response.json().get('items') == []
 
-    influencer_id = items[0]['id']
-    shortlist_response = client.post(
-        '/social/influencers/shortlist',
-        headers=H,
-        json={'influencer_id': influencer_id},
-    )
-    assert shortlist_response.status_code == 200
-    shortlist = shortlist_response.json().get('shortlist', [])
-    assert influencer_id in shortlist
+    shortlist_response = client.post('/social/influencers/shortlist', headers=H, json={'influencer_id': 'inf-001'})
+    assert shortlist_response.status_code == 404
+
 
 def test_competitor_insights_flow(client: TestClient) -> None:
     insights_response = client.get('/social/competitors/insights', headers=H)
     assert insights_response.status_code == 200
     insights = insights_response.json()
-    assert isinstance(insights, list)
-    assert len(insights) >= 1
-    assert 'competitor' in insights[0]
+    assert insights == []
 
     track_response = client.post(
         '/social/competitors/track',
@@ -167,8 +130,7 @@ def test_automation_and_advanced_inbox_flow(client: TestClient) -> None:
     rules_response = client.get('/social/automation/rules', headers=H)
     assert rules_response.status_code == 200
     rules = rules_response.json().get('rules', [])
-    assert isinstance(rules, list)
-    assert len(rules) >= 1
+    assert rules == []
 
     create_rule = client.post(
         '/social/automation/rules',
@@ -208,8 +170,7 @@ def test_automation_and_advanced_inbox_flow(client: TestClient) -> None:
     replies_response = client.get('/social/inbox/saved-replies', headers=H)
     assert replies_response.status_code == 200
     replies = replies_response.json().get('items', [])
-    assert isinstance(replies, list)
-    assert len(replies) >= 1
+    assert replies == []
 
     create_reply = client.post(
         '/social/inbox/saved-replies',
@@ -244,73 +205,31 @@ def test_automation_and_advanced_inbox_flow(client: TestClient) -> None:
     assert replies_after_delete.status_code == 200
     assert all(item['id'] != saved_reply['id'] for item in replies_after_delete.json().get('items', []))
 
+    # Messages arrive from connected accounts; none are invented for a new workspace.
     inbox_response = client.get('/social/inbox', headers=H)
     assert inbox_response.status_code == 200
-    messages = inbox_response.json().get('items', [])
-    assert isinstance(messages, list)
-    assert len(messages) >= 1
-    message_id = messages[0]['id']
-    bulk_message_ids = [int(item['id']) for item in messages[:2]]
-
-    bulk_claim_response = client.post(
-        '/social/inbox/bulk-action',
-        headers=H,
-        json={'message_ids': bulk_message_ids, 'action': 'claim', 'agent_name': 'Social Desk'},
-    )
-    assert bulk_claim_response.status_code == 200
-    bulk_claim_payload = bulk_claim_response.json()
-    assert bulk_claim_payload['updated_count'] == len(bulk_message_ids)
-    assert bulk_claim_payload['action'] == 'claim'
-    assert all(item['assigned_to'] == 'Social Desk' for item in bulk_claim_payload['updated_messages'])
-    assert 'summary' in bulk_claim_payload
-    assert isinstance(bulk_claim_payload['summary'].get('claimed'), int)
-
-    bulk_complete_response = client.post(
-        '/social/inbox/bulk-action',
-        headers=H,
-        json={'message_ids': bulk_message_ids, 'action': 'complete', 'agent_name': 'Social Desk'},
-    )
-    assert bulk_complete_response.status_code == 200
-    bulk_complete_payload = bulk_complete_response.json()
-    assert bulk_complete_payload['updated_count'] == len(bulk_message_ids)
-    assert bulk_complete_payload['action'] == 'complete'
-    assert all(item['status'] == 'complete' for item in bulk_complete_payload['updated_messages'])
-    assert isinstance(bulk_complete_payload['summary'].get('complete'), int)
+    assert inbox_response.json().get('items') == []
 
     bulk_with_missing = client.post(
         '/social/inbox/bulk-action',
         headers=H,
-        json={'message_ids': [bulk_message_ids[0], 999999], 'action': 'claim', 'agent_name': 'Social Desk'},
+        json={'message_ids': [999999], 'action': 'claim', 'agent_name': 'Social Desk'},
     )
-    assert bulk_with_missing.status_code == 200
-    assert 999999 in bulk_with_missing.json().get('missing_ids', [])
+    assert bulk_with_missing.status_code == 404
 
     invalid_bulk_action = client.post(
         '/social/inbox/bulk-action',
         headers=H,
-        json={'message_ids': [bulk_message_ids[0]], 'action': 'archive', 'agent_name': 'Social Desk'},
+        json={'message_ids': [999999], 'action': 'archive', 'agent_name': 'Social Desk'},
     )
-    assert invalid_bulk_action.status_code == 400
+    assert invalid_bulk_action.status_code in (400, 404)
 
     contacts_response = client.get('/social/inbox/contact-views', headers=H)
     assert contacts_response.status_code == 200
-    assert isinstance(contacts_response.json().get('items'), list)
+    assert contacts_response.json().get('items') == []
 
-    history_response = client.get(f'/social/inbox/messages/{message_id}/history', headers=H)
-    assert history_response.status_code == 200
-    assert isinstance(history_response.json().get('history'), list)
-
-    claim_response = client.post(
-        f'/social/inbox/messages/{message_id}/claim',
-        headers=H,
-        json={'agent_name': 'Social Desk'},
-    )
-    assert claim_response.status_code == 200
-    assert claim_response.json()['message']['assigned_to'] == 'Social Desk'
-
-    complete_response = client.post(f'/social/inbox/messages/{message_id}/complete', headers=H)
-    assert complete_response.status_code == 200
-    assert complete_response.json()['message']['status'] == 'complete'
+    assert client.post('/social/inbox/messages/999999/claim', headers=H, json={'agent_name': 'Social Desk'}).status_code == 404
+    assert client.post('/social/inbox/messages/999999/complete', headers=H).status_code == 404
 
 
 def test_calendar_reschedule_and_autopost_flow(client: TestClient) -> None:
@@ -455,13 +374,7 @@ def test_longform_repurpose_flow(client: TestClient) -> None:
 
 
 def test_influencer_advocacy_bridge_flow(client: TestClient) -> None:
-    shortlist_response = client.post(
-        '/social/influencers/shortlist',
-        headers=H,
-        json={'influencer_id': 'inf-001'},
-    )
-    assert shortlist_response.status_code == 200
-
+    # Without an influencer on record there is nothing to bridge into advocacy.
     bridge_response = client.post(
         '/social/influencers/inf-001/advocacy-asset',
         headers=H,
@@ -472,14 +385,7 @@ def test_influencer_advocacy_bridge_flow(client: TestClient) -> None:
             'network': 'linkedin',
         },
     )
-    assert bridge_response.status_code == 200
-    payload = bridge_response.json()
-    assert payload['asset']['status'] == 'ready'
-    assert payload['shortlist_count'] >= 1
-
-    assets_response = client.get('/social/advocacy/assets', headers=H)
-    assert assets_response.status_code == 200
-    assert any(asset.get('source') == 'social-selling-bridge' for asset in assets_response.json().get('items', []))
+    assert bridge_response.status_code == 404
 
 
 def test_ocoya_style_ai_agents_and_integrations_flow(client: TestClient) -> None:
@@ -512,44 +418,17 @@ def test_ocoya_style_ai_agents_and_integrations_flow(client: TestClient) -> None
     poster_payload = poster_run.json()
     assert poster_payload.get('queued_post', {}).get('status') == 'scheduled'
 
+    # Messages arrive from connected accounts; none are invented for a new workspace.
     inbox_response = client.get('/social/inbox', headers=H)
     assert inbox_response.status_code == 200
-    inbox_items = inbox_response.json().get('items', [])
-    assert len(inbox_items) >= 1
-    message_id = int(inbox_items[0]['id'])
+    assert inbox_response.json().get('items') == []
 
-    dm_bot_run = client.post(
+    missing_message = client.post(
         '/social/ai-agents/workflows/execute',
         headers=H,
-        json={
-            'template_key': 'dm_chatbot',
-            'trigger_type': 'new_dm',
-            'payload': {
-                'message_id': message_id,
-                'intent': 'support',
-            },
-        },
+        json={'template_key': 'dm_chatbot', 'trigger_type': 'new_dm', 'payload': {'message_id': 999999, 'intent': 'support'}},
     )
-    assert dm_bot_run.status_code == 200
-    workflow_message = dm_bot_run.json().get('message', {})
-    assert workflow_message.get('status') == 'responded'
-    assert workflow_message.get('assigned_to') == 'dm-chatbot'
-    assert isinstance(workflow_message.get('reply_text'), str)
-    assert bool(workflow_message.get('reply_text'))
-
-    comment_to_dm = client.post(
-        '/social/inbox/comment-to-dm',
-        headers=H,
-        json={
-            'message_id': message_id,
-            'keyword': 'pricing',
-            'offer_link': 'https://nuxtron.local/offers/social-growth',
-        },
-    )
-    assert comment_to_dm.status_code == 200
-    outbound = comment_to_dm.json().get('outbound_dm', {})
-    assert outbound.get('source_type') == 'dm'
-    assert outbound.get('status') == 'responded'
+    assert missing_message.status_code in (404, 422)
 
 
 def test_production_readiness_remediation_plan(client: TestClient) -> None:

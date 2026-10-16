@@ -7,7 +7,7 @@ defined inline inside ``legacy_main.py`` (lines 2132-5319).
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Any, cast
 
 from fastapi import FastAPI, Request
 
@@ -113,6 +113,11 @@ from .routers.viralpost import create_viralpost_router
 from .services.ai_providers import _provider_health_metrics
 
 # ── Late-bound compatibility adapters ────────────────────────────────────────
+
+
+def _tenant_count(records: Any, tenant_id: str) -> int:
+    """Count only the records that belong to the calling tenant."""
+    return sum(1 for item in list(records) if isinstance(item, dict) and str(item.get('tenant_id', '')) == tenant_id)
 
 def _ops_require_super_admin_access(request: Request, x_super_admin_key: str | None) -> None:
     from .security_admin import require_super_admin_access
@@ -584,27 +589,27 @@ def register_all_routers(app: FastAPI) -> None:
             report_schedules_memory=lg._analytics_report_schedules_memory,
             trends_memory=lg._analytics_trends_memory,
             rollups_memory=lg._analytics_rollups_memory,
-            get_queue_counts=lambda: {
-                'social_scheduled': len(lg._scheduled_posts_memory),
-                'notifications': len(lg._notifications_memory),
-                'reviews': len(lg._reviews_memory),
-                'social_listening': len(lg._social_listening_memory),
-                'email_campaigns': len(lg._email_campaigns_memory),
-                'crm_contacts': len(lg._crm_contacts_memory),
-                'crm_deals': len(lg._crm_deals_memory),
-                'influencer_campaigns': len(lg._influencer_campaigns_memory),
-                'chatbots': len(lg._chatbots_memory),
-                'cms_connections': len(lg._cms_connections_memory),
-                'content_generated': len(lg._ai_gateway_memory),
+            get_queue_counts=lambda tenant_id: {
+                'social_scheduled': _tenant_count(lg._scheduled_posts_memory, tenant_id),
+                'notifications': _tenant_count(lg._notifications_memory, tenant_id),
+                'reviews': _tenant_count(lg._reviews_memory, tenant_id),
+                'social_listening': _tenant_count(lg._social_listening_memory, tenant_id),
+                'email_campaigns': _tenant_count(lg._email_campaigns_memory, tenant_id),
+                'crm_contacts': _tenant_count(lg._crm_contacts_memory, tenant_id),
+                'crm_deals': _tenant_count(lg._crm_deals_memory, tenant_id),
+                'influencer_campaigns': _tenant_count(lg._influencer_campaigns_memory, tenant_id),
+                'chatbots': _tenant_count(lg._chatbots_memory, tenant_id),
+                'cms_connections': _tenant_count(lg._cms_connections_memory, tenant_id),
+                'content_generated': _tenant_count(lg._ai_gateway_memory, tenant_id),
                 'seo_analyses': 0,
                 'ad_jobs': 0,
-                'bank_payouts': len(lg._bank_payouts_memory),
-                'studios_escrows': len(lg._studios_escrows_memory),
-                'university_courses': len(lg._university_courses_memory),
-                'university_enrollments': len(lg._university_enrollments_memory),
-                'studios_services': len(lg._studios_services_memory),
-                'commerce_products': len(lg._commerce_products_memory),
-                'commerce_orders': len(lg._commerce_orders_memory),
+                'bank_payouts': _tenant_count(lg._bank_payouts_memory, tenant_id),
+                'studios_escrows': _tenant_count(lg._studios_escrows_memory, tenant_id),
+                'university_courses': _tenant_count(lg._university_courses_memory, tenant_id),
+                'university_enrollments': _tenant_count(lg._university_enrollments_memory, tenant_id),
+                'studios_services': _tenant_count(lg._studios_services_memory, tenant_id),
+                'commerce_products': _tenant_count(lg._commerce_products_memory, tenant_id),
+                'commerce_orders': _tenant_count(lg._commerce_orders_memory, tenant_id),
             },
         )
     )

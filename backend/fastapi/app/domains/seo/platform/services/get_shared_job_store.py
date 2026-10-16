@@ -34,7 +34,7 @@ def _strict_no_mock_mode() -> bool:
     raw = os.getenv("SEO_STRICT_NO_MOCK", "").strip().lower()
     if raw:
         return raw not in _STRICT_NO_MOCK_FALSY
-    return os.getenv("ENV", "").strip().lower() == "production"
+    return (os.getenv("ENVIRONMENT") or os.getenv("ENV") or "").strip().lower() == "production"
 
 
 def _upstash_rest_base_url() -> str:

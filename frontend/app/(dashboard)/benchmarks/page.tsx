@@ -1,437 +1,77 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { apiGet, apiPost, resolveSessionTenant } from '@/app/lib/api-client';
+import { useState, type FormEvent } from "react";
+import { Plus } from "lucide-react";
+import { apiGet, apiSend } from "@/app/lib/platform-api";
+import { Button, Callout, DataTable, EmptyState, ErrorState, Field, FieldSelect, FieldTextarea, FormActions, Modal, Page, PageHeader, type Column } from "../_ui/kit";
+import { formatDate } from "../_ui/format";
+import { ResourceView, useResource, useTenant } from "../_ui/use-resource";
 
-type Json = Record<string, unknown>;
+type Benchmark = { id?: number | string; metric: string; value: number; baseline_value?: number | null; period_label?: string; segment?: string; notes?: string; created_at?: string };
 
-function asNumber(v: unknown, fb = 0): number {
-  return typeof v === 'number' ? v : fb;
-}
-function asString(v: unknown, fb = ''): string {
-  return typeof v === 'string' ? v : fb;
-}
-function asArray(v: unknown): unknown[] {
-  return Array.isArray(v) ? v : [];
-}
-function asObject(v: unknown): Json {
-  return v !== null && typeof v === 'object' && !Array.isArray(v) ? (v as Json) : {};
-}
-
-const PERCENTILE_COLOR: Record<string, string> = {
-  top_quartile: 'var(--success)',
-  above_median: 'var(--brand)',
-  below_median: 'var(--warning)',
-  no_segment_data: 'var(--muted)',
-};
-
-const METRIC_LABELS: Record<string, string> = {
-  activation_rate_pct: 'Activation Rate %',
-  churn_reduction_pct: 'Churn Reduction %',
-  dispute_auto_resolution_rate_pct: 'Dispute Auto-Resolution %',
-  revenue_per_recommendation_gbp: 'Revenue / Recommendation £',
-  qualified_lead_rate_pct: 'Qualified Lead Rate %',
-  organic_reach_uplift_pct: 'Organic Reach Uplift %',
-  response_time_minutes: 'Response Time (min)',
-  attribution_coverage_pct: 'Attribution Coverage %',
-  outreach_conversion_pct: 'Outreach Conversion %',
-  avg_decision_quality_score: 'Avg Decision Quality',
-  net_revenue_retained_gbp: 'Net Revenue Retained £',
-  autonomous_workflow_coverage_pct: 'Autonomous Workflow Coverage %',
-};
+const SEGMENTS = ["all", "ecommerce", "saas", "agency", "media", "fintech", "healthtech", "nonprofit", "education", "marketplace"];
 
 export default function BenchmarksPage() {
-  const [tenantId] = useState(resolveSessionTenant);
-  const [summary, setSummary] = useState<Json>({});
-  const [comparison, setComparison] = useState<unknown[]>([]);
-  const [benchmarks, setBenchmarks] = useState<unknown[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [segment, setSegment] = useState('saas');
+  const tenant = useTenant();
+  const resource = useResource<Benchmark[]>(async (id) => (await apiGet<{ benchmarks: Benchmark[] }>("/benchmarks", id)).benchmarks, []);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ metric: "", value: "", baseline: "", period: "", segment: "all", notes: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [failure, setFailure] = useState<unknown>(null);
+  const [busy, setBusy] = useState(false);
+  const set = (key: keyof typeof form) => (event: { target: { value: string } }) => setForm((current) => ({ ...current, [key]: event.target.value }));
 
-  // Submit form
-  const [metric, setMetric] = useState('activation_rate_pct');
-  const [metricValue, setMetricValue] = useState(0);
-  const [baseline, setBaseline] = useState('');
-  const [period, setPeriod] = useState('2026-Q2');
-  const [submitMsg, setSubmitMsg] = useState('');
-
-  const metricsData = useMemo(() => asObject(summary.metrics), [summary]);
-
-  async function load() {
-    setLoading(true);
-    setError('');
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    const found: Record<string, string> = {};
+    if (!form.metric.trim()) found.metric = "Name the metric.";
+    if (form.value === "" || Number.isNaN(Number(form.value))) found.value = "Enter a number.";
+    if (form.baseline !== "" && Number.isNaN(Number(form.baseline))) found.baseline = "Enter a number or leave empty.";
+    if (!form.period.trim()) found.period = "Say which period this covers, such as 2026-Q3.";
+    setErrors(found);
+    if (Object.keys(found).length) return;
+    setBusy(true);
+    setFailure(null);
     try {
-      const [sumData, cmpData, listData] = await Promise.all([
-        apiGet('/benchmarks/summary', tenantId),
-        apiGet(`/benchmarks/compare/${segment}`, tenantId),
-        apiGet('/benchmarks', tenantId),
-      ]);
-      setSummary(sumData as Json);
-      setComparison(asArray((cmpData as Json).comparison));
-      setBenchmarks(asArray((listData as Json).benchmarks));
-    } catch (e) {
-      setError(String(e));
+      await apiSend("/benchmarks", "POST", { metric: form.metric.trim(), value: Number(form.value), baseline_value: form.baseline === "" ? null : Number(form.baseline), period_label: form.period.trim(), segment: form.segment, notes: form.notes.trim() }, tenant);
+      setForm({ metric: "", value: "", baseline: "", period: "", segment: "all", notes: "" });
+      setOpen(false);
+      resource.reload();
+    } catch (caught) {
+      setFailure(caught);
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, segment]);
-
-  async function submitBenchmark() {
-    if (!metric.trim() || !period.trim()) return;
-    setSubmitMsg('');
-    try {
-      const res = await apiPost(
-        '/benchmarks',
-        {
-          metric,
-          value: metricValue,
-          baseline_value: baseline.trim() ? Number.parseFloat(baseline) : null,
-          period_label: period,
-          segment,
-        },
-        tenantId
-      );
-      const r = res as Json;
-      const uplift = r.uplift_pct;
-      const upliftText = uplift === null || uplift === undefined ? 'N/A (no baseline)' : `${asNumber(uplift)}%`;
-      setSubmitMsg(`Recorded. Uplift: ${upliftText}`);
-      await load();
-    } catch (e) {
-      setSubmitMsg(`Error: ${String(e)}`);
-    }
-  }
+  const columns: Column<Benchmark>[] = [
+    { key: "metric", header: "Metric", strong: true, render: (row) => row.metric, sortValue: (row) => row.metric },
+    { key: "value", header: "Value", numeric: true, render: (row) => row.value.toLocaleString(), sortValue: (row) => row.value },
+    { key: "baseline", header: "Baseline", numeric: true, render: (row) => (row.baseline_value ?? "—") },
+    { key: "period", header: "Period", render: (row) => row.period_label || "—" },
+    { key: "segment", header: "Segment", render: (row) => row.segment || "all" },
+    { key: "when", header: "Recorded", render: (row) => formatDate(row.created_at), sortValue: (row) => row.created_at ?? "" },
+  ];
 
   return (
-    <main style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '0.5rem' }}>Performance Benchmarks</h1>
-      <p style={{ color: 'var(--muted)', marginBottom: '1.5rem' }}>
-        Tenant-level uplift data and segment-level comparisons — the Performance Benchmark Moat.
-      </p>
-
-      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', alignItems: 'center' }}>
-        <input
-          value={tenantId}
-          readOnly
-          placeholder="Tenant ID"
-          style={{
-            padding: '0.5rem 0.8rem',
-            borderRadius: 6,
-            border: '1px solid var(--line)',
-            background: 'var(--card)',
-            color: 'var(--text)',
-            minWidth: 200,
-          }}
-        />
-        <select
-          value={segment}
-          onChange={(e) => setSegment(e.target.value)}
-          style={{
-            padding: '0.5rem 0.8rem',
-            borderRadius: 6,
-            border: '1px solid var(--line)',
-            background: 'var(--card)',
-            color: 'var(--text)',
-          }}
-        >
-          {[
-            'ecommerce',
-            'saas',
-            'agency',
-            'media',
-            'fintech',
-            'healthtech',
-            'nonprofit',
-            'education',
-            'marketplace',
-            'all',
-          ].map((s) => (
-            <option key={s} value={s}>
-              {s.charAt(0).toUpperCase() + s.slice(1)}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={load}
-          disabled={loading}
-          style={{
-            padding: '0.5rem 1.2rem',
-            borderRadius: 6,
-            background: "var(--brand)",
-            color: 'var(--text)',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          {loading ? 'Loading…' : 'Refresh'}
-        </button>
-      </div>
-
-      {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem' }}>{error}</p>}
-
-      {/* Summary metrics */}
-      {Object.keys(metricsData).length > 0 && (
-        <section style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '1rem' }}>Your Metrics</h2>
-          <div
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 200px), 1fr))', gap: '0.75rem' }}
-          >
-            {Object.entries(metricsData).map(([key, data]) => {
-              const d = asObject(data);
-              const uplift = d.avg_uplift_pct;
-              return (
-                <div
-                  key={key}
-                  style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8, padding: '0.75rem' }}
-                >
-                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '0.25rem' }}>
-                    {METRIC_LABELS[key] ?? key.replaceAll('_', ' ')}
-                  </div>
-                  <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--brand)' }}>
-                    {asNumber(d.avg_value).toFixed(1)}
-                  </div>
-                  {uplift !== null && uplift !== undefined && (
-                    <div style={{ fontSize: '13px', color: asNumber(uplift) >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                      {asNumber(uplift) >= 0 ? '▲' : '▼'} {Math.abs(asNumber(uplift))}% uplift
-                    </div>
-                  )}
-                  <div style={{ fontSize: '12px', color: 'var(--faint)' }}>{asNumber(d.data_points)} data point(s)</div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Segment comparison */}
-      {comparison.length > 0 && (
-        <section style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '1rem' }}>
-            vs {segment.charAt(0).toUpperCase() + segment.slice(1)} Segment
-          </h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                {['Metric', 'Your Value', 'Segment P50', 'P75', 'P90', 'Band'].map((h) => (
-                  <th key={h} style={{ textAlign: 'left', padding: '0.4rem 0.6rem', color: 'var(--muted)' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {comparison.map((c, idx) => {
-                const cmp = c as Json;
-                const band = asString(cmp.percentile_band, 'no_segment_data');
-                const p50 =
-                  cmp.segment_p50 === null || cmp.segment_p50 === undefined
-                    ? '—'
-                    : asNumber(cmp.segment_p50).toFixed(2);
-                const p75 =
-                  cmp.segment_p75 === null || cmp.segment_p75 === undefined
-                    ? '—'
-                    : asNumber(cmp.segment_p75).toFixed(2);
-                const p90 =
-                  cmp.segment_p90 === null || cmp.segment_p90 === undefined
-                    ? '—'
-                    : asNumber(cmp.segment_p90).toFixed(2);
-                return (
-                  <tr key={`${asString(cmp.metric)}-${idx}`} style={{ borderBottom: '1px solid var(--line)' }}>
-                    <td style={{ padding: '0.4rem 0.6rem', fontSize: '13px' }}>
-                      {METRIC_LABELS[asString(cmp.metric)] ?? asString(cmp.metric).replaceAll('_', ' ')}
-                    </td>
-                    <td style={{ padding: '0.4rem 0.6rem', fontWeight: 700 }}>
-                      {asNumber(cmp.tenant_value).toFixed(2)}
-                    </td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--muted)' }}>{p50}</td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--muted)' }}>{p75}</td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--muted)' }}>{p90}</td>
-                    <td
-                      style={{
-                        padding: '0.4rem 0.6rem',
-                        color: PERCENTILE_COLOR[band],
-                        fontWeight: 600,
-                        fontSize: '12px',
-                      }}
-                    >
-                      {band.replaceAll('_', ' ')}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </section>
-      )}
-
-      {/* Submit benchmark */}
-      <section
-        style={{
-          marginBottom: '2rem',
-          background: 'var(--card)',
-          border: '1px solid var(--line)',
-          borderRadius: 8,
-          padding: '1.25rem',
-        }}
-      >
-        <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '1rem' }}>Record Benchmark Data Point</h2>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 170px), 1fr))',
-            gap: '0.5rem',
-            marginBottom: '0.75rem',
-          }}
-        >
-          <div>
-            <label htmlFor="metric-input" style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              Metric
-            </label>
-            <select
-              id="metric-input"
-              value={metric}
-              onChange={(e) => setMetric(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.4rem 0.6rem',
-                borderRadius: 6,
-                border: '1px solid var(--line)',
-                background: 'var(--card)',
-                color: 'var(--text)',
-              }}
-            >
-              {Object.entries(METRIC_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="value-input" style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              Value
-            </label>
-            <input
-              id="value-input"
-              type="number"
-              value={metricValue}
-              onChange={(e) => setMetricValue(Number.parseFloat(e.target.value))}
-              style={{
-                width: '100%',
-                padding: '0.4rem 0.6rem',
-                borderRadius: 6,
-                border: '1px solid var(--line)',
-                background: 'var(--card)',
-                color: 'var(--text)',
-              }}
-            />
-          </div>
-          <div>
-            <label htmlFor="baseline-input" style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              Baseline (optional)
-            </label>
-            <input
-              id="baseline-input"
-              value={baseline}
-              onChange={(e) => setBaseline(e.target.value)}
-              placeholder="e.g. 20"
-              style={{
-                width: '100%',
-                padding: '0.4rem 0.6rem',
-                borderRadius: 6,
-                border: '1px solid var(--line)',
-                background: 'var(--card)',
-                color: 'var(--text)',
-              }}
-            />
-          </div>
-          <div>
-            <label htmlFor="period-input" style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              Period
-            </label>
-            <input
-              id="period-input"
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              placeholder="2026-Q2"
-              style={{
-                width: '100%',
-                padding: '0.4rem 0.6rem',
-                borderRadius: 6,
-                border: '1px solid var(--line)',
-                background: 'var(--card)',
-                color: 'var(--text)',
-              }}
-            />
-          </div>
-        </div>
-        <button
-          onClick={submitBenchmark}
-          style={{
-            padding: '0.5rem 1.2rem',
-            borderRadius: 6,
-            background: "var(--brand)",
-            color: 'var(--text)',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          Submit
-        </button>
-        {submitMsg && <p style={{ color: 'var(--brand)', fontSize: '14px', marginTop: '0.5rem' }}>{submitMsg}</p>}
-      </section>
-
-      {/* Data history */}
-      {benchmarks.length > 0 && (
-        <section>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '0.75rem' }}>Data History</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                {['Metric', 'Value', 'Baseline', 'Uplift', 'Period', 'Date'].map((h) => (
-                  <th key={h} style={{ textAlign: 'left', padding: '0.4rem 0.6rem', color: 'var(--muted)' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {benchmarks.slice(0, 30).map((b, idx) => {
-                const bm = b as Json;
-                const upliftVal = bm.uplift_pct;
-                const hasBaseline = bm.baseline_value !== null && bm.baseline_value !== undefined;
-                const hasUplift = upliftVal !== null && upliftVal !== undefined;
-                const upliftNumber = asNumber(upliftVal);
-                const upliftColorInner = upliftNumber >= 0 ? 'var(--success)' : 'var(--danger)';
-                const upliftColor = hasUplift ? upliftColorInner : 'var(--muted)';
-                const upliftSign = upliftNumber >= 0 ? '+' : '';
-                const upliftText = hasUplift ? `${upliftSign}${upliftNumber}%` : '—';
-                return (
-                  <tr key={`${asString(bm.id)}-${idx}`} style={{ borderBottom: '1px solid var(--line)' }}>
-                    <td style={{ padding: '0.4rem 0.6rem', fontSize: '13px' }}>
-                      {METRIC_LABELS[asString(bm.metric)] ?? asString(bm.metric)}
-                    </td>
-                    <td style={{ padding: '0.4rem 0.6rem', fontWeight: 600 }}>{asNumber(bm.value).toFixed(2)}</td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--muted)' }}>
-                      {hasBaseline ? asNumber(bm.baseline_value).toFixed(2) : '—'}
-                    </td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: upliftColor }}>{upliftText}</td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--muted)' }}>{asString(bm.period_label)}</td>
-                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--muted)', fontSize: '12px' }}>
-                      {asString(bm.created_at).slice(0, 10)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </section>
-      )}
-    </main>
+    <Page width="wide">
+      <PageHeader title="Benchmarks" subtitle="Record your own results period by period, so you can see whether you are moving." actions={<Button variant="primary" icon={<Plus size={15} aria-hidden="true" />} onClick={() => setOpen(true)}>Record a result</Button>} />
+      <ResourceView resource={resource} isEmpty={(rows) => rows.length === 0} empty={<EmptyState title="Nothing recorded" description="Add a metric and its value for a period to start your own benchmark history." action={<Button variant="primary" onClick={() => setOpen(true)}>Record a result</Button>} />}>
+        {(rows) => <DataTable columns={columns} rows={rows} getKey={(row, index) => row.id ?? index} caption="Recorded results" pageSize={20} />}
+      </ResourceView>
+      <Callout tone="info">Industry comparison needs a benchmark dataset loaded for your segment. None is loaded, so only your own numbers are shown.</Callout>
+      <Modal open={open} onOpenChange={setOpen} title="Record a result">
+        <form onSubmit={save} noValidate style={{ display: "grid", gap: 16 }}>
+          <Field label="Metric" value={form.metric} error={errors.metric} maxLength={120} onChange={set("metric")} />
+          <Field label="Value" inputMode="decimal" value={form.value} error={errors.value} onChange={set("value")} />
+          <Field label="Baseline (optional)" inputMode="decimal" value={form.baseline} error={errors.baseline} onChange={set("baseline")} />
+          <Field label="Period" value={form.period} error={errors.period} maxLength={80} onChange={set("period")} />
+          <FieldSelect label="Segment" value={form.segment} onChange={set("segment")}>{SEGMENTS.map((item) => <option key={item} value={item}>{item}</option>)}</FieldSelect>
+          <FieldTextarea label="Notes" rows={2} value={form.notes} maxLength={500} onChange={set("notes")} />
+          {failure ? <ErrorState error={failure} title="Not saved" /> : null}
+          <FormActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={busy}>Save</Button></FormActions>
+        </form>
+      </Modal>
+    </Page>
   );
 }

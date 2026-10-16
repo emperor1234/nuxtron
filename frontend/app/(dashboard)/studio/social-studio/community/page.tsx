@@ -1,371 +1,144 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiGet, apiSend } from '@/app/lib/platform-api';
-import { resolveSessionTenant } from '@/app/lib/api-client';
+import { useState } from "react";
+import { MessageSquareReply, Trash2 } from "lucide-react";
+import { apiGet, apiSend } from "@/app/lib/platform-api";
+import { Badge, Button, Callout, Card, CardTitle, DataTable, EmptyState, Field, FieldTextarea, IconButton, Kpi, KpiGrid, Modal, Page, PageHeader, Section, StatusBadge, Tabs, type Column } from "../../../_ui/kit";
+import { formatDateTime, truncate } from "../../../_ui/format";
+import { ResourceView, useResource, useTenant } from "../../../_ui/use-resource";
 
-type CommunityComment = {
-  id: string;
-  network: string;
-  post_title?: string;
-  author: string;
-  text: string;
-  sentiment?: string;
-  replied?: boolean;
-  reply?: string;
-  created_at?: string;
-  status?: string;
-  likes?: number;
-};
-
-type SavedReply = {
-  id: string;
-  label: string;
-  text: string;
-  shortcut?: string;
-};
-
-type CommentScore = {
-  response_rate: number;
-  avg_response_time_minutes: number;
-  consistency_score: number;
-  total_comments: number;
-  replied_count: number;
-  pending_count: number;
-  grade: string;
-};
-
-const box = {
-  background: 'var(--bg-soft)',
-  border: '1px solid var(--line)',
-  borderRadius: 12,
-  padding: 16,
-} as const;
+type Comment = { id: string; network: string; post_title?: string; author: string; text: string; sentiment?: string; replied?: boolean; reply?: string; created_at?: string; status?: string };
+type SavedReply = { id: string; label: string; text: string; shortcut?: string | null };
+type Loaded = { comments: Comment[]; unanswered: number; replies: SavedReply[] };
 
 export default function CommentRepliesPage() {
-  const [tenantId] = useState(resolveSessionTenant);
-  const [filter, setFilter] = useState('all');
-  const [sort, setSort] = useState('newest');
-  const [comments, setComments] = useState<CommunityComment[]>([]);
-  const [savedReplies, setSavedReplies] = useState<SavedReply[]>([]);
-  const [score, setScore] = useState<CommentScore | null>(null);
-  const [draftReplies, setDraftReplies] = useState<Record<string, string>>({});
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const tenant = useTenant();
+  const resource = useResource<Loaded>(async (id) => {
+    const [comments, replies] = await Promise.all([
+      apiGet<{ comments?: Comment[]; unanswered_count?: number }>("/social/community/comments", id),
+      apiGet<{ saved_replies?: SavedReply[] }>("/social/community/saved-replies", id),
+    ]);
+    return { comments: comments.comments ?? [], unanswered: comments.unanswered_count ?? 0, replies: replies.saved_replies ?? [] };
+  });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const [tab, setTab] = useState<"comments" | "replies">("comments");
+  const [replying, setReplying] = useState<Comment | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [label, setLabel] = useState("");
+  const [savedText, setSavedText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run(action: () => Promise<unknown>, done: () => void) {
+    setBusy(true);
+    setError(null);
     try {
-      const [commentRes, scoreRes, replyRes] = await Promise.all([
-        apiGet<{ comments?: CommunityComment[] }>(`/social/community/comments?sort=${sort}`, tenantId),
-        apiGet<{ comment_score?: CommentScore }>('/social/community/score', tenantId),
-        apiGet<{ saved_replies?: SavedReply[] }>('/social/community/saved-replies', tenantId),
-      ]);
-      setComments(commentRes.comments ?? []);
-      setScore(scoreRes.comment_score ?? null);
-      setSavedReplies(replyRes.saved_replies ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load community data');
+      await action();
+      done();
+      await resource.reload();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "That action failed.");
     } finally {
-      setLoading(false);
-    }
-  }, [sort, tenantId]);
-
-  useEffect(() => {
-    // Fetch on mount and whenever the filters behind `load` change.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load();
-  }, [load]);
-
-  const filtered = useMemo(() => {
-    if (filter === 'all') return comments;
-    if (filter === 'unanswered') return comments.filter((comment) => !comment.replied);
-    return comments.filter((comment) => comment.network === filter);
-  }, [comments, filter]);
-
-  function setReply(commentId: string, text: string) {
-    setDraftReplies((prev) => ({ ...prev, [commentId]: text }));
-  }
-
-  async function replyToComment(comment: CommunityComment) {
-    const reply = (draftReplies[comment.id] || '').trim();
-    if (!reply) return;
-    try {
-      await apiSend(
-        `/social/community/comments/${comment.id}/reply`,
-        'POST',
-        {
-          comment_id: comment.id,
-          reply,
-          platform: comment.network,
-        },
-        tenantId
-      );
-      setDraftReplies((prev) => ({ ...prev, [comment.id]: '' }));
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Reply failed');
+      setBusy(false);
     }
   }
 
-  async function createPost(commentId: string) {
-    try {
-      await apiSend(`/social/community/comments/${commentId}/create-post`, 'POST', undefined, tenantId);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Create post failed');
-    }
-  }
-
-  function applySavedReply(commentId: string, text: string) {
-    setReply(commentId, text);
-  }
+  const commentColumns: Column<Comment>[] = [
+    { key: "author", header: "From", strong: true, sortValue: (comment) => comment.author, render: (comment) => <span>{comment.author}<br /><span style={{ color: "var(--nx-muted)", fontWeight: 400 }}>{comment.network}{comment.post_title ? ` · ${truncate(comment.post_title, 40)}` : ""}</span></span> },
+    { key: "text", header: "Comment", render: (comment) => truncate(comment.text, 140) },
+    { key: "sentiment", header: "Sentiment", render: (comment) => (comment.sentiment ? <Badge tone={comment.sentiment === "negative" ? "danger" : comment.sentiment === "positive" ? "success" : "neutral"}>{comment.sentiment}</Badge> : "—") },
+    { key: "when", header: "Received", sortValue: (comment) => comment.created_at ?? "", render: (comment) => formatDateTime(comment.created_at) },
+    { key: "status", header: "Status", render: (comment) => <StatusBadge status={comment.replied ? "replied" : "open"} /> },
+    { key: "actions", header: "", render: (comment) => comment.replied ? null : <IconButton label="Reply" onClick={() => { setReplying(comment); setReplyText(""); setError(null); }}><MessageSquareReply size={15} aria-hidden="true" /></IconButton> },
+  ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
-      <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 18,
-            alignItems: 'flex-start',
-            marginBottom: 20,
-          }}
-        >
-          <div>
-            <h1 style={{ margin: 0, fontSize: 28 }}>Comment Replies</h1>
-            <p style={{ margin: '6px 0 0', color: "var(--muted)" }}>
-              Reply across networks, reuse saved answers, and track response performance.
-            </p>
-          </div>
-          <div
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 110px), 1fr))', gap: 10, minWidth: 500 }}
-          >
-            <div style={box}>
-              <div style={{ fontSize: 12, color: "var(--muted)" }}>Grade</div>
-              <div style={{ fontSize: 24, fontWeight: 700 }}>{score?.grade || '—'}</div>
-            </div>
-            <div style={box}>
-              <div style={{ fontSize: 12, color: "var(--muted)" }}>Response rate</div>
-              <div style={{ fontSize: 24, fontWeight: 700 }}>{score ? `${score.response_rate}%` : '—'}</div>
-            </div>
-            <div style={box}>
-              <div style={{ fontSize: 12, color: "var(--muted)" }}>Avg speed</div>
-              <div style={{ fontSize: 24, fontWeight: 700 }}>{score ? `${score.avg_response_time_minutes}m` : '—'}</div>
-            </div>
-            <div style={box}>
-              <div style={{ fontSize: 12, color: "var(--muted)" }}>Pending</div>
-              <div style={{ fontSize: 24, fontWeight: 700 }}>{score?.pending_count || 0}</div>
-            </div>
-          </div>
-        </div>
-
-        {error ? <div style={{ ...box, color: 'var(--danger)', marginBottom: 14 }}>{error}</div> : null}
-
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 12,
-            alignItems: 'center',
-            marginBottom: 18,
-            flexWrap: 'wrap',
-          }}
-        >
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {[
-              'all',
-              'unanswered',
-              'instagram',
-              'facebook',
-              'linkedin',
-              'x',
-              'tiktok',
-              'youtube',
-              'threads',
-              'bluesky',
-              'mastodon',
-            ].map((value) => (
-              <button
-                key={value}
-                onClick={() => setFilter(value)}
-                style={{
-                  border: 'none',
-                  borderRadius: 999,
-                  padding: '8px 14px',
-                  cursor: 'pointer',
-                  background: filter === value ? "var(--brand)" : 'var(--neutral-soft)',
-                  color: filter === value ? 'var(--on-status)' : 'var(--ink-2)',
-                  fontWeight: 700,
-                }}
-              >
-                {value}
-              </button>
-            ))}
-          </div>
-          <select
-            value={sort}
-            onChange={(event) => setSort(event.target.value)}
-            style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--neutral-line)' }}
-          >
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-          </select>
-        </div>
-
-        {loading ? (
-          <div style={{ color: "var(--muted)", padding: 30, textAlign: 'center' }}>Loading community inbox…</div>
-        ) : null}
-
-        {loading ? null : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 16 }}>
-            <section style={{ display: 'grid', gap: 12 }}>
-              {filtered.map((comment) => (
-                <div key={comment.id} style={box}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
-                    <div>
-                      <div style={{ fontWeight: 700 }}>{comment.author}</div>
-                      <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                        {comment.network} · {comment.post_title || 'Untitled post'} ·{' '}
-                        {comment.created_at ? new Date(comment.created_at).toLocaleString() : 'no date'}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          borderRadius: 999,
-                          padding: '4px 10px',
-                          background: comment.replied ? 'var(--success-soft)' : 'var(--warning-line)',
-                          color: comment.replied ? 'var(--success-ink)' : 'var(--warning-ink)',
-                        }}
-                      >
-                        {comment.replied ? 'Replied' : 'Waiting'}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          borderRadius: 999,
-                          padding: '4px 10px',
-                          background: 'var(--neutral-soft)',
-                          color: 'var(--ink-2)',
-                        }}
-                      >
-                        {comment.sentiment || 'neutral'}
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ whiteSpace: 'pre-wrap', color: 'var(--ink-2)', marginBottom: 10 }}>{comment.text}</div>
-                  {comment.reply ? (
-                    <div
-                      style={{
-                        padding: 12,
-                        borderRadius: 10,
-                        background: 'var(--info-soft)',
-                        color: "var(--brand)",
-                        marginBottom: 10,
-                      }}
-                    >
-                      Your reply: {comment.reply}
-                    </div>
-                  ) : null}
-                  <textarea
-                    value={draftReplies[comment.id] || ''}
-                    onChange={(event) => setReply(comment.id, event.target.value)}
-                    placeholder="Write a reply…"
-                    style={{
-                      width: '100%',
-                      minHeight: 90,
-                      boxSizing: 'border-box',
-                      borderRadius: 10,
-                      border: '1px solid var(--neutral-line)',
-                      padding: 10,
-                      marginBottom: 10,
-                    }}
-                  />
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-                    {savedReplies.map((reply) => (
-                      <button
-                        key={reply.id}
-                        onClick={() => applySavedReply(comment.id, reply.text)}
-                        style={{
-                          border: 'none',
-                          borderRadius: 999,
-                          padding: '6px 10px',
-                          cursor: 'pointer',
-                          background: 'var(--info-soft)',
-                          color: 'var(--info)',
-                          fontSize: 12,
-                        }}
-                      >
-                        {reply.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                      onClick={() => void replyToComment(comment)}
-                      style={{
-                        border: 'none',
-                        borderRadius: 10,
-                        padding: '9px 12px',
-                        background: "var(--brand)",
-                        color: 'var(--on-brand)',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Send reply
-                    </button>
-                    <button
-                      onClick={() => void createPost(comment.id)}
-                      style={{
-                        border: 'none',
-                        borderRadius: 10,
-                        padding: '9px 12px',
-                        background: 'var(--success)',
-                        color: 'var(--on-status)',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Create post from reply
-                    </button>
-                  </div>
-                </div>
+    <Page>
+      <PageHeader
+        title="Comment Replies"
+        subtitle="Comments from your connected accounts, with saved replies to answer quickly."
+        tabs={<Tabs items={[{ id: "comments", label: "Comments", count: resource.data?.comments.length }, { id: "replies", label: "Saved replies", count: resource.data?.replies.length }]} value={tab} onChange={(id) => setTab(id as "comments" | "replies")} />}
+        actions={tab === "replies" ? <Button variant="primary" onClick={() => { setSaveOpen(true); setError(null); }}>New saved reply</Button> : undefined}
+      />
+      <ResourceView resource={resource}>
+        {(data) =>
+          tab === "comments" ? (
+            <>
+              <KpiGrid>
+                <Kpi label="Comments" value={data.comments.length} />
+                <Kpi label="Waiting for a reply" value={data.unanswered} />
+              </KpiGrid>
+              {data.comments.length === 0 ? (
+                <EmptyState title="No comments yet" description="Comments appear here once a connected account receives them." />
+              ) : (
+                <DataTable columns={commentColumns} rows={data.comments} getKey={(comment) => comment.id} caption="Comments" pageSize={15} />
+              )}
+            </>
+          ) : data.replies.length === 0 ? (
+            <EmptyState title="No saved replies" description="Save the answers you give often and reuse them in one click." action={<Button variant="primary" onClick={() => setSaveOpen(true)}>New saved reply</Button>} />
+          ) : (
+            <Section title="Saved replies">
+              {data.replies.map((reply) => (
+                <Card key={reply.id}>
+                  <CardTitle sub={reply.shortcut ?? undefined} actions={<IconButton label={`Delete ${reply.label}`} variant="quiet" onClick={() => void run(() => apiSend(`/social/community/saved-replies/${reply.id}`, "DELETE", undefined, tenant), () => undefined)}><Trash2 size={15} aria-hidden="true" /></IconButton>}>{reply.label}</CardTitle>
+                  <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{reply.text}</p>
+                </Card>
               ))}
-              {filtered.length === 0 ? <div style={box}>No comments match this filter.</div> : null}
-            </section>
+            </Section>
+          )
+        }
+      </ResourceView>
 
-            <aside style={{ display: 'grid', gap: 12, alignContent: 'start' }}>
-              <div style={box}>
-                <h2 style={{ marginTop: 0, fontSize: 18 }}>Saved Replies</h2>
-                <div style={{ display: 'grid', gap: 10 }}>
-                  {savedReplies.map((reply) => (
-                    <div key={reply.id} style={{ padding: 12, borderRadius: 10, background: 'var(--card)' }}>
-                      <div style={{ fontWeight: 700 }}>{reply.label}</div>
-                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
-                        {reply.shortcut || 'no shortcut'}
-                      </div>
-                      <div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 8 }}>{reply.text}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div style={box}>
-                <h2 style={{ marginTop: 0, fontSize: 18 }}>Comment Score</h2>
-                <div style={{ fontSize: 13, color: 'var(--ink-2)', display: 'grid', gap: 8 }}>
-                  <div>Total comments: {score?.total_comments || 0}</div>
-                  <div>Replied: {score?.replied_count || 0}</div>
-                  <div>Consistency: {score?.consistency_score || 0}</div>
-                </div>
-              </div>
-            </aside>
-          </div>
-        )}
-      </div>
-    </div>
+      <Modal
+        open={Boolean(replying)}
+        onOpenChange={(open) => !open && setReplying(null)}
+        title="Reply to comment"
+        description={replying ? `${replying.author}: ${truncate(replying.text, 120)}` : undefined}
+        footer={
+          <>
+            <Button onClick={() => setReplying(null)} disabled={busy}>Cancel</Button>
+            <Button
+              variant="primary"
+              loading={busy}
+              onClick={() => {
+                if (!replying || !replyText.trim()) return setError("Write a reply first.");
+                void run(() => apiSend(`/social/community/comments/${replying.id}/reply`, "POST", { comment_id: replying.id, reply: replyText.trim(), platform: replying.network }, tenant), () => setReplying(null));
+              }}
+            >
+              Send reply
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: "grid", gap: 14 }}>
+          {error ? <Callout tone="danger">{error}</Callout> : null}
+          {(resource.data?.replies.length ?? 0) > 0 ? (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {resource.data?.replies.map((reply) => <Button key={reply.id} size="sm" onClick={() => setReplyText(reply.text)}>{reply.label}</Button>)}
+            </div>
+          ) : null}
+          <FieldTextarea label="Reply" rows={5} value={replyText} maxLength={2200} onChange={(event) => setReplyText(event.target.value)} />
+        </div>
+      </Modal>
+
+      <Modal
+        open={saveOpen}
+        onOpenChange={setSaveOpen}
+        title="New saved reply"
+        footer={
+          <>
+            <Button onClick={() => setSaveOpen(false)} disabled={busy}>Cancel</Button>
+            <Button variant="primary" loading={busy} onClick={() => { if (!label.trim() || !savedText.trim()) return setError("Add a name and the reply text."); void run(() => apiSend("/social/community/saved-replies", "POST", { label: label.trim(), text: savedText.trim() }, tenant), () => { setSaveOpen(false); setLabel(""); setSavedText(""); }); }}>Save reply</Button>
+          </>
+        }
+      >
+        <div style={{ display: "grid", gap: 14 }}>
+          {error ? <Callout tone="danger">{error}</Callout> : null}
+          <Field label="Name" value={label} maxLength={100} onChange={(event) => setLabel(event.target.value)} />
+          <FieldTextarea label="Reply text" rows={5} value={savedText} maxLength={2200} onChange={(event) => setSavedText(event.target.value)} />
+        </div>
+      </Modal>
+    </Page>
   );
 }

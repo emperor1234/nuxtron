@@ -204,7 +204,7 @@ def test_content_generation_strict_mode_rejects_missing_ai_text(
     )
 
     assert response.status_code == 503
-    assert 'AI text generation returned no output' in response.json()['detail']
+    assert response.json()['detail']['code'] == 'AI_MODEL_UNAVAILABLE'
 
 
 def test_content_generation_strict_mode_all_generated_succeeds(

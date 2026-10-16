@@ -5,7 +5,7 @@ import type { SVGProps } from 'react';
  * Single stroke language (1.8–2.2) to match the reference; theming via currentColor.
  */
 
-type IconProps = SVGProps<SVGSVGElement> & { size?: number };
+type IconProps = SVGProps<globalThis.SVGSVGElement> & { size?: number };
 
 function base({ size = 20, ...props }: IconProps): IconProps {
   return { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', 'aria-hidden': true, ...props };

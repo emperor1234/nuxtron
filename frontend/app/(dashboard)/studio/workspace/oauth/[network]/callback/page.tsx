@@ -1,118 +1,66 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
-import { socialApi, type SocialNetwork } from '@/app/lib/social-api';
+import { Suspense, useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { apiSend } from "@/app/lib/platform-api";
+import { resolveSessionTenant } from "@/app/lib/api-client";
+import { ButtonLink, Callout, LoadingState, Page, PageHeader } from "../../../../../_ui/kit";
 
-export default function SocialOAuthCallbackPage() {
+type Outcome = { state: "working" } | { state: "done" } | { state: "failed"; message: string };
+
+function Completing() {
   const params = useParams<{ network: string }>();
-  const searchParams = useSearchParams();
-  const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
-  const [message, setMessage] = useState('Completing OAuth callback...');
+  const search = useSearchParams();
+  const [outcome, setOutcome] = useState<Outcome>({ state: "working" });
 
   useEffect(() => {
     let active = true;
+    const network = (params?.network || "").trim();
+    const code = (search.get("code") || "").trim();
+    const state = (search.get("state") || "").trim();
+    const providerError = (search.get("error") || "").trim();
 
-    async function run() {
-      const network = (params?.network || '').trim();
-      const code = (searchParams.get('code') || '').trim();
-      const state = (searchParams.get('state') || '').trim();
-      const oauthError = (searchParams.get('error') || '').trim();
-
-      if (!network) {
-        if (!active) return;
-        setStatus('error');
-        setMessage('Missing OAuth network in callback URL.');
-        return;
-      }
-
-      if (oauthError) {
-        if (!active) return;
-        setStatus('error');
-        setMessage(`OAuth provider returned an error: ${oauthError}`);
-        return;
-      }
-
-      if (!code || !state) {
-        if (!active) return;
-        setStatus('error');
-        setMessage('Missing OAuth code/state from provider callback.');
-        return;
-      }
-
+    async function complete() {
+      if (!network) return fail("The sign-in address is missing the network name.");
+      if (providerError) return fail(`The network returned an error: ${providerError}.`);
+      if (!code || !state) return fail("The network did not return the sign-in code. Start the connection again.");
       try {
-        await socialApi.completeOAuth(network as SocialNetwork, code, state);
+        await apiSend(`/social/oauth/${encodeURIComponent(network)}/callback`, "POST", { code, state }, resolveSessionTenant());
         if (!active) return;
-        setStatus('success');
-        setMessage('Account connected successfully. Redirecting to social accounts...');
-        setTimeout(() => {
-          globalThis.location.href = '/studio/social-accounts?oauth=success';
-        }, 850);
+        setOutcome({ state: "done" });
+        setTimeout(() => globalThis.location.assign("/studio/social-studio/accounts"), 900);
       } catch (error) {
-        if (!active) return;
-        const detail = error instanceof Error ? error.message : 'OAuth callback failed.';
-        setStatus('error');
-        setMessage(detail);
+        fail(error instanceof Error ? error.message : "The connection could not be completed.");
       }
     }
-
-    void run();
+    function fail(message: string) {
+      if (active) setOutcome({ state: "failed", message });
+    }
+    void complete();
     return () => {
       active = false;
     };
-  }, [params?.network, searchParams]);
+  }, [params, search]);
 
   return (
-    <main style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>Social OAuth Callback</h1>
-        <p style={{ ...styles.message, color: status === 'error' ? 'var(--danger)' : 'var(--info-line)' }}>{message}</p>
-        <div style={styles.actions}>
-          <Link href="/studio/social-accounts" style={styles.link}>
-            Back to Social Accounts
-          </Link>
-        </div>
-      </div>
-    </main>
+    <Page width="narrow">
+      <PageHeader title="Connecting your account" subtitle="Finishing the sign-in with the network." />
+      {outcome.state === "working" ? <LoadingState label="Connecting" /> : null}
+      {outcome.state === "done" ? <Callout tone="success" title="Account connected">Taking you to Connected Accounts…</Callout> : null}
+      {outcome.state === "failed" ? (
+        <>
+          <Callout tone="danger" title="The account was not connected">{outcome.message}</Callout>
+          <div><ButtonLink href="/studio/social-studio/accounts" variant="primary">Back to Connected Accounts</ButtonLink></div>
+        </>
+      ) : null}
+    </Page>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    display: 'grid',
-    placeItems: 'center',
-    padding: '24px',
-    backgroundColor: 'var(--card)',
-    color: 'var(--text)',
-  },
-  card: {
-    width: '100%',
-    maxWidth: '560px',
-    backgroundColor: 'var(--card)',
-    border: '1px solid var(--line)',
-    borderRadius: '16px',
-    padding: '24px',
-  },
-  title: {
-    margin: '0 0 10px',
-    fontSize: '22px',
-    fontWeight: 700,
-    color: 'var(--text)',
-  },
-  message: {
-    margin: '0 0 16px',
-    fontSize: '14px',
-    lineHeight: '1.5',
-  },
-  actions: {
-    display: 'flex',
-    justifyContent: 'flex-start',
-  },
-  link: {
-    color: 'var(--brand)',
-    textDecoration: 'none',
-    fontSize: '14px',
-  },
-};
+export default function SocialOAuthCallbackPage() {
+  return (
+    <Suspense fallback={<LoadingState label="Connecting" />}>
+      <Completing />
+    </Suspense>
+  );
+}

@@ -45,20 +45,17 @@ describe("feature directory", () => {
     expect(publicCopy).not.toContain("send the numbers on a schedule");
   });
 
-  it("describes keyword tooling as local review of user-provided exports", () => {
-    const keywordTool = FEATURE_TOOLS.find((tool) => tool.id === "organic-research");
-    expect(keywordTool).toMatchObject({ name: "Keyword Data Review" });
-    expect(keywordTool?.description).toMatch(/CSV export you provide, locally in your browser/i);
+  it("does not market capabilities that have no working backend", () => {
     const publicCopy = JSON.stringify({ jobs: FEATURE_JOBS, tools: FEATURE_TOOLS, homepage: seoHomepage }).toLowerCase();
-    expect(publicCopy).not.toContain("organic research");
-    expect(publicCopy).not.toContain("keyword gap");
+    for (const retired of ["domain overview", "keyword data review", "rank position", "market explorer", "competitor research", "organic research", "keyword gap"]) {
+      expect(publicCopy).not.toContain(retired);
+    }
+    expect(FEATURE_TOOLS.some((tool) => ["organic-research", "domain-overview", "position-tracking"].includes(tool.id))).toBe(false);
   });
 
-  it("describes rank and performance tracking as supplied review, not live measurement", () => {
+  it("describes tracking as what is actually measured", () => {
     const trackingSummary = FEATURE_JOBS.find((job) => job.id === "track")?.summary ?? "";
-    expect(trackingSummary).toMatch(/review rank exports/i);
-    expect(trackingSummary).toMatch(/monitoring are unavailable/i);
-    expect(trackingSummary).not.toMatch(/measured over time/i);
+    expect(trackingSummary).not.toMatch(/measured over time|live position|forecast/i);
   });
 
   it("does not market unconnected provider-backed review management", () => {

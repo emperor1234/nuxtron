@@ -383,30 +383,6 @@ def operation_list_community_saved_replies(
             for r in st.saved_replies
             if r.get("tenant_id") == auth.tenant_id and r.get("reply_type") == "comment"
         ]
-    if not items:
-        now = datetime.now(UTC).isoformat()
-        seeds = [
-            {"label": "Thank you!", "text": "Thank you so much for your kind words! 🙏", "shortcut": "/ty"},
-            {
-                "label": "Link in bio",
-                "text": "Great question! Check the link in our bio for more info 👆",
-                "shortcut": "/lib",
-            },
-            {"label": "DM us", "text": "We'd love to help! Please DM us with your details 📩", "shortcut": "/dm"},
-        ]
-        with st.lock:
-            for i, s in enumerate(seeds):
-                r = {
-                    "id": f"csr-{i + 1}",
-                    "tenant_id": auth.tenant_id,
-                    "reply_type": "comment",
-                    "label": s["label"],
-                    "text": s["text"],
-                    "shortcut": s["shortcut"],
-                    "created_at": now,
-                }
-                st.saved_replies.append(r)
-                items.append(r.copy())
     return {"status": "ok", "tenant_id": auth.tenant_id, "count": len(items), "saved_replies": items}
 
 

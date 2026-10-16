@@ -1,0 +1,18 @@
+.formCard { position: sticky; top: 76px; }
+@media (max-width: 980px) { .formCard { position: static; } }
+.fields { display: grid; gap: 16px; }
+.noteLine { font-size: 12.5px; color: var(--nx-muted); line-height: 1.55; margin: 0 0 14px; }
+.resultHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.resultHead h2 { margin: 0; font-size: 16px; font-weight: 700; }
+.running { display: grid; gap: 12px; }
+.runningText { font-size: 13.5px; color: var(--nx-muted); margin: 0; }
+.scoreCard { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
+.scoreLabel { font-size: 13.5px; font-weight: 650; color: var(--nx-ink); overflow-wrap: anywhere; }
+.quickWins { border-color: var(--nx-brand-line, var(--nx-border)); background: var(--nx-brand-soft); }
+.tableTitle { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 6px; }
+.tableTitle h3 { margin: 0; font-size: 15px; font-weight: 700; }
+.miniTitle { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--nx-muted); }
+.records { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13.5px; color: var(--nx-ink-2); }
+.cell { overflow-wrap: anywhere; display: inline-block; max-width: 420px; }
+.dash { color: var(--nx-faint); }
+.empty { color: var(--nx-muted); font-size: 14px; }

@@ -1,5 +1,7 @@
 """Social use cases: social catalog."""
 
+import os
+
 from ....domains.social.persistence import _SocialWorkspaceState
 from ....domains.social.persistence import _sw_audit
 from ....domains.social.schemas import SocialAccountConnectRequest
@@ -32,6 +34,12 @@ def operation_connect_social_account(
     network = payload.network.strip().lower()
     if network not in SUPPORTED_NETWORKS:
         raise _sw_http_error(status_code=422, detail=UNSUPPORTED_SOCIAL_NETWORK)
+    if os.getenv("ENVIRONMENT", "").strip().lower() == "production":
+        # A handle typed into a form proves nothing about account ownership.
+        raise _sw_http_error(
+            status_code=403,
+            detail="Accounts are connected through the network's sign-in (OAuth), not by entering a handle.",
+        )
     account, connected = _sw_connect_account(
         st,
         tenant_id=auth.tenant_id,

@@ -104,72 +104,46 @@ describe("navigation model", () => {
     }
   });
 
-  it("groups manually supplied analytics separately from saved SEO analysis history", () => {
-    const group = MENUS.seo?.groups.find((item) => item.label === "Analytics & history");
-    expect(group?.items.map((item) => [item.label, item.href])).toEqual([
-      ["Traffic Analytics", "/seo/analytics"],
-      ["Analysis History", "/seo/history"],
-    ]);
-    expect(ROUTE_INDEX.find((item) => item.route === "/seo/history")?.title).toBe("SEO Analysis History");
+  it("keeps every page discoverable from the menus", () => {
+    // A page nobody can reach is dead weight. Only post-action landing pages
+    // are allowed to sit outside the menus.
+    const OUTSIDE_MENUS = new Set(["/billing/success"]);
+    const reachable = new Set(navHrefs());
+    const orphans = ROUTE_INDEX.filter((entry) => !entry.internal && !OUTSIDE_MENUS.has(entry.route) && !reachable.has(entry.route));
+    expect(orphans.map((entry) => entry.route)).toEqual([]);
   });
 
-  it("labels keyword CSV review without promising provider discovery", () => {
-    const research = MENUS.seo?.groups.find((item) => item.label === "Research & visibility");
-    expect(research?.items).toContainEqual({
-      label: "Keyword Data Review",
-      href: "/seo/keywords",
-    });
-    expect(ROUTE_INDEX.find((item) => item.route === "/seo/keywords")?.title).toBe("Keyword Data Review");
+  it("describes every menu destination in one line", () => {
+    const missing = Object.values(MENUS).flatMap((menu) =>
+      (menu?.groups ?? []).flatMap((group) =>
+        group.items.filter((item) => !item.description || item.description.length > 90).map((item) => item.label),
+      ),
+    );
+    expect(missing).toEqual([]);
   });
 
-  it("labels the SEO Planner as a review-only workflow draft tool", () => {
-    const optimize = MENUS.seo?.groups.find((item) => item.label === "Optimize & automate");
-    expect(optimize?.items).toContainEqual({
-      label: "SEO Workflow Planner",
-      href: "/seo/planner",
-    });
-    expect(ROUTE_INDEX.find((item) => item.route === "/seo/planner")?.title).toBe("SEO Workflow Planner");
+  it("titles search results exactly as the menus do", () => {
+    for (const menu of Object.values(MENUS)) {
+      for (const group of menu?.groups ?? []) {
+        for (const item of group.items) {
+          const entry = ROUTE_INDEX.find((candidate) => candidate.route === item.href);
+          expect(entry?.title, item.href).toBe(item.label);
+        }
+      }
+    }
   });
 
-  it("groups browser-local hreflang markup review under International SEO", () => {
-    const international = MENUS.seo?.groups.find((item) => item.label === "International SEO");
-    expect(international?.items).toEqual([
-      { label: "Hreflang & Locale Review", href: "/seo/international-multilingual" },
-    ]);
-    expect(ROUTE_INDEX.find((item) => item.route === "/seo/international-multilingual")).toMatchObject({
-      title: "Hreflang & Locale Review",
-      group: "International SEO",
-    });
+  it("offers the history of analyses next to the SEO tools", () => {
+    const ops = MENUS.seo?.groups.find((group) => group.label === "Strategy & operations");
+    expect(ops?.items.map((item) => item.href)).toContain("/seo/history");
+    expect(ROUTE_INDEX.find((item) => item.route === "/seo/history")?.title).toBe("Analysis History");
   });
 
-  it("labels Programmatic SEO as a local draft preview rather than server generation", () => {
-    const optimize = MENUS.seo?.groups.find((item) => item.label === "Optimize & automate");
-    expect(optimize?.items).toContainEqual({
-      label: "Programmatic SEO Draft Preview",
-      href: "/seo/programmatic",
-    });
-    expect(ROUTE_INDEX.find((item) => item.route === "/seo/programmatic")?.title).toBe("Programmatic SEO Draft Preview");
-  });
-
-  it("discloses Corpus Search Preview as the user-supplied local search tool", () => {
-    const research = MENUS.seo?.groups.find((item) => item.label === "Research & visibility");
-    expect(research?.items).toContainEqual({
-      label: "Corpus Search Preview",
-      href: "/seo/rag-search",
-    });
-    expect(ROUTE_INDEX.find((item) => item.route === "/seo/rag-search")).toMatchObject({
-      title: "Corpus Search Preview",
-      group: "Search Intelligence",
-    });
-  });
-
-  it("labels the manual competitor-observation route explicitly", () => {
-    const market = MENUS.seo?.groups.find((item) => item.label === "Market & research");
-    expect(market?.items).toContainEqual({
-      label: "Competitive Benchmarking",
-      href: "/competitive-benchmarking",
-    });
-    expect(ROUTE_INDEX.find((item) => item.route === "/seo/competitor")?.title).toBe("SEO Competitor Research");
+  it("does not advertise capabilities that have no working backend", () => {
+    const labels = Object.values(MENUS).flatMap((menu) => menu?.groups.flatMap((group) => group.items.map((item) => item.label)) ?? []);
+    for (const retired of ["Keyword Data Review", "Rank Position Review", "Domain Overview", "Market Explorer", "Competitor Research", "Media Processing"]) {
+      expect(labels).not.toContain(retired);
+    }
   });
 
   it("promotes real differentiated product surfaces", () => {
@@ -179,7 +153,6 @@ describe("navigation model", () => {
       "/workflows",
       "/smart-inbox",
       "/affiliate",
-      "/affiliate/dashboard",
       "/ai-visibility-dashboard",
       "/studio/social-studio/queue",
       "/trust-center",
@@ -215,7 +188,7 @@ describe("route index", () => {
       "utf8",
     );
     expect(generated).toContain("AUTO-GENERATED");
-    expect(ROUTE_INDEX.length).toBeGreaterThan(100);
+    expect(ROUTE_INDEX.length).toBeGreaterThan(60);
   });
 
   it("has a usable title for every entry", () => {

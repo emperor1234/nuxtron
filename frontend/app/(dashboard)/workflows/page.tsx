@@ -1,139 +1,132 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { resolveSessionTenant } from '@/app/lib/api-client';
-import { apiGet } from '@/app/lib/platform-api';
-import { Badge, Button, Card, CardTitle, DataStatus, Field, FieldSelect, Page, PageHeader } from '../_ui/kit';
-import { isWorkflowPreviewResponse, parseWorkflowList, type WorkflowDefinition, type WorkflowList } from './workflow-model';
-import styles from './workflows.module.css';
+import { useState, type FormEvent } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { apiGet, apiSend } from "@/app/lib/platform-api";
+import { Button, Callout, ConfirmModal, DataTable, EmptyState, ErrorState, Field, FieldSelect, FieldTextarea, FormActions, Modal, Page, PageHeader, Switch, type Column } from "../_ui/kit";
+import { formatDate } from "../_ui/format";
+import { ResourceView, useResource, useTenant } from "../_ui/use-resource";
 
-type StatusFilter = 'all' | 'active' | 'paused';
+type Workflow = { id: number; name: string; description?: string; trigger: { trigger_type: string }; step_count: number; status: string; enrollment_count: number; execution_count: number; created_at?: string };
+type StepDraft = { action: string; delay: string; config: string };
 
-function formatDate(value: string | null): string {
-  if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? 'Date unavailable' : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
-}
-
-function matchesStatus(workflow: WorkflowDefinition, filter: StatusFilter): boolean {
-  if (filter === 'all') return true;
-  return workflow.status.toLowerCase() === filter;
-}
+const TRIGGERS = ["manual", "contact_created", "deal_stage_changed", "form_submitted", "ticket_created", "survey_response", "date_based", "tag_added", "property_changed", "webhook", "api_event"];
+const ACTIONS = ["send_email", "update_property", "add_tag", "remove_tag", "notify_rep", "create_task", "send_webhook", "delay", "enroll_sequence", "create_ticket", "add_to_list"];
+const label = (value: string) => value.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 
 export default function WorkflowsPage() {
-  const [tenantId] = useState(resolveSessionTenant);
-  const [data, setData] = useState<WorkflowList | null>(null);
-  const [loading, setLoading] = useState(Boolean(tenantId));
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [preview, setPreview] = useState(false);
-  const [error, setError] = useState(tenantId ? '' : 'Workspace context is required. Sign in or select a workspace to view workflow definitions.');
-  const [query, setQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const tenant = useTenant();
+  const resource = useResource<Workflow[]>(async (id) => (await apiGet<{ workflows: Workflow[] }>("/workflows?limit=100", id)).workflows, []);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [trigger, setTrigger] = useState("manual");
+  const [steps, setSteps] = useState<StepDraft[]>([{ action: "send_email", delay: "0", config: "" }]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [failure, setFailure] = useState<unknown>(null);
+  const [busy, setBusy] = useState(false);
+  const [removing, setRemoving] = useState<Workflow | null>(null);
 
-  const refresh = useCallback(async () => {
-    if (!tenantId) {
-      setLoading(false);
-      setError('Workspace context is required. Sign in or select a workspace to view workflow definitions.');
-      return;
-    }
-    setLoading(true);
-    setError('');
+  function updateStep(index: number, patch: Partial<StepDraft>) {
+    setSteps((current) => current.map((step, i) => (i === index ? { ...step, ...patch } : step)));
+  }
+
+  async function create(event: FormEvent) {
+    event.preventDefault();
+    const found: Record<string, string> = {};
+    if (!name.trim()) found.name = "Name the workflow.";
+    const built = steps.map((step, index) => {
+      let config: Record<string, unknown> = {};
+      if (step.config.trim()) {
+        try {
+          const parsed: unknown = JSON.parse(step.config);
+          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("not an object");
+          config = parsed as Record<string, unknown>;
+        } catch {
+          found[`config-${index}`] = "Settings must be a JSON object, for example {\"subject\": \"Welcome\"}.";
+        }
+      }
+      const delay = Number(step.delay || 0);
+      if (!Number.isInteger(delay) || delay < 0 || delay > 8760) found[`delay-${index}`] = "Use whole hours from 0 to 8760.";
+      return { step_id: `step_${index + 1}`, action_type: step.action, config, delay_hours: delay, next_step_id: index < steps.length - 1 ? `step_${index + 2}` : "" };
+    });
+    setErrors(found);
+    if (Object.keys(found).length) return;
+    setBusy(true);
+    setFailure(null);
     try {
-      const response = await apiGet<unknown>('/workflows?limit=100', tenantId);
-      setData(parseWorkflowList(response));
-      setPreview(isWorkflowPreviewResponse(response));
-      setHasLoaded(true);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load workflow definitions.');
+      await apiSend("/workflows", "POST", { name: name.trim(), description: description.trim(), trigger: { trigger_type: trigger, conditions: [] }, steps: built }, tenant);
+      setOpen(false);
+      setName("");
+      setDescription("");
+      setSteps([{ action: "send_email", delay: "0", config: "" }]);
+      resource.reload();
+    } catch (caught) {
+      setFailure(caught);
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
-  }, [tenantId]);
+  }
 
-  useEffect(() => {
-    if (!tenantId) return;
-    let active = true;
-    window.queueMicrotask(() => {
-      if (active) void refresh();
-    });
-    return () => {
-      active = false;
-    };
-  }, [refresh, tenantId]);
+  async function toggle(workflow: Workflow, active: boolean) {
+    setFailure(null);
+    try {
+      await apiSend(`/workflows/${workflow.id}/toggle?active=${active}`, "PATCH", undefined, tenant);
+      resource.reload();
+    } catch (caught) {
+      setFailure(caught);
+    }
+  }
 
-  const visibleWorkflows = useMemo(() => {
-    if (!data) return [];
-    const normalizedQuery = query.trim().toLowerCase();
-    return data.workflows.filter((workflow) => {
-      const matchesText = !normalizedQuery || `${workflow.name} ${workflow.description ?? ''} ${workflow.triggerType} ${workflow.status}`.toLowerCase().includes(normalizedQuery);
-      return matchesText && matchesStatus(workflow, statusFilter);
-    });
-  }, [data, query, statusFilter]);
+  async function remove() {
+    if (!removing) return;
+    try {
+      await apiSend(`/workflows/${removing.id}`, "DELETE", undefined, tenant);
+      resource.reload();
+    } catch (caught) {
+      setFailure(caught);
+    }
+    setRemoving(null);
+  }
 
-  const showUnavailable = Boolean(error && !hasLoaded);
-  const definitionsStatus = preview ? 'preview' : showUnavailable ? 'unavailable' : 'live';
+  const columns: Column<Workflow>[] = [
+    { key: "name", header: "Workflow", strong: true, render: (row) => <span>{row.name}{row.description ? <><br /><span style={{ color: "var(--nx-muted)", fontWeight: 400 }}>{row.description}</span></> : null}</span>, sortValue: (row) => row.name },
+    { key: "trigger", header: "Starts when", render: (row) => label(row.trigger.trigger_type) },
+    { key: "steps", header: "Steps", numeric: true, render: (row) => row.step_count, sortValue: (row) => row.step_count },
+    { key: "enrolled", header: "Enrolled", numeric: true, render: (row) => row.enrollment_count, sortValue: (row) => row.enrollment_count },
+    { key: "status", header: "Active", render: (row) => <Switch label={row.status === "active" ? "On" : "Off"} checked={row.status === "active"} onChange={(next) => void toggle(row, next)} /> },
+    { key: "created", header: "Created", render: (row) => formatDate(row.created_at), sortValue: (row) => row.created_at ?? "" },
+    { key: "x", header: "", render: (row) => <Button size="sm" variant="ghost" icon={<Trash2 size={14} aria-hidden="true" />} aria-label={`Delete ${row.name}`} onClick={() => setRemoving(row)}>Delete</Button> },
+  ];
 
   return (
-    <Page>
-      <PageHeader
-        title="Workflows"
-        subtitle="Review automation definitions configured for this workspace."
-        actions={<Button onClick={() => void refresh()} disabled={loading || !tenantId}>{loading ? 'Refreshing…' : 'Refresh definitions'}</Button>}
-      />
-
-      {loading ? <p role="status" aria-live="polite">Loading workflow definitions…</p> : null}
-      {!loading && !(error && hasLoaded) ? <DataStatus state={definitionsStatus} provider="workflow definitions" /> : null}
-      {error ? (
-        <div role="alert" className={styles.error}>
-          <p>{error}</p>
-          {hasLoaded ? <p>Previously loaded definitions remain visible; the latest refresh failed.</p> : null}
-          <Button onClick={() => void refresh()} disabled={loading || !tenantId}>Retry</Button>
-        </div>
-      ) : null}
-
-      <section className={styles.notice} aria-label="Workflow execution availability" role="note">
-        <h2>Execution is not available</h2>
-        <p>The current workflow service records simulated “completed” steps; it does not perform configured actions such as sending email, updating contact properties, creating tickets, or calling external systems. To avoid implying work was done when it was not, workflow creation, activation, enrollment, and execution history are disabled here.</p>
-        <p>Do not rely on an “active” status reported by the service to trigger customer-facing or operational actions.</p>
-      </section>
-
-      <section className={styles.section} aria-label="Workflow definitions">
-        <Card>
-          <CardTitle sub="Read-only until the service can execute and verify real actions.">Workspace definitions</CardTitle>
-          <div className={styles.filters}>
-            <Field id="workflow-search" label="Search definitions" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, description, trigger, status" />
-            <FieldSelect id="workflow-status" label="Service-reported status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}>
-              <option value="all">All statuses</option>
-              <option value="active">Reported enabled</option>
-              <option value="paused">Reported paused</option>
-            </FieldSelect>
-          </div>
-        </Card>
-
-        {loading ? <p role="status">Refreshing definitions…</p> : null}
-        {!loading && data?.workflows.length === 0 && !error ? <Card><p>No workflow definitions were returned for this workspace.</p></Card> : null}
-        {!loading && data && data.workflows.length > 0 && visibleWorkflows.length === 0 ? <Card><p>No definitions match the current search and status filter.</p></Card> : null}
-        {!loading && visibleWorkflows.length > 0 ? (
-          <div className={styles.list}>
-            {visibleWorkflows.map((workflow) => (
-              <article className={styles.item} key={workflow.id}>
-                <div className={styles.itemHeader}>
-                  <div className={styles.itemText}>
-                    <h3>{workflow.name}</h3>
-                    {workflow.description ? <p>{workflow.description}</p> : null}
-                  </div>
-                  <Badge tone="neutral">{workflow.status.toLowerCase() === 'active' ? 'Reported enabled' : workflow.status.toLowerCase() === 'paused' ? 'Reported paused' : workflow.status}</Badge>
-                </div>
-                <dl className={styles.metadata}>
-                  <div><dt>Trigger</dt><dd>{workflow.triggerType.replaceAll('_', ' ')}</dd></div>
-                  <div><dt>Steps configured</dt><dd>{workflow.stepCount ?? 'Unavailable'}</dd></div>
-                  <div><dt>Updated</dt><dd>{formatDate(workflow.updatedAt)}</dd></div>
-                </dl>
-              </article>
-            ))}
-          </div>
-        ) : null}
-      </section>
+    <Page width="wide">
+      <PageHeader title="Workflows" subtitle="Define what should happen after an event, step by step." actions={<Button variant="primary" icon={<Plus size={15} aria-hidden="true" />} onClick={() => setOpen(true)}>New workflow</Button>} />
+      {failure && !open ? <ErrorState error={failure} title="The change failed" /> : null}
+      <ResourceView resource={resource} isEmpty={(rows) => rows.length === 0} empty={<EmptyState title="No workflows yet" description="Create a workflow to describe a follow-up that should run on its own." action={<Button variant="primary" onClick={() => setOpen(true)}>New workflow</Button>} />}>
+        {(rows) => <DataTable columns={columns} rows={rows} getKey={(row) => row.id} caption="Workflows" pageSize={15} />}
+      </ResourceView>
+      <Callout tone="info">Steps that send messages only work once the matching channel, such as email, is connected.</Callout>
+      <Modal open={open} onOpenChange={setOpen} title="New workflow">
+        <form onSubmit={create} noValidate style={{ display: "grid", gap: 16 }}>
+          <Field label="Name" value={name} error={errors.name} maxLength={200} onChange={(event) => setName(event.target.value)} />
+          <Field label="Description" value={description} maxLength={1000} onChange={(event) => setDescription(event.target.value)} />
+          <FieldSelect label="Starts when" value={trigger} onChange={(event) => setTrigger(event.target.value)}>{TRIGGERS.map((item) => <option key={item} value={item}>{label(item)}</option>)}</FieldSelect>
+          {steps.map((step, index) => (
+            <fieldset key={index} style={{ border: "1px solid var(--nx-line, #d9dce5)", borderRadius: 10, padding: 14, display: "grid", gap: 12, margin: 0 }}>
+              <legend style={{ padding: "0 6px", fontWeight: 600 }}>Step {index + 1}</legend>
+              <FieldSelect label="Action" value={step.action} onChange={(event) => updateStep(index, { action: event.target.value })}>{ACTIONS.map((item) => <option key={item} value={item}>{label(item)}</option>)}</FieldSelect>
+              <Field label="Wait before this step (hours)" inputMode="numeric" value={step.delay} error={errors[`delay-${index}`]} onChange={(event) => updateStep(index, { delay: event.target.value })} />
+              <FieldTextarea label="Settings (JSON, optional)" rows={2} value={step.config} error={errors[`config-${index}`]} onChange={(event) => updateStep(index, { config: event.target.value })} />
+              {steps.length > 1 ? <div><Button size="sm" onClick={() => setSteps((current) => current.filter((_, i) => i !== index))}>Remove step</Button></div> : null}
+            </fieldset>
+          ))}
+          {steps.length < 20 ? <div><Button onClick={() => setSteps((current) => [...current, { action: "send_email", delay: "0", config: "" }])} icon={<Plus size={14} aria-hidden="true" />}>Add a step</Button></div> : null}
+          {failure ? <ErrorState error={failure} title="Not saved" /> : null}
+          <FormActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={busy}>Create workflow</Button></FormActions>
+        </form>
+      </Modal>
+      <ConfirmModal open={Boolean(removing)} onOpenChange={(next) => !next && setRemoving(null)} title="Delete this workflow?" description={`"${removing?.name ?? ""}" and its history are removed.`} onConfirm={() => void remove()} />
     </Page>
   );
 }

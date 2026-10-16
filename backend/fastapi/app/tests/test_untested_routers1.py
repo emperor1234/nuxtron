@@ -149,36 +149,6 @@ class TestKnowledgeBase:
         assert r.status_code in VALID
 
 
-class TestInfluencer:
-    def test_create_campaign(self, client: TestClient) -> None:
-        r = client.post("/influencer/campaigns", headers=H, json={
-            "name": "Summer Launch",
-            "budget": 5000.0,
-            "target_reach": 100000,
-        })
-        assert r.status_code in VALID
-
-    def test_list_campaigns(self, client: TestClient) -> None:
-        r = client.get("/influencer/campaigns", headers=H)
-        assert r.status_code in VALID
-
-    def test_add_influencer(self, client: TestClient) -> None:
-        r = client.post("/influencer/campaigns/99999/influencers", headers=H, json={
-            "handle": "@test_influencer",
-            "platform": "instagram",
-            "followers": 50000,
-        })
-        assert r.status_code in VALID
-
-    def test_list_influencers(self, client: TestClient) -> None:
-        r = client.get("/influencer/campaigns/99999/influencers", headers=H)
-        assert r.status_code in VALID
-
-    def test_analytics(self, client: TestClient) -> None:
-        r = client.get("/influencer/campaigns/99999/analytics", headers=H)
-        assert r.status_code in VALID
-
-
 class TestLinkinbio:
     def test_create_page(self, client: TestClient) -> None:
         r = client.post("/linkinbio/pages", headers=H, json={

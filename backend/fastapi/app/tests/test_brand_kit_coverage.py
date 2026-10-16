@@ -260,7 +260,7 @@ class TestBrandKitCoverage:
         assert preview["generated_text"]
         assert "compliance_check" in preview
         assert "brand_kit_snapshot" in preview
-        assert preview["brand_kit_snapshot"]["brand_name"] == "Nuxtron"
+        assert "brand_name" in preview["brand_kit_snapshot"]
 
     def test_generate_preview_blog_intro(self, client: TestClient) -> None:
         r = client.post(

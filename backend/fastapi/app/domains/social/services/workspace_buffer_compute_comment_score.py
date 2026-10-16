@@ -11,6 +11,7 @@ from datetime import UTC
 from datetime import datetime
 from typing import Any
 import httpx
+from fastapi import HTTPException
 import os
 import re
 
@@ -55,103 +56,13 @@ def _buffer_compute_comment_score(st: _SocialWorkspaceState, tenant_id: str) -> 
 
 
 def _buffer_seed_hashtag_groups(st: _SocialWorkspaceState, tenant_id: str) -> None:
-    with st.lock:
-        if any((g.get("tenant_id") == tenant_id for g in st.hashtag_groups)):
-            return
-        now = datetime.now(UTC).isoformat()
-        st.hashtag_groups.extend(
-            [
-                {
-                    "id": "hg-1",
-                    "tenant_id": tenant_id,
-                    "name": "Brand Core",
-                    "hashtags": ["#brand", "#ourproduct", "#builtwithlove"],
-                    "description": "Core brand hashtags",
-                    "created_at": now,
-                    "updated_at": now,
-                },
-                {
-                    "id": "hg-2",
-                    "tenant_id": tenant_id,
-                    "name": "Product Launch",
-                    "hashtags": ["#newproduct", "#launch", "#innovation", "#comingsoon", "#productlaunch"],
-                    "description": "For product launch posts",
-                    "created_at": now,
-                    "updated_at": now,
-                },
-                {
-                    "id": "hg-3",
-                    "tenant_id": tenant_id,
-                    "name": "Engagement Boosters",
-                    "hashtags": ["#follow", "#like", "#share", "#comment", "#viral"],
-                    "description": "High-engagement hashtags",
-                    "created_at": now,
-                    "updated_at": now,
-                },
-                {
-                    "id": "hg-4",
-                    "tenant_id": tenant_id,
-                    "name": "Industry",
-                    "hashtags": ["#marketing", "#socialmedia", "#digitalmarketing", "#contentmarketing", "#growth"],
-                    "description": "Industry relevant tags",
-                    "created_at": now,
-                    "updated_at": now,
-                },
-                {
-                    "id": "hg-5",
-                    "tenant_id": tenant_id,
-                    "name": "Trending",
-                    "hashtags": ["#trending", "#viral", "#explore", "#foryou", "#fyp"],
-                    "description": "Trending discovery tags",
-                    "created_at": now,
-                    "updated_at": now,
-                },
-            ]
-        )
+    # Demo data is never created for a workspace; records exist only once a user or a connected provider creates them.
+    return
 
 
 def _buffer_seed_posting_schedules(st: _SocialWorkspaceState, tenant_id: str) -> None:
-    with st.lock:
-        if any((s.get("tenant_id") == tenant_id for s in st.posting_schedules)):
-            return
-        now = datetime.now(UTC).isoformat()
-        st.posting_schedules.extend(
-            [
-                {
-                    "id": "sched-1",
-                    "tenant_id": tenant_id,
-                    "network": "instagram",
-                    "slots": [
-                        {"day": "Monday", "time": "09:00"},
-                        {"day": "Wednesday", "time": "12:00"},
-                        {"day": "Friday", "time": "17:00"},
-                    ],
-                    "timezone": DEFAULT_SOCIAL_TIMEZONE,
-                    "created_at": now,
-                },
-                {
-                    "id": "sched-2",
-                    "tenant_id": tenant_id,
-                    "network": "linkedin",
-                    "slots": [{"day": "Tuesday", "time": "08:30"}, {"day": "Thursday", "time": "10:00"}],
-                    "timezone": DEFAULT_SOCIAL_TIMEZONE,
-                    "created_at": now,
-                },
-                {
-                    "id": "sched-3",
-                    "tenant_id": tenant_id,
-                    "network": "x",
-                    "slots": [
-                        {"day": "Monday", "time": "07:00"},
-                        {"day": "Tuesday", "time": "12:00"},
-                        {"day": "Thursday", "time": "17:30"},
-                        {"day": "Saturday", "time": "10:00"},
-                    ],
-                    "timezone": DEFAULT_SOCIAL_TIMEZONE,
-                    "created_at": now,
-                },
-            ]
-        )
+    # Demo data is never created for a workspace; records exist only once a user or a connected provider creates them.
+    return
 
 
 def _buffer_seed_templates(st: _SocialWorkspaceState, tenant_id: str) -> None:
@@ -246,142 +157,23 @@ def _buffer_seed_templates(st: _SocialWorkspaceState, tenant_id: str) -> None:
 
 
 def _buffer_seed_team_members(st: _SocialWorkspaceState, tenant_id: str) -> None:
-    with st.lock:
-        if any((m.get("tenant_id") == tenant_id for m in st.team_members)):
-            return
-        now = datetime.now(UTC).isoformat()
-        st.team_members.extend(
-            [
-                {
-                    "id": "mem-1",
-                    "tenant_id": tenant_id,
-                    "email": "admin@example.com",
-                    "name": "Admin User",
-                    "role": "admin",
-                    "channel_ids": [],
-                    "status": "active",
-                    "joined_at": now,
-                },
-                {
-                    "id": "mem-2",
-                    "tenant_id": tenant_id,
-                    "email": "editor@example.com",
-                    "name": "Content Editor",
-                    "role": "editor",
-                    "channel_ids": [],
-                    "status": "active",
-                    "joined_at": now,
-                },
-                {
-                    "id": "mem-3",
-                    "tenant_id": tenant_id,
-                    "email": "approver@example.com",
-                    "name": "Content Approver",
-                    "role": "approver",
-                    "channel_ids": [],
-                    "status": "active",
-                    "joined_at": now,
-                },
-            ]
-        )
+    # Demo data is never created for a workspace; records exist only once a user or a connected provider creates them.
+    return
 
 
 def _buffer_seed_start_page(st: _SocialWorkspaceState, tenant_id: str) -> None:
-    with st.lock:
-        if any((p.get("tenant_id") == tenant_id for p in st.start_pages)):
-            return
-        now = datetime.now(UTC).isoformat()
-        st.start_pages.append(
-            {
-                "id": f"sp-{tenant_id}",
-                "tenant_id": tenant_id,
-                "title": "My Brand",
-                "bio": "Social media manager & content creator.",
-                "theme": "minimal",
-                "accent_color": "#1d4ed8",
-                "background_color": "#ffffff",
-                "avatar_url": None,
-                "slug": tenant_id,
-                "links": [
-                    {
-                        "id": "lnk-1",
-                        "label": "Visit our website",
-                        "url": "https://example.com",
-                        "active": True,
-                        "clicks": 0,
-                        "emoji": "🌐",
-                    },
-                    {
-                        "id": "lnk-2",
-                        "label": "Shop now",
-                        "url": "https://shop.example.com",
-                        "active": True,
-                        "clicks": 0,
-                        "emoji": "🛍️",
-                    },
-                    {
-                        "id": "lnk-3",
-                        "label": "Free download",
-                        "url": "https://example.com/free",
-                        "active": True,
-                        "clicks": 0,
-                        "emoji": "📥",
-                    },
-                ],
-                "social_links": [
-                    {"network": "instagram", "url": "https://instagram.com/brand"},
-                    {"network": "x", "url": "https://x.com/brand"},
-                    {"network": "youtube", "url": "https://youtube.com/@brand"},
-                ],
-                "views": 0,
-                "created_at": now,
-                "updated_at": now,
-            }
-        )
+    # Demo data is never created for a workspace; records exist only once a user or a connected provider creates them.
+    return
 
 
 def _buffer_get_audience_insights(network: str) -> dict[str, Any]:
     """Audience demographics from connected platform APIs.
     Live: Facebook Graph API /insights, LinkedIn API /organizationFollowerStatistics,
     Instagram Basic Display API, TikTok Research API, YouTube Analytics API."""
-    return {
-        "network": network,
-        "followers": {"total": 12840, "growth_30d": 342, "growth_pct": 2.7},
-        "age_distribution": [
-            {"range": "18-24", "pct": 18.4},
-            {"range": "25-34", "pct": 34.2},
-            {"range": "35-44", "pct": 26.8},
-            {"range": "45-54", "pct": 13.1},
-            {"range": "55+", "pct": 7.5},
-        ],
-        "gender_distribution": [
-            {"gender": "female", "pct": 54.2},
-            {"gender": "male", "pct": 43.8},
-            {"gender": "other", "pct": 2.0},
-        ],
-        "top_countries": [
-            {"country": "United States", "pct": 42.1},
-            {"country": "United Kingdom", "pct": 12.8},
-            {"country": "Canada", "pct": 8.3},
-            {"country": "Australia", "pct": 6.4},
-            {"country": "India", "pct": 5.7},
-        ],
-        "top_cities": [
-            {"city": "New York", "pct": 8.4},
-            {"city": "London", "pct": 5.9},
-            {"city": "Los Angeles", "pct": 5.1},
-            {"city": "Toronto", "pct": 3.8},
-        ],
-        "active_hours_heatmap": {
-            "Mon": [0, 0, 1, 1, 2, 3, 5, 8, 12, 15, 14, 13, 14, 12, 10, 9, 10, 13, 15, 14, 12, 8, 4, 1],
-            "Tue": [0, 0, 1, 1, 2, 4, 6, 9, 13, 16, 15, 14, 15, 13, 11, 10, 11, 14, 16, 15, 13, 9, 5, 1],
-            "Wed": [0, 0, 1, 1, 2, 3, 5, 8, 12, 15, 14, 13, 14, 12, 10, 9, 10, 13, 15, 14, 12, 8, 4, 1],
-            "Thu": [0, 0, 1, 1, 2, 4, 6, 9, 13, 16, 15, 14, 15, 13, 11, 10, 11, 14, 16, 15, 13, 9, 5, 1],
-            "Fri": [0, 0, 1, 1, 2, 3, 5, 8, 11, 14, 13, 12, 13, 12, 10, 9, 11, 15, 17, 16, 14, 10, 6, 2],
-            "Sat": [0, 0, 0, 1, 1, 2, 4, 7, 10, 13, 14, 14, 15, 14, 13, 12, 12, 13, 14, 12, 10, 7, 4, 1],
-            "Sun": [0, 0, 0, 1, 1, 2, 3, 6, 9, 12, 13, 13, 14, 13, 12, 11, 11, 12, 13, 11, 9, 6, 3, 1],
-        },
-    }
+    raise HTTPException(
+        status_code=501,
+        detail={"code": "NOT_IMPLEMENTED", "message": "Audience demographics need verified platform insights from a connected account; no figures are generated without them."},
+    )
 
 
 def _buffer_get_channel_analytics(networks: list[str], days: int) -> dict[str, Any]:
@@ -392,93 +184,19 @@ def _buffer_get_channel_analytics(networks: list[str], days: int) -> dict[str, A
     - X (Twitter): v2 tweet_metrics endpoint
     - TikTok: /v2/research/video/query/
     - YouTube: YouTube Analytics API /reports"""
-    network_data = []
-    for net in networks:
-        multiplier = {
-            "instagram": 1.4,
-            "facebook": 1.1,
-            "linkedin": 0.9,
-            "x": 1.2,
-            "tiktok": 1.8,
-            "youtube": 0.7,
-            "threads": 0.6,
-            "bluesky": 0.4,
-        }.get(net, 1.0)
-        base = int(10000 * multiplier * (days / 30))
-        if net in ("instagram", "tiktok"):
-            best_post_type = "reel"
-        elif net == "youtube":
-            best_post_type = "video"
-        else:
-            best_post_type = "text"
-        network_data.append(
-            {
-                "network": net,
-                "followers": int(12000 * multiplier),
-                "follower_growth": int(340 * multiplier),
-                "impressions": base,
-                "reach": int(base * 0.72),
-                "engagement": int(base * 0.057),
-                "engagement_rate": round(5.7 * multiplier, 2),
-                "clicks": int(base * 0.012),
-                "link_clicks": int(base * 0.008),
-                "saves": int(base * 0.015),
-                "shares": int(base * 0.009),
-                "posts_count": int(8 * (days / 30)),
-                "best_post_type": best_post_type,
-                "organic_reach": int(base * 0.65),
-                "paid_reach": int(base * 0.07),
-            }
-        )
-    totals = {
-        "total_impressions": sum((n["impressions"] for n in network_data)),
-        "total_reach": sum((n["reach"] for n in network_data)),
-        "total_engagement": sum((n["engagement"] for n in network_data)),
-        "avg_engagement_rate": round(sum((n["engagement_rate"] for n in network_data)) / max(len(network_data), 1), 2),
-    }
-    return {"networks": network_data, "totals": totals, "days": days}
+    raise HTTPException(
+        status_code=501,
+        detail={"code": "NOT_IMPLEMENTED", "message": "Channel analytics need verified platform insights from a connected account; no figures are generated without them."},
+    )
 
 
 def _buffer_get_best_time_analysis(network: str) -> dict[str, Any]:
     """Best time to post analysis. Live: fetches post engagement data from platform APIs,
     correlates publish timestamp with engagement rate, returns ranked time slots."""
-    slot_map = {
-        "instagram": [
-            {"day": "Monday", "time": "09:00", "engagement_rate": 6.8, "recommended": True},
-            {"day": "Wednesday", "time": "11:00", "engagement_rate": 7.2, "recommended": True},
-            {"day": "Friday", "time": "17:00", "engagement_rate": 6.9, "recommended": True},
-            {"day": "Saturday", "time": "10:00", "engagement_rate": 5.4, "recommended": False},
-        ],
-        "facebook": [
-            {"day": "Tuesday", "time": "13:00", "engagement_rate": 5.1, "recommended": True},
-            {"day": "Thursday", "time": "09:00", "engagement_rate": 5.8, "recommended": True},
-            {"day": "Sunday", "time": "12:00", "engagement_rate": 4.2, "recommended": False},
-        ],
-        "linkedin": [
-            {"day": "Tuesday", "time": "08:30", "engagement_rate": 7.4, "recommended": True},
-            {"day": "Wednesday", "time": "12:00", "engagement_rate": 6.9, "recommended": True},
-            {"day": "Thursday", "time": "09:00", "engagement_rate": 7.1, "recommended": True},
-        ],
-        "x": [
-            {"day": "Monday", "time": "08:00", "engagement_rate": 4.8, "recommended": True},
-            {"day": "Wednesday", "time": "12:00", "engagement_rate": 5.2, "recommended": True},
-            {"day": "Friday", "time": "17:00", "engagement_rate": 4.5, "recommended": True},
-            {"day": "Saturday", "time": "09:00", "engagement_rate": 3.8, "recommended": False},
-        ],
-        "tiktok": [
-            {"day": "Tuesday", "time": "19:00", "engagement_rate": 9.4, "recommended": True},
-            {"day": "Thursday", "time": "21:00", "engagement_rate": 8.7, "recommended": True},
-            {"day": "Friday", "time": "17:00", "engagement_rate": 8.9, "recommended": True},
-        ],
-    }
-    slots = slot_map.get(
-        network,
-        [
-            {"day": "Tuesday", "time": "10:00", "engagement_rate": 4.5, "recommended": True},
-            {"day": "Thursday", "time": "14:00", "engagement_rate": 4.2, "recommended": True},
-        ],
+    raise HTTPException(
+        status_code=501,
+        detail={"code": "NOT_IMPLEMENTED", "message": "Best-time analysis need verified platform insights from a connected account; no figures are generated without them."},
     )
-    return {"network": network, "recommended_slots": slots, "data_based_on": "Last 90 days of your post engagement"}
 
 
 def _sw_generate_dm_chatbot_reply(

@@ -32,6 +32,7 @@ from typing import Annotated, Any
 
 import httpx
 from fastapi import APIRouter, Depends, Query
+from ._provider_required import provider_required
 from pydantic import BaseModel, Field
 
 from ..deps import AuthContext, require_auth
@@ -40,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
-router = APIRouter(prefix="/domain-overview", tags=["Domain Overview"])
+router = APIRouter(prefix="/domain-overview", tags=["Domain Overview"], dependencies=[provider_required("A verified domain-metrics provider (traffic, keywords, backlinks) is not connected, so Domain Overview is disabled rather than estimated.")])
 
 _lock = threading.Lock()
 

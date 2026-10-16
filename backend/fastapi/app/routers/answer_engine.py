@@ -73,6 +73,11 @@ async def trigger_sync(
                 import asyncio
 
                 mentions = asyncio.run(sync_brand_mentions(brand_name, tenant_id))
+                if not mentions:
+                    # Nothing came back (no engine keys configured, or every call failed).
+                    # Replacing with an empty list would erase mentions saved earlier.
+                    logger.warning('Answer Engine sync for %s returned no mentions; keeping saved data.', brand_name)
+                    return
                 persisted = store.replace_brand_mentions(
                     tenant_id,
                     brand_name,

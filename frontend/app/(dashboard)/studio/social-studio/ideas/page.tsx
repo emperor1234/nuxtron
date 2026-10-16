@@ -1,721 +1,285 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { apiGet, apiSend } from '@/app/lib/platform-api';
-import { resolveSessionTenant } from '@/app/lib/api-client';
+import { useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { apiGet, apiSend } from "@/app/lib/platform-api";
+import {
+  Badge,
+  Button,
+  Callout,
+  Card,
+  CardTitle,
+  ConfirmModal,
+  DataTable,
+  EmptyState,
+  Field,
+  FieldSelect,
+  FieldTextarea,
+  Grid,
+  IconButton,
+  Modal,
+  Page,
+  PageHeader,
+  StatusBadge,
+  Tabs,
+  type Column,
+} from "../../../_ui/kit";
+import { formatDate, fromLocalInputValue, toLocalInputValue, truncate } from "../../../_ui/format";
+import { ResourceView, useResource, useTenant } from "../../../_ui/use-resource";
+import { SCHEDULE_PLATFORMS } from "../_lib/social";
 
-type Idea = {
-  id: string;
-  tenant_id?: string;
-  title: string;
-  body?: string;
-  status: string;
-  tags?: string[];
-  networks?: string[];
-  created_at?: string;
-};
+type Idea = { id: number; title: string; body: string; source: string; tags: string[]; status: string; created_at: string };
+type HashtagGroup = { id: number; name: string; hashtags: string[]; description?: string };
+type Template = { id: string; name: string; content_type: string; body: string; networks: string[] };
+type Loaded = { ideas: Idea[]; groups: HashtagGroup[]; templates: Template[] };
+type Tab = "ideas" | "hashtags" | "templates";
 
-type Template = {
-  id: string;
-  name: string;
-  content_type: string;
-  body: string;
-  networks: string[];
-  tags: string[];
-};
+const splitList = (text: string) =>
+  text
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 
-type HashtagGroup = {
-  id: string;
-  name: string;
-  hashtags: string[];
-  description: string;
-};
-
-const KANBAN_COLUMNS: { key: string; label: string; color: string }[] = [
-  { key: 'new', label: 'Ideas', color: "var(--brand)" },
-  { key: 'researching', label: 'In Progress', color: 'var(--warning)' },
-  { key: 'ready', label: 'Ready to Post', color: 'var(--success)' },
-  { key: 'queued', label: 'Queued', color: "var(--brand)" },
-];
-
-const NETWORK_OPTIONS = [
-  'instagram',
-  'facebook',
-  'linkedin',
-  'x',
-  'tiktok',
-  'youtube',
-  'threads',
-  'bluesky',
-  'pinterest',
-];
-
-const card: React.CSSProperties = {
-  background: 'var(--bg-soft)',
-  border: '1px solid var(--line)',
-  borderRadius: 10,
-  padding: 14,
-};
-
-const btn = (color = 'var(--info)'): React.CSSProperties => ({
-  background: color,
-  color: 'var(--on-status)',
-  border: 'none',
-  borderRadius: 8,
-  padding: '8px 14px',
-  cursor: 'pointer',
-  fontSize: 13,
-  fontWeight: 600,
-});
-
-const input: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 10px',
-  borderRadius: 8,
-  border: '1px solid var(--line)',
-  background: 'var(--bg)',
-  color: 'var(--text)',
-  marginBottom: 8,
-  boxSizing: 'border-box',
-};
-
-function tabLabel(tab: 'board' | 'list' | 'templates' | 'hashtags'): string {
-  if (tab === 'board') return '📋 Board';
-  if (tab === 'list') return '☰ List';
-  if (tab === 'templates') return '📄 Templates';
-  return '#️⃣ Hashtags';
-}
-
-function statusTone(status: string): { background: string; color: string } {
-  if (status === 'queued') return { background: 'var(--info-soft)', color: "var(--brand)" };
-  if (status === 'ready') return { background: 'var(--success-soft)', color: 'var(--success-ink)' };
-  if (status === 'researching') return { background: 'var(--warning-line)', color: 'var(--warning-ink)' };
-  return { background: 'var(--bg-soft)', color: 'var(--ink-2)' };
-}
-
-export default function IdeasDraftsPage() {
-  const [tenantId] = useState(resolveSessionTenant);
-  const [view, setView] = useState<'board' | 'list' | 'templates' | 'hashtags'>('board');
-  const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [hashtagGroups, setHashtagGroups] = useState<HashtagGroup[]>([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  // New idea form
-  const [newTitle, setNewTitle] = useState('');
-  const [newBody, setNewBody] = useState('');
-  const [newNetworks, setNewNetworks] = useState<string[]>(['instagram']);
-  const [newTags, setNewTags] = useState('');
-  const [showForm, setShowForm] = useState(false);
-
-  // AI assistant
-  const [aiText, setAiText] = useState('');
-  const [aiAction, setAiAction] = useState('rephrase');
-  const [aiResult, setAiResult] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [showAI, setShowAI] = useState(false);
-
-  // Hashtag group form
-  const [hgName, setHgName] = useState('');
-  const [hgTags, setHgTags] = useState('');
-  const [hgDesc, setHgDesc] = useState('');
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [ideasRes, tmplRes, hgRes] = await Promise.all([
-        apiGet<{ items?: Idea[] }>('/social/ideas', tenantId),
-        apiGet<{ templates?: Template[] }>('/social/templates', tenantId),
-        apiGet<{ hashtag_groups?: HashtagGroup[] }>('/social/hashtag-groups', tenantId),
-      ]);
-      setIdeas(ideasRes.items ?? []);
-      setTemplates(tmplRes.templates ?? []);
-      setHashtagGroups(hgRes.hashtag_groups ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Load failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [tenantId]);
-
-  useEffect(() => {
-    // Fetch on mount and whenever the filters behind `load` change.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load();
-  }, [load]);
-
-  async function createIdea() {
-    if (!newTitle.trim()) return;
-    try {
-      await apiSend(
-        '/social/ideas',
-        'POST',
-        {
-          title: newTitle.trim(),
-          body: newBody.trim(),
-          source: newNetworks[0] || 'manual',
-          tags: newTags
-            .split(',')
-            .map((t) => t.trim())
-            .filter(Boolean),
-        },
-        tenantId
-      );
-      setNewTitle('');
-      setNewBody('');
-      setNewTags('');
-      setShowForm(false);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Create failed');
-    }
-  }
-
-  async function queueIdea(ideaId: string) {
-    try {
-      await apiSend(
-        `/social/ideas/${ideaId}/queue`,
-        'POST',
-        {
-          network: newNetworks[0] || 'instagram',
-        },
-        tenantId
-      );
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Queue failed');
-    }
-  }
-
-  async function runAI() {
-    if (!aiText.trim()) return;
-    setAiLoading(true);
-    try {
-      const res = await apiSend<{ result?: string }>(
-        '/social/ai-assistant',
-        'POST',
-        {
-          text: aiText,
-          action: aiAction,
-        },
-        tenantId
-      );
-      setAiResult(res.result ?? '');
-    } catch (e) {
-      setAiResult(`Error: ${e instanceof Error ? e.message : 'AI call failed'}`);
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
-  async function createHashtagGroup() {
-    if (!hgName.trim() || !hgTags.trim()) return;
-    try {
-      await apiSend(
-        '/social/hashtag-groups',
-        'POST',
-        {
-          name: hgName.trim(),
-          hashtags: hgTags
-            .split(',')
-            .map((t) => t.trim())
-            .filter(Boolean),
-          description: hgDesc.trim(),
-        },
-        tenantId
-      );
-      setHgName('');
-      setHgTags('');
-      setHgDesc('');
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Create hashtag group failed');
-    }
-  }
-
-  async function deleteHashtagGroup(id: string) {
-    try {
-      await apiSend(`/social/hashtag-groups/${id}`, 'DELETE', undefined, tenantId);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Delete failed');
-    }
-  }
-
-  function applyTemplate(tmpl: Template) {
-    setNewTitle(tmpl.name);
-    setNewBody(tmpl.body);
-    setNewNetworks(tmpl.networks.length ? tmpl.networks : ['instagram']);
-    setView('board');
-    setShowForm(true);
-  }
-
-  function toggleNetwork(network: string) {
-    setNewNetworks((prev) => (prev.includes(network) ? prev.filter((item) => item !== network) : [...prev, network]));
-  }
-
-  const ideasByStatus = KANBAN_COLUMNS.reduce<Record<string, Idea[]>>((acc, col) => {
-    acc[col.key] = ideas.filter((i) => i.status === col.key);
-    return acc;
-  }, {});
-
-  const tabStyle = (active: boolean): React.CSSProperties => ({
-    padding: '8px 18px',
-    borderRadius: 8,
-    border: 'none',
-    cursor: 'pointer',
-    fontWeight: 600,
-    fontSize: 13,
-    background: active ? "var(--brand)" : 'var(--bg-soft)',
-    color: active ? 'var(--on-status)' : 'var(--text)',
+export default function IdeasPage() {
+  const tenant = useTenant();
+  const resource = useResource<Loaded>(async (id) => {
+    const [ideas, groups, templates] = await Promise.all([
+      apiGet<{ items?: Idea[] }>("/social/ideas", id),
+      apiGet<{ hashtag_groups?: HashtagGroup[] }>("/social/hashtag-groups", id),
+      apiGet<{ templates?: Template[] }>("/social/templates", id),
+    ]);
+    return { ideas: ideas.items ?? [], groups: groups.hashtag_groups ?? [], templates: templates.templates ?? [] };
   });
 
+  const [tab, setTab] = useState<Tab>("ideas");
+  const [ideaOpen, setIdeaOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [tags, setTags] = useState("");
+  const [planning, setPlanning] = useState<Idea | null>(null);
+  const [network, setNetwork] = useState<string>(SCHEDULE_PLATFORMS[0].value);
+  const [planAt, setPlanAt] = useState("");
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [groupName, setGroupName] = useState("");
+  const [groupTags, setGroupTags] = useState("");
+  const [deleting, setDeleting] = useState<HashtagGroup | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run(action: () => Promise<unknown>, done: () => void) {
+    setBusy(true);
+    setError(null);
+    try {
+      await action();
+      done();
+      await resource.reload();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "That action failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const ideaColumns: Column<Idea>[] = [
+    { key: "title", header: "Idea", strong: true, sortValue: (idea) => idea.title, render: (idea) => <span>{idea.title}<br /><span style={{ color: "var(--nx-muted)", fontWeight: 400 }}>{truncate(idea.body, 110)}</span></span> },
+    { key: "tags", header: "Tags", render: (idea) => idea.tags.map((tag) => <Badge key={tag}>{tag}</Badge>) },
+    { key: "status", header: "Status", sortValue: (idea) => idea.status, render: (idea) => <StatusBadge status={idea.status} /> },
+    { key: "created", header: "Added", sortValue: (idea) => idea.created_at, render: (idea) => formatDate(idea.created_at) },
+    {
+      key: "actions",
+      header: "",
+      render: (idea) => (
+        <Button
+          size="sm"
+          onClick={() => {
+            setPlanning(idea);
+            setPlanAt(toLocalInputValue(new Date(Date.now() + 24 * 3600_000)));
+            setError(null);
+          }}
+        >
+          Plan it
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: 24 }}>
-      <div style={{ maxWidth: 1300, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}>Ideas &amp; Drafts</h1>
-            <p style={{ margin: '4px 0 0', color: "var(--muted)", fontSize: 14 }}>
-              Dream up, gather, and polish your content ideas in one place.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              style={btn('var(--success)')}
-              onClick={() => {
-                setShowForm(true);
-                setView('board');
-              }}
-            >
-              + New Idea
-            </button>
-            <button style={btn('var(--info)')} onClick={() => setShowAI(!showAI)}>
-              ✨ AI Assistant
-            </button>
-          </div>
-        </div>
+    <Page>
+      <PageHeader
+        title="Ideas & Drafts"
+        subtitle="Keep ideas, reusable hashtag groups and templates together, then turn an idea into a planned post."
+        actions={
+          tab === "hashtags" ? (
+            <Button variant="primary" icon={<Plus size={15} aria-hidden="true" />} onClick={() => setGroupOpen(true)}>New hashtag group</Button>
+          ) : (
+            <Button variant="primary" icon={<Plus size={15} aria-hidden="true" />} onClick={() => setIdeaOpen(true)}>New idea</Button>
+          )
+        }
+        tabs={
+          <Tabs
+            items={[
+              { id: "ideas", label: "Ideas", count: resource.data?.ideas.length },
+              { id: "hashtags", label: "Hashtag groups", count: resource.data?.groups.length },
+              { id: "templates", label: "Templates", count: resource.data?.templates.length },
+            ]}
+            value={tab}
+            onChange={(id) => setTab(id as Tab)}
+          />
+        }
+      />
+      {error && !ideaOpen && !groupOpen && !planning && !deleting ? <Callout tone="danger">{error}</Callout> : null}
 
-        {error && <div style={{ ...card, color: 'var(--danger)', marginBottom: 12 }}>{error}</div>}
-
-        {/* AI Assistant Panel */}
-        {showAI && (
-          <div style={{ ...card, marginBottom: 20, borderColor: "var(--brand)", borderWidth: 2 }}>
-            <h3 style={{ margin: '0 0 12px', color: "var(--brand)" }}>✨ AI Assistant</h3>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-              {(['rephrase', 'shorten', 'expand', 'casual', 'formal', 'generate'] as const).map((a) => (
-                <button
-                  key={a}
-                  onClick={() => setAiAction(a)}
-                  style={{
-                    ...btn(aiAction === a ? 'var(--info)' : 'var(--neutral-soft)'),
-                    color: aiAction === a ? 'var(--on-status)' : 'var(--ink-2)',
-                    fontSize: 12,
-                    padding: '6px 12px',
-                  }}
-                >
-                  {a}
-                </button>
-              ))}
-            </div>
-            <textarea
-              style={{ ...input, height: 80, resize: 'vertical', fontFamily: 'inherit' }}
-              placeholder="Enter your post text or topic..."
-              value={aiText}
-              onChange={(e) => setAiText(e.target.value)}
-            />
-            <button style={btn('var(--info)')} onClick={runAI} disabled={aiLoading}>
-              {aiLoading ? 'Processing…' : 'Generate'}
-            </button>
-            {aiResult && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  background: 'var(--bg-soft)',
-                  borderRadius: 8,
-                  border: '1px solid var(--info-line)',
-                }}
-              >
-                <div style={{ fontSize: 12, color: "var(--brand)", fontWeight: 600, marginBottom: 4 }}>Result</div>
-                <div style={{ whiteSpace: 'pre-wrap', fontSize: 14 }}>{aiResult}</div>
-                <button
-                  style={{ ...btn('var(--info)'), marginTop: 8, fontSize: 12, padding: '6px 10px' }}
-                  onClick={() => {
-                    setNewBody(aiResult);
-                    setShowForm(true);
-                  }}
-                >
-                  Use in new post
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          {(['board', 'list', 'templates', 'hashtags'] as const).map((v) => (
-            <button key={v} style={tabStyle(view === v)} onClick={() => setView(v)}>
-              {tabLabel(v)}
-            </button>
-          ))}
-        </div>
-
-        {/* New idea form */}
-        {showForm && view !== 'templates' && view !== 'hashtags' && (
-          <div style={{ ...card, marginBottom: 20, borderColor: "var(--brand)", borderWidth: 2 }}>
-            <h3 style={{ margin: '0 0 12px' }}>New Idea</h3>
-            <input style={input} placeholder="Title *" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
-            <textarea
-              style={{ ...input, height: 80, resize: 'vertical', fontFamily: 'inherit' }}
-              placeholder="Body / content..."
-              value={newBody}
-              onChange={(e) => setNewBody(e.target.value)}
-            />
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>Networks</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {NETWORK_OPTIONS.map((net) => (
-                  <button
-                    key={net}
-                    onClick={() => toggleNetwork(net)}
-                    style={{
-                      ...btn(newNetworks.includes(net) ? 'var(--info)' : 'var(--neutral-soft)'),
-                      color: newNetworks.includes(net) ? 'var(--on-status)' : 'var(--ink-2)',
-                      fontSize: 12,
-                      padding: '4px 10px',
-                    }}
-                  >
-                    {net}
-                  </button>
+      <ResourceView resource={resource}>
+        {(data) =>
+          tab === "ideas" ? (
+            data.ideas.length === 0 ? (
+              <EmptyState title="No ideas yet" description="Capture an idea now and plan it when you are ready." action={<Button variant="primary" onClick={() => setIdeaOpen(true)}>New idea</Button>} />
+            ) : (
+              <DataTable columns={ideaColumns} rows={data.ideas} getKey={(idea) => idea.id} caption="Ideas" pageSize={15} />
+            )
+          ) : tab === "hashtags" ? (
+            data.groups.length === 0 ? (
+              <EmptyState title="No hashtag groups" description="Save sets of hashtags you use together." action={<Button variant="primary" onClick={() => setGroupOpen(true)}>New hashtag group</Button>} />
+            ) : (
+              <Grid cols={3}>
+                {data.groups.map((group) => (
+                  <Card key={group.id}>
+                    <CardTitle
+                      sub={group.description || undefined}
+                      actions={
+                        <IconButton label={`Delete ${group.name}`} variant="quiet" onClick={() => { setDeleting(group); setError(null); }}>
+                          <Trash2 size={15} aria-hidden="true" />
+                        </IconButton>
+                      }
+                    >
+                      {group.name}
+                    </CardTitle>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{group.hashtags.map((tag) => <Badge key={tag} tone="brand">{tag}</Badge>)}</div>
+                  </Card>
                 ))}
-              </div>
-            </div>
-            <input
-              style={input}
-              placeholder="Tags (comma-separated)"
-              value={newTags}
-              onChange={(e) => setNewTags(e.target.value)}
-            />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button style={btn('var(--success)')} onClick={createIdea}>
-                Save Idea
-              </button>
-              <button style={btn('var(--neutral)')} onClick={() => setShowForm(false)}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+              </Grid>
+            )
+          ) : (
+            <Grid cols={3}>
+              {data.templates.map((template) => (
+                <Card key={template.id}>
+                  <CardTitle sub={template.networks.join(", ")}>{template.name}</CardTitle>
+                  <p style={{ margin: "0 0 12px", fontSize: 13.5, whiteSpace: "pre-wrap", color: "var(--nx-ink-2)" }}>{truncate(template.body, 220)}</p>
+                  <Button size="sm" onClick={() => { setTitle(template.name); setBody(template.body); setTags(""); setIdeaOpen(true); setError(null); }}>
+                    Start an idea from this
+                  </Button>
+                </Card>
+              ))}
+            </Grid>
+          )
+        }
+      </ResourceView>
 
-        {loading && <div style={{ color: "var(--muted)", textAlign: 'center', padding: 40 }}>Loading…</div>}
-
-        {/* Board View */}
-        {!loading && view === 'board' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 16 }}>
-            {KANBAN_COLUMNS.map((col) => (
-              <div key={col.key}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: col.color }} />
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>{col.label}</span>
-                  <span
-                    style={{
-                      marginLeft: 'auto',
-                      fontSize: 12,
-                      color: "var(--muted)",
-                      background: 'var(--bg-soft)',
-                      borderRadius: 16,
-                      padding: '2px 8px',
-                    }}
-                  >
-                    {ideasByStatus[col.key]?.length ?? 0}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 120 }}>
-                  {(ideasByStatus[col.key] ?? []).map((idea) => (
-                    <div key={idea.id} style={{ ...card, borderLeft: `3px solid ${col.color}`, cursor: 'default' }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{idea.title}</div>
-                      {idea.body && (
-                        <div
-                          style={{
-                            fontSize: 12,
-                            color: "var(--muted)",
-                            marginBottom: 6,
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                          }}
-                        >
-                          {idea.body}
-                        </div>
-                      )}
-                      {idea.networks && idea.networks.length > 0 && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
-                          {idea.networks.map((n) => (
-                            <span
-                              key={n}
-                              style={{
-                                fontSize: 10,
-                                background: 'var(--info-soft)',
-                                color: "var(--brand)",
-                                borderRadius: 4,
-                                padding: '1px 6px',
-                              }}
-                            >
-                              {n}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {col.key === 'new' && (
-                        <button
-                          style={{ ...btn('var(--info)'), fontSize: 11, padding: '4px 8px' }}
-                          onClick={() => queueIdea(idea.id)}
-                        >
-                          Add to Queue →
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  {(ideasByStatus[col.key] ?? []).length === 0 && (
-                    <div
-                      style={{
-                        padding: 20,
-                        textAlign: 'center',
-                        color: 'var(--neutral)',
-                        fontSize: 13,
-                        border: '2px dashed var(--neutral-soft)',
-                        borderRadius: 8,
-                      }}
-                    >
-                      No {col.label.toLowerCase()} yet
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* List View */}
-        {!loading && view === 'list' && (
-          <div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr 1fr 80px',
-                gap: 8,
-                padding: '10px 14px',
-                background: 'var(--bg-soft)',
-                borderRadius: 8,
-                fontWeight: 600,
-                fontSize: 12,
-                color: 'var(--ink-2)',
-                marginBottom: 8,
+      <Modal
+        open={ideaOpen}
+        onOpenChange={setIdeaOpen}
+        title="New idea"
+        footer={
+          <>
+            <Button onClick={() => setIdeaOpen(false)} disabled={busy}>Cancel</Button>
+            <Button
+              variant="primary"
+              loading={busy}
+              onClick={() => {
+                if (title.trim().length < 2 || body.trim().length < 2) return setError("Add a title and some text.");
+                void run(
+                  () => apiSend("/social/ideas", "POST", { title: title.trim(), body: body.trim(), source: "manual", tags: splitList(tags) }, tenant),
+                  () => { setIdeaOpen(false); setTitle(""); setBody(""); setTags(""); setTab("ideas"); },
+                );
               }}
             >
-              <span>Title</span>
-              <span>Networks</span>
-              <span>Status</span>
-              <span>Tags</span>
-              <span>Action</span>
-            </div>
-            {ideas.map((idea) => (
-              <div
-                key={idea.id}
-                style={{
-                  ...card,
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 1fr 1fr 1fr 80px',
-                  gap: 8,
-                  alignItems: 'center',
-                  marginBottom: 6,
-                  padding: '10px 14px',
-                }}
-              >
-                <span style={{ fontWeight: 600, fontSize: 13 }}>{idea.title}</span>
-                <span style={{ fontSize: 12, color: "var(--muted)" }}>{(idea.networks ?? []).join(', ') || '—'}</span>
-                <span>
-                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 16, ...statusTone(idea.status) }}>
-                    {idea.status}
-                  </span>
-                </span>
-                <span style={{ fontSize: 12, color: "var(--muted)" }}>{(idea.tags ?? []).join(', ') || '—'}</span>
-                {idea.status === 'new' && (
-                  <button
-                    style={{ ...btn('var(--info)'), fontSize: 11, padding: '4px 8px' }}
-                    onClick={() => queueIdea(idea.id)}
-                  >
-                    Queue
-                  </button>
-                )}
-              </div>
-            ))}
-            {ideas.length === 0 && (
-              <div style={{ textAlign: 'center', color: 'var(--neutral)', padding: 40 }}>
-                No ideas yet. Create your first idea!
-              </div>
-            )}
-          </div>
-        )}
+              Save idea
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: "grid", gap: 14 }}>
+          {error ? <Callout tone="danger">{error}</Callout> : null}
+          <Field label="Title" value={title} maxLength={180} onChange={(event) => setTitle(event.target.value)} />
+          <FieldTextarea label="Text" rows={6} value={body} maxLength={4000} onChange={(event) => setBody(event.target.value)} />
+          <Field label="Tags" value={tags} onChange={(event) => setTags(event.target.value)} hint="Separate with commas." />
+        </div>
+      </Modal>
 
-        {/* Templates View */}
-        {!loading && view === 'templates' && (
-          <div>
-            <h2 style={{ marginTop: 0 }}>Content Templates</h2>
-            <p style={{ color: "var(--muted)", marginBottom: 20 }}>
-              Jump-start your posts with proven templates for every occasion.
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
-              {templates.map((tmpl) => (
-                <div key={tmpl.id} style={card}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      justifyContent: 'space-between',
-                      marginBottom: 8,
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{tmpl.name}</div>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          background: 'var(--bg-soft)',
-                          color: 'var(--ink-2)',
-                          borderRadius: 4,
-                          padding: '1px 8px',
-                        }}
-                      >
-                        {tmpl.content_type}
-                      </span>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      color: "var(--muted)",
-                      whiteSpace: 'pre-wrap',
-                      marginBottom: 10,
-                      maxHeight: 100,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {tmpl.body}
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
-                    {tmpl.networks.map((n) => (
-                      <span
-                        key={n}
-                        style={{
-                          fontSize: 10,
-                          background: 'var(--info-soft)',
-                          color: "var(--brand)",
-                          borderRadius: 4,
-                          padding: '1px 6px',
-                        }}
-                      >
-                        {n}
-                      </span>
-                    ))}
-                  </div>
-                  <button style={btn('var(--info)')} onClick={() => applyTemplate(tmpl)}>
-                    Use Template
-                  </button>
-                </div>
-              ))}
-              {templates.length === 0 && <div style={{ color: 'var(--neutral)' }}>No templates found.</div>}
-            </div>
-          </div>
-        )}
+      <Modal
+        open={Boolean(planning)}
+        onOpenChange={(open) => !open && setPlanning(null)}
+        title="Plan this idea"
+        description={planning?.title}
+        footer={
+          <>
+            <Button onClick={() => setPlanning(null)} disabled={busy}>Cancel</Button>
+            <Button
+              variant="primary"
+              loading={busy}
+              onClick={() => {
+                if (!planning) return;
+                const iso = fromLocalInputValue(planAt);
+                void run(
+                  () => apiSend(`/social/ideas/${planning.id}/queue`, "POST", { network, publish_at: iso }, tenant),
+                  () => setPlanning(null),
+                );
+              }}
+            >
+              Add to plan
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: "grid", gap: 14 }}>
+          {error ? <Callout tone="danger">{error}</Callout> : null}
+          <FieldSelect label="Platform" value={network} onChange={(event) => setNetwork(event.target.value)}>
+            {SCHEDULE_PLATFORMS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          </FieldSelect>
+          <Field label="Planned for" type="datetime-local" value={planAt} onChange={(event) => setPlanAt(event.target.value)} />
+        </div>
+      </Modal>
 
-        {/* Hashtag Manager */}
-        {!loading && view === 'hashtags' && (
-          <div>
-            <h2 style={{ marginTop: 0 }}>Hashtag Manager</h2>
-            <p style={{ color: "var(--muted)", marginBottom: 20 }}>Save groups of hashtags to quickly add to your posts.</p>
+      <Modal
+        open={groupOpen}
+        onOpenChange={setGroupOpen}
+        title="New hashtag group"
+        footer={
+          <>
+            <Button onClick={() => setGroupOpen(false)} disabled={busy}>Cancel</Button>
+            <Button
+              variant="primary"
+              loading={busy}
+              onClick={() => {
+                const hashtags = splitList(groupTags).map((tag) => (tag.startsWith("#") ? tag : `#${tag}`));
+                if (!groupName.trim() || hashtags.length === 0) return setError("Add a name and at least one hashtag.");
+                void run(
+                  () => apiSend("/social/hashtag-groups", "POST", { name: groupName.trim(), hashtags }, tenant),
+                  () => { setGroupOpen(false); setGroupName(""); setGroupTags(""); },
+                );
+              }}
+            >
+              Save group
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: "grid", gap: 14 }}>
+          {error ? <Callout tone="danger">{error}</Callout> : null}
+          <Field label="Name" value={groupName} maxLength={100} onChange={(event) => setGroupName(event.target.value)} />
+          <FieldTextarea label="Hashtags" rows={4} value={groupTags} onChange={(event) => setGroupTags(event.target.value)} hint="One per line or separated by commas." />
+        </div>
+      </Modal>
 
-            {/* Create group form */}
-            <div style={{ ...card, marginBottom: 20 }}>
-              <h3 style={{ margin: '0 0 12px' }}>Create Hashtag Group</h3>
-              <input
-                style={input}
-                placeholder="Group name *"
-                value={hgName}
-                onChange={(e) => setHgName(e.target.value)}
-              />
-              <input
-                style={input}
-                placeholder="Hashtags (comma-separated, e.g. #marketing, #growth) *"
-                value={hgTags}
-                onChange={(e) => setHgTags(e.target.value)}
-              />
-              <input
-                style={input}
-                placeholder="Description (optional)"
-                value={hgDesc}
-                onChange={(e) => setHgDesc(e.target.value)}
-              />
-              <button style={btn('var(--success)')} onClick={createHashtagGroup}>
-                Create Group
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
-              {hashtagGroups.map((hg) => (
-                <div key={hg.id} style={card}>
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}
-                  >
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{hg.name}</div>
-                    <button
-                      style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 16 }}
-                      onClick={() => deleteHashtagGroup(hg.id)}
-                    >
-                      🗑
-                    </button>
-                  </div>
-                  {hg.description && (
-                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>{hg.description}</div>
-                  )}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    {hg.hashtags.map((tag) => (
-                      <span
-                        key={tag}
-                        style={{
-                          fontSize: 12,
-                          background: 'var(--bg-soft)',
-                          color: "var(--brand)",
-                          borderRadius: 4,
-                          padding: '2px 8px',
-                        }}
-                      >
-                        #{tag.replace(/^#/, '')}
-                      </span>
-                    ))}
-                  </div>
-                  <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>{hg.hashtags.length} hashtags</div>
-                  <button
-                    style={{ ...btn('var(--info)'), fontSize: 12, marginTop: 8 }}
-                    onClick={() => {
-                      setNewTags(hg.hashtags.join(', '));
-                      setView('board');
-                      setShowForm(true);
-                    }}
-                  >
-                    Use in new post
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </main>
+      <ConfirmModal
+        open={Boolean(deleting)}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Delete this hashtag group?"
+        description={deleting ? `“${deleting.name}” will be removed.` : ""}
+        pending={busy}
+        error={error}
+        onConfirm={() => deleting && void run(() => apiSend(`/social/hashtag-groups/${deleting.id}`, "DELETE", undefined, tenant), () => setDeleting(null))}
+      />
+    </Page>
   );
 }

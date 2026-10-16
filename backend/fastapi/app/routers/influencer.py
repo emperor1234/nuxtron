@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from ._provider_required import provider_required
 from pydantic import BaseModel, Field
 
 from ..deps import AuthContext, require_auth
@@ -108,19 +109,18 @@ def create_influencer_router(
     influencer_outreach_memory: list[dict[str, Any]],
     audit_log_memory: list[dict[str, Any]],
 ) -> APIRouter:
-    router = APIRouter()
+    router = APIRouter(
+        dependencies=[
+            provider_required(
+                'A verified influencer data provider is not connected, so influencer discovery is disabled rather than generated.'
+            )
+        ]
+    )
     lock = threading.Lock()
 
-    # Pre-seed the memory store with representative profiles on first use.
-    with lock:
-        if not influencers_memory:
-            influencers_memory.extend(_SEED_INFLUENCERS)
-
     def _ensure_seeded() -> None:
-        """Re-seed influencers if the store was cleared (e.g. between tests)."""
-        with lock:
-            if not influencers_memory:
-                influencers_memory.extend(_SEED_INFLUENCERS)
+        """Intentionally empty: influencer profiles are never pre-populated with sample people."""
+        return
 
     def _audit(tenant_id: str, action: str, resource_id: int | None = None) -> None:
         with lock:

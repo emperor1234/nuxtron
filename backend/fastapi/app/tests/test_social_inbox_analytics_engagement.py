@@ -260,7 +260,7 @@ class TestAnalyticsDashboard:
 
     def test_predictions(self, client: TestClient) -> None:
         r = client.get("/analytics/predictions", headers=H)
-        assert r.status_code == 200
+        assert r.status_code == 501
 
     def test_export(self, client: TestClient) -> None:
         r = client.get("/analytics/export", headers=H)
@@ -268,7 +268,7 @@ class TestAnalyticsDashboard:
 
     def test_benchmarks(self, client: TestClient) -> None:
         r = client.get("/analytics/benchmarks", headers=H)
-        assert r.status_code == 200
+        assert r.status_code == 501
 
     def test_kpi_insights(self, client: TestClient) -> None:
         r = client.get("/analytics/insights/kpi", headers=H)

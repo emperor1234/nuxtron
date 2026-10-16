@@ -1,199 +1,104 @@
-'use client';
+"use client";
 
-import { useState, type FormEvent } from 'react';
-import { resolveSessionTenant } from '@/app/lib/api-client';
-import { apiSend } from '@/app/lib/platform-api';
-import { Badge, Button, Card, CardTitle, Field, FieldSelect, Page, PageHeader } from '../_ui/kit';
-import { parseAdsGenerationResult, type AdsGenerationResult } from './ads-generation-model';
-import styles from './ads-generation.module.css';
+import { useState, type FormEvent } from "react";
+import { Sparkles } from "lucide-react";
+import { apiSend } from "@/app/lib/platform-api";
+import { Badge, BulletList, Button, Callout, Card, EmptyState, ErrorState, Field, FieldSelect, Page, PageHeader, Skeleton, Split } from "../_ui/kit";
+import { CopyButton, OutputBlock } from "../_ui/generator";
+import { useTenant } from "../_ui/use-resource";
 
-function sessionWorkspace(): string {
-  try {
-    return resolveSessionTenant();
-  } catch {
-    return '';
-  }
-}
+const PLATFORMS = [
+  { value: "google", label: "Google" },
+  { value: "meta", label: "Meta" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "instagram", label: "Instagram" },
+  { value: "youtube", label: "YouTube" },
+  { value: "facebook", label: "Facebook" },
+  { value: "x", label: "X" },
+  { value: "threads", label: "Threads" },
+  { value: "snapchat", label: "Snapchat" },
+];
+const OBJECTIVES = ["traffic", "leads", "sales", "awareness"];
 
-export default function AdsGenerationPage() {
-  const [tenantId] = useState(sessionWorkspace);
-  const [product, setProduct] = useState('');
-  const [audience, setAudience] = useState('');
-  const [platform, setPlatform] = useState('');
-  const [objective, setObjective] = useState('');
-  const [result, setResult] = useState<AdsGenerationResult | null>(null);
-  const [error, setError] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [copyStatus, setCopyStatus] = useState('');
+type AdResult = {
+  platform: string;
+  objective: string;
+  headlines: string[];
+  descriptions: string[];
+  cta?: string;
+  provider_used?: string;
+  model_used?: string;
+  outputs?: { text?: string };
+};
 
-  const hasWorkspace = tenantId.trim().length > 0;
-  const canGenerate = hasWorkspace && product.trim().length >= 2 && audience.trim().length >= 2 && !!platform && !!objective;
+export default function AdCreativePage() {
+  const tenant = useTenant();
+  const [product, setProduct] = useState("");
+  const [audience, setAudience] = useState("");
+  const [platform, setPlatform] = useState("meta");
+  const [objective, setObjective] = useState("traffic");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<unknown>(null);
+  const [result, setResult] = useState<AdResult | null>(null);
 
-  async function run(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
-    const cleanProduct = product.trim();
-    const cleanAudience = audience.trim();
-    if (!hasWorkspace) {
-      setError('Sign in and select a workspace before generating ad copy.');
-      return;
-    }
-    if (cleanProduct.length < 2 || cleanAudience.length < 2 || !platform || !objective) {
-      setError('Complete the product, audience, advertising platform, and campaign objective before generating.');
-      return;
-    }
-
-    setError('');
-    setCopyStatus('');
+    const found: Record<string, string> = {};
+    if (product.trim().length < 2) found.product = "Name the product or offer.";
+    if (audience.trim().length < 2) found.audience = "Say who the ad is for.";
+    setErrors(found);
+    if (Object.keys(found).length) return;
+    setBusy(true);
+    setFailure(null);
     setResult(null);
-    setIsGenerating(true);
     try {
-      const response = await apiSend<unknown>(
-        '/ads/generate',
-        'POST',
-        { product: cleanProduct, audience: cleanAudience, platform, objective },
-        tenantId
-      );
-      const parsed = parseAdsGenerationResult(response);
-      if (!parsed) throw new Error('The ad-generation service returned an incomplete response. Please retry.');
-      setResult(parsed);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Ad copy could not be generated. Please retry.');
+      setResult(await apiSend<AdResult>("/ads/generate", "POST", { product: product.trim(), audience: audience.trim(), platform, objective }, tenant));
+    } catch (error) {
+      setFailure(error);
     } finally {
-      setIsGenerating(false);
+      setBusy(false);
     }
   }
 
-  async function copyGeneratedText() {
-    if (!result || result.ai_status !== 'generated') return;
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error('Clipboard access is unavailable.');
-      await navigator.clipboard.writeText(result.outputs.text);
-      setCopyStatus('Ad copy copied to clipboard.');
-    } catch {
-      setCopyStatus('Copy is unavailable here. Select the ad copy below and copy it manually.');
-    }
-  }
+  const all = result ? [...result.headlines, ...result.descriptions, ...(result.outputs?.text ? [result.outputs.text] : [])].join("\n") : "";
 
   return (
-    <Page className={styles.layout}>
-      <PageHeader
-        title="AI ad generation"
-        subtitle="Create channel-specific ad copy from a brief you provide. Nothing is generated until you submit it."
-        actions={<Badge tone="neutral">Workspace scoped</Badge>}
-      />
-
-      {!hasWorkspace ? (
-        <p role="alert" className={styles.error}>
-          Workspace context is unavailable. Sign in or select a workspace, then return to generate ad copy.
-        </p>
-      ) : null}
-      {error ? <p role="alert" className={styles.error}>{error}</p> : null}
-      {isGenerating ? <p role="status" className={styles.pending}>Generating ad copy from your brief…</p> : null}
-
-      <Card>
-        <form className={styles.form} onSubmit={(event) => void run(event)} aria-busy={isGenerating}>
-          <div>
-            <CardTitle sub="Use your own product and audience details. Required fields are sent only to the workspace-scoped generation endpoint.">
-              Campaign brief
-            </CardTitle>
-          </div>
-          <div className={styles.briefGrid}>
-            <Field
-              id="ads-product"
-              label="Product or offer"
-              value={product}
-              onChange={(event) => setProduct(event.target.value)}
-              placeholder="Describe the product or offer"
-              minLength={2}
-              maxLength={140}
-              required
-              disabled={isGenerating}
-              autoComplete="off"
-            />
-            <Field
-              id="ads-audience"
-              label="Target audience"
-              value={audience}
-              onChange={(event) => setAudience(event.target.value)}
-              placeholder="Who should this reach?"
-              minLength={2}
-              maxLength={120}
-              required
-              disabled={isGenerating}
-              autoComplete="off"
-            />
-            <FieldSelect
-              id="ads-platform"
-              label="Advertising platform"
-              value={platform}
-              onChange={(event) => setPlatform(event.target.value)}
-              required
-              disabled={isGenerating}
-            >
-              <option value="" disabled>Choose a platform</option>
-              <option value="google">Google</option>
-              <option value="meta">Meta</option>
-              <option value="linkedin">LinkedIn</option>
-              <option value="tiktok">TikTok</option>
-              <option value="instagram">Instagram</option>
-              <option value="youtube">YouTube</option>
-              <option value="facebook">Facebook</option>
-              <option value="x">X</option>
-              <option value="threads">Threads</option>
-              <option value="snapchat">Snapchat</option>
-            </FieldSelect>
-            <FieldSelect
-              id="ads-objective"
-              label="Campaign objective"
-              value={objective}
-              onChange={(event) => setObjective(event.target.value)}
-              required
-              disabled={isGenerating}
-            >
-              <option value="" disabled>Choose an objective</option>
-              <option value="traffic">Website traffic</option>
-              <option value="leads">Lead generation</option>
-              <option value="sales">Sales</option>
-              <option value="awareness">Brand awareness</option>
-            </FieldSelect>
-          </div>
-          <div className={styles.formActions}>
-            <p className={styles.helper}>Review generated copy before using it in a live campaign.</p>
-            <Button type="submit" variant="primary" disabled={!canGenerate || isGenerating}>
-              {isGenerating ? 'Generating…' : 'Generate ad copy'}
-            </Button>
-          </div>
-        </form>
-      </Card>
-
-      {result?.ai_status === 'fallback' ? (
-        <p role="status" className={styles.notice}>
-          The generation provider did not return AI-created copy. Its template fallback is hidden so it cannot be mistaken for generated content. Check the AI provider configuration and retry.
-        </p>
-      ) : null}
-
-      {result?.ai_status === 'generated' ? (
+    <Page width="wide">
+      <PageHeader title="Paid Ad Creative" subtitle="Write ad headlines and descriptions for a platform and objective. Output comes from the AI model connected to your workspace." />
+      <Split>
         <Card>
-          <div className={styles.resultHeader}>
-            <div>
-              <CardTitle sub={`${result.platform} · ${result.objective}`}>Generated ad copy</CardTitle>
-              <div className={styles.metaRow}>
-                <Badge tone="success">Provider generated</Badge>
-                {result.provider_used || result.model_used ? (
-                  <span className={styles.meta}>
-                    {[result.provider_used, result.model_used].filter(Boolean).join(' · ')}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-            <Button type="button" variant="ghost" onClick={() => void copyGeneratedText()}>
-              Copy ad copy
-            </Button>
-          </div>
-          <pre className={styles.resultText}>{result.outputs.text}</pre>
-          {copyStatus ? <p role="status" className={styles.helper}>{copyStatus}</p> : null}
+          <form onSubmit={submit} noValidate aria-label="Ad details" style={{ display: "grid", gap: 16 }}>
+            <Field label="Product or offer" value={product} error={errors.product} maxLength={140} onChange={(event) => setProduct(event.target.value)} />
+            <Field label="Audience" value={audience} error={errors.audience} maxLength={120} onChange={(event) => setAudience(event.target.value)} />
+            <FieldSelect label="Platform" value={platform} onChange={(event) => setPlatform(event.target.value)}>{PLATFORMS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</FieldSelect>
+            <FieldSelect label="Objective" value={objective} onChange={(event) => setObjective(event.target.value)}>{OBJECTIVES.map((item) => <option key={item} value={item}>{item.charAt(0).toUpperCase() + item.slice(1)}</option>)}</FieldSelect>
+            <Button type="submit" variant="primary" loading={busy} icon={<Sparkles size={15} aria-hidden="true" />}>{busy ? "Writing…" : "Generate ads"}</Button>
+          </form>
         </Card>
-      ) : null}
+        <div aria-live="polite">
+          {busy ? (
+            <div style={{ display: "grid", gap: 12 }} role="status"><Skeleton height={64} /><Skeleton height={160} /></div>
+          ) : failure ? (
+            <ErrorState error={failure} title="No ad copy was generated" />
+          ) : result ? (
+            <Card>
+              <div style={{ display: "grid", gap: 20 }}>
+                <OutputBlock title="Headlines"><BulletList items={result.headlines} /></OutputBlock>
+                <OutputBlock title="Descriptions"><BulletList items={result.descriptions} /></OutputBlock>
+                {result.cta ? <OutputBlock title="Call to action"><Badge tone="brand">{result.cta}</Badge></OutputBlock> : null}
+                {result.outputs?.text ? <OutputBlock title="Full copy" text={result.outputs.text} /> : null}
+                <p style={{ margin: 0, fontSize: 12.5, color: "var(--nx-muted)" }}>Written by {result.provider_used ?? "the connected model"}{result.model_used ? ` (${result.model_used})` : ""}. Check each platform&apos;s ad policies before you run it.</p>
+                <div><CopyButton text={all} label="Copy everything" /></div>
+              </div>
+            </Card>
+          ) : (
+            <EmptyState title="Your ad copy will appear here" description="Describe the product and audience, then generate." />
+          )}
+        </div>
+      </Split>
+      <Callout tone="info">Nuxtron writes the copy. Creating and launching campaigns happens in the ad platform itself.</Callout>
     </Page>
   );
 }

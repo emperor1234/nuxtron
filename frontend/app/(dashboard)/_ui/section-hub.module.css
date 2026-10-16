@@ -1,0 +1,37 @@
+.group { display: flex; flex-direction: column; gap: 12px; }
+.groupTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nx-muted);
+}
+.count {
+  font-size: 11.5px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--nx-border-soft);
+  color: var(--nx-ink-2);
+  letter-spacing: 0;
+}
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.tile { text-decoration: none; color: inherit; display: block; border-radius: 12px; }
+.tile:focus-visible { outline: 2px solid var(--nx-brand); outline-offset: 2px; }
+.tileCard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.tile:hover .tileCard { border-color: var(--nx-brand); box-shadow: 0 4px 16px color-mix(in oklab, var(--nx-brand) 14%, transparent); }
+.tileHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tileTitle { font-size: 14.5px; font-weight: 650; color: var(--nx-ink); }
+.arrow { color: var(--nx-faint); flex: none; }
+.tile:hover .arrow { color: var(--nx-brand); }
+.tileText { font-size: 13px; line-height: 1.5; color: var(--nx-muted); }

@@ -1,142 +1,109 @@
+import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { __test__ } from './route';
+import { GET, POST, __test__ } from './route';
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
-describe('fastapi route fallback internals', () => {
-  it('returns modules fallback payload with offline header', async () => {
-    vi.stubEnv('NUXTRON_ALLOW_PROXY_FALLBACK', 'true');
-
-    const response = __test__.buildOfflineFallbackResponse({
-      method: 'GET',
-      path: ['seo-platform', 'modules'],
-      tenantId: 'tenant-demo',
-      requestBody: undefined,
-      detail: 'Upstream unavailable.',
-      fallbackKind: 'offline',
-    });
-
-    expect(response).not.toBeNull();
-    expect(response?.status).toBe(200);
-    expect(response?.headers.get('X-Nuxtron-Fallback')).toBe('offline');
-
-    const payload = await response?.json();
-    expect(payload.total).toBeGreaterThan(0);
-    expect(Array.isArray(payload.modules)).toBe(true);
+function call(method: 'GET' | 'POST', path: string[], init?: { body?: string; tenant?: string }) {
+  const handler = method === 'GET' ? GET : POST;
+  const request = new NextRequest(`http://localhost/api/fastapi/${path.join('/')}`, {
+    method,
+    headers: { 'x-tenant-id': init?.tenant ?? 'tenant-a', 'content-type': 'application/json' },
+    body: init?.body,
   });
+  return handler(request, { params: Promise.resolve({ path }) });
+}
 
-  it('returns llmo fallback payload for analyze post', async () => {
-    vi.stubEnv('NUXTRON_ALLOW_PROXY_FALLBACK', 'true');
-
-    const response = __test__.buildOfflineFallbackResponse({
-      method: 'POST',
-      path: ['seo-platform', 'llmo', 'analyze'],
-      tenantId: 'tenant-demo',
-      requestBody: JSON.stringify({ brand: 'Acme' }),
-      detail: 'Forced fallback mode.',
-      fallbackKind: 'forced',
-    });
-
-    expect(response).not.toBeNull();
-    expect(response?.status).toBe(200);
-    expect(response?.headers.get('X-Nuxtron-Fallback')).toBe('forced');
-
-    const payload = await response?.json();
-    expect(payload.fallback).toBe(true);
-    expect(payload.model_representations.gpt_4).toContain('Acme');
-    expect(Array.isArray(payload.knowledge_gap_topics)).toBe(true);
-  });
-
-  it('returns null when no fallback handler matches', () => {
-    const response = __test__.buildOfflineFallbackResponse({
-      method: 'GET',
-      path: ['unknown', 'endpoint'],
-      tenantId: 'tenant-demo',
-      requestBody: undefined,
-      detail: 'No route handler.',
-      fallbackKind: 'offline',
-    });
-
-    expect(response).toBeNull();
-  });
-
-  it('forces fallback globally when env toggle is enabled', () => {
-    vi.stubEnv('NUXTRON_PROXY_FORCE_FALLBACK', 'true');
-
-    expect(__test__.isFallbackForced('GET', ['seo-platform', 'modules'])).toBe(true);
-    expect(__test__.isFallbackForced('POST', ['seo-platform', 'llmo', 'analyze'])).toBe(true);
-  });
-
-  it('forces fallback for matching route rules only', () => {
-    vi.stubEnv(
-      'NUXTRON_PROXY_FORCE_FALLBACK_ROUTES',
-      'seo-platform/modules, POST seo-platform/llmo/*, v1/loop/strategy-snapshots/*'
-    );
-
-    expect(__test__.isFallbackForced('GET', ['seo-platform', 'modules'])).toBe(true);
-    expect(__test__.isFallbackForced('POST', ['seo-platform', 'llmo', 'analyze'])).toBe(true);
-    expect(__test__.isFallbackForced('GET', ['v1', 'loop', 'strategy-snapshots', 'tenant-demo'])).toBe(true);
-    expect(__test__.isFallbackForced('GET', ['seo-platform', 'health'])).toBe(false);
-  });
-
-  it('fails closed in production by excluding implicit localhost fallbacks', () => {
+describe('fastapi gateway', () => {
+  it('fails closed in production by excluding implicit localhost upstreams', () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('FASTAPI_URL', 'https://api.example.com');
 
     const upstreams = __test__.getUpstreamBaseUrls();
 
-    expect(upstreams).toContain('https://api.example.com');
-    expect(upstreams).not.toContain('http://127.0.0.1:8001');
-    expect(upstreams).not.toContain('http://localhost:8001');
+    expect(upstreams).toEqual(['https://api.example.com']);
   });
 
-  it('rejects forced synthetic business fallback in production', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('NUXTRON_PROXY_FORCE_FALLBACK', 'true');
+  it('keeps localhost upstreams outside production', () => {
+    vi.stubEnv('NODE_ENV', 'development');
 
-    const response = __test__.maybeBuildForcedFallbackResponse(
-      'POST',
-      ['ads-control-tower', 'campaigns'],
-      'org-production',
-      JSON.stringify({ campaign_name: 'must-not-be-created' })
+    expect(__test__.getUpstreamBaseUrls()).toEqual(
+      expect.arrayContaining(['http://127.0.0.1:8001', 'http://localhost:8000'])
+    );
+  });
+
+  it('reports missing configuration instead of guessing', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('FASTAPI_URL', '');
+    vi.stubEnv('NEXT_PUBLIC_FASTAPI_URL', '');
+    vi.stubEnv('LOCAL_FASTAPI_URL', '');
+    vi.stubEnv('FASTAPI_API_KEY', 'key');
+
+    const response = await call('GET', ['social', 'queue']);
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ detail: 'FASTAPI_URL is not configured.' });
+  });
+
+  it('returns a real 502 and no invented payload when the backend is unreachable', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('FASTAPI_URL', 'https://api.example.com');
+    vi.stubEnv('FASTAPI_API_KEY', 'key');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('connect ECONNREFUSED')));
+
+    const response = await call('GET', ['notifications']);
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toEqual({ detail: 'connect ECONNREFUSED' });
+  });
+
+  it('passes backend errors through unchanged', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('FASTAPI_URL', 'https://api.example.com');
+    vi.stubEnv('FASTAPI_API_KEY', 'key');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ detail: { code: 'NOT_IMPLEMENTED' } }), {
+          status: 501,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
     );
 
-    expect(response?.status).toBe(503);
-    await expect(response?.json()).resolves.toEqual({ detail: 'Forced fallback is disabled in production.' });
+    const response = await call('POST', ['media', 'jobs'], { body: '{}' });
+
+    expect(response.status).toBe(501);
+    await expect(response.json()).resolves.toEqual({ detail: { code: 'NOT_IMPLEMENTED' } });
   });
 
-  it('does not synthesize a connected Ads account from an offline OAuth callback', () => {
-    vi.stubEnv('NUXTRON_ALLOW_PROXY_FALLBACK', 'true');
-
-    const response = __test__.buildOfflineFallbackResponse({
-      method: 'POST',
-      path: ['ads-control-tower', 'connectors', 'google_ads', 'oauth', 'callback'],
-      tenantId: 'org-test',
-      requestBody: JSON.stringify({ state: 'fake', code: 'demo-code' }),
-      detail: 'Provider service unavailable.',
-      fallbackKind: 'offline',
-    });
-
-    expect(response).toBeNull();
-  });
-
-  it('keeps localhost fallbacks outside production', () => {
-    vi.stubEnv('NODE_ENV', 'development');
-
-    const upstreams = __test__.getUpstreamBaseUrls();
-
-    expect(upstreams).toContain('http://127.0.0.1:8001');
-    expect(upstreams).toContain('http://localhost:8001');
-  });
-
-  it('detects production runtime using exported helper', () => {
+  it('forwards the service key, tenant and session to the backend', async () => {
     vi.stubEnv('NODE_ENV', 'production');
-    expect(__test__.isProductionRuntime()).toBe(true);
+    vi.stubEnv('FASTAPI_URL', 'https://api.example.com');
+    vi.stubEnv('FASTAPI_API_KEY', 'service-key');
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
 
-    vi.stubEnv('NODE_ENV', 'development');
-    expect(__test__.isProductionRuntime()).toBe(false);
+    await call('GET', ['social', 'queue'], { tenant: 'tenant-b' });
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Headers;
+    expect(url).toBe('https://api.example.com/social/queue');
+    expect(headers.get('X-API-Key')).toBe('service-key');
+    expect(headers.get('X-Tenant-Id')).toBe('tenant-b');
+  });
+
+  it('requires a tenant', () => {
+    expect(__test__.getProxyConfigError(['https://api.example.com'], 'key', '')?.status).toBe(400);
+  });
+
+  it('gives AI analysis routes a longer timeout than CRUD routes', () => {
+    expect(__test__.getUpstreamTimeoutMs(['seo-platform', 'on-page', 'analyze'])).toBeGreaterThan(
+      __test__.getUpstreamTimeoutMs(['social', 'queue'])
+    );
   });
 });

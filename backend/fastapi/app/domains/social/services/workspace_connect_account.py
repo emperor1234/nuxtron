@@ -47,6 +47,8 @@ def _sw_connect_account(
         if existing:
             return (existing.copy(), False)
         account_id = len(st.social_accounts) + 1
+        # Audience figures come only from the network's own API after OAuth;
+        # a newly connected account starts at zero rather than a made-up number.
         account = {
             "id": account_id,
             "tenant_id": tenant_id,
@@ -61,11 +63,11 @@ def _sw_connect_account(
             "oauth_provider": oauth_provider,
             "token_expires_at": (datetime.now(UTC) + timedelta(days=30)).isoformat(),
             "capabilities": SUPPORTED_NETWORKS[network]["formats"],
-            "followers": 8200 + account_id * 540,
-            "likes": 410 + account_id * 36,
-            "shares": 64 + account_id * 7,
-            "comments": 52 + account_id * 5,
-            "mentions": 18 + account_id * 3,
+            "followers": 0,
+            "likes": 0,
+            "shares": 0,
+            "comments": 0,
+            "mentions": 0,
             "connected_at": datetime.now(UTC).isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
@@ -414,90 +416,23 @@ def _sw_integration_catalog() -> list[dict[str, Any]]:
 
 
 def _sw_seed_inbox_for_tenant(st: _SocialWorkspaceState, tenant_id: str) -> None:
-    with st.lock:
-        existing = any((item.get("tenant_id") == tenant_id for item in st.inbox_messages))
-    if existing:
-        return
-    _sw_seed_inbox_messages(st, tenant_id, "linkedin", "socialdesk")
+    # Demo data is never created for a workspace; records exist only once a user or a connected provider creates them.
+    return
 
 
 def _sw_seed_automation_rules(st: _SocialWorkspaceState, tenant_id: str) -> None:
-    with st.lock:
-        existing = [item for item in st.automation_rules if item.get("tenant_id") == tenant_id]
-        if existing:
-            return
-        st.automation_rules.extend(
-            [
-                {
-                    "id": len(st.automation_rules) + 1,
-                    "tenant_id": tenant_id,
-                    "name": "Escalate negative reviews",
-                    "trigger_type": "review_rating_lte",
-                    "trigger_value": "2",
-                    "action_type": "create_case",
-                    "action_payload": {"priority": "high", "owner": "social-care"},
-                    "enabled": True,
-                    "created_at": datetime.now(UTC).isoformat(),
-                },
-                {
-                    "id": len(st.automation_rules) + 2,
-                    "tenant_id": tenant_id,
-                    "name": "Queue best-time publishing",
-                    "trigger_type": "post_created",
-                    "trigger_value": "all",
-                    "action_type": "enqueue_best_time",
-                    "action_payload": {"window": "7d"},
-                    "enabled": True,
-                    "created_at": datetime.now(UTC).isoformat(),
-                },
-            ]
-        )
+    # Demo data is never created for a workspace; records exist only once a user or a connected provider creates them.
+    return
 
 
 def _sw_seed_automation_feeds(st: _SocialWorkspaceState, tenant_id: str) -> None:
-    with st.lock:
-        existing = [item for item in st.automation_feeds if item.get("tenant_id") == tenant_id]
-        if existing:
-            return
-        st.automation_feeds.extend(
-            [
-                {
-                    "id": len(st.automation_feeds) + 1,
-                    "tenant_id": tenant_id,
-                    "name": "Company Blog RSS",
-                    "feed_url": "https://buffer.com/resources/rss.xml",
-                    "target_networks": ["linkedin", "x"],
-                    "cadence_minutes": 180,
-                    "autopublish": False,
-                    "enabled": True,
-                    "last_synced_at": None,
-                    "created_at": datetime.now(UTC).isoformat(),
-                }
-            ]
-        )
+    # Demo data is never created for a workspace; records exist only once a user or a connected provider creates them.
+    return
 
 
 def _sw_seed_content_ideas(st: _SocialWorkspaceState, tenant_id: str) -> None:
-    with st.lock:
-        existing = [item for item in st.content_ideas if item.get("tenant_id") == tenant_id]
-        if existing:
-            return
-        st.content_ideas.extend(
-            [
-                {
-                    "id": len(st.content_ideas) + 1,
-                    "tenant_id": tenant_id,
-                    "title": "Behind-the-scenes product sprint",
-                    "body": "Share a short story about a recent sprint win and include one key lesson.",
-                    "source": "manual",
-                    "source_ref": None,
-                    "tags": ["culture", "product"],
-                    "status": "new",
-                    "created_at": datetime.now(UTC).isoformat(),
-                    "updated_at": datetime.now(UTC).isoformat(),
-                }
-            ]
-        )
+    # Demo data is never created for a workspace; records exist only once a user or a connected provider creates them.
+    return
 
 
 def _sw_workspace_overview(st: _SocialWorkspaceState, tenant_id: str) -> dict[str, Any]:
@@ -574,111 +509,5 @@ def _sw_engage_inbox_message(
 
 
 def _buffer_seed_community_comments(st: _SocialWorkspaceState, tenant_id: str) -> None:
-    with st.lock:
-        if any((c.get("tenant_id") == tenant_id for c in st.community_comments)):
-            return
-        now = datetime.now(UTC).isoformat()
-        seeds = [
-            {
-                "network": "instagram",
-                "post_title": "New product launch",
-                "author": "@jane_doe",
-                "text": "Love this! Where can I buy it?",
-                "sentiment": "positive",
-                "replied": False,
-            },
-            {
-                "network": "instagram",
-                "post_title": "New product launch",
-                "author": "@mark_buyer",
-                "text": "Great quality, been waiting for this!",
-                "sentiment": "positive",
-                "replied": True,
-                "reply": "Thank you Mark! Link in bio 🎉",
-            },
-            {
-                "network": "facebook",
-                "post_title": "Weekly tips roundup",
-                "author": "Sarah K.",
-                "text": "Super helpful article, sharing with my team.",
-                "sentiment": "positive",
-                "replied": False,
-            },
-            {
-                "network": "x",
-                "post_title": "Behind the scenes",
-                "author": "@techuser99",
-                "text": "What camera did you use for this?",
-                "sentiment": "neutral",
-                "replied": False,
-            },
-            {
-                "network": "linkedin",
-                "post_title": "Q2 results announcement",
-                "author": "David Chen",
-                "text": "Impressive growth numbers. Congrats to the team!",
-                "sentiment": "positive",
-                "replied": True,
-                "reply": "Thank you David, appreciate it!",
-            },
-            {
-                "network": "tiktok",
-                "post_title": "Tutorial video",
-                "author": "@creator_fan",
-                "text": "This was so helpful, please do more!",
-                "sentiment": "positive",
-                "replied": False,
-            },
-            {
-                "network": "youtube",
-                "post_title": "How-to guide episode 3",
-                "author": "Alex Turner",
-                "text": "Subscribed! Best tutorial channel.",
-                "sentiment": "positive",
-                "replied": False,
-            },
-            {
-                "network": "threads",
-                "post_title": "Industry thoughts",
-                "author": "@social_watcher",
-                "text": "Good take, but what about small businesses?",
-                "sentiment": "neutral",
-                "replied": False,
-            },
-            {
-                "network": "bluesky",
-                "post_title": "Open source update",
-                "author": "@dev_user.bsky.social",
-                "text": "Excited to see this ship. Following the project closely.",
-                "sentiment": "positive",
-                "replied": False,
-            },
-            {
-                "network": "mastodon",
-                "post_title": "Privacy update",
-                "author": "@fediverse_user",
-                "text": "Thanks for the transparency, this matters.",
-                "sentiment": "positive",
-                "replied": True,
-                "reply": "Always our priority!",
-            },
-        ]
-        for i, s in enumerate(seeds):
-            replied_at = now if s.get("replied") else None
-            st.community_comments.append(
-                {
-                    "id": f"cmt-{i + 1}",
-                    "tenant_id": tenant_id,
-                    "network": s["network"],
-                    "post_title": s["post_title"],
-                    "author": s["author"],
-                    "text": s["text"],
-                    "sentiment": s["sentiment"],
-                    "replied": s.get("replied", False),
-                    "reply": s.get("reply"),
-                    "replied_at": replied_at,
-                    "likes": int(i * 3 + 2),
-                    "created_at": (datetime.now(UTC) - timedelta(hours=i * 3)).isoformat(),
-                    "status": "replied" if s.get("replied") else "pending",
-                }
-            )
+    # Demo data is never created for a workspace; records exist only once a user or a connected provider creates them.
+    return

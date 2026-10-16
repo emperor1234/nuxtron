@@ -82,6 +82,8 @@ def _register_referral_read_routes(router: APIRouter, ctx: ReferralsContext) -> 
                     'last_referral_at': str(item.get('last_referral_at') or ''),
                 }
                 for item in ctx.referrals_memory
+                # Other tenants' identities are never exposed; a caller sees only its own row.
+                if str(item.get('tenant_id') or '') == auth.tenant_id
             ]
             leaderboard: list[dict[str, Any]] = sorted(
                 _raw,

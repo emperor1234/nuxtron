@@ -102,6 +102,19 @@ def _get_platform_requirements(channel: str) -> list[str]:
 # ── Content Generation ────────────────────────────────────────
 
 
+def _require_generated_text(ai_text: str) -> None:
+    """Refuse to answer with templated copy when no AI provider produced text."""
+    if not ai_text.strip():
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "AI_MODEL_UNAVAILABLE",
+                "message": "No AI provider is available to write this, so nothing was generated. Add a provider API key or try again.",
+            },
+        )
+
+
+
 def generate_content(payload: ContentRequest, auth: AuthDep) -> JsonObject:
     platform_requirements = _get_platform_requirements(payload.channel)
 
@@ -131,6 +144,7 @@ def generate_content(payload: ContentRequest, auth: AuthDep) -> JsonObject:
 
     created_at = datetime.now(UTC).isoformat()
     selected_provider, selected_model, ai_result, ai_text = _run_optional_ai_generation(ai_payload, auth, created_at)
+    _require_generated_text(ai_text)
 
     keywords = [payload.topic.lower().replace(" ", "-"), payload.audience.lower().replace(" ", "-"), "nuxtron"]
     if "reel" in active_formats:
@@ -291,6 +305,7 @@ def generate_ads(payload: AdsRequest, auth: AuthDep) -> JsonObject:
 
     created_at = datetime.now(UTC).isoformat()
     selected_provider, selected_model, ai_result, ai_text = _run_optional_ai_generation(ai_payload, auth, created_at)
+    _require_generated_text(ai_text)
 
     media_bundle = _generate_media_asset_bundle(
         tenant_id=auth.tenant_id,

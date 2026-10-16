@@ -2065,10 +2065,10 @@ def run_selftest() -> None:  # NOSONAR
         assert an_metrics.status_code == 200
 
         an_pred = client.get('/analytics/predictions', headers=_headers('tenant-an'))
-        assert an_pred.status_code == 200
+        assert an_pred.status_code == 501
 
         an_bench = client.get('/analytics/benchmarks', headers=_headers('tenant-an'))
-        assert an_bench.status_code == 200
+        assert an_bench.status_code == 501
 
         an_report = client.post(
             '/analytics/reports',

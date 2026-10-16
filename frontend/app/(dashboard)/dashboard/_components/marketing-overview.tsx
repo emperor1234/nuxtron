@@ -221,7 +221,7 @@ export default function MarketingOverview({
         throw new Error("invalid");
       setDomainError("");
       router.push(
-        `/seo/domain-overview?domain=${encodeURIComponent(url.hostname)}`,
+        `/seo/on-page?url=${encodeURIComponent(url.hostname)}`,
       );
     } catch {
       setDomainError("Enter a valid domain, such as example.com.");
@@ -400,7 +400,7 @@ export default function MarketingOverview({
               <li key={item}>
                 <Globe2 size={16} aria-hidden="true" />
                 <Link
-                  href={`/seo/domain-overview?domain=${encodeURIComponent(item)}`}
+                  href={`/seo/on-page?url=${encodeURIComponent(item)}`}
                 >
                   {item}
                   <span>

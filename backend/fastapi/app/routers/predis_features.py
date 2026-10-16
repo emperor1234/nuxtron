@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import TypedDict
 
 from fastapi import APIRouter, Depends, HTTPException
+from ._provider_required import provider_required
 
 from ..deps import require_auth
 
@@ -105,7 +106,13 @@ HIGH_CTR_HOOKS_EXTENDED = {
 predis_router = APIRouter(
     prefix="/ai/social-studio",
     tags=["predis-features"],
-    dependencies=[Depends(require_auth)],
+    dependencies=[
+        Depends(require_auth),
+        provider_required(
+            "Social Studio media generation (video, reels, avatars, photoshoots, localization) is not connected to a rendering "
+            "provider. Jobs here used to be advanced to 'completed' with a made-up file, so the routes are disabled."
+        ),
+    ],
 )
 
 # ============ TYPE DEFINITIONS ============

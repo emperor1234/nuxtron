@@ -1478,30 +1478,23 @@ def _generate_media_asset_bundle(
     voice_bytes, voice_mime, voice_provider, voice_status = _ai_generate_voice_binary(text_seed)
     video_bytes, video_mime, video_provider, video_status = _ai_generate_video_binary(prompt)
 
-    image_asset = _persist_ai_generated_asset(
-        tenant_id=tenant_id,
-        kind="image",
-        mime_type=image_mime,
-        content=image_bytes,
-        provider_used=image_provider,
-        generation_status=image_status,
-    )
-    voice_asset = _persist_ai_generated_asset(
-        tenant_id=tenant_id,
-        kind="voice",
-        mime_type=voice_mime,
-        content=voice_bytes,
-        provider_used=voice_provider,
-        generation_status=voice_status,
-    )
-    video_asset = _persist_ai_generated_asset(
-        tenant_id=tenant_id,
-        kind="video",
-        mime_type=video_mime,
-        content=video_bytes,
-        provider_used=video_provider,
-        generation_status=video_status,
-    )
+    def _persist_if_generated(kind: str, mime: str, content: bytes, provider: str, status: str) -> JsonObject:
+        # "fallback" is a development placeholder (an SVG, a synthesized tone, a
+        # blank GIF). It is never stored or offered as if it were a generated asset.
+        if status == "fallback":
+            return {}
+        return _persist_ai_generated_asset(
+            tenant_id=tenant_id,
+            kind=kind,
+            mime_type=mime,
+            content=content,
+            provider_used=provider,
+            generation_status=status,
+        )
+
+    image_asset = _persist_if_generated("image", image_mime, image_bytes, image_provider, image_status)
+    voice_asset = _persist_if_generated("voice", voice_mime, voice_bytes, voice_provider, voice_status)
+    video_asset = _persist_if_generated("video", video_mime, video_bytes, video_provider, video_status)
 
     return {
         "image": image_asset,

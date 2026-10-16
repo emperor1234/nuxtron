@@ -136,35 +136,34 @@ function titleFromSource(source) {
   return null;
 }
 
-function loadSeoCatalog() {
-  const file = join(DASHBOARD_ROOT, 'seo', 'module-catalog.ts');
-  const source = readFileSync(file, 'utf8');
-  const byRoute = new Map();
-  const entry = /\{\s*title:\s*'((?:[^'\\]|\\.)*)',[\s\S]*?category:\s*'((?:[^'\\]|\\.)*)',\s*routePath:\s*'([^']+)'/g;
-  let match;
-  while ((match = entry.exec(source))) {
-    byRoute.set(match[3], { title: match[1].replace(/\\'/g, "'"), category: match[2] });
-  }
-  return byRoute;
-}
-
-/** Nav labels become search aliases, so old menu wording still finds the page. */
-function loadNavLabels() {
+/**
+ * Titles, groups, sections and descriptions come from the navigation model
+ * (app/(dashboard)/_shell/nav.ts) so search, hubs and the sidebar always agree.
+ */
+function loadNav() {
   const source = readFileSync(join(DASHBOARD_ROOT, '_shell', 'nav.ts'), 'utf8');
+  const menus = source.slice(source.indexOf('export const MENUS'));
   const byRoute = new Map();
-  const item = /\{\s*label:\s*'((?:[^'\\]|\\.)*)',\s*href:\s*(?:seo\('([^']+)'\)|'([^']+)')\s*\}/g;
-  let match;
-  while ((match = item.exec(source))) {
-    const route = match[2] ? `/seo/${match[2]}` : match[3];
-    const label = match[1].replace(/\\'/g, "'");
-    if (!byRoute.has(route)) byRoute.set(route, new Set());
-    byRoute.get(route).add(label);
-  }
+  const keyStarts = [...menus.matchAll(/^ {2}(seo|social|studio|apps|settings): \{/gm)];
+  keyStarts.forEach((match, index) => {
+    const section = match[1];
+    const block = menus.slice(match.index, keyStarts[index + 1]?.index ?? menus.length);
+    const groupStarts = [...block.matchAll(/label: "([^"]+)",\s*items: \[/g)];
+    groupStarts.forEach((group, groupIndex) => {
+      const body = block.slice(group.index, groupStarts[groupIndex + 1]?.index ?? block.length);
+      const item =
+        /\{\s*label: "([^"]+)",\s*href: (?:(seo|studio|social)\("([^"]+)"\)|"([^"]+)")(?:,\s*description: "([^"]*)")?\s*\}/g;
+      let hit;
+      while ((hit = item.exec(body))) {
+        const route = hit[2] === 'seo' ? `/seo/${hit[3]}` : hit[2] === 'studio' ? `/studio/${hit[3]}` : hit[2] === 'social' ? `/studio/social-studio/${hit[3]}` : hit[4];
+        if (!byRoute.has(route)) byRoute.set(route, { title: hit[1], group: group[1], section, description: hit[5] ?? '' });
+      }
+    });
+  });
   return byRoute;
 }
 
-const seoCatalog = loadSeoCatalog();
-const navLabels = loadNavLabels();
+const nav = loadNav();
 
 const pages = [];
 const aliases = [];
@@ -181,14 +180,19 @@ for (const file of walk(DASHBOARD_ROOT).sort()) {
   }
 
   const slug = route.split('/').filter(Boolean).at(-1) ?? 'dashboard';
-  const catalog = seoCatalog.get(route);
-  const title = catalog?.title ?? titleFromSource(source) ?? titleize(slug);
-  const group = catalog?.category ?? titleize(route.split('/').filter(Boolean).at(-2) ?? 'General');
+  const navEntry = nav.get(route);
+  const title = navEntry?.title ?? titleFromSource(source) ?? titleize(slug);
+  const group = navEntry?.group ?? titleize(route.split('/').filter(Boolean).at(-2) ?? 'General');
+  const keywords = new Set();
 
-  const keywords = new Set(navLabels.get(route) ?? []);
-  keywords.delete(title);
-
-  const entry = { route, title, section: sectionFor(route), group, keywords: [...keywords].sort() };
+  const entry = {
+    route,
+    title,
+    section: navEntry?.section ?? sectionFor(route),
+    group,
+    description: navEntry?.description ?? '',
+    keywords: [...keywords].sort(),
+  };
   // Vendor-parity consoles report *Nuxtron's own* integration build status —
   // "Production Gate: FAILED", implementation percentages, rollout blockers.
   // That is internal engineering telemetry, so it is kept out of customer
@@ -222,6 +226,8 @@ export type RouteIndexEntry = {
   title: string;
   section: string;
   group: string;
+  /** One-line summary shown in search results and section hubs. */
+  description: string;
   /** Alternate wording (mostly legacy nav labels) that should still match. */
   keywords: readonly string[];
   /** Internal engineering telemetry — excluded from customer search and nav. */

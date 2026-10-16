@@ -151,9 +151,6 @@ def execute_keyword_top_insights(runtime: ContextRuntime, auth: AuthDep) -> dict
     tracked = [
         row for row in helper_load_records(runtime, auth.tenant_id) if row.get("feature_key") == "keyword_tracking"
     ]
-    voice_records = [
-        row for row in helper_load_records(runtime, auth.tenant_id) if row.get("feature_key") == "brand_voice_dna"
-    ]
     keyword_map: dict[str, dict[str, Any]] = {}
     for row in tracked:
         p = row.get("payload", {}) if isinstance(row.get("payload"), dict) else {}
@@ -167,19 +164,6 @@ def execute_keyword_top_insights(runtime: ContextRuntime, auth: AuthDep) -> dict
         platform = p.get("platform", "")
         if platform and platform not in keyword_map[kw]["platforms"]:
             keyword_map[kw]["platforms"].append(platform)
-    for vrow in voice_records:
-        vp = vrow.get("payload", {}) if isinstance(vrow.get("payload"), dict) else {}
-        bv = vp.get("brand_voice", {}) if isinstance(vp.get("brand_voice"), dict) else {}
-        fp = bv.get("fingerprint", {}) if isinstance(bv.get("fingerprint"), dict) else {}
-        sig_words = fp.get("signature_words", []) if isinstance(fp.get("signature_words"), list) else []
-        for idx, word in enumerate(sig_words):
-            if word not in keyword_map:
-                keyword_map[word] = {
-                    "keyword": word,
-                    "impressions": 2400 - idx * 200,
-                    "engagement": 180 - idx * 12,
-                    "platforms": ["linkedin"],
-                }
     keywords = sorted(keyword_map.values(), key=lambda x: int(x.get("impressions", 0)), reverse=True)
     for kw in keywords:
         imp = int(kw.get("impressions", 0))

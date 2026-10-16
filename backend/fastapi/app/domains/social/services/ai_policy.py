@@ -10,6 +10,7 @@ from .workspace import _sw_http_error
 from typing import Any
 from typing import cast
 import httpx
+from fastapi import HTTPException
 import json
 import os
 import re
@@ -251,20 +252,15 @@ def _sw_run_ai_assistant_text(action: str, text: str, platform: str, tone: str) 
                 output_safety["llm_guard"]["sanitized_text"],
                 {**safety, "output_safety": output_safety, "provider": "openai/gpt-4o"},
             )
+        except HTTPException:
+            raise
         except Exception:
-            fallback = _ai_assistant_fallback(action, sanitized_text, platform)
-            output_safety = _sw_ai_output_guard("ai_assistant", fallback, safety)
-            if output_safety["blocked"]:
-                raise _sw_http_error(status_code=502, detail="AI assistant fallback output blocked by LLM Guard.")
-            return (
-                output_safety["llm_guard"]["sanitized_text"],
-                {**safety, "output_safety": output_safety, "provider": "fallback"},
+            # Never answer with canned text posing as an AI rewrite.
+            raise _sw_http_error(
+                status_code=503,
+                detail="The AI writing assistant is not available right now (no provider key configured or the provider did not answer).",
             )
-    fallback = _ai_assistant_fallback(action, sanitized_text, platform)
-    output_safety = _sw_ai_output_guard("ai_assistant", fallback, safety)
-    if output_safety["blocked"]:
-        raise _sw_http_error(status_code=502, detail="AI assistant fallback output blocked by LLM Guard.")
-    return (
-        output_safety["llm_guard"]["sanitized_text"],
-        {**safety, "output_safety": output_safety, "provider": "fallback"},
+    raise _sw_http_error(
+        status_code=503,
+        detail="The AI writing assistant is not available right now (no provider key configured).",
     )

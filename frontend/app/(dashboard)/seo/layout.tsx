@@ -1,11 +1,5 @@
-import type { ReactNode } from 'react';
-import SeoRouteIdentityBanner from './components/seo-route-identity-banner';
+import type { ReactNode } from "react";
 
 export default function SeoLayout({ children }: Readonly<{ children: ReactNode }>) {
-  return (
-    <div className="seo-product-surface">
-      <SeoRouteIdentityBanner />
-      {children}
-    </div>
-  );
+  return <div className="seo-product-surface">{children}</div>;
 }

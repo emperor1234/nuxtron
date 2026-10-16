@@ -92,7 +92,7 @@ describe("workspace overview", () => {
       screen.getByRole("button", { name: "Analyze" }),
     );
     expect(push).toHaveBeenCalledWith(
-      "/seo/domain-overview?domain=example.com",
+      "/seo/on-page?url=example.com",
     );
   });
 });

@@ -11,7 +11,6 @@ import { useEffect } from 'react';
  */
 export default function DashboardError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    // eslint-disable-next-line no-console
     console.error('[dashboard-error]', error.digest ?? error.message);
   }, [error]);
 
@@ -29,7 +28,7 @@ export default function DashboardError({ error, reset }: { error: Error & { dige
         minHeight: '40vh',
       }}
     >
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>This page couldn't load</h2>
+      <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>This page couldn&apos;t load</h2>
       <p style={{ color: 'var(--nx-muted)', maxWidth: '32rem' }}>
         Something went wrong loading this section. The rest of the dashboard is unaffected — try again, or pick
         another page from the sidebar.

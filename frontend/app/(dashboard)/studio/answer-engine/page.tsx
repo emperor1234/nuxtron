@@ -1,20 +1,14 @@
-/**
- * Answer Engine Hub Dashboard
- *
- * Real-time brand mention tracking across 5 AI search engines
- * - Visibility score & trending direction
- * - Mentions by engine breakdown
- * - Sentiment analysis
- * - Top queries mentioning brand
- * - Competitor mentions
- */
+"use client";
 
-'use client';
+import { useState, type FormEvent } from "react";
+import { RefreshCw, Search } from "lucide-react";
+import { apiGet, apiSend } from "@/app/lib/platform-api";
+import { Badge, Button, Callout, DataTable, EmptyState, ErrorState, Field, FormActions, Kpi, KpiGrid, Meter, Page, PageHeader, Section, type Column } from "../../_ui/kit";
+import { formatDateTime, formatNumber, truncate } from "../../_ui/format";
+import { useTenant } from "../../_ui/use-resource";
 
-import { useState, useEffect } from 'react';
-import { apiGet, apiSend, DEFAULT_TENANT_ID } from '@/app/lib/platform-api';
-
-interface AnswerEngineInsight {
+type Insight = {
+  brand_name: string;
   total_mentions_7d: number;
   total_mentions_30d: number;
   trending_direction: string;
@@ -23,301 +17,103 @@ interface AnswerEngineInsight {
   sentiment_breakdown: Record<string, number>;
   top_queries: string[];
   updated_at: string;
-}
+};
+type Mention = { id: string; search_engine: string; query: string; answer_text: string; source_url?: string | null; sentiment: string; confidence: number; timestamp: string };
 
-interface BrandMention {
-  id: string;
-  search_engine: string;
-  query: string;
-  answer_text: string;
-  sentiment: string;
-  confidence: number;
-  timestamp: string;
-}
+const SENTIMENT_TONE = { positive: "success", negative: "danger", neutral: "neutral" } as const;
 
-export default function AnswerEngineHub() {
-  const [selectedBrand, setSelectedBrand] = useState<string>('');
-  const [insight, setInsight] = useState<AnswerEngineInsight | null>(null);
-  const [mentions, setMentions] = useState<BrandMention[]>([]);
-  const [loading, setLoading] = useState(false);
+export default function AnswerEngineHubPage() {
+  const tenant = useTenant();
+  const [brand, setBrand] = useState("");
+  const [fieldError, setFieldError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [sentimentFilter, setSentimentFilter] = useState<string>('');
-  const [engineFilter, setEngineFilter] = useState<string>('');
+  const [failure, setFailure] = useState<unknown>(null);
+  const [notice, setNotice] = useState("");
+  const [loaded, setLoaded] = useState("");
+  const [insight, setInsight] = useState<Insight | null>(null);
+  const [mentions, setMentions] = useState<Mention[]>([]);
 
-  // Fetch insight data
-  const fetchInsight = async (brandName: string) => {
+  async function load(name: string) {
+    setBusy(true);
+    setFailure(null);
     try {
-      setLoading(true);
-      const response = await apiGet<AnswerEngineInsight>(
-        `/api/v1/answer-engine/insights/${brandName}`,
-        DEFAULT_TENANT_ID
-      );
-      setInsight(response);
-
-      // Also fetch mentions
-      const mentionsResponse = await apiGet<BrandMention[]>(
-        `/api/v1/answer-engine/insights/${brandName}/mentions`,
-        DEFAULT_TENANT_ID
-      );
-      setMentions(mentionsResponse);
+      const encoded = encodeURIComponent(name);
+      const [summary, rows] = await Promise.all([
+        apiGet<Insight>(`/api/v1/answer-engine/insights/${encoded}`, tenant),
+        apiGet<Mention[]>(`/api/v1/answer-engine/insights/${encoded}/mentions?limit=100`, tenant),
+      ]);
+      setInsight(summary);
+      setMentions(rows);
+      setLoaded(name);
     } catch (error) {
-      console.error('Failed to fetch insight:', error);
+      setFailure(error);
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
-  };
+  }
 
-  // Trigger sync
-  const handleSync = async () => {
-    if (!selectedBrand) return;
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const name = brand.trim();
+    if (name.length < 2) return setFieldError("Enter the brand name to look up.");
+    setFieldError("");
+    setNotice("");
+    void load(name);
+  }
 
+  async function sync() {
+    setSyncing(true);
+    setFailure(null);
     try {
-      setSyncing(true);
-      await apiSend(`/api/v1/answer-engine/sync/${selectedBrand}`, 'POST', undefined, DEFAULT_TENANT_ID);
-
-      // Poll for results
-      setTimeout(() => fetchInsight(selectedBrand), 2000);
+      await apiSend(`/api/v1/answer-engine/sync/${encodeURIComponent(loaded)}`, "POST", undefined, tenant);
+      setNotice("Sync started. AI engines are being asked about your brand. Refresh in a minute.");
     } catch (error) {
-      console.error('Failed to trigger sync:', error);
+      setFailure(error);
     } finally {
       setSyncing(false);
     }
-  };
+  }
 
-  // Filter mentions
-  const filteredMentions = mentions.filter((m) => {
-    if (sentimentFilter && m.sentiment !== sentimentFilter) return false;
-    if (engineFilter && m.search_engine !== engineFilter) return false;
-    return true;
-  });
-
-  const getTrendingIcon = (direction: string) => {
-    if (direction === 'up') return '📈';
-    if (direction === 'down') return '📉';
-    return '→';
-  };
-
-  const getSentimentColor = (sentiment: string) => {
-    if (sentiment === 'positive') return 'text-green-600';
-    if (sentiment === 'negative') return 'text-red-600';
-    return 'text-gray-600';
-  };
+  const columns: Column<Mention>[] = [
+    { key: "engine", header: "Engine", strong: true, render: (row) => row.search_engine, sortValue: (row) => row.search_engine },
+    { key: "query", header: "Question asked", render: (row) => truncate(row.query, 80) },
+    { key: "answer", header: "Answer", render: (row) => truncate(row.answer_text, 140) },
+    { key: "sentiment", header: "Sentiment", render: (row) => <Badge tone={SENTIMENT_TONE[row.sentiment as keyof typeof SENTIMENT_TONE] ?? "neutral"}>{row.sentiment}</Badge>, sortValue: (row) => row.sentiment },
+    { key: "when", header: "Checked", render: (row) => formatDateTime(row.timestamp), sortValue: (row) => row.timestamp },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Answer Engine Hub</h1>
-            <p className="text-sm text-gray-600 mt-1">Track brand mentions across AI search engines</p>
-          </div>
-          <button
-            onClick={handleSync}
-            disabled={!selectedBrand || syncing}
-            className="px-4 py-2 bg-[var(--brand)] text-white rounded-lg hover:bg-[var(--brand)] disabled:bg-gray-400"
-          >
-            {syncing ? 'Syncing...' : 'Sync Now'}
-          </button>
-        </div>
-      </div>
-
-      <div className="p-6">
-        {/* Brand Selector */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Select Brand</label>
-          <input
-            type="text"
-            value={selectedBrand}
-            onChange={(e) => {
-              setSelectedBrand(e.target.value);
-              if (e.target.value) fetchInsight(e.target.value);
-            }}
-            placeholder="Enter a brand name"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
-          />
-        </div>
-
-        {insight && (
-          <>
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {/* Visibility Score */}
-              <div className="bg-white rounded-lg shadow p-4">
-                <div className="text-sm text-gray-600">Visibility Score</div>
-                <div className="text-3xl font-bold text-[var(--brand)] mt-2">{insight.visibility_score.toFixed(1)}%</div>
-                <div className="text-xs text-gray-500 mt-2">of AI responses</div>
-              </div>
-
-              {/* 7-Day Mentions */}
-              <div className="bg-white rounded-lg shadow p-4">
-                <div className="text-sm text-gray-600">Mentions (7d)</div>
-                <div className="text-3xl font-bold text-green-600 mt-2">{insight.total_mentions_7d}</div>
-                <div className="text-xs text-gray-500 mt-2">in past week</div>
-              </div>
-
-              {/* 30-Day Mentions */}
-              <div className="bg-white rounded-lg shadow p-4">
-                <div className="text-sm text-gray-600">Mentions (30d)</div>
-                <div className="text-3xl font-bold text-[var(--brand)] mt-2">{insight.total_mentions_30d}</div>
-                <div className="text-xs text-gray-500 mt-2">in past month</div>
-              </div>
-
-              {/* Trending */}
-              <div className="bg-white rounded-lg shadow p-4">
-                <div className="text-sm text-gray-600">Trend</div>
-                <div className="text-3xl font-bold mt-2">{getTrendingIcon(insight.trending_direction)}</div>
-                <div className="text-xs text-gray-500 mt-2 capitalize">{insight.trending_direction}</div>
-              </div>
-            </div>
-
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {/* Mentions by Engine */}
-              <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Mentions by Engine</h3>
-                <div className="space-y-3">
-                  {Object.entries(insight.mentions_by_engine).map(([engine, count]) => (
-                    <div key={engine}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">{engine}</span>
-                        <span className="font-medium text-gray-900">{count}</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-[var(--brand)] h-2 rounded-full"
-                          style={{
-                            width: `${(count / Math.max(...Object.values(insight.mentions_by_engine))) * 100}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
+    <Page width="wide">
+      <PageHeader title="Answer Engine Hub" subtitle="See how ChatGPT, Gemini, Perplexity and Claude talk about your brand. Mentions come from questions Nuxtron asks each engine." />
+      <form onSubmit={submit} noValidate aria-label="Brand lookup" style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 280px", maxWidth: 420 }}><Field label="Brand name" value={brand} error={fieldError} maxLength={80} onChange={(event) => setBrand(event.target.value)} /></div>
+        <div style={{ paddingTop: 24 }}><Button type="submit" variant="primary" loading={busy} icon={<Search size={15} aria-hidden="true" />}>Look up</Button></div>
+      </form>
+      {failure ? <ErrorState error={failure} title="The request failed" /> : null}
+      {notice ? <Callout tone="success">{notice}</Callout> : null}
+      {insight ? (
+        <>
+          <FormActions><Button loading={syncing} icon={<RefreshCw size={15} aria-hidden="true" />} onClick={() => void sync()}>Check AI engines now</Button><Button onClick={() => void load(loaded)}>Refresh</Button></FormActions>
+          {insight.total_mentions_30d === 0 ? (
+            <EmptyState title={`No saved mentions for ${insight.brand_name}`} description="Run a check to ask the connected AI engines about this brand. An engine only answers when its API key is configured on the server." />
+          ) : (
+            <>
+              <KpiGrid>
+                <Kpi label="Visibility score" value={`${Math.round(insight.visibility_score)}`} hint="0 to 100" />
+                <Kpi label="Mentions, 7 days" value={formatNumber(insight.total_mentions_7d)} />
+                <Kpi label="Mentions, 30 days" value={formatNumber(insight.total_mentions_30d)} hint={`Trend: ${insight.trending_direction}`} />
+              </KpiGrid>
+              <Section title="By engine">
+                <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
+                  {Object.entries(insight.mentions_by_engine).map(([engine, count]) => <Meter key={engine} label={engine} value={count} max={Math.max(...Object.values(insight.mentions_by_engine), 1)} tone="brand" />)}
                 </div>
-              </div>
-
-              {/* Sentiment Breakdown */}
-              <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Sentiment</h3>
-                <div className="space-y-3">
-                  {Object.entries(insight.sentiment_breakdown).map(([sentiment, count]) => (
-                    <div key={sentiment}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className={`capitalize ${getSentimentColor(sentiment)}`}>{sentiment}</span>
-                        <span className="font-medium text-gray-900">{count}</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            sentiment === 'positive'
-                              ? 'bg-green-600'
-                              : sentiment === 'negative'
-                                ? 'bg-red-600'
-                                : 'bg-gray-400'
-                          }`}
-                          style={{
-                            width: `${(count / Math.max(...Object.values(insight.sentiment_breakdown))) * 100}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Top Queries */}
-            <div className="bg-white rounded-lg shadow p-4 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Queries</h3>
-              <div className="space-y-2">
-                {insight.top_queries.slice(0, 5).map((query, idx) => (
-                  <div key={idx} className="flex items-start p-3 bg-gray-50 rounded">
-                    <span className="text-sm font-medium text-gray-500 mr-3">{idx + 1}.</span>
-                    <span className="text-sm text-gray-700">{query}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Mentions List */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-4 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Mentions</h3>
-                <div className="mt-3 flex gap-3">
-                  <select
-                    value={sentimentFilter}
-                    onChange={(e) => setSentimentFilter(e.target.value)}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded"
-                  >
-                    <option value="">All Sentiments</option>
-                    <option value="positive">Positive</option>
-                    <option value="neutral">Neutral</option>
-                    <option value="negative">Negative</option>
-                  </select>
-                  <select
-                    value={engineFilter}
-                    onChange={(e) => setEngineFilter(e.target.value)}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded"
-                  >
-                    <option value="">All Engines</option>
-                    {Object.keys(insight.mentions_by_engine).map((engine) => (
-                      <option key={engine} value={engine}>
-                        {engine}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="divide-y">
-                {filteredMentions.map((mention) => (
-                  <div key={mention.id} className="p-4 hover:bg-gray-50">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                          {mention.search_engine}
-                        </span>
-                        <span
-                          className={`text-xs font-medium px-2 py-1 rounded capitalize ${
-                            mention.sentiment === 'positive'
-                              ? 'bg-green-100 text-green-800'
-                              : mention.sentiment === 'negative'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {mention.sentiment}
-                        </span>
-                      </div>
-                      <span className="text-xs text-gray-500">{new Date(mention.timestamp).toLocaleDateString()}</span>
-                    </div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Query: {mention.query}</p>
-                    <p className="text-sm text-gray-600 line-clamp-2">{mention.answer_text}</p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-xs text-gray-500">
-                        Confidence: {(mention.confidence * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {!selectedBrand && (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <div className="text-[var(--muted)] text-4xl mb-2">🔍</div>
-            <p className="text-gray-600">Enter a brand name to start tracking Answer Engine visibility</p>
-          </div>
-        )}
-
-        {loading && (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <div className="animate-spin text-4xl mb-2">⏳</div>
-            <p className="text-gray-600">Loading insight data...</p>
-          </div>
-        )}
-      </div>
-    </div>
+              </Section>
+              <Section title="Mentions"><DataTable columns={columns} rows={mentions} getKey={(row) => row.id} caption="Brand mentions" pageSize={15} /></Section>
+            </>
+          )}
+        </>
+      ) : !busy && !failure ? <EmptyState title="Look up a brand" description="Enter a brand name to see saved AI answer mentions." /> : null}
+    </Page>
   );
 }

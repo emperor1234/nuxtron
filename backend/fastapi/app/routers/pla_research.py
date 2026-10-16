@@ -36,6 +36,7 @@ from typing import Annotated, Any
 
 import httpx
 from fastapi import APIRouter, Depends, Query
+from ._provider_required import provider_required
 from pydantic import BaseModel, Field
 
 from ..deps import AuthContext, require_auth
@@ -53,7 +54,7 @@ def _require_live_pla_provider(auth: AuthContext | None) -> None:
             from fastapi import HTTPException
             raise HTTPException(status_code=503, detail='PLA research provider is not configured.')
 
-router = APIRouter(prefix="/pla-research", tags=["PLA Research"])
+router = APIRouter(prefix="/pla-research", tags=["PLA Research"], dependencies=[provider_required("A verified shopping-ads data provider is not connected, so PLA Research is disabled rather than estimated.")])
 _lock = threading.Lock()
 
 _tracked_domains: dict[str, list[dict[str, Any]]] = {}

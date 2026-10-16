@@ -3,19 +3,15 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ComponentRef, type CSSProperties } from "react";
 import Image from "next/image";
 import {
-  BarChart3,
   Bell,
   ChevronDown,
   Clapperboard,
-  FileText,
   Home,
   LayoutGrid,
-  MapPin,
   Menu,
   Pause,
   Play,
   Plus,
-  ScanEye,
   Search,
   Settings,
   Share2,
@@ -38,7 +34,7 @@ function subscribeReduced(onChange: () => void) {
 const readReduced = () => globalThis.matchMedia?.(REDUCED).matches ?? false;
 
 type RailEntry = {
-  key: RailSection | "traffic" | "local" | "operations" | "settings";
+  key: RailSection | "settings";
   label: string;
   Icon: typeof Search;
   /** What the section shows when opened — real group labels and tools. */
@@ -53,51 +49,39 @@ const RAILS: Record<"seo" | "marketing", readonly RailEntry[]> = {
       label: "SEO",
       Icon: Search,
       groups: [
-        { label: "Market & research", items: ["Market Explorer", "Industry Benchmarks", "Competitive Benchmarking", "Trending Now"] },
-        { label: "Research & visibility", items: ["Domain Overview", "Keyword Data Review", "Rank Position Review", "Competitor Research"] },
+        { label: "Content & on-page", items: ["On-Page Optimizer", "Content Brief", "AI Article Writer"] },
+        { label: "AI search visibility", items: ["Answer Engine (AEO)", "Prompt Research"] },
       ],
     },
     {
-      key: "ai",
-      label: "AI",
-      Icon: ScanEye,
-      groups: [
-        { label: "Research & optimize", items: ["AI Visibility Overview"] },
-        { label: "AI Search Impact", items: ["Competitor Research", "Prompt Research", "Brand Performance"] },
-      ],
+      key: "apps",
+      label: "Business",
+      Icon: LayoutGrid,
+      groups: [{ label: "Customer operations", items: ["CRM", "Workflows"] }],
     },
-    { key: "traffic", label: "Traffic", Icon: BarChart3 },
-    { key: "local", label: "Local", Icon: MapPin },
-    { key: "operations", label: "Operations", Icon: LayoutGrid },
-    { key: "settings", label: "Settings", Icon: Settings },
   ],
   marketing: [
-    {
-      key: "content",
-      label: "Content",
-      Icon: FileText,
-      groups: [
-        { label: "Plan", items: ["Content Brief"] },
-        { label: "Create", items: ["SEO Writing Assistant", "Content Templates"] },
-      ],
-    },
     {
       key: "social",
       label: "Social",
       Icon: Share2,
       groups: [
         { label: "Publish", items: ["Post Scheduler", "Content Calendar"] },
-        { label: "Engage", items: ["Smart Inbox", "Comment Replies"] },
+        { label: "Engage", items: ["Social Inbox", "Comment Replies"] },
       ],
     },
     {
       key: "studio",
       label: "Studio",
       Icon: Clapperboard,
-      groups: [{ label: "Create", items: ["Editor", "AI Image Studio", "Short Video Factory"] }],
+      groups: [{ label: "Create", items: ["Editor", "Image Studio", "Short Video Factory"] }],
     },
-    { key: "operations", label: "Operations", Icon: LayoutGrid },
-    { key: "settings", label: "Settings", Icon: Settings },
+    {
+      key: "apps",
+      label: "Business",
+      Icon: LayoutGrid,
+      groups: [{ label: "Customer operations", items: ["CRM", "Workflows"] }],
+    },
   ],
 };
 

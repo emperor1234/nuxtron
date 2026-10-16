@@ -49,12 +49,14 @@ from .sync_job_store import (
     helper_ensure_db_tables,
     helper_log,
     helper_payload_hash,
+    helper_require_ai_for_result,
 )
 
 
 def helper_save_analysis(
     runtime: ContextRuntime, tenant_id: str, module: str, payload: dict[str, Any], result: dict[str, Any]
 ) -> str:
+    helper_require_ai_for_result(module, result)
     helper_enrich_response(runtime, module, result)
     analysis_id = str(uuid.uuid4())
     created_at = datetime.now(UTC).isoformat()

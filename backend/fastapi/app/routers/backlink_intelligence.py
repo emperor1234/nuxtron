@@ -38,13 +38,14 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from ._provider_required import provider_required
 from pydantic import BaseModel, Field
 
 from ..deps import AuthContext, require_auth
 
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
 
-router = APIRouter(prefix="/backlink-intel", tags=["Backlink Intelligence"])
+router = APIRouter(prefix="/backlink-intel", tags=["Backlink Intelligence"], dependencies=[provider_required("A verified backlink index is not connected, so Backlink Intelligence is disabled rather than generating links and prospects.")])
 
 # ---------------------------------------------------------------------------
 # In-memory stores keyed by tenant_id

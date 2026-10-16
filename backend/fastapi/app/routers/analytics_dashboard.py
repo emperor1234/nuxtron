@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..deps import AuthContext, require_auth
+from ._provider_required import provider_required
 
 # Type alias for dependency injection
 AuthDep = Annotated[AuthContext, Depends(require_auth)]
@@ -119,7 +120,7 @@ def create_analytics_router(  # NOSONAR
     trends_memory: list[dict[str, Any]],
     rollups_memory: list[dict[str, Any]],
     # Cross-module counters injected so dashboard can aggregate
-    get_queue_counts: Callable[[], dict[str, int]],
+    get_queue_counts: Callable[[str], dict[str, int]],
 ) -> APIRouter:
     router = APIRouter()
     lock = threading.Lock()
@@ -127,7 +128,7 @@ def create_analytics_router(  # NOSONAR
     @router.get('/analytics/dashboard')
     def dashboard(auth: AuthDep) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:dashboard', 60, 60)
-        queue_counts = get_queue_counts()
+        queue_counts = get_queue_counts(auth.tenant_id)
         return {
             'status': 'ok',
             'tenant_id': auth.tenant_id,
@@ -150,7 +151,7 @@ def create_analytics_router(  # NOSONAR
     @router.get('/analytics/metrics')
     def metrics(auth: AuthDep) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:metrics', 120, 60)
-        queue_counts = get_queue_counts()
+        queue_counts = get_queue_counts(auth.tenant_id)
         return {
             'status': 'ok',
             'tenant_id': auth.tenant_id,
@@ -164,7 +165,7 @@ def create_analytics_router(  # NOSONAR
             },
         }
 
-    @router.get('/analytics/predictions')
+    @router.get('/analytics/predictions', dependencies=[provider_required('Forecasts need a connected revenue and engagement data source. None is connected.')])
     def predictions(auth: AuthDep) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:predictions', 60, 60)
         return {
@@ -180,7 +181,7 @@ def create_analytics_router(  # NOSONAR
             },
         }
 
-    @router.get('/analytics/benchmarks')
+    @router.get('/analytics/benchmarks', dependencies=[provider_required('Industry benchmarks need a licensed benchmark dataset. None is connected.')])
     def benchmarks(auth: AuthDep) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:benchmarks', 60, 60)
         return {
@@ -203,7 +204,7 @@ def create_analytics_router(  # NOSONAR
         auth: AuthDep,
     ) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:reports:create', 30, 60)
-        queue_counts = get_queue_counts()
+        queue_counts = get_queue_counts(auth.tenant_id)
         with lock:
             report: dict[str, Any] = {
                 'id': len(custom_reports_memory) + 1,
@@ -276,7 +277,7 @@ def create_analytics_router(  # NOSONAR
     @router.post('/analytics/schedules/{schedule_id}/run', responses={404: {'description': 'Schedule not found'}})
     def run_schedule(schedule_id: int, auth: AuthDep) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:schedules:run', 60, 60)
-        queue_counts = get_queue_counts()
+        queue_counts = get_queue_counts(auth.tenant_id)
         with lock:
             schedule = next(
                 (
@@ -322,7 +323,7 @@ def create_analytics_router(  # NOSONAR
         export_format: Annotated[str, Query(pattern=r'^(csv|json)$')] = 'csv',
     ) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:export', 5, 60)
-        queue_counts = get_queue_counts()
+        queue_counts = get_queue_counts(auth.tenant_id)
         fmt = export_format.strip().lower()
         if fmt not in EXPORT_FORMATS:
             raise HTTPException(status_code=422, detail='Unsupported export format')
@@ -383,7 +384,7 @@ def create_analytics_router(  # NOSONAR
     @router.get('/analytics/insights/kpi')
     def insights_kpi(auth: AuthDep) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:insights:kpi', 120, 60)
-        counts = get_queue_counts()
+        counts = get_queue_counts(auth.tenant_id)
         return {
             'status': 'ok',
             'tenant_id': auth.tenant_id,
@@ -422,7 +423,7 @@ def create_analytics_router(  # NOSONAR
     ) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:insights:trend', 60, 60)
         days = _insight_periods.get(payload.period, 30)
-        counts = get_queue_counts()
+        counts = get_queue_counts(auth.tenant_id)
         baseline = counts.get(payload.metric, 0)
         # Generate synthetic trend datapoints from the baseline count
         datapoints: list[dict[str, Any]] = []
@@ -451,7 +452,7 @@ def create_analytics_router(  # NOSONAR
         payload: InsightsRollupRequest, auth: AuthDep
     ) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:insights:rollup', 60, 60)
-        counts = get_queue_counts()
+        counts = get_queue_counts(auth.tenant_id)
         snapshot: dict[str, int] = {
             module: counts.get(module, 0) for module in payload.modules
         }
@@ -473,7 +474,7 @@ def create_analytics_router(  # NOSONAR
     @router.get('/analytics/insights/intelligence')
     def insights_intelligence(auth: AuthDep) -> dict[str, Any]:
         enforce_rate_limit(f'{auth.tenant_id}:analytics:insights:intelligence', 60, 60)
-        counts = get_queue_counts()
+        counts = get_queue_counts(auth.tenant_id)
         with lock:
             recent_trends = [t.copy() for t in trends_memory if t.get('tenant_id') == auth.tenant_id][-5:]
             recent_rollups = [r.copy() for r in rollups_memory if r.get('tenant_id') == auth.tenant_id][-3:]

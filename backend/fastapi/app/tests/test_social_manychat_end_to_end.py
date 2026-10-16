@@ -27,7 +27,7 @@ def test_manychat_full_automation_slice() -> None:
     assert overview.status_code == 200
     overview_payload = overview.json()
     assert overview_payload['status'] == 'ok'
-    assert overview_payload['counts']['tags'] >= 1
+    assert overview_payload['counts']['tags'] == 0
     assert isinstance(overview_payload['vendors'], list)
     assert len(overview_payload['vendors']) >= 1
 

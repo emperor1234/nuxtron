@@ -5,6 +5,7 @@ from ..constants import SEO_ANALYSIS_CACHE_TTL_SEC
 from ..constants import logger
 from ..runtime import ContextRuntime
 from ..services.get_shared_job_store import _seo_analysis_cache_key
+from ..services.get_shared_job_store import _strict_no_mock_mode
 from ..services.get_shared_job_store import _seo_analysis_dist_cache_enabled
 from ..services.get_shared_job_store import _upstash_command
 from datetime import UTC
@@ -97,81 +98,37 @@ def helper_log(runtime: ContextRuntime, tenant_id: str, action: str, details: di
 
 
 def helper_enrich_response(runtime: ContextRuntime, module: str, result: dict[str, Any]) -> None:
+    """Deliberately a no-op.
+
+    This used to stamp every response with a hard-coded 0.85 confidence, a
+    "powered_by: deepseek-r1 / audit_tier: production" claim, canned next steps,
+    and a fixed "medium" competitor threat level — none of which was measured,
+    and all of which was attached even when no model ran. A response now carries
+    only what the analysis itself produced.
     """
-    Enrich every module response in-place with autonomous execution metadata,
-    confidence scoring, AI insights, and structured next-step playbooks.
-    Non-destructive: only adds keys that are missing or empty.
-    """
-    if result.get("fallback"):
-        result.setdefault("_enriched", False)
+    del runtime, module, result
+
+
+# Modules whose rule-based output is a deterministic computation over the
+# caller's own input (text metrics, parsed log lines, generated JSON-LD).
+# Every other module without a connected AI model would only emit templated
+# guesses about search engines, competitors and third parties.
+_RULE_BASED_MODULES = frozenset({"on_page", "schema", "log_file", "technical_audit"})
+_AI_UNAVAILABLE_MESSAGE = (
+    "This analysis needs a connected AI model and none is available, so no result was produced. "
+    "Estimates are never substituted for a measurement."
+)
+
+
+def helper_require_ai_for_result(module: str, result: dict[str, Any]) -> None:
+    """Refuse templated heuristic output in strict (production) mode."""
+    if module in _RULE_BASED_MODULES or not _strict_no_mock_mode():
         return
-    if "confidence_score" not in result:
-        score_candidates = [
-            v for k, v in result.items() if k.endswith("_score") and isinstance(v, (int, float)) and (0 <= v <= 100)
-        ]
-        if score_candidates:
-            avg = sum(score_candidates) / len(score_candidates)
-            result["confidence_score"] = round(min(1.0, avg / 100.0), 3)
-        else:
-            result["confidence_score"] = 0.85
-    if "module_intelligence" not in result:
-        result["module_intelligence"] = {
-            "module_key": module,
-            "engine_version": "v2.0-phase2",
-            "execution_ts": datetime.now(UTC).isoformat(),
-            "powered_by": ["deepseek-r1:8b", "nuxtron-seo-engine", "triple-audit-v2"],
-            "audit_tier": "production",
-        }
-    existing_steps = result.get("autonomous_next_steps") or result.get("next_actions") or []
-    if not result.get("autonomous_next_steps"):
-        module_steps = runtime._MODULE_NEXT_STEPS.get(module, runtime._DEFAULT_NEXT_STEPS)
-        if existing_steps and isinstance(existing_steps[0], str):
-            structured = [
-                {"action": s, "priority": "high", "effort": "medium", "impact": "high"} for s in existing_steps[:3]
-            ]
-            result["autonomous_next_steps"] = structured + module_steps[len(structured) :]
-        else:
-            result["autonomous_next_steps"] = module_steps
-    if "ai_insights" not in result:
-        quick_wins = result.get("quick_wins") or []
-        recommendations = result.get("recommendations") or []
-        alerts = []
-        if isinstance(result.get("alerts"), dict):
-            alert_rules = result["alerts"].get("rules") or []
-            alerts = [r.get("metric", "") for r in alert_rules if r.get("state") != "ok"]
-        elif isinstance(result.get("alerts"), list):
-            alerts = [a.get("type", str(a)) for a in result.get("alerts", [])]
-        score_info = {k: v for k, v in result.items() if k.endswith("_score") and isinstance(v, (int, float))}
-        top_score_key = max(score_info, key=lambda k: score_info[k]) if score_info else None
-        summary_parts = []
-        if top_score_key:
-            summary_parts.append(f"Primary score ({top_score_key.replace('_', ' ')}): {score_info[top_score_key]}")
-        if quick_wins:
-            summary_parts.append(f"Top quick-win: {quick_wins[0]}")
-        if alerts:
-            summary_parts.append(f"Active alerts: {', '.join(alerts[:2])}")
-        result["ai_insights"] = {
-            "executive_summary": ". ".join(summary_parts)
-            if summary_parts
-            else f"Module {module} analysis complete with production-grade insights.",
-            "key_risks": alerts[:3] if alerts else ["Monitor for algorithm updates", "Track competitor movements"],
-            "quick_wins": quick_wins[:5]
-            if quick_wins
-            else [r.get("action", str(r)) if isinstance(r, dict) else str(r) for r in recommendations[:3]],
-            "growth_lever": "content_authority"
-            if module in ("geo_seo", "aeo", "llmo", "eeat", "sageo")
-            else "technical_foundation"
-            if module in ("technical_seo", "performance", "crawl_budget")
-            else "visibility_expansion",
-        }
-    if "serp_intelligence" not in result:
-        result["serp_intelligence"] = {
-            "opportunity_score": result.get("confidence_score", 0.85),
-            "primary_surface": "google_search" if module not in ("llmo", "daeo", "msvo") else "ai_assistants",
-            "content_gap_count": len(result.get("content_gaps") or []),
-            "competitor_threat_level": "medium",
-        }
-    result["_enriched"] = True
+    if result.get("analysis_mode") == "heuristic" or result.get("ai_available") is False:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "AI_MODEL_UNAVAILABLE", "message": _AI_UNAVAILABLE_MESSAGE},
+        )
 
 
 def helper_payload_hash(payload: dict[str, Any]) -> str:

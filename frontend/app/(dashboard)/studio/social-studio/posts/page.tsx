@@ -1,529 +1,312 @@
-'use client';
+"use client";
 
-import { useEffect, useState, type CSSProperties } from 'react';
-import Link from 'next/link';
-import { socialApi, type SocialPost, type SocialNetwork } from '@/app/lib/social-api';
+import { useMemo, useState } from "react";
+import { Plus, Trash2, CalendarClock } from "lucide-react";
+import { apiGet, apiSend } from "@/app/lib/platform-api";
+import {
+  Button,
+  Callout,
+  ConfirmModal,
+  DataTable,
+  EmptyState,
+  Field,
+  FieldSelect,
+  FieldTextarea,
+  IconButton,
+  Modal,
+  Page,
+  PageHeader,
+  ButtonLink,
+  SearchField,
+  StatusBadge,
+  Tabs,
+  Toolbar,
+  type Column,
+} from "../../../_ui/kit";
+import { formatDateTime, fromLocalInputValue, toLocalInputValue, truncate } from "../../../_ui/format";
+import { ResourceView, useResource, useTenant } from "../../../_ui/use-resource";
+import { platformLabel, postText, SCHEDULE_PLATFORMS, type QueuePost } from "../_lib/social";
 
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
+type Filter = "all" | "scheduled" | "draft" | "pending_approval" | "published";
 
-const NETWORKS: SocialNetwork[] = ['facebook', 'instagram', 'twitter', 'linkedin', 'tiktok', 'youtube'];
+const FILTERS: Array<{ id: Filter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "scheduled", label: "Planned" },
+  { id: "draft", label: "Drafts" },
+  { id: "pending_approval", label: "Pending approval" },
+  { id: "published", label: "Published" },
+];
 
-export default function PostsPage() {
-  const [posts, setPosts] = useState<SocialPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+type Loaded = { posts: QueuePost[] };
 
-  // Form state
-  const [content, setContent] = useState('');
-  const [selectedPlatforms, setSelectedPlatforms] = useState<SocialNetwork[]>([]);
-  const [scheduledAt, setScheduledAt] = useState('');
-  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
-  const [publishing, setPublishing] = useState(false);
+function defaultPublishAt(): string {
+  const next = new Date(Date.now() + 60 * 60 * 1000);
+  next.setMinutes(0, 0, 0);
+  return toLocalInputValue(next);
+}
 
-  async function loadPosts() {
-    try {
-      const result = await socialApi.listScheduledPosts();
-      setPosts(result || []);
-    } catch (err) {
-      console.error('Failed to load posts:', err);
-      setPosts([]);
-      setError(
-        IS_STRICT_NO_MOCK_MODE
-          ? 'Posts backend unavailable in strict no-mock mode.'
-          : 'Posts backend unavailable in fail-closed mode.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+export default function PostSchedulerPage() {
+  const tenant = useTenant();
+  const resource = useResource<Loaded>(async (id) => {
+    const queue = await apiGet<{ queue?: QueuePost[] }>("/social/queue?status=all&limit=200", id);
+    return { posts: queue.queue ?? [] };
+  });
 
-  useEffect(() => {
-    let active = true;
-    globalThis.queueMicrotask(() => {
-      if (active) void loadPosts();
+  const [filter, setFilter] = useState<Filter>("all");
+  const [query, setQuery] = useState("");
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [platform, setPlatform] = useState<string>(SCHEDULE_PLATFORMS[0].value);
+  const [text, setText] = useState("");
+  const [publishAt, setPublishAt] = useState(defaultPublishAt);
+  const [media, setMedia] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const [moving, setMoving] = useState<QueuePost | null>(null);
+  const [moveTo, setMoveTo] = useState("");
+  const [deleting, setDeleting] = useState<QueuePost | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const rows = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return (resource.data?.posts ?? []).filter((post) => {
+      if (filter !== "all" && post.status !== filter) return false;
+      return !needle || postText(post).toLowerCase().includes(needle) || post.platform.includes(needle);
     });
-    return () => {
-      active = false;
-    };
-  }, []);
+  }, [resource.data, filter, query]);
 
-  async function handleCreate() {
-    if (!content.trim() || selectedPlatforms.length === 0) {
-      alert('Please enter content and select at least one platform');
-      return;
-    }
+  const counts = useMemo(() => {
+    const result: Record<string, number> = {};
+    for (const post of resource.data?.posts ?? []) result[post.status] = (result[post.status] ?? 0) + 1;
+    return result;
+  }, [resource.data]);
 
-    setPublishing(true);
+  async function submit() {
+    setFormError(null);
+    const iso = fromLocalInputValue(publishAt);
+    const body = text.trim();
+    if (body.length < 3) return setFormError("Write at least 3 characters.");
+    if (body.length > 2200) return setFormError("Posts can be at most 2,200 characters.");
+    if (!iso) return setFormError("Choose when you plan to post.");
+    if (new Date(iso).getTime() < Date.now() - 60_000) return setFormError("Choose a time in the future.");
+    const mediaUrls = media.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    setSaving(true);
     try {
-      if (scheduledAt) {
-        const post = await socialApi.schedulePost('temp_id', scheduledAt, selectedPlatforms);
-        setPosts([...posts, post]);
-      } else {
-        const post = await socialApi.createPost(selectedPlatforms, content, mediaUrls);
-        setPosts([...posts, post]);
-      }
-
-      // Reset form
-      setContent('');
-      setSelectedPlatforms([]);
-      setScheduledAt('');
-      setMediaUrls([]);
-      setShowForm(false);
-    } catch (err) {
-      console.error('Post creation failed:', err);
-      alert('Failed to create post. Please try again.');
+      await apiSend("/social/schedule", "POST", { platform, text: body, publish_at: iso, media_urls: mediaUrls }, tenant);
+      setComposeOpen(false);
+      setText("");
+      setMedia("");
+      setPublishAt(defaultPublishAt());
+      await resource.reload();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "The post could not be added.");
     } finally {
-      setPublishing(false);
+      setSaving(false);
     }
   }
 
-  return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div>
-          <Link href="/studio/social-studio" style={styles.backLink}>
-            ← Back to Hub
-          </Link>
-          <h1 style={styles.title}>Social Posts</h1>
-          <p style={styles.subtitle}>Create, schedule, and manage posts across all platforms</p>
-        </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          style={{
-            ...styles.createBtn,
-            backgroundColor: showForm ? "var(--line)" : "var(--brand)",
-          }}
-        >
-          {showForm ? 'Cancel' : '+ New Post'}
-        </button>
-      </div>
+  async function run(action: () => Promise<unknown>, done: () => void) {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await action();
+      done();
+      await resource.reload();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "That action failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
-      {error ? <div style={styles.errorBanner}>⚠ {error}</div> : null}
-
-      {/* Create Form */}
-      {showForm && (
-        <div style={styles.formCard}>
-          <h2 style={styles.formTitle}>Create New Post</h2>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Content</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="What's on your mind?"
-              style={styles.textarea}
-              maxLength={2800}
-            />
-            <small style={styles.charCount}>{content.length} / 2800</small>
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Platforms</label>
-            <div style={styles.platformGrid}>
-              {NETWORKS.map((network) => (
-                <button
-                  key={network}
-                  onClick={() =>
-                    setSelectedPlatforms(
-                      selectedPlatforms.includes(network)
-                        ? selectedPlatforms.filter((p) => p !== network)
-                        : [...selectedPlatforms, network]
-                    )
-                  }
-                  style={{
-                    ...styles.platformBtn,
-                    backgroundColor: selectedPlatforms.includes(network) ? "var(--brand)" : "var(--line-soft)",
-                    borderColor: selectedPlatforms.includes(network) ? "var(--brand)" : "var(--line)",
-                  }}
-                >
-                  {network.charAt(0).toUpperCase() + network.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={styles.formRow}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Schedule For (Optional)</label>
-              <input
-                type="datetime-local"
-                value={scheduledAt}
-                onChange={(e) => setScheduledAt(e.target.value)}
-                style={styles.input}
-              />
-            </div>
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Preview</label>
-            <div style={styles.preview}>
-              <p>{content || 'Your post content will appear here...'}</p>
-              {mediaUrls.length > 0 && (
-                <div style={styles.previewMedia}>
-                  {mediaUrls.map((url, idx) => (
-                    <img key={idx} src={url} alt="preview" style={styles.previewImg} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={styles.formActions}>
-            <button
-              onClick={handleCreate}
-              disabled={publishing}
-              style={{
-                ...styles.publishBtn,
-                opacity: publishing ? 0.6 : 1,
-                cursor: publishing ? 'not-allowed' : 'pointer',
+  const columns: Column<QueuePost>[] = [
+    {
+      key: "text",
+      header: "Post",
+      strong: true,
+      sortValue: (post) => postText(post),
+      render: (post) => (
+        <span>
+          {truncate(postText(post) || "(no text)", 120)}
+          {post.media_urls?.length ? <span style={{ color: "var(--nx-muted)" }}> · {post.media_urls.length} media</span> : null}
+        </span>
+      ),
+    },
+    { key: "platform", header: "Platform", sortValue: (post) => post.platform, render: (post) => platformLabel(post.platform) },
+    { key: "when", header: "Planned for", sortValue: (post) => post.publish_at ?? "", render: (post) => formatDateTime(post.publish_at) },
+    { key: "status", header: "Status", sortValue: (post) => post.status, render: (post) => <StatusBadge status={post.status} /> },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (post) =>
+        post.status === "published" ? null : (
+          <span style={{ display: "inline-flex", gap: 6 }}>
+            <IconButton
+              label="Reschedule"
+              onClick={() => {
+                setMoving(post);
+                setMoveTo(post.publish_at ? toLocalInputValue(new Date(post.publish_at)) : defaultPublishAt());
+                setActionError(null);
               }}
             >
-              {publishing ? 'Creating...' : scheduledAt ? 'Schedule Post' : 'Post Now'}
-            </button>
-          </div>
-        </div>
-      )}
+              <CalendarClock size={15} aria-hidden="true" />
+            </IconButton>
+            <IconButton
+              label="Delete"
+              variant="quiet"
+              onClick={() => {
+                setDeleting(post);
+                setActionError(null);
+              }}
+            >
+              <Trash2 size={15} aria-hidden="true" />
+            </IconButton>
+          </span>
+        ),
+    },
+  ];
 
-      {/* Posts List */}
-      {loading ? (
-        <div style={styles.skeleton}>
-          <div style={styles.skeletonCard} />
-          <div style={styles.skeletonCard} />
-        </div>
-      ) : (
-        <>
-          {posts.length > 0 ? (
-            <div style={styles.postsList}>
-              {posts.map((post) => (
-                <div key={post.id} style={styles.postCard}>
-                  <div style={styles.postHeader}>
-                    <div>
-                      <span style={statusBadgeStyle(post.status)}>{post.status.toUpperCase()}</span>
-                      {post.scheduledAt && (
-                        <small style={styles.scheduledTime}>
-                          Scheduled for {new Date(post.scheduledAt).toLocaleString()}
-                        </small>
-                      )}
-                    </div>
-                    <div style={styles.platforms}>
-                      {post.platforms.map((p) => (
-                        <span key={p} style={styles.platformBadge}>
-                          {p}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
 
-                  <p style={styles.postContent}>{post.content}</p>
+  return (
+    <Page>
+      <PageHeader
+        title="Post Planner"
+        subtitle="Plan posts and keep them in one list. Nuxtron stores your plan; it does not publish to your accounts for you."
+        actions={
+          <Button variant="primary" icon={<Plus size={15} aria-hidden="true" />} onClick={() => setComposeOpen(true)}>
+            New post
+          </Button>
+        }
+        tabs={
+          <Tabs
+            items={FILTERS.map((item) => ({ ...item, count: item.id === "all" ? resource.data?.posts.length : counts[item.id] ?? 0 }))}
+            value={filter}
+            onChange={(id) => setFilter(id as Filter)}
+            label="Post status"
+          />
+        }
+      />
 
-                  {post.mediaUrls && post.mediaUrls.length > 0 && (
-                    <div style={styles.postMedia}>
-                      {post.mediaUrls.map((url, idx) => (
-                        <img key={idx} src={url} alt="post" style={styles.postImg} />
-                      ))}
-                    </div>
-                  )}
+      {actionError ? <Callout tone="danger">{actionError}</Callout> : null}
 
-                  {post.metrics && (
-                    <div style={styles.postMetrics}>
-                      <div style={styles.metric}>
-                        <span>❤️ {post.metrics.likes}</span>
-                      </div>
-                      <div style={styles.metric}>
-                        <span>💬 {post.metrics.comments}</span>
-                      </div>
-                      <div style={styles.metric}>
-                        <span>🔄 {post.metrics.shares}</span>
-                      </div>
-                      <div style={styles.metric}>
-                        <span>👁️ {post.metrics.impressions}</span>
-                      </div>
-                      <div style={styles.metric}>
-                        <span>🎯 {post.metrics.reach}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+      <Toolbar>
+        <SearchField value={query} onChange={setQuery} placeholder="Search posts" label="Search posts" />
+      </Toolbar>
+
+      <ResourceView resource={resource}>
+        {() =>
+          rows.length === 0 ? (
+            <EmptyState
+              title={(resource.data?.posts.length ?? 0) === 0 ? "No posts yet" : "No posts match"}
+              description={
+                (resource.data?.posts.length ?? 0) === 0
+                  ? "Plan your first post to see it here and on the calendar."
+                  : "Try a different status or search."
+              }
+              action={
+                (resource.data?.posts.length ?? 0) === 0 ? (
+                  <Button variant="primary" onClick={() => setComposeOpen(true)}>
+                    New post
+                  </Button>
+                ) : (
+                  <ButtonLink href="/studio/social-studio/calendar">Open the calendar</ButtonLink>
+                )
+              }
+            />
           ) : (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>✍️</div>
-              <h2>No Posts Yet</h2>
-              <p>Create your first social media post</p>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+            <DataTable columns={columns} rows={rows} getKey={(post) => post.id} caption="Social posts" pageSize={15} />
+          )
+        }
+      </ResourceView>
+
+      <Modal
+        open={composeOpen}
+        onOpenChange={(open) => {
+          setComposeOpen(open);
+          if (!open) setFormError(null);
+        }}
+        title="Plan a post"
+        description="Add the post to your plan for the date and time you will post it."
+        footer={
+          <>
+            <Button onClick={() => setComposeOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button variant="primary" loading={saving} onClick={() => void submit()}>
+              Add to plan
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: "grid", gap: 16 }}>
+          {formError ? <Callout tone="danger">{formError}</Callout> : null}
+          <FieldSelect label="Platform" value={platform} onChange={(event) => setPlatform(event.target.value)}>
+            {SCHEDULE_PLATFORMS.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </FieldSelect>
+          <FieldTextarea
+            label="Post text"
+            rows={6}
+            value={text}
+            maxLength={2200}
+            onChange={(event) => setText(event.target.value)}
+            hint={`${text.length.toLocaleString()} / 2,200`}
+          />
+          <Field label="Planned for" type="datetime-local" value={publishAt} onChange={(event) => setPublishAt(event.target.value)} />
+          <FieldTextarea
+            label="Media URLs"
+            rows={3}
+            value={media}
+            onChange={(event) => setMedia(event.target.value)}
+            placeholder="One image or video URL per line (optional)"
+          />
+        </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(moving)}
+        onOpenChange={(open) => !open && setMoving(null)}
+        title="Reschedule post"
+        description={moving ? truncate(postText(moving), 100) : undefined}
+        footer={
+          <>
+            <Button onClick={() => setMoving(null)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              loading={busy}
+              onClick={() => {
+                const iso = fromLocalInputValue(moveTo);
+                if (!moving || !iso) return setActionError("Choose a valid time.");
+                void run(
+                  () => apiSend(`/social/scheduled/${moving.id}/move`, "PATCH", { new_publish_at: iso }, tenant),
+                  () => setMoving(null),
+                );
+              }}
+            >
+              Reschedule
+            </Button>
+          </>
+        }
+      >
+        {actionError ? <Callout tone="danger">{actionError}</Callout> : null}
+        <Field label="New publish time" type="datetime-local" value={moveTo} onChange={(event) => setMoveTo(event.target.value)} />
+      </Modal>
+
+      <ConfirmModal
+        open={Boolean(deleting)}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Delete this post?"
+        description={deleting ? `“${truncate(postText(deleting), 80)}” will be removed from the schedule. This cannot be undone.` : ""}
+        pending={busy}
+        error={actionError}
+        onConfirm={() => deleting && void run(() => apiSend(`/social/scheduled/${deleting.id}`, "DELETE", undefined, tenant), () => setDeleting(null))}
+      />
+    </Page>
   );
 }
-
-function statusBadgeStyle(status: string): CSSProperties {
-  return {
-    display: 'inline-block',
-    padding: '4px 8px',
-    backgroundColor:
-      status === 'published'
-        ? 'color-mix(in oklab, var(--success) 15%, transparent)'
-        : status === 'scheduled'
-          ? 'color-mix(in oklab, var(--warning) 15%, transparent)'
-          : 'color-mix(in oklab, var(--neutral) 15%, transparent)',
-    color:
-      status === 'published'
-        ? 'var(--success)'
-        : status === 'scheduled'
-          ? 'var(--warning)'
-          : 'var(--muted)',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 600,
-  };
-}
-
-const styles: Record<string, CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: 'var(--card)',
-    color: 'var(--text)',
-    padding: '32px 24px',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '32px',
-  },
-  backLink: {
-    display: 'inline-block',
-    marginBottom: '16px',
-    color: 'var(--muted)',
-    textDecoration: 'none',
-    fontSize: '14px',
-  },
-  title: {
-    fontSize: '32px',
-    fontWeight: 700,
-    margin: '0 0 8px',
-  },
-  subtitle: {
-    fontSize: '14px',
-    color: 'var(--muted)',
-    margin: 0,
-  },
-  createBtn: {
-    padding: '10px 20px',
-    backgroundColor: "var(--brand)",
-    color: 'var(--text)',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'background-color 200ms ease',
-  },
-  errorBanner: {
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-    border: '1px solid rgba(245, 158, 11, 0.4)',
-    color: 'var(--warning-ink)',
-    padding: '12px 14px',
-    borderRadius: '10px',
-    marginBottom: '16px',
-  },
-  formCard: {
-    backgroundColor: 'var(--card)',
-    border: '1px solid var(--line)',
-    borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '32px',
-  },
-  formTitle: {
-    fontSize: '18px',
-    fontWeight: 600,
-    margin: '0 0 20px',
-  },
-  formGroup: {
-    marginBottom: '20px',
-  },
-  label: {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: 500,
-    marginBottom: '8px',
-    color: 'var(--text)',
-  },
-  textarea: {
-    width: '100%',
-    minHeight: '120px',
-    padding: '12px',
-    backgroundColor: 'var(--card)',
-    color: 'var(--text)',
-    border: '1px solid var(--line)',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    resize: 'vertical' as const,
-  },
-  charCount: {
-    display: 'block',
-    marginTop: '4px',
-    fontSize: '12px',
-    color: 'var(--muted)',
-  },
-  platformGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 100px), 1fr))',
-    gap: '8px',
-  },
-  platformBtn: {
-    padding: '8px 12px',
-    backgroundColor: 'var(--card)',
-    color: 'var(--text)',
-    border: '1px solid var(--line)',
-    borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'background-color 200ms ease, border-color 200ms ease',
-  },
-  formRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
-    gap: '16px',
-  },
-  input: {
-    width: '100%',
-    padding: '10px 12px',
-    backgroundColor: 'var(--card)',
-    color: 'var(--text)',
-    border: '1px solid var(--line)',
-    borderRadius: '6px',
-    fontSize: '14px',
-  },
-  preview: {
-    backgroundColor: 'var(--card)',
-    border: '1px solid var(--line)',
-    borderRadius: '6px',
-    padding: '12px',
-    fontSize: '13px',
-    color: 'var(--text)',
-  },
-  previewMedia: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 80px), 1fr))',
-    gap: '8px',
-    marginTop: '12px',
-  },
-  previewImg: {
-    width: '100%',
-    height: '80px',
-    objectFit: 'cover' as const,
-    borderRadius: '4px',
-  },
-  formActions: {
-    display: 'flex',
-    gap: '12px',
-    marginTop: '24px',
-  },
-  publishBtn: {
-    padding: '10px 20px',
-    backgroundColor: 'var(--success)',
-    color: 'var(--text)',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  postsList: {
-    display: 'grid',
-    gap: '16px',
-  },
-  postCard: {
-    backgroundColor: 'var(--card)',
-    border: '1px solid var(--line)',
-    borderRadius: '12px',
-    padding: '20px',
-  },
-  postHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '12px',
-  },
-  scheduledTime: {
-    display: 'block',
-    marginTop: '6px',
-    fontSize: '12px',
-    color: 'var(--muted)',
-  },
-  platforms: {
-    display: 'flex',
-    gap: '6px',
-    flexWrap: 'wrap' as const,
-  },
-  platformBadge: {
-    display: 'inline-block',
-    padding: '3px 8px',
-    backgroundColor: "var(--line)",
-    color: 'var(--text)',
-    borderRadius: '3px',
-    fontSize: '11px',
-  },
-  postContent: {
-    margin: '0 0 12px',
-    lineHeight: '1.5',
-    color: 'var(--text)',
-  },
-  postMedia: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))',
-    gap: '8px',
-    marginBottom: '12px',
-  },
-  postImg: {
-    width: '100%',
-    height: '150px',
-    objectFit: 'cover' as const,
-    borderRadius: '6px',
-  },
-  postMetrics: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))',
-    gap: '12px',
-    paddingTop: '12px',
-    borderTop: '1px solid var(--line)',
-  },
-  metric: {
-    textAlign: 'center' as const,
-    fontSize: '12px',
-    color: 'var(--muted)',
-  },
-  skeleton: {
-    display: 'grid',
-    gap: '16px',
-  },
-  skeletonCard: {
-    height: '200px',
-    backgroundColor: 'var(--card)',
-    borderRadius: '12px',
-    animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-  },
-  emptyState: {
-    textAlign: 'center' as const,
-    padding: '60px 24px',
-    backgroundColor: 'var(--card)',
-    borderRadius: '12px',
-    border: "1px dashed var(--line)",
-  },
-  emptyIcon: {
-    fontSize: '48px',
-    marginBottom: '16px',
-  },
-};

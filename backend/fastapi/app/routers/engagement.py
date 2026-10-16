@@ -910,14 +910,6 @@ def create_engagement_router(  # NOSONAR
                 'updated_at': now_iso,
             }
             bank_accounts_memory.append(account)
-            # Seed a one-time activation credit so new wallets can execute payouts/transfers immediately.
-            _record_bank_transaction(
-                tenant_id,
-                'credit',
-                100.0,
-                'activation_bonus',
-                {'reason': 'nuxtron_bank_onboarding'},
-            )
             return account
         return existing_account
 

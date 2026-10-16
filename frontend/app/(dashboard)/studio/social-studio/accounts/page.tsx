@@ -1,426 +1,130 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { socialApi, type SocialAccount, type SocialNetwork } from '@/app/lib/social-api';
+import { useState } from "react";
+import { Link2, Unplug } from "lucide-react";
+import { apiGet, apiSend } from "@/app/lib/platform-api";
+import { Badge, Button, Callout, Card, CardTitle, ConfirmModal, DataTable, EmptyState, Grid, Page, PageHeader, Section, StatusBadge, type Column } from "../../../_ui/kit";
+import { formatDate, formatNumber } from "../../../_ui/format";
+import { ResourceView, useResource, useTenant } from "../../../_ui/use-resource";
+import type { SocialAccount } from "../_lib/social";
 
-const STRICT_NO_MOCK_FALSY = new Set(['0', 'false', 'no', 'off']);
-const STRICT_NO_MOCK_RAW = (process.env.NEXT_PUBLIC_STRICT_NO_MOCK || '').trim().toLowerCase();
-const IS_STRICT_NO_MOCK_MODE = STRICT_NO_MOCK_RAW
-  ? !STRICT_NO_MOCK_FALSY.has(STRICT_NO_MOCK_RAW)
-  : process.env.NODE_ENV === 'production';
+type Provider = { network: string; label: string; supported_formats?: string[] };
+type OAuthStart = { mode?: string; configured?: boolean; authorization_url?: string; provider_label?: string };
+type Loaded = { accounts: SocialAccount[]; providers: Provider[] };
 
-// Monogram badges, not emoji: lucide-react 1.14 dropped brand/logo icons
-// (Facebook, Instagram, etc. are all undefined), and approximating a
-// trademarked logo with a generic icon is worse than a plain initial.
-const SOCIAL_NETWORKS: { network: SocialNetwork; label: string; monogram: string; color: string }[] = [
-  { network: 'facebook', label: 'Facebook', monogram: 'f', color: '#1877F2' },
-  { network: 'instagram', label: 'Instagram', monogram: 'IG', color: '#E4405F' },
-  { network: 'tiktok', label: 'TikTok', monogram: 'TT', color: '#000000' },
-  { network: 'twitter', label: 'X (Twitter)', monogram: 'X', color: '#000000' },
-  { network: 'linkedin', label: 'LinkedIn', monogram: 'in', color: '#0A66C2' },
-  { network: 'youtube', label: 'YouTube', monogram: 'YT', color: 'var(--danger)' },
-  { network: 'threads', label: 'Threads', monogram: '@', color: '#000000' },
-];
+export default function ConnectedAccountsPage() {
+  const tenant = useTenant();
+  const resource = useResource<Loaded>(async (id) => {
+    const [accounts, catalog] = await Promise.all([
+      apiGet<{ accounts?: SocialAccount[] }>("/social/accounts", id),
+      apiGet<{ providers?: Provider[] }>("/social/accounts/catalog", id),
+    ]);
+    return { accounts: accounts.accounts ?? [], providers: catalog.providers ?? [] };
+  });
 
-export default function AccountsPage() {
-  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [connecting, setConnecting] = useState<SocialNetwork | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ tone: "warning" | "danger"; text: string } | null>(null);
+  const [removing, setRemoving] = useState<SocialAccount | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
-  async function loadAccounts() {
+  async function connect(provider: Provider) {
+    setConnecting(provider.network);
+    setNotice(null);
     try {
-      const result = await socialApi.listAccounts();
-      setAccounts(result || []);
-    } catch (err) {
-      console.error('Failed to load accounts:', err);
-      setError(
-        IS_STRICT_NO_MOCK_MODE
-          ? 'Failed to load social accounts in strict no-mock mode.'
-          : 'Failed to load social accounts in fail-closed mode.'
-      );
-      setAccounts([]);
+      const start = await apiSend<OAuthStart>(`/social/oauth/${provider.network}/start`, "POST", {}, tenant);
+      if (!start.configured || !start.authorization_url) {
+        setNotice({
+          tone: "warning",
+          text: `${provider.label} sign-in is not configured for this deployment, so an account cannot be connected yet. An administrator needs to add the ${provider.label} app credentials.`,
+        });
+        return;
+      }
+      window.location.assign(start.authorization_url);
+    } catch (error) {
+      setNotice({ tone: "danger", text: error instanceof Error ? error.message : `Could not start the ${provider.label} sign-in.` });
     } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    let active = true;
-    globalThis.queueMicrotask(() => {
-      if (active) void loadAccounts();
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  async function handleConnect(network: SocialNetwork) {
-    setConnecting(network);
-    setError(null);
-    try {
-      const { authorization_url: authorizationUrl } = await socialApi.startOAuth(network);
-      // Full navigation, not a fetch — the provider's authorization page is
-      // a real page the user must interact with, and it redirects back to
-      // our own /oauth/[network]/callback route with ?code=&state=.
-      globalThis.location.assign(authorizationUrl);
-    } catch (err) {
-      console.error('Connect failed:', err);
-      setError(err instanceof Error ? err.message : `Failed to connect ${network}. Please try again.`);
       setConnecting(null);
     }
   }
 
-  async function handleDisconnect(accountId: string) {
-    if (!globalThis.confirm('Are you sure you want to disconnect this account?')) return;
+  async function disconnect() {
+    if (!removing) return;
+    setBusy(true);
+    setRemoveError(null);
     try {
-      await socialApi.disconnectAccount(accountId);
-      setAccounts((current) => current.filter((a) => a.id !== accountId));
-    } catch (err) {
-      console.error('Disconnect failed:', err);
-      globalThis.alert('Failed to disconnect account. Please try again.');
+      await apiSend(`/social/accounts/${removing.id}`, "DELETE", undefined, tenant);
+      setRemoving(null);
+      await resource.reload();
+    } catch (error) {
+      setRemoveError(error instanceof Error ? error.message : "The account could not be disconnected.");
+    } finally {
+      setBusy(false);
     }
   }
 
-  const connectedNetworks = new Set(accounts.map((a) => a.network));
-  const availableNetworks = SOCIAL_NETWORKS.filter((n) => !connectedNetworks.has(n.network));
+  const columns: Column<SocialAccount>[] = [
+    { key: "name", header: "Account", strong: true, sortValue: (account) => account.account_name, render: (account) => <span>{account.account_name}<br /><span style={{ color: "var(--nx-muted)", fontWeight: 400 }}>@{account.handle}</span></span> },
+    { key: "network", header: "Network", sortValue: (account) => account.network_label, render: (account) => account.network_label },
+    { key: "status", header: "Connection", render: (account) => <StatusBadge status={account.oauth_status} /> },
+    { key: "followers", header: "Followers", numeric: true, render: (account) => (account.followers ? formatNumber(account.followers) : "—") },
+    { key: "since", header: "Connected", sortValue: (account) => account.connected_at ?? "", render: (account) => formatDate(account.connected_at) },
+    {
+      key: "actions",
+      header: "",
+      render: (account) => (
+        <Button size="sm" variant="quiet" icon={<Unplug size={14} aria-hidden="true" />} onClick={() => { setRemoving(account); setRemoveError(null); }}>
+          Disconnect
+        </Button>
+      ),
+    },
+  ];
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div>
-          <Link href="/studio/social-studio" style={styles.backLink}>
-            ← Back to Hub
-          </Link>
-          <h1 style={styles.title}>Social Media Accounts</h1>
-          <p style={styles.subtitle}>Connect and manage your social media accounts across all major platforms</p>
-        </div>
-      </div>
-
-      {error && <div style={styles.errorBanner}>⚠️ {error}</div>}
-
-      {loading ? (
-        <div style={styles.skeleton}>
-          <div style={styles.skeletonCard} />
-          <div style={styles.skeletonCard} />
-          <div style={styles.skeletonCard} />
-        </div>
-      ) : (
-        <>
-          {/* Connected Accounts Section */}
-          {accounts.length > 0 && (
-            <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Connected Accounts ({accounts.length})</h2>
-              <div style={styles.accountGrid}>
-                {accounts.map((account) => {
-                  const network = SOCIAL_NETWORKS.find((n) => n.network === account.network);
+    <Page>
+      <PageHeader title="Connected Accounts" subtitle="Connect the social accounts Nuxtron works with. You sign in on the network itself; Nuxtron never sees your password." />
+      {notice ? <Callout tone={notice.tone}>{notice.text}</Callout> : null}
+      <ResourceView resource={resource}>
+        {(data) => (
+          <>
+            <Section title="Your accounts">
+              {data.accounts.length === 0 ? (
+                <EmptyState title="No accounts connected" description="Choose a network below to sign in and connect an account." icon={<Link2 size={22} aria-hidden="true" />} />
+              ) : (
+                <DataTable columns={columns} rows={data.accounts} getKey={(account) => account.id} caption="Connected social accounts" />
+              )}
+            </Section>
+            <Section title="Connect a network" description="Audience figures appear only after the network reports them.">
+              <Grid cols={4}>
+                {data.providers.map((provider) => {
+                  const count = data.accounts.filter((account) => account.network === provider.network).length;
                   return (
-                    <div key={account.id} style={styles.accountCard}>
-                      <div style={{ ...styles.cardHeader, borderLeftColor: network?.color }}>
-                        <span style={{ ...styles.networkIcon, background: network?.color }}>{network?.monogram}</span>
-                        <div style={styles.accountInfo}>
-                          <h3 style={styles.accountName}>{account.accountName}</h3>
-                          <p style={styles.accountHandle}>{account.handle}</p>
-                        </div>
-                        <span style={styles.verifiedBadge}>{account.verified ? '✓' : ''}</span>
+                    <Card key={provider.network}>
+                      <CardTitle sub={count ? `${count} connected` : undefined}>{provider.label}</CardTitle>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+                        {(provider.supported_formats ?? []).slice(0, 4).map((format) => <Badge key={format}>{format}</Badge>)}
                       </div>
-
-                      <div style={styles.cardStats}>
-                        <div style={styles.stat}>
-                          <span style={styles.statLabel}>Followers</span>
-                          <span style={styles.statValue}>{account.followers.toLocaleString()}</span>
-                        </div>
-                        <div style={styles.stat}>
-                          <span style={styles.statLabel}>Sync Status</span>
-                          <span
-                            style={{
-                              ...styles.statusBadge,
-                              backgroundColor:
-                                account.syncStatus === 'synced'
-                                  ? 'color-mix(in oklab, var(--success) 15%, transparent)'
-                                  : account.syncStatus === 'syncing'
-                                    ? 'color-mix(in oklab, var(--warning) 15%, transparent)'
-                                    : 'color-mix(in oklab, var(--danger) 15%, transparent)',
-                              color:
-                                account.syncStatus === 'synced'
-                                  ? 'var(--success-ink)'
-                                  : account.syncStatus === 'syncing'
-                                    ? 'var(--warning-ink)'
-                                    : 'var(--danger)',
-                            }}
-                          >
-                            {account.syncStatus}
-                          </span>
-                        </div>
-                        <div style={styles.stat}>
-                          <span style={styles.statLabel}>Credits Balance</span>
-                          <span style={styles.statValue}>{account.creditsBalance}</span>
-                        </div>
-                      </div>
-
-                      <div style={styles.cardFooter}>
-                        <small style={styles.syncedTime}>
-                          Last sync: {new Date(account.last_sync).toLocaleString()}
-                        </small>
-                        <button onClick={() => handleDisconnect(account.id)} style={styles.disconnectBtn}>
-                          Disconnect
-                        </button>
-                      </div>
-                    </div>
+                      <Button size="sm" variant="primary" loading={connecting === provider.network} onClick={() => void connect(provider)}>
+                        Connect
+                      </Button>
+                    </Card>
                   );
                 })}
-              </div>
-            </section>
-          )}
-
-          {/* Available Networks Section */}
-          {availableNetworks.length > 0 && (
-            <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Available Networks ({availableNetworks.length})</h2>
-              <div style={styles.networkGrid}>
-                {availableNetworks.map((network) => (
-                  <button
-                    key={network.network}
-                    onClick={() => handleConnect(network.network)}
-                    disabled={connecting === network.network}
-                    style={{
-                      ...styles.connectCard,
-                      opacity: connecting === network.network ? 0.6 : 1,
-                      cursor: connecting === network.network ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    <span style={{ ...styles.connectIcon, background: network.color }}>{network.monogram}</span>
-                    <span style={styles.connectLabel}>{network.label}</span>
-                    {connecting === network.network && <span style={styles.connectingSpinner}>⟳</span>}
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {accounts.length === 0 && availableNetworks.length === 0 && (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>🔗</div>
-              <h2>No Accounts Connected</h2>
-              <p>Connect your social media accounts to get started</p>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+              </Grid>
+            </Section>
+          </>
+        )}
+      </ResourceView>
+      <ConfirmModal
+        open={Boolean(removing)}
+        onOpenChange={(open) => !open && setRemoving(null)}
+        title="Disconnect this account?"
+        description={removing ? `${removing.account_name} will be disconnected. Your planned posts stay in your plan.` : ""}
+        confirmLabel="Disconnect"
+        pending={busy}
+        error={removeError}
+        onConfirm={() => void disconnect()}
+      />
+    </Page>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: 'var(--card)',
-    color: 'var(--text)',
-    padding: '32px 24px',
-  },
-  header: {
-    marginBottom: '48px',
-  },
-  backLink: {
-    display: 'inline-block',
-    marginBottom: '16px',
-    color: 'var(--muted)',
-    textDecoration: 'none',
-    fontSize: '14px',
-    transition: 'color 0.2s',
-  },
-  title: {
-    fontSize: '32px',
-    fontWeight: 700,
-    margin: '0 0 8px',
-    color: 'var(--text)',
-  },
-  subtitle: {
-    fontSize: '14px',
-    color: 'var(--muted)',
-    margin: 0,
-  },
-  errorBanner: {
-    backgroundColor: 'color-mix(in oklab, var(--warning-soft) 15%, transparent)',
-    border: '1px solid color-mix(in oklab, var(--series-5) 15%, transparent)',
-    borderRadius: '8px',
-    padding: '12px 16px',
-    marginBottom: '24px',
-    fontSize: '14px',
-    color: 'var(--danger)',
-  },
-  section: {
-    marginBottom: '40px',
-  },
-  sectionTitle: {
-    fontSize: '18px',
-    fontWeight: 600,
-    marginBottom: '16px',
-    color: 'var(--text)',
-  },
-  accountGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
-    gap: '16px',
-  },
-  accountCard: {
-    backgroundColor: 'var(--card)',
-    border: '1px solid var(--line)',
-    borderRadius: '12px',
-    overflow: 'hidden',
-  },
-  cardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '16px',
-    borderLeft: "4px solid var(--brand)",
-    backgroundColor: 'var(--card)',
-  },
-  networkIcon: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    fontSize: '13px',
-    fontWeight: 700,
-    color: 'var(--on-status)',
-    flexShrink: 0,
-  },
-  accountInfo: {
-    flex: 1,
-  },
-  accountName: {
-    margin: '0 0 4px',
-    fontSize: '14px',
-    fontWeight: 600,
-    color: 'var(--text)',
-  },
-  accountHandle: {
-    margin: 0,
-    fontSize: '12px',
-    color: 'var(--muted)',
-  },
-  verifiedBadge: {
-    fontSize: '16px',
-    color: "var(--brand)",
-  },
-  cardStats: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
-    gap: '12px',
-    padding: '16px',
-    borderTop: '1px solid var(--line)',
-  },
-  stat: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  statLabel: {
-    fontSize: '11px',
-    color: 'var(--muted)',
-    marginBottom: '4px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  },
-  statValue: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: 'var(--text)',
-  },
-  statusBadge: {
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 500,
-  },
-  cardFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '12px 16px',
-    borderTop: '1px solid var(--line)',
-    backgroundColor: 'var(--card)',
-  },
-  syncedTime: {
-    color: 'var(--muted)',
-    fontSize: '12px',
-  },
-  disconnectBtn: {
-    padding: '6px 12px',
-    backgroundColor: 'color-mix(in oklab, var(--series-5) 15%, transparent)',
-    color: 'var(--danger)',
-    border: '1px solid color-mix(in oklab, var(--series-5) 15%, transparent)',
-    borderRadius: '6px',
-    fontSize: '12px',
-    fontWeight: 500,
-    cursor: 'pointer',
-  },
-  networkGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 140px), 1fr))',
-    gap: '12px',
-  },
-  connectCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    padding: '20px',
-    backgroundColor: 'var(--card)',
-    border: "2px dashed var(--line)",
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'opacity 200ms ease',
-    fontSize: '14px',
-    fontWeight: 500,
-    color: 'var(--text)',
-  },
-  connectIcon: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '44px',
-    height: '44px',
-    borderRadius: '12px',
-    fontSize: '15px',
-    fontWeight: 700,
-    color: 'var(--on-status)',
-  },
-  connectLabel: {
-    textAlign: 'center',
-    fontSize: '13px',
-  },
-  connectingSpinner: {
-    display: 'inline-block',
-    animation: 'spin 1s linear infinite',
-    fontSize: '16px',
-  },
-  skeleton: {
-    display: 'grid',
-    gap: '16px',
-  },
-  skeletonCard: {
-    height: '200px',
-    backgroundColor: 'var(--card)',
-    borderRadius: '12px',
-    animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-  },
-  emptyState: {
-    textAlign: 'center',
-    padding: '60px 24px',
-    backgroundColor: 'var(--card)',
-    borderRadius: '12px',
-    border: "1px dashed var(--line)",
-  },
-  emptyIcon: {
-    fontSize: '48px',
-    marginBottom: '16px',
-  },
-};

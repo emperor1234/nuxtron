@@ -305,17 +305,38 @@ def operation_bulk_schedule_posts(
                 if not post_data.get("publish_at") and (not post_data.get("schedule_at")):
                     errors.append({"row": idx + 1, "error": "Missing publish_at field"})
                     continue
-                platform = str(post_data.get("platform") or post_data.get("network") or "instagram")
+                platform = str(post_data.get("platform") or post_data.get("network") or "").strip().lower()
+                if platform not in SUPPORTED_NETWORKS:
+                    errors.append({"row": idx + 1, "error": f"Unsupported platform '{platform}'"})
+                    continue
+                text = str(post_data.get("text") or post_data.get("content") or "").strip()
+                if len(text) > 4000:
+                    errors.append({"row": idx + 1, "error": "Text is longer than 4,000 characters"})
+                    continue
+                publish_raw = str(post_data.get("publish_at") or post_data.get("schedule_at") or "").strip()
+                try:
+                    publish_at = datetime.fromisoformat(publish_raw.replace("Z", "+00:00"))
+                except ValueError:
+                    errors.append({"row": idx + 1, "error": "publish_at must be an ISO 8601 date and time"})
+                    continue
+                if publish_at.tzinfo is None:
+                    publish_at = publish_at.replace(tzinfo=UTC)
+
+                def _as_list(value: Any) -> list[str]:
+                    if isinstance(value, list):
+                        return [str(item).strip() for item in value if str(item).strip()]
+                    return [part.strip() for part in str(value or "").replace("\n", ",").split(",") if part.strip()]
+
                 post = {
                     "id": len(st.scheduled_posts) + len(created) + 1,
                     "tenant_id": auth.tenant_id,
                     "platform": platform,
-                    "text": str(post_data.get("text") or post_data.get("content") or ""),
-                    "publish_at": str(post_data.get("publish_at") or post_data.get("schedule_at") or ""),
+                    "text": text,
+                    "publish_at": publish_at.isoformat(),
                     "status": "scheduled",
-                    "hashtags": post_data.get("hashtags", []),
-                    "media_urls": post_data.get("media_urls", []),
-                    "utm_tags": post_data.get("utm_tags", {}),
+                    "hashtags": _as_list(post_data.get("hashtags")),
+                    "media_urls": _as_list(post_data.get("media_urls")),
+                    "utm_tags": post_data.get("utm_tags") if isinstance(post_data.get("utm_tags"), dict) else {},
                     "created_at": datetime.now(UTC).isoformat(),
                     "bulk_job_id": None,
                 }

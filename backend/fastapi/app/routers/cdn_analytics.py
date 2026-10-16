@@ -43,8 +43,18 @@ class CDNProviderRegistration(BaseModel):
     api_key: str = Field(..., min_length=1)
     api_token: str | None = None
 
-# Singleton collector (TODO: move to database)
-cdn_collector = CDNAnalyticsCollector()  # type: ignore[no-untyped-call]
+# One collector per tenant. A shared collector let one tenant's registered
+# provider credentials and metrics appear in every other tenant's dashboard.
+# State is held in process memory and is lost on restart.
+_collectors: dict[str, CDNAnalyticsCollector] = {}
+
+
+def _collector(tenant_id: str) -> CDNAnalyticsCollector:
+    collector = _collectors.get(tenant_id)
+    if collector is None:
+        collector = CDNAnalyticsCollector()  # type: ignore[no-untyped-call]
+        _collectors[tenant_id] = collector
+    return collector
 
 
 @router.post("/api/v1/cdn/register")
@@ -64,7 +74,7 @@ async def register_cdn_provider(
     """
     try:
         provider_enum = CDNProvider(registration.provider.lower())
-        await cdn_collector.add_provider(provider_enum, registration.api_key, registration.api_token)
+        await _collector(tenant_id).add_provider(provider_enum, registration.api_key, registration.api_token)
         return {
             "status": "registered",
             "provider": registration.provider,
@@ -93,7 +103,7 @@ async def sync_all_providers(
     Returns:
         Count of metrics collected per provider
     """
-    metrics = await cdn_collector.sync_all_providers(hours)
+    metrics = await _collector(tenant_id).sync_all_providers(hours)
     return {
         provider: len(metric_list)
         for provider, metric_list in metrics.items()
@@ -116,7 +126,7 @@ async def get_cdn_dashboard(
         Dashboard with metrics from all providers
     """
     # Sync latest data
-    await cdn_collector.sync_all_providers(hours=24)
+    await _collector(tenant_id).sync_all_providers(hours=24)
     
     # Build dashboard
     dashboard: dict[str, Any] = {
@@ -130,7 +140,7 @@ async def get_cdn_dashboard(
     # Get analytics per provider
     for provider in CDNProvider:
         try:
-            analytics = await cdn_collector.get_analytics(provider, days)
+            analytics = await _collector(tenant_id).get_analytics(provider, days)
         except ValueError:
             # Some providers may be unregistered; skip them in aggregate dashboards.
             continue
@@ -145,10 +155,10 @@ async def get_cdn_dashboard(
             }
     
     # Get comparison metrics
-    dashboard["comparison"] = cdn_collector.compare_providers()
+    dashboard["comparison"] = _collector(tenant_id).compare_providers()
     
     # Get cost estimates
-    dashboard["costs"] = cdn_collector.get_cost_estimate()
+    dashboard["costs"] = _collector(tenant_id).get_cost_estimate()
     
     # Generate recommendations
     comparison: dict[str, Any] = dashboard["comparison"]
@@ -184,7 +194,7 @@ async def get_provider_analytics(
     """
     try:
         provider_enum = CDNProvider(provider.lower())
-        analytics = await cdn_collector.get_analytics(provider_enum, days)
+        analytics = await _collector(tenant_id).get_analytics(provider_enum, days)
         
         if not analytics:
             raise HTTPException(status_code=404, detail=f"No data for provider {provider}")
@@ -231,7 +241,7 @@ async def compare_cdns(
     Returns:
         Performance comparison across all providers
     """
-    comparison = cdn_collector.compare_providers()
+    comparison = _collector(tenant_id).compare_providers()
     
     return {
         "fastest_provider": comparison.get("fastest"),
@@ -257,7 +267,7 @@ async def get_cost_analysis(
     Returns:
         Cost breakdown and recommendations
     """
-    costs = cdn_collector.get_cost_estimate()
+    costs = _collector(tenant_id).get_cost_estimate()
     
     if not costs:
         return {"message": "No cost data available"}
@@ -297,7 +307,7 @@ async def get_provider_metrics(
     """
     try:
         CDNProvider(provider.lower())
-        metrics = cdn_collector.metrics.get(provider)
+        metrics = _collector(tenant_id).metrics.get(provider)
         
         if not metrics:
             return {
@@ -341,7 +351,7 @@ async def get_cdn_health(
         "providers": {}
     }
     
-    for analytics in cdn_collector.analytics.values():
+    for analytics in _collector(tenant_id).analytics.values():
         provider = analytics.provider.value
         # Status determined by error rate
         if analytics.error_rate < 0.01:
@@ -372,8 +382,8 @@ async def get_optimization_recommendations(
         List of actionable recommendations to improve CDN performance
     """
     recommendations = []
-    comparison = cdn_collector.compare_providers()
-    costs = cdn_collector.get_cost_estimate()
+    comparison = _collector(tenant_id).compare_providers()
+    costs = _collector(tenant_id).get_cost_estimate()
     
     if not comparison:
         return {"recommendations": []}
@@ -474,7 +484,7 @@ async def get_load_distribution(
     Returns:
         Traffic percentage allocation per provider
     """
-    analytics_list = list(cdn_collector.analytics.values())
+    analytics_list = list(_collector(tenant_id).analytics.values())
     if not analytics_list:
         return {"distribution": {}}
     

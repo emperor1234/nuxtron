@@ -32,11 +32,11 @@ class TestAnalyticsDashboard:
 
     def test_predictions(self, client: TestClient) -> None:
         r = client.get("/analytics/predictions", headers=H)
-        assert r.status_code in VALID
+        assert r.status_code == 501
 
     def test_benchmarks(self, client: TestClient) -> None:
         r = client.get("/analytics/benchmarks", headers=H)
-        assert r.status_code in VALID
+        assert r.status_code == 501
 
     def test_create_report(self, client: TestClient) -> None:
         r = client.post("/analytics/reports", headers=H, json={

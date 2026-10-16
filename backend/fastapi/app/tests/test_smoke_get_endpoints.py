@@ -173,7 +173,6 @@ GET_ROUTES = [
     "/inbox/stats",
     # Influencer
     "/influencer/analytics",
-    "/influencer/campaigns",
     "/influencer/profile/1",
     # Integrations
     "/integrations/tools",
@@ -416,6 +415,10 @@ def test_get_not_server_error(client: TestClient, path: str) -> None:
         assert r.status_code == 501, f"GET {path} returned {r.status_code}: {r.text[:200]}"
         assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
         return
+    if path.startswith("/influencer/"):
+        assert r.status_code == 501, f"GET {path} returned {r.status_code}: {r.text[:200]}"
+        assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
+        return
     if path.startswith("/social/ugc"):
         assert r.status_code == 501, f"GET {path} returned {r.status_code}: {r.text[:200]}"
         assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"
@@ -430,6 +433,8 @@ def test_get_not_server_error(client: TestClient, path: str) -> None:
         "/marketplace/themes",
         "/reviews",
         "/reviews/summary",
+        "/analytics/benchmarks",
+        "/analytics/predictions",
     }:
         assert r.status_code == 501, f"GET {path} returned {r.status_code}: {r.text[:200]}"
         assert r.json()["detail"]["code"] == "NOT_IMPLEMENTED"

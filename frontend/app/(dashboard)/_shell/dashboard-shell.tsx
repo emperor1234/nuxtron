@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -16,9 +17,6 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   Home,
   Search,
-  ChartNoAxesCombined,
-  MapPin,
-  FileText,
   Share2,
   Clapperboard,
   LayoutGrid,
@@ -27,9 +25,9 @@ import {
   X,
   ChevronDown,
   Plus,
-  ScanEye,
   LogOut,
   ArrowLeftRight,
+  type LucideIcon,
 } from "lucide-react";
 import { apiGet, resolveSessionTenant } from "@/app/lib/api-client";
 import { readSessionUser, type SessionUser } from "@/app/lib/session-user";
@@ -45,7 +43,7 @@ import styles from "./shell.module.css";
 import "../_ui/tokens.css";
 import CommandPalette from "./command-palette";
 import DashboardRouteIdentity from "./route-identity";
-import { MENUS, RAIL_ITEMS, SETTINGS_ITEM, type RailKey } from "./nav";
+import { MENUS, RAIL_ITEMS, SETTINGS_ITEM, type FlyoutMenu, type RailKey } from "./nav";
 
 function subscribeSession(update: () => void) {
   window.addEventListener("storage", update);
@@ -64,13 +62,9 @@ function sessionSnapshot() {
 }
 const serverSessionSnapshot = () => "null";
 
-const ICONS = {
+const ICONS: Record<RailKey, LucideIcon> = {
   dashboard: Home,
   seo: Search,
-  ai: ScanEye,
-  traffic: ChartNoAxesCombined,
-  local: MapPin,
-  content: FileText,
   social: Share2,
   studio: Clapperboard,
   apps: LayoutGrid,
@@ -82,23 +76,31 @@ const ALL_RAILS = [...RAIL_ITEMS, SETTINGS_ITEM];
 function primaryAction(product: ProductLine | null): { href: Route; label: string } {
   return product === "marketing"
     ? { href: "/content-generation", label: "New content" }
-    : { href: "/seo/domain-overview", label: "New analysis" };
+    : { href: "/seo/on-page", label: "New analysis" };
 }
 
 function matchKey(path: string): RailKey {
   let best: RailKey = "dashboard";
   let length = -1;
   for (const item of ALL_RAILS) {
-    const menuRoutes = MENUS[item.key]?.groups.flatMap((group) =>
-      group.items.map((entry) => entry.href),
-    ) ?? [];
+    const menuRoutes = MENUS[item.key]?.groups.flatMap((group) => group.items.map((entry) => entry.href)) ?? [];
     for (const prefix of [item.href, ...(item.matchPrefixes ?? []), ...menuRoutes]) {
-      if (
-        (path === prefix || path.startsWith(`${prefix}/`)) &&
-        prefix.length > length
-      ) {
+      if ((path === prefix || path.startsWith(`${prefix}/`)) && prefix.length > length) {
         best = item.key;
         length = prefix.length;
+      }
+    }
+  }
+  return best;
+}
+
+/** The link that best matches the current path, so only one item looks active. */
+function activeHref(menu: FlyoutMenu | undefined, path: string): string | null {
+  let best: string | null = null;
+  for (const group of menu?.groups ?? []) {
+    for (const item of group.items) {
+      if ((path === item.href || path.startsWith(`${item.href}/`)) && (best === null || item.href.length > best.length)) {
+        best = item.href;
       }
     }
   }
@@ -114,33 +116,23 @@ export default function DashboardShell({
 }) {
   const pathname = usePathname() || "/dashboard";
   const activeKey = matchKey(pathname);
-  const [expandedOverride, setExpandedOverride] = useState<{
-    pathname: string;
-    key: RailKey | null;
-  } | null>(null);
-  const expanded = expandedOverride?.pathname === pathname ? expandedOverride.key : activeKey;
   const [mobile, setMobile] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const searchTrigger = useRef<HTMLButtonElement>(null);
-  const session = useSyncExternalStore(
-    subscribeSession,
-    sessionSnapshot,
-    serverSessionSnapshot,
-  );
+  const session = useSyncExternalStore(subscribeSession, sessionSnapshot, serverSessionSnapshot);
   const sessionUser = JSON.parse(session) as SessionUser | null;
   const product = useProductLine();
-  const rails = visibleRailItems(ALL_RAILS, product);
+  const rails = visibleRailItems(ALL_RAILS, product).filter((item) => item.key !== "settings");
   const action = primaryAction(product);
   const [workspace, setWorkspace] = useState("");
+
   useEffect(() => {
     const tenant = resolveSessionTenant();
     if (!tenant) return;
     let active = true;
     void apiGet("/white-label/profile", tenant)
       .then((profile) => {
-        const whiteLabel = profile.white_label as
-          | { profile?: { brand_name?: string } }
-          | undefined;
+        const whiteLabel = profile.white_label as { profile?: { brand_name?: string } } | undefined;
         if (active) setWorkspace(whiteLabel?.profile?.brand_name?.trim() || "");
       })
       .catch(() => {
@@ -150,6 +142,7 @@ export default function DashboardShell({
       active = false;
     };
   }, []);
+
   useEffect(() => {
     const listener = (event: globalThis.KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -161,172 +154,83 @@ export default function DashboardShell({
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
   }, []);
-  const closeSearch = () => setSearchOpen(false);
+
+  const menu = MENUS[activeKey];
+  const hasPanel = Boolean(menu);
 
   function navigation(scope: string) {
     return (
       <>
-        <div className={styles.brandRow}>
-          <Link
-            href="/dashboard"
-            className={styles.logo}
-            onClick={() => setMobile(false)}
-          >
-            <Image src="/brand/nuxtron-icon-square.svg" alt="" width={27} height={27} />
-            Nuxtron
+        <nav className={styles.rail} aria-label="Products and sections">
+          <Link href="/dashboard" className={styles.logo} onClick={() => setMobile(false)} aria-label="Nuxtron home">
+            <Image src="/brand/nuxtron-icon-square.svg" alt="" width={32} height={32} />
           </Link>
-          {product && (
-            <span className={styles.productBadge}>
-              <span className="sr-only">Signed in to </span>
-              {PRODUCT_META[product].label}
-            </span>
-          )}
-        </div>
-        <div className={styles.workspaceLabel}>
-          <span className={styles.workspaceInitial} aria-hidden="true">
-            {Array.from(workspace || "Workspace")[0]}
-          </span>
-          <div>
-            <strong title={workspace || "Your workspace"}>
-              {workspace || "Your workspace"}
-            </strong>
-            <small>{product ? PRODUCT_META[product].name : "All products"}</small>
-          </div>
-        </div>
-        <p className={styles.navLabel}>Workspace</p>
-        <nav className={styles.railNav} aria-label="Primary">
-          {rails.map((item) => {
-            const Icon = ICONS[item.key];
-            const isExpanded = expanded === item.key;
-            const section = MENUS[item.key];
-            return (
-              <div key={item.key}>
-                {item.hasMenu ? (
-                  <div className={styles.railItemRow}>
-                    <Link
-                      href={item.href}
-                      className={`${styles.railItem} ${activeKey === item.key ? styles.railItemActive : ""}`}
-                      aria-current={
-                        pathname === item.href
-                          ? "page"
-                          : activeKey === item.key
-                            ? "location"
-                            : undefined
-                      }
-                      onClick={() => {
-                        setExpandedOverride({ pathname, key: item.key });
-                        setMobile(false);
-                      }}
-                    >
-                      <Icon size={18} aria-hidden="true" />
-                      <span>{item.label}</span>
-                    </Link>
-                    <button
-                      type="button"
-                      className={styles.railDisclosure}
-                      aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.label} navigation`}
-                      aria-expanded={isExpanded}
-                      aria-controls={`${scope}-nav-${item.key}`}
-                      onClick={() =>
-                        setExpandedOverride({
-                          pathname,
-                          key: isExpanded ? null : item.key,
-                        })
-                      }
-                    >
-                      <ChevronDown
-                        size={14}
-                        className={styles.chevron}
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </div>
-                ) : (
+          <ul className={styles.railList}>
+            {rails.map((item) => {
+              const Icon = ICONS[item.key];
+              const current = activeKey === item.key;
+              return (
+                <li key={item.key}>
                   <Link
                     href={item.href}
-                    className={`${styles.railItem} ${activeKey === item.key ? styles.railItemActive : ""}`}
-                    aria-current={pathname === item.href ? "page" : undefined}
-                    onClick={() => {
-                      setExpandedOverride({ pathname, key: null });
-                      setMobile(false);
-                    }}
+                    className={`${styles.railItem} ${current ? styles.railItemActive : ""}`}
+                    aria-current={pathname === item.href ? "page" : current ? "location" : undefined}
+                    onClick={() => setMobile(false)}
                   >
-                    <Icon size={18} aria-hidden="true" />
+                    <Icon size={20} aria-hidden="true" />
                     <span>{item.label}</span>
                   </Link>
-                )}
-                {section && (
-                  <div
-                    id={`${scope}-nav-${item.key}`}
-                    className={styles.subnav}
-                    hidden={!isExpanded}
-                  >
-                    {section.groups.map((group) => (
-                      <div key={group.label}>
-                        <p className={styles.flyoutGroupLabel}>{group.label}</p>
-                        {group.items.map((entry) => (
-                          <Link
-                            key={entry.href}
-                            href={entry.href}
-                            className={styles.flyoutLink}
-                            aria-current={
-                              pathname === entry.href ? "page" : undefined
-                            }
-                            onClick={() => setMobile(false)}
-                          >
-                            {entry.label}
-                          </Link>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </nav>
-        <div className={styles.sidebarFoot}>
-          <Link href="/account">
-            Account settings <Settings size={14} aria-hidden="true" />
+                </li>
+              );
+            })}
+          </ul>
+          <Link
+            href="/account"
+            className={`${styles.railItem} ${activeKey === "settings" ? styles.railItemActive : ""}`}
+            aria-current={pathname === "/account" ? "page" : activeKey === "settings" ? "location" : undefined}
+            onClick={() => setMobile(false)}
+          >
+            <Settings size={20} aria-hidden="true" />
+            <span>Account</span>
           </Link>
-        </div>
+        </nav>
+        {menu ? (
+          <SectionPanel
+            key={`${scope}-${activeKey}`}
+            sectionKey={activeKey}
+            menu={menu}
+            pathname={pathname}
+            workspace={workspace}
+            product={product}
+            onNavigate={() => setMobile(false)}
+          />
+        ) : null}
       </>
     );
   }
+
   return (
-    <div className={`nxScope ${styles.shell} ${fontClassName || ""}`}>
+    <div className={`nxScope ${styles.shell} ${hasPanel ? "" : styles.shellNoPanel} ${fontClassName || ""}`}>
       <a href="#workspace-content" className="skip-to-content">
         Skip to workspace
       </a>
-      <aside className={styles.rail}>{navigation("desktop")}</aside>
+      <aside className={styles.sidebar}>{navigation("desktop")}</aside>
       <div className={styles.main}>
         <header className={styles.topbar}>
           <Dialog.Root open={mobile} onOpenChange={setMobile}>
             <Dialog.Trigger asChild>
-              <button
-                className={styles.mobileMenu}
-                type="button"
-                aria-label="Open workspace navigation"
-              >
+              <button className={styles.mobileMenu} type="button" aria-label="Open workspace navigation">
                 <Menu size={20} />
               </button>
             </Dialog.Trigger>
             <Dialog.Portal>
               <Dialog.Overlay className={styles.mobileOverlay} />
-              <Dialog.Content
-                className={`nxScope ${styles.mobilePanel}`}
-                aria-describedby={undefined}
-              >
-                <Dialog.Title className="sr-only">
-                  Workspace navigation
-                </Dialog.Title>
-                <Dialog.Close
-                  className={styles.mobileClose}
-                  aria-label="Close workspace navigation"
-                >
+              <Dialog.Content className={`nxScope ${styles.mobilePanel}`} aria-describedby={undefined}>
+                <Dialog.Title className="sr-only">Workspace navigation</Dialog.Title>
+                <Dialog.Close className={styles.mobileClose} aria-label="Close workspace navigation">
                   <X size={20} />
                 </Dialog.Close>
-                {navigation("mobile")}
+                <div className={styles.mobileBody}>{navigation("mobile")}</div>
               </Dialog.Content>
             </Dialog.Portal>
           </Dialog.Root>
@@ -338,36 +242,131 @@ export default function DashboardShell({
             aria-label="Search tools and pages"
           >
             <Search size={16} aria-hidden="true" />
-            <span className={styles.searchText}>Search your workspace</span>
+            <span className={styles.searchText}>Search tools and pages</span>
             <kbd className={styles.kbd}>⌘ K</kbd>
           </button>
           <div className={styles.topActions}>
-            <Link
-              href={action.href}
-              className={styles.newReport}
-              aria-label={action.label}
-            >
+            <Link href={action.href} className={styles.newReport} aria-label={action.label}>
               <Plus size={15} aria-hidden="true" />
               <span>{action.label}</span>
             </Link>
             <NotificationCenter />
-            <AccountMenu
-              email={sessionUser?.email}
-              initials={sessionUser?.initials}
-              product={product}
-            />
+            <AccountMenu email={sessionUser?.email} initials={sessionUser?.initials} product={product} />
           </div>
         </header>
-        <CommandPalette
-          open={searchOpen}
-          onClose={closeSearch}
-          returnFocusRef={searchTrigger}
-        />
+        <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} returnFocusRef={searchTrigger} />
         <main id="workspace-content" tabIndex={-1} className={styles.content}>
           <DashboardRouteIdentity />
           {children}
         </main>
       </div>
+    </div>
+  );
+}
+
+/** Contextual navigation for the active section, with a filter for long menus. */
+function SectionPanel({
+  sectionKey,
+  menu,
+  pathname,
+  workspace,
+  product,
+  onNavigate,
+}: {
+  sectionKey: RailKey;
+  menu: FlyoutMenu;
+  pathname: string;
+  workspace: string;
+  product: ProductLine | null;
+  onNavigate: () => void;
+}) {
+  const current = activeHref(menu, pathname);
+  const initial = useMemo(() => {
+    const open = new Set<string>();
+    const owner = menu.groups.find((group) => group.items.some((item) => item.href === current));
+    open.add(owner?.label ?? menu.groups[0]?.label ?? "");
+    return open;
+  }, [menu, current]);
+  const [open, setOpen] = useState<Set<string>>(initial);
+  const [query, setQuery] = useState("");
+  const needle = query.trim().toLowerCase();
+  const searching = needle.length > 0;
+  const long = menu.groups.reduce((sum, group) => sum + group.items.length, 0) > 14;
+
+  const groups = menu.groups
+    .map((group) => ({
+      ...group,
+      items: searching
+        ? group.items.filter((item) => `${item.label} ${item.description ?? ""}`.toLowerCase().includes(needle))
+        : group.items,
+    }))
+    .filter((group) => group.items.length > 0);
+
+  return (
+    <div className={styles.panel}>
+      <div className={styles.panelHead}>
+        <Link href={(ALL_RAILS.find((item) => item.key === sectionKey)?.href ?? "/dashboard") as Route} className={styles.panelTitle} onClick={onNavigate}>
+          {menu.title}
+        </Link>
+        <p className={styles.panelWorkspace} title={workspace || undefined}>
+          {workspace || (product ? PRODUCT_META[product].name : "Your workspace")}
+        </p>
+      </div>
+      {long ? (
+        <div className={styles.panelFilter}>
+          <Search size={14} aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={`Filter ${menu.title} tools`}
+            aria-label={`Filter ${menu.title} tools`}
+          />
+        </div>
+      ) : null}
+      <nav className={styles.panelNav} aria-label={`${menu.title} navigation`}>
+        {groups.length === 0 ? <p className={styles.panelEmpty}>No tools match “{query}”.</p> : null}
+        {groups.map((group) => {
+          const expanded = searching || open.has(group.label);
+          return (
+            <div key={group.label} className={styles.panelGroup}>
+              <button
+                type="button"
+                className={styles.groupToggle}
+                aria-expanded={expanded}
+                disabled={searching}
+                onClick={() =>
+                  setOpen((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(group.label)) next.delete(group.label);
+                    else next.add(group.label);
+                    return next;
+                  })
+                }
+              >
+                <span>{group.label}</span>
+                <ChevronDown size={14} className={expanded ? styles.chevronOpen : styles.chevron} aria-hidden="true" />
+              </button>
+              {expanded ? (
+                <ul className={styles.groupList}>
+                  {group.items.map((item) => (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={`${styles.panelLink} ${current === item.href ? styles.panelLinkActive : ""}`}
+                        aria-current={pathname === item.href ? "page" : undefined}
+                        onClick={onNavigate}
+                      >
+                        {item.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          );
+        })}
+      </nav>
     </div>
   );
 }
@@ -402,12 +401,7 @@ function AccountMenu({
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <button
-          type="button"
-          className={styles.userChip}
-          aria-label="Account menu"
-          title={email || "Account"}
-        >
+        <button type="button" className={styles.userChip} aria-label="Account menu" title={email || "Account"}>
           <span className={styles.userAvatar} aria-hidden="true">
             {initials || "N"}
           </span>
@@ -422,9 +416,7 @@ function AccountMenu({
         >
           <div className={styles.accountMenuHead}>
             <strong>{email || "Signed in"}</strong>
-            <small>
-              {product ? PRODUCT_META[product].name : "All Nuxtron products"}
-            </small>
+            <small>{product ? PRODUCT_META[product].name : "All Nuxtron products"}</small>
           </div>
           <DropdownMenu.Separator className={styles.accountMenuSeparator} />
           <DropdownMenu.Item asChild className={styles.accountMenuItem}>
@@ -450,9 +442,7 @@ function AccountMenu({
           <DropdownMenu.Item
             className={styles.accountMenuItem}
             disabled={leaving}
-            onSelect={() =>
-              leave(product ? PRODUCT_META[product].homePath : "/")
-            }
+            onSelect={() => leave(product ? PRODUCT_META[product].homePath : "/")}
           >
             <LogOut size={15} aria-hidden="true" />
             {leaving ? "Signing out…" : "Sign out"}

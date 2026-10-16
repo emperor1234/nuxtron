@@ -6,6 +6,8 @@ export type RouteIndexEntry = {
   title: string;
   section: string;
   group: string;
+  /** One-line summary shown in search results and section hubs. */
+  description: string;
   /** Alternate wording (mostly legacy nav labels) that should still match. */
   keywords: readonly string[];
   /** Internal engineering telemetry — excluded from customer search and nav. */
@@ -17,70 +19,72 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "route": "/account",
     "title": "Account Overview",
     "section": "settings",
-    "group": "General",
+    "group": "Account",
+    "description": "Plan and usage at a glance.",
     "keywords": []
   },
   {
     "route": "/account/orders",
-    "title": "Order Details",
+    "title": "Orders",
     "section": "settings",
     "group": "Account",
+    "description": "Purchase history.",
     "keywords": []
   },
   {
     "route": "/account/profile",
-    "title": "Personal Details",
+    "title": "Profile",
     "section": "settings",
     "group": "Account",
+    "description": "Your details.",
     "keywords": []
   },
   {
     "route": "/ads-generation",
-    "title": "AI ad generation",
-    "section": "apps",
-    "group": "General",
+    "title": "Paid Ad Creative",
+    "section": "studio",
+    "group": "Create",
+    "description": "Generate ad variations.",
     "keywords": []
   },
   {
     "route": "/affiliate",
-    "title": "Partner referrals",
+    "title": "Referral Program",
     "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/affiliate/dashboard",
-    "title": "Partner Performance",
-    "section": "apps",
-    "group": "Affiliate",
+    "group": "Partnerships",
+    "description": "Invite partners and track referrals.",
     "keywords": []
   },
   {
     "route": "/ai-search-impact-calculator",
-    "title": "AI search impact calculator",
-    "section": "apps",
-    "group": "General",
+    "title": "AI Search Impact",
+    "section": "seo",
+    "group": "AI search visibility",
+    "description": "Estimate the traffic impact of AI search.",
     "keywords": []
   },
   {
     "route": "/ai-visibility-dashboard",
-    "title": "AI crawler visibility",
-    "section": "apps",
-    "group": "General",
+    "title": "AI Crawler Visibility",
+    "section": "seo",
+    "group": "AI search visibility",
+    "description": "See which AI crawlers reach your sites.",
     "keywords": []
   },
   {
     "route": "/benchmarks",
-    "title": "Performance Benchmarks",
-    "section": "apps",
-    "group": "General",
+    "title": "Benchmarks",
+    "section": "seo",
+    "group": "Strategy & operations",
+    "description": "Compare your results against benchmarks.",
     "keywords": []
   },
   {
     "route": "/billing",
-    "title": "Billing & Credits",
+    "title": "Billing & Plans",
     "section": "settings",
-    "group": "General",
+    "group": "Account",
+    "description": "Plan, credits and invoices.",
     "keywords": []
   },
   {
@@ -88,27 +92,31 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "title": "Success",
     "section": "settings",
     "group": "Billing",
+    "description": "",
     "keywords": []
   },
   {
     "route": "/competitive-benchmarking",
     "title": "Competitive Benchmarking",
-    "section": "apps",
-    "group": "General",
+    "section": "seo",
+    "group": "Strategy & operations",
+    "description": "Record and compare competitor observations.",
     "keywords": []
   },
   {
     "route": "/content-generation",
-    "title": "AI Content Generation",
-    "section": "apps",
-    "group": "General",
+    "title": "Content Generator",
+    "section": "studio",
+    "group": "Create",
+    "description": "Generate long-form and short-form copy.",
     "keywords": []
   },
   {
     "route": "/crm",
     "title": "CRM",
     "section": "apps",
-    "group": "General",
+    "group": "Customer operations",
+    "description": "Contacts, companies and deals.",
     "keywords": []
   },
   {
@@ -116,27 +124,23 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "title": "Dashboard",
     "section": "dashboard",
     "group": "General",
+    "description": "",
     "keywords": []
   },
   {
     "route": "/disputes",
     "title": "Disputes",
     "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/media-processing",
-    "title": "Media Processing",
-    "section": "apps",
-    "group": "General",
+    "group": "Customer operations",
+    "description": "Open cases that need a human decision.",
     "keywords": []
   },
   {
     "route": "/playbooks",
     "title": "Integration Playbooks",
     "section": "apps",
-    "group": "General",
+    "group": "Customer operations",
+    "description": "Step-by-step integration guides.",
     "keywords": []
   },
   {
@@ -144,482 +148,359 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "title": "SEO",
     "section": "seo",
     "group": "General",
+    "description": "",
     "keywords": []
   },
   {
     "route": "/seo-analysis",
-    "title": "SEO Content Check",
-    "section": "apps",
-    "group": "General",
-    "keywords": []
-  },
-  {
-    "route": "/seo/accessibility",
-    "title": "Accessibility Audit",
+    "title": "Content Check",
     "section": "seo",
-    "group": "Accessibility & Media",
+    "group": "Strategy & operations",
+    "description": "Quick SEO check of a page or draft.",
     "keywords": []
   },
   {
     "route": "/seo/aeo",
-    "title": "AEO: Answer Engine Optimization",
+    "title": "Answer Engine (AEO)",
     "section": "seo",
-    "group": "Search Intelligence",
-    "keywords": []
-  },
-  {
-    "route": "/seo/agency-platform",
-    "title": "Agency Workspace Health",
-    "section": "seo",
-    "group": "SaaS Platform",
+    "group": "AI search visibility",
+    "description": "Shape content so answer engines can quote it.",
     "keywords": []
   },
   {
     "route": "/seo/agent",
-    "title": "Autonomous Agent Engine",
+    "title": "Autonomous Agent",
     "section": "seo",
-    "group": "Experience Optimization",
+    "group": "Strategy & operations",
+    "description": "Plan an SEO run and review the proposed steps.",
     "keywords": []
   },
   {
     "route": "/seo/aio",
-    "title": "AIO-2",
+    "title": "AI Overviews (AIO)",
     "section": "seo",
-    "group": "Search Intelligence",
-    "keywords": []
-  },
-  {
-    "route": "/seo/analytics",
-    "title": "Traffic Analytics",
-    "section": "seo",
-    "group": "Analytics & history",
-    "keywords": []
-  },
-  {
-    "route": "/seo/audience-intelligence",
-    "title": "Audience Intelligence",
-    "section": "seo",
-    "group": "SEO",
+    "group": "AI search visibility",
+    "description": "Score machine-readability for AI summaries.",
     "keywords": []
   },
   {
     "route": "/seo/backlink-intelligence",
-    "title": "Backlink Intelligence Engine",
+    "title": "Backlink Intelligence",
     "section": "seo",
-    "group": "Core Foundations",
+    "group": "Links",
+    "description": "Assess a backlink profile you provide.",
     "keywords": []
   },
   {
     "route": "/seo/brand-voice",
-    "title": "Brand Voice & Style Engine",
+    "title": "Brand Voice Rewrite",
     "section": "seo",
-    "group": "Content & Distribution",
-    "keywords": []
-  },
-  {
-    "route": "/seo/competitor",
-    "title": "SEO Competitor Research",
-    "section": "seo",
-    "group": "Search Intelligence",
-    "keywords": []
-  },
-  {
-    "route": "/seo/competitor-monitoring",
-    "title": "Competitor Activity Monitor",
-    "section": "seo",
-    "group": "Search Intelligence",
-    "keywords": []
-  },
-  {
-    "route": "/seo/content-auditor",
-    "title": "Content Review",
-    "section": "seo",
-    "group": "Monitoring & Observability",
+    "group": "Content & on-page",
+    "description": "Rewrite copy so it matches your brand voice.",
     "keywords": []
   },
   {
     "route": "/seo/content-brief",
-    "title": "Content Brief Generator",
+    "title": "Content Brief",
     "section": "seo",
-    "group": "SEO",
+    "group": "Content & on-page",
+    "description": "Build a brief with headings, questions and entities for a keyword.",
     "keywords": []
   },
   {
     "route": "/seo/content-creation-blogging",
-    "title": "Content Creation & Blogging Suite",
+    "title": "Content Planner",
     "section": "seo",
-    "group": "Core Foundations",
-    "keywords": []
-  },
-  {
-    "route": "/seo/crawl-budget",
-    "title": "Crawl Budget Review",
-    "section": "seo",
-    "group": "Monitoring & Observability",
+    "group": "Content & on-page",
+    "description": "Plan pillar topics and a publishing strategy for a blog.",
     "keywords": []
   },
   {
     "route": "/seo/cxao",
-    "title": "CXAO: Conversational Experience Answer Optimization",
+    "title": "Conversational (CXAO)",
     "section": "seo",
-    "group": "Experience Optimization",
+    "group": "AI search visibility",
+    "description": "Optimize for conversational experiences.",
     "keywords": []
   },
   {
     "route": "/seo/daeo",
-    "title": "DAEO",
+    "title": "Decentralized (DAEO)",
     "section": "seo",
-    "group": "Search Intelligence",
-    "keywords": []
-  },
-  {
-    "route": "/seo/domain-overview",
-    "title": "Domain Overview",
-    "section": "seo",
-    "group": "SEO",
+    "group": "AI search visibility",
+    "description": "Readiness for federated and decentralized search.",
     "keywords": []
   },
   {
     "route": "/seo/ecommerce",
-    "title": "eCommerce SEO Suite",
+    "title": "eCommerce SEO",
     "section": "seo",
-    "group": "Experience Optimization",
+    "group": "Content & on-page",
+    "description": "Optimize product and category page copy.",
     "keywords": []
   },
   {
     "route": "/seo/eeat",
-    "title": "E-E-A-T Optimization Suite",
+    "title": "E-E-A-T",
     "section": "seo",
-    "group": "Experience Optimization",
+    "group": "AI search visibility",
+    "description": "Score experience, expertise, authority and trust signals.",
     "keywords": []
   },
   {
     "route": "/seo/entity",
-    "title": "Entity-First SEO",
+    "title": "Entity SEO",
     "section": "seo",
-    "group": "Search Intelligence",
+    "group": "AI search visibility",
+    "description": "Analyze entity coverage and relationships.",
     "keywords": []
   },
   {
     "route": "/seo/geo",
-    "title": "GEO: Generative Engine Optimization",
+    "title": "Generative Engine (GEO)",
     "section": "seo",
-    "group": "Search Intelligence",
+    "group": "AI search visibility",
+    "description": "Optimize for citation in generative AI answers.",
     "keywords": []
   },
   {
     "route": "/seo/growth-playbooks",
-    "title": "Growth Playbooks Automation",
+    "title": "Growth Playbooks",
     "section": "seo",
-    "group": "Growth & Governance",
+    "group": "Strategy & operations",
+    "description": "Pick and sequence growth plays.",
     "keywords": []
   },
   {
     "route": "/seo/gxo",
-    "title": "GXO",
+    "title": "Google AI (GXO)",
     "section": "seo",
-    "group": "Search Intelligence",
+    "group": "AI search visibility",
+    "description": "Estimate readiness for AI Overview citations.",
     "keywords": []
   },
   {
     "route": "/seo/history",
-    "title": "SEO Analysis History",
+    "title": "Analysis History",
     "section": "seo",
-    "group": "Analytics & history",
-    "keywords": []
-  },
-  {
-    "route": "/seo/integrations-automation",
-    "title": "Integrations & Automation Layer",
-    "section": "seo",
-    "group": "SaaS Platform",
+    "group": "Strategy & operations",
+    "description": "Every analysis you have run.",
     "keywords": []
   },
   {
     "route": "/seo/internal-linking",
-    "title": "AI Internal Linking Engine",
+    "title": "Internal Linking",
     "section": "seo",
-    "group": "Monitoring & Observability",
-    "keywords": []
-  },
-  {
-    "route": "/seo/international-multilingual",
-    "title": "Hreflang & Locale Review",
-    "section": "seo",
-    "group": "International SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/keywords",
-    "title": "Keyword Data Review",
-    "section": "seo",
-    "group": "Research & visibility",
-    "keywords": []
-  },
-  {
-    "route": "/seo/knowledge-graph",
-    "title": "Entity Graph Planner",
-    "section": "seo",
-    "group": "Monitoring & Observability",
+    "group": "Content & on-page",
+    "description": "Suggest internal links between your pages.",
     "keywords": []
   },
   {
     "route": "/seo/landing",
     "title": "Landing Page Brief",
     "section": "seo",
-    "group": "Content & Distribution",
+    "group": "Content & on-page",
+    "description": "Generate a conversion-focused landing page brief.",
     "keywords": []
   },
   {
     "route": "/seo/linkbuilding",
-    "title": "Autonomous Link Building",
+    "title": "Link Building",
     "section": "seo",
-    "group": "Expansion Modules",
+    "group": "Links",
+    "description": "Plan outreach and link opportunities.",
     "keywords": []
   },
   {
     "route": "/seo/llmo",
-    "title": "LLMO",
+    "title": "LLM Optimization (LLMO)",
     "section": "seo",
-    "group": "Search Intelligence",
+    "group": "AI search visibility",
+    "description": "Check how language models represent your brand.",
     "keywords": []
   },
   {
     "route": "/seo/log-file",
-    "title": "Log File Analysis Engine",
+    "title": "Log File Analysis",
     "section": "seo",
-    "group": "Content & Distribution",
-    "keywords": []
-  },
-  {
-    "route": "/seo/market-explorer",
-    "title": "Market Explorer",
-    "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/media",
-    "title": "Media Markup Review",
-    "section": "seo",
-    "group": "Accessibility & Media",
+    "group": "Strategy & operations",
+    "description": "Analyze server log lines you provide.",
     "keywords": []
   },
   {
     "route": "/seo/msvo",
-    "title": "MSVO",
+    "title": "Multi-surface (MSVO)",
     "section": "seo",
-    "group": "Search Intelligence",
+    "group": "AI search visibility",
+    "description": "Visibility across search surfaces.",
     "keywords": []
   },
   {
     "route": "/seo/multi-channel-activation",
-    "title": "Multi-Channel Activation Loop",
+    "title": "Multi-Channel Activation",
     "section": "seo",
-    "group": "Growth & Governance",
+    "group": "Strategy & operations",
+    "description": "Reuse SEO content across channels.",
     "keywords": []
   },
   {
     "route": "/seo/news-discover",
-    "title": "News SEO & Google Discover",
+    "title": "News & Discover",
     "section": "seo",
-    "group": "SaaS Platform",
+    "group": "AI search visibility",
+    "description": "Readiness for news and Discover surfaces.",
     "keywords": []
   },
   {
     "route": "/seo/on-page",
     "title": "On-Page Optimizer",
     "section": "seo",
-    "group": "SEO",
+    "group": "Content & on-page",
+    "description": "Score a page against a focus keyword and get prioritized fixes.",
     "keywords": []
   },
   {
     "route": "/seo/peao",
-    "title": "PEAO",
+    "title": "Predictive (PEAO)",
     "section": "seo",
-    "group": "Search Intelligence",
-    "keywords": []
-  },
-  {
-    "route": "/seo/pla-research",
-    "title": "PLA Research",
-    "section": "seo",
-    "group": "SEO",
+    "group": "AI search visibility",
+    "description": "Forecast volatility and ranking risk.",
     "keywords": []
   },
   {
     "route": "/seo/planner",
     "title": "SEO Workflow Planner",
     "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/programmatic",
-    "title": "Programmatic SEO Draft Preview",
-    "section": "seo",
-    "group": "Experience Optimization",
+    "group": "Strategy & operations",
+    "description": "Turn a goal into an ordered SEO plan.",
     "keywords": []
   },
   {
     "route": "/seo/prompt-research",
     "title": "Prompt Research",
     "section": "seo",
-    "group": "SEO",
-    "keywords": []
-  },
-  {
-    "route": "/seo/rag-search",
-    "title": "Corpus Search Preview",
-    "section": "seo",
-    "group": "Search Intelligence",
-    "keywords": []
-  },
-  {
-    "route": "/seo/rank-tracking",
-    "title": "Rank Position Review",
-    "section": "seo",
-    "group": "Core Foundations",
-    "keywords": []
-  },
-  {
-    "route": "/seo/realtime-monitoring",
-    "title": "Search Observation Log",
-    "section": "seo",
-    "group": "Monitoring & Observability",
+    "group": "AI search visibility",
+    "description": "Research the prompts people ask AI about your topic.",
     "keywords": []
   },
   {
     "route": "/seo/revenue-attribution",
     "title": "Revenue Attribution",
     "section": "seo",
-    "group": "Growth & Governance",
+    "group": "Strategy & operations",
+    "description": "Attribute revenue to organic channels.",
     "keywords": []
   },
   {
     "route": "/seo/sageo",
-    "title": "SAGEO",
+    "title": "Search Intent (SAGEO)",
     "section": "seo",
-    "group": "Search Intelligence",
+    "group": "AI search visibility",
+    "description": "Map intent and generative-search readiness.",
     "keywords": []
   },
   {
     "route": "/seo/schemas",
-    "title": "AI Schema Engine",
+    "title": "Schema Generator",
     "section": "seo",
-    "group": "Schema & Optimization",
-    "keywords": []
-  },
-  {
-    "route": "/seo/security",
-    "title": "Security Header Review",
-    "section": "seo",
-    "group": "Accessibility & Media",
+    "group": "Content & on-page",
+    "description": "Generate JSON-LD structured data for a page.",
     "keywords": []
   },
   {
     "route": "/seo/seo-ab-testing",
-    "title": "SEO A/B Testing Framework",
+    "title": "A/B Test Design",
     "section": "seo",
-    "group": "Experience Optimization",
+    "group": "Strategy & operations",
+    "description": "Design SEO experiments you can run.",
     "keywords": []
   },
   {
     "route": "/seo/seo-ai",
-    "title": "SEO-AI",
+    "title": "AI SEO Assistant",
     "section": "seo",
-    "group": "Search Intelligence",
+    "group": "AI search visibility",
+    "description": "Keyword opportunities and content guidance from a seed topic.",
     "keywords": []
   },
   {
     "route": "/seo/site-migration",
-    "title": "Site Migration SEO Manager",
+    "title": "Site Migration",
     "section": "seo",
-    "group": "Expansion Modules",
-    "keywords": []
-  },
-  {
-    "route": "/seo/social",
-    "title": "Social Share Preview",
-    "section": "seo",
-    "group": "Content & Distribution",
+    "group": "Strategy & operations",
+    "description": "Plan redirects and risk for a migration.",
     "keywords": []
   },
   {
     "route": "/seo/sxo",
-    "title": "SXO",
+    "title": "Search Experience (SXO)",
     "section": "seo",
-    "group": "Search Intelligence",
-    "keywords": []
-  },
-  {
-    "route": "/seo/technical",
-    "title": "Technical SEO Audit",
-    "section": "seo",
-    "group": "Monitoring & Observability",
+    "group": "AI search visibility",
+    "description": "Align page experience with search intent.",
     "keywords": []
   },
   {
     "route": "/seo/topical-map",
-    "title": "Topical Map & Silo Builder",
+    "title": "Topical Map",
     "section": "seo",
-    "group": "Content & Distribution",
-    "keywords": []
-  },
-  {
-    "route": "/seo/trust-risk-governance",
-    "title": "Trust & Risk Governance",
-    "section": "seo",
-    "group": "Growth & Governance",
+    "group": "Content & on-page",
+    "description": "Cluster a topic into pillar and supporting pages.",
     "keywords": []
   },
   {
     "route": "/seo/ux",
-    "title": "UX & Conversion Optimizer",
+    "title": "UX & Conversion",
     "section": "seo",
-    "group": "Schema & Optimization",
+    "group": "AI search visibility",
+    "description": "Audit above-the-fold experience and conversion paths.",
     "keywords": []
   },
   {
     "route": "/seo/video",
-    "title": "Video SEO Module",
+    "title": "Video SEO",
     "section": "seo",
-    "group": "Expansion Modules",
+    "group": "Content & on-page",
+    "description": "Optimize video titles, descriptions and chapters.",
     "keywords": []
   },
   {
     "route": "/seo/vso",
-    "title": "VSO",
+    "title": "Voice Search (VSO)",
     "section": "seo",
-    "group": "Search Intelligence",
+    "group": "AI search visibility",
+    "description": "Optimize for spoken and assistant queries.",
     "keywords": []
   },
   {
     "route": "/seo/writer",
     "title": "AI Article Writer",
     "section": "seo",
-    "group": "SEO",
+    "group": "Content & on-page",
+    "description": "Draft an SEO article from a topic, keyword and outline.",
     "keywords": []
   },
   {
     "route": "/smart-inbox",
     "title": "Customer Inbox",
     "section": "apps",
-    "group": "General",
+    "group": "Customer operations",
+    "description": "Customer messages with suggested replies.",
     "keywords": []
   },
   {
     "route": "/social-listening",
     "title": "Social Listening",
-    "section": "apps",
-    "group": "General",
+    "section": "social",
+    "group": "Listen & measure",
+    "description": "Track keywords and mentions.",
     "keywords": []
   },
   {
     "route": "/social-media-roi",
     "title": "Social Media ROI",
-    "section": "apps",
-    "group": "General",
+    "section": "social",
+    "group": "Listen & measure",
+    "description": "Connect social activity to revenue.",
     "keywords": []
   },
   {
@@ -627,174 +508,95 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "title": "Studio",
     "section": "studio",
     "group": "General",
+    "description": "",
     "keywords": []
   },
   {
     "route": "/studio/agent-analytics",
     "title": "Agent Analytics",
     "section": "studio",
-    "group": "Studio",
+    "group": "Operate & measure",
+    "description": "AI crawler and agent activity.",
     "keywords": []
   },
   {
     "route": "/studio/analytics",
-    "title": "Live KPI & Platform Dashboards",
+    "title": "Studio Analytics",
     "section": "studio",
-    "group": "Studio",
+    "group": "Operate & measure",
+    "description": "Output and performance.",
     "keywords": []
   },
   {
     "route": "/studio/answer-engine",
     "title": "Answer Engine Hub",
     "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/avatar-builder",
-    "title": "🧑‍💻 Avatar Builder",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/backlink-intelligence",
-    "title": "Backlink Intelligence",
-    "section": "studio",
-    "group": "Studio",
+    "group": "Operate & measure",
+    "description": "Answer-engine content readiness.",
     "keywords": []
   },
   {
     "route": "/studio/brand-kit",
     "title": "Brand Kit",
     "section": "studio",
-    "group": "Studio",
+    "group": "Brand & content",
+    "description": "Colors, fonts and logos.",
     "keywords": []
   },
   {
     "route": "/studio/brands",
-    "title": "Brand Hub",
+    "title": "Brands",
     "section": "studio",
-    "group": "Studio",
+    "group": "Brand & content",
+    "description": "Manage brands and their assets.",
     "keywords": []
   },
   {
     "route": "/studio/cdn-analytics",
     "title": "CDN Analytics",
     "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/content-hub",
-    "title": "AI Content Hub",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/content-hub/ab-testing",
-    "title": "A/B Testing Engine",
-    "section": "studio",
-    "group": "Content Hub",
+    "group": "Operate & measure",
+    "description": "Delivery performance.",
     "keywords": []
   },
   {
     "route": "/studio/content-hub/brand-hierarchy",
     "title": "Brand Hierarchy",
     "section": "studio",
-    "group": "Content Hub",
+    "group": "Brand & content",
+    "description": "Organize parent and sub-brands.",
     "keywords": []
   },
   {
     "route": "/studio/content-hub/brand-voice",
-    "title": "Brand Voice DNA",
+    "title": "Brand Voice",
     "section": "studio",
-    "group": "Content Hub",
-    "keywords": []
-  },
-  {
-    "route": "/studio/content-hub/repurpose",
-    "title": "Content Repurposer",
-    "section": "studio",
-    "group": "Content Hub",
-    "keywords": []
-  },
-  {
-    "route": "/studio/content-hub/roi-forecast",
-    "title": "ROI Forecaster",
-    "section": "studio",
-    "group": "Content Hub",
+    "group": "Brand & content",
+    "description": "Define how your brand sounds.",
     "keywords": []
   },
   {
     "route": "/studio/content-hub/word-cloud",
-    "title": "Keyword Intelligence",
+    "title": "Keyword Tracker",
     "section": "studio",
-    "group": "Content Hub",
+    "group": "Operate & measure",
+    "description": "Track the keywords you care about.",
     "keywords": []
   },
   {
     "route": "/studio/copywriter",
-    "title": "Copywriter",
+    "title": "AI Copywriter",
     "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/editor",
-    "title": "Editor",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/faceless-video-engine",
-    "title": "🤖 Faceless Video Engine",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/image-direction",
-    "title": "Image Direction",
-    "section": "studio",
-    "group": "Studio",
+    "group": "Create",
+    "description": "Marketing copy in your brand voice.",
     "keywords": []
   },
   {
     "route": "/studio/image-studio",
-    "title": "AI Image Studio",
+    "title": "Image Studio",
     "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/intelligence",
-    "title": "Intelligence",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/multilingual-ads",
-    "title": "Multilingual Ads",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/reels-factory",
-    "title": "Reels Factory",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/short-video-factory",
-    "title": "Short Video Factory",
-    "section": "studio",
-    "group": "Studio",
+    "group": "Create",
+    "description": "Generate and edit images.",
     "keywords": []
   },
   {
@@ -802,237 +604,161 @@ export const ROUTE_INDEX: readonly RouteIndexEntry[] = [
     "title": "Social Studio",
     "section": "social",
     "group": "Studio",
+    "description": "",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/accounts",
-    "title": "Social Media Accounts",
+    "title": "Connected Accounts",
     "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/ads",
-    "title": "Paid Social Advertising",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/advocacy",
-    "title": "Employee Advocacy",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/analytics",
-    "title": "Analytics & KPIs",
-    "section": "social",
-    "group": "Social Studio",
+    "group": "Setup",
+    "description": "Connect and manage social accounts.",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/approvals",
     "title": "Content Approvals",
     "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/audience",
-    "title": "Audience Insights",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/automation",
-    "title": "Automation Engine",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/best-time",
-    "title": "Best Time to Post",
-    "section": "social",
-    "group": "Social Studio",
+    "group": "Engage",
+    "description": "Route posts through reviewers before publishing.",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/browser-capture",
-    "title": "Browser Capture Pipeline",
+    "title": "Browser Capture",
     "section": "social",
-    "group": "Social Studio",
+    "group": "Setup",
+    "description": "Capture content from the web into drafts.",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/bulk-schedule",
-    "title": "Bulk Scheduler",
+    "title": "Bulk Import",
     "section": "social",
-    "group": "Social Studio",
+    "group": "Publish",
+    "description": "Plan many posts at once from a file.",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/calendar",
     "title": "Content Calendar",
     "section": "social",
-    "group": "Social Studio",
+    "group": "Publish",
+    "description": "See planned posts by day and move them.",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/community",
     "title": "Comment Replies",
     "section": "social",
-    "group": "Social Studio",
+    "group": "Engage",
+    "description": "Reply to comments with saved responses.",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/ideas",
-    "title": "Ideas &amp; Drafts",
+    "title": "Ideas & Drafts",
     "section": "social",
-    "group": "Social Studio",
+    "group": "Publish",
+    "description": "Capture ideas and turn them into drafts.",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/inbox",
-    "title": "Smart Inbox",
+    "title": "Social Inbox",
     "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/influencers",
-    "title": "Influencer CRM",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/link-in-bio",
-    "title": "Link In Bio Commerce",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/optimization",
-    "title": "AI Optimization",
-    "section": "social",
-    "group": "Social Studio",
+    "group": "Engage",
+    "description": "Messages and comments in one place.",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/posts",
-    "title": "Social Posts",
+    "title": "Post Planner",
     "section": "social",
-    "group": "Social Studio",
+    "group": "Publish",
+    "description": "Plan posts and keep them in one list.",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/queue",
-    "title": "Publishing Queue",
+    "title": "Content Queue",
     "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/reports",
-    "title": "Report Builder",
-    "section": "social",
-    "group": "Social Studio",
+    "group": "Publish",
+    "description": "What is planned next, grouped by day.",
     "keywords": []
   },
   {
     "route": "/studio/social-studio/streams",
     "title": "Monitoring Streams",
     "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/social-studio/trends",
-    "title": "Social Trends & Intelligence",
-    "section": "social",
-    "group": "Social Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/team",
-    "title": "Team & Roles",
-    "section": "studio",
-    "group": "Studio",
-    "keywords": []
-  },
-  {
-    "route": "/studio/template-system",
-    "title": "Template System",
-    "section": "studio",
-    "group": "Studio",
+    "group": "Listen & measure",
+    "description": "Live feeds for accounts and topics.",
     "keywords": []
   },
   {
     "route": "/studio/workspace",
-    "title": "Workspace",
+    "title": "Brand Profile",
     "section": "studio",
-    "group": "Studio",
+    "group": "Operate & measure",
+    "description": "Business details, tone, keywords and colors.",
     "keywords": []
   },
   {
     "route": "/trust-center",
     "title": "Trust Center",
     "section": "apps",
-    "group": "General",
+    "group": "Trust",
+    "description": "Policies, approvals and audit trail.",
     "keywords": []
   },
   {
     "route": "/workflows",
     "title": "Workflows",
     "section": "apps",
-    "group": "General",
+    "group": "Customer operations",
+    "description": "Automations across your tools.",
     "keywords": []
   }
 ];
 
 /** Routes that only re-export or redirect to a canonical page. */
 export const ROUTE_ALIASES: Readonly<Record<string, string>> = {
-  "/studio/lately": "/studio/content-hub",
+  "/studio/lately": "/studio",
   "/studio/prompt-volumes": "/seo/prompt-research",
   "/buffer-create": "/studio/social-studio/ideas",
   "/buffer-publish": "/studio/social-studio/queue",
   "/buffer-community": "/studio/social-studio/community",
-  "/buffer-analyze": "/studio/social-studio/audience",
-  "/buffer-collaborate": "/studio/team",
-  "/buffer-startpage": "/studio/social-studio/link-in-bio",
+  "/buffer-analyze": "/studio/social-studio",
+  "/buffer-collaborate": "/studio",
+  "/buffer-startpage": "/studio/social-studio",
   "/platform/owly-writer-ai": "/studio/copywriter",
   "/social-scheduling": "/studio/social-studio/posts",
   "/studio/scheduler": "/studio/social-studio/posts",
   "/reviews": "/studio/social-studio",
   "/seo/reviews": "/seo",
   "/studio/social-studio/reviews": "/studio/social-studio",
-  "/seo/one2target": "/seo/audience-intelligence",
-  "/airanklab/wiring": "/seo/integrations-automation",
+  "/seo/one2target": "/seo",
+  "/airanklab/wiring": "/seo",
   "/hubspot-e2e": "/crm",
-  "/seo/ai-content-grader": "/seo/content-auditor",
+  "/seo/ai-content-grader": "/seo",
   "/seo/ai-content-helper": "/seo/content-creation-blogging",
-  "/seo/bot-analytics": "/seo/realtime-monitoring",
-  "/seo/brand-radar": "/seo/realtime-monitoring",
+  "/seo/bot-analytics": "/seo",
+  "/seo/brand-radar": "/seo",
   "/seo/content-explorer": "/seo/content-creation-blogging",
   "/seo/custom-prompts": "/seo/planner",
   "/seo/dashboard": "/dashboard",
-  "/seo/eyeon": "/seo/competitor-monitoring",
+  "/seo/eyeon": "/seo",
   "/seo/gbp-monitor": "/seo",
   "/seo/local": "/seo",
   "/seo/local-seo": "/seo",
   "/seo/local-heatmap": "/seo",
   "/seo/map-rank-tracker": "/seo",
   "/seo/gsc-insights": "/seo/history",
-  "/seo/keywords-explorer": "/seo/keywords",
+  "/seo/keywords-explorer": "/seo",
   "/seo/nsvo": "/seo/msvo",
-  "/seo/patches": "/seo/technical",
-  "/seo/portfolios": "/seo/agency-platform",
-  "/seo/rank-tracker": "/seo/rank-tracking",
+  "/seo/patches": "/seo",
+  "/seo/portfolios": "/seo",
+  "/seo/rank-tracker": "/seo",
   "/seo/report-builder": "/seo",
   "/seo/client-portal": "/seo",
   "/seo/performance": "/seo",
@@ -1054,39 +780,39 @@ export const ROUTE_ALIASES: Readonly<Record<string, string>> = {
   "/seo/ads-metrics": "/seo",
   "/seo/ads-kpis": "/seo",
   "/seo/ads-smart-schedule": "/seo",
-  "/seo/site-audit": "/seo/technical",
-  "/seo/site-explorer": "/seo/domain-overview",
+  "/seo/site-audit": "/seo",
+  "/seo/site-explorer": "/seo",
   "/seo/social-media-manager": "/studio/social-studio",
-  "/seo/web-analytics": "/seo/analytics",
+  "/seo/web-analytics": "/seo",
   "/studio/ar-experience-studio": "/studio/social-studio",
   "/studio/blog-studio": "/studio/social-studio",
   "/studio/editing-suite": "/studio/social-studio",
   "/studio/hologram-stage": "/studio/social-studio",
   "/studio/image-slider": "/studio/social-studio",
-  "/studio/keyword-research": "/seo/keywords",
-  "/studio/rank-tracker": "/seo/rank-tracking",
+  "/studio/keyword-research": "/seo",
+  "/studio/rank-tracker": "/seo",
   "/studio/music-generator": "/studio/social-studio",
   "/studio/social-accounts": "/studio/social-studio/accounts",
-  "/studio/social-ads": "/studio/social-studio/ads",
-  "/studio/social-advocacy": "/studio/social-studio/advocacy",
-  "/studio/social-analytics": "/studio/social-studio/analytics",
+  "/studio/social-ads": "/studio/social-studio",
+  "/studio/social-advocacy": "/studio/social-studio",
+  "/studio/social-analytics": "/studio/social-studio",
   "/studio/social-approvals": "/studio/social-studio/approvals",
-  "/studio/social-automation": "/studio/social-studio/automation",
-  "/studio/social-studio/manychat": "/studio/social-studio/automation",
+  "/studio/social-automation": "/studio/social-studio",
+  "/studio/social-studio/manychat": "/studio/social-studio",
   "/studio/social-studio/mobile": "/studio/social-studio",
-  "/studio/social-best-time": "/studio/social-studio/best-time",
+  "/studio/social-best-time": "/studio/social-studio",
   "/studio/social-bulk-schedule": "/studio/social-studio/bulk-schedule",
   "/studio/social-calendar": "/studio/social-studio/calendar",
   "/studio/social-inbox": "/studio/social-studio/inbox",
-  "/studio/social-influencers": "/studio/social-studio/influencers",
-  "/studio/social-link-in-bio": "/studio/social-studio/link-in-bio",
+  "/studio/social-influencers": "/studio/social-studio",
+  "/studio/social-link-in-bio": "/studio/social-studio",
   "/studio/social-listening": "/social-listening",
   "/studio/social-studio/listening": "/social-listening",
   "/studio/social-posts": "/studio/social-studio/posts",
-  "/studio/social-reports": "/studio/social-studio/reports",
+  "/studio/social-reports": "/studio/social-studio",
   "/studio/social-reviews": "/studio/social-studio",
   "/studio/social-streams": "/studio/social-studio/streams",
-  "/studio/social-trends": "/studio/social-studio/trends",
+  "/studio/social-trends": "/studio/social-studio",
   "/studio/social-ugc": "/studio/social-studio",
   "/studio/social-studio/ugc": "/studio/social-studio",
   "/studio/sound-design": "/studio/social-studio",
@@ -1102,7 +828,59 @@ export const ROUTE_ALIASES: Readonly<Record<string, string>> = {
   "/studio/seo-suite": "/seo",
   "/studio/growth-suite": "/studio",
   "/seo/contentshake": "/content-generation",
-  "/seo-aeo-geo-audit-tool": "/seo/technical",
+  "/seo-aeo-geo-audit-tool": "/seo",
   "/studio/workflow-orchestrator": "/workflows",
-  "/vse": "/studio"
+  "/vse": "/studio",
+  "/seo/accessibility": "/seo",
+  "/seo/agency-platform": "/seo",
+  "/seo/analytics": "/seo",
+  "/seo/audience-intelligence": "/seo",
+  "/seo/competitor": "/seo",
+  "/seo/competitor-monitoring": "/seo",
+  "/seo/crawl-budget": "/seo",
+  "/seo/domain-overview": "/seo",
+  "/seo/integrations-automation": "/seo",
+  "/seo/international-multilingual": "/seo",
+  "/seo/keywords": "/seo",
+  "/seo/knowledge-graph": "/seo",
+  "/seo/market-explorer": "/seo",
+  "/seo/media": "/seo",
+  "/seo/pla-research": "/seo",
+  "/seo/rag-search": "/seo",
+  "/seo/rank-tracking": "/seo",
+  "/seo/realtime-monitoring": "/seo",
+  "/seo/security": "/seo",
+  "/seo/social": "/seo",
+  "/seo/technical": "/seo",
+  "/seo/trust-risk-governance": "/seo",
+  "/media-processing": "/dashboard",
+  "/studio/backlink-intelligence": "/studio",
+  "/studio/social-studio/audience": "/studio/social-studio",
+  "/studio/social-studio/best-time": "/studio/social-studio",
+  "/seo/modules": "/seo",
+  "/seo/content-auditor": "/seo",
+  "/seo/programmatic": "/seo",
+  "/studio/social-studio/influencers": "/studio/social-studio",
+  "/studio/social-studio/trends": "/studio/social-studio",
+  "/studio/social-studio/optimization": "/studio/social-studio",
+  "/studio/social-studio/ads": "/studio/social-studio",
+  "/studio/social-studio/reports": "/studio/social-studio",
+  "/studio/social-studio/link-in-bio": "/studio/social-studio",
+  "/studio/social-studio/advocacy": "/studio/social-studio",
+  "/studio/social-studio/analytics": "/studio/social-studio",
+  "/studio/social-studio/automation": "/studio/social-studio",
+  "/studio/short-video-factory": "/studio",
+  "/studio/reels-factory": "/studio",
+  "/studio/faceless-video-engine": "/studio",
+  "/studio/avatar-builder": "/studio",
+  "/studio/image-direction": "/studio",
+  "/studio/multilingual-ads": "/studio",
+  "/studio/template-system": "/studio",
+  "/studio/editor": "/studio",
+  "/studio/team": "/studio",
+  "/studio/content-hub/repurpose": "/studio",
+  "/studio/content-hub/roi-forecast": "/studio",
+  "/studio/content-hub/ab-testing": "/studio",
+  "/studio/content-hub": "/studio",
+  "/studio/intelligence": "/studio"
 };

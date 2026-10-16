@@ -93,75 +93,8 @@ STATE = _ManychatState()
 
 
 def _seed_defaults(tenant_id: str) -> None:
-    with STATE.lock:
-        if not any(item.get('tenant_id') == tenant_id for item in STATE.tags):
-            STATE.tags.extend(
-                [
-                    {
-                        'id': len(STATE.tags) + 1,
-                        'tenant_id': tenant_id,
-                        'name': 'Lead',
-                        'color': '#16a34a',
-                        'created_at': _utc_now(),
-                    },
-                    {
-                        'id': len(STATE.tags) + 2,
-                        'tenant_id': tenant_id,
-                        'name': 'VIP',
-                        'color': '#f59e0b',
-                        'created_at': _utc_now(),
-                    },
-                ]
-            )
-
-        if not any(item.get('tenant_id') == tenant_id for item in STATE.segments):
-            STATE.segments.append(
-                {
-                    'id': len(STATE.segments) + 1,
-                    'tenant_id': tenant_id,
-                    'name': 'New Leads (7d)',
-                    'description': 'Contacts tagged Lead in the last 7 days',
-                    'conditions': [
-                        {'field': 'tag', 'operator': 'contains', 'value': 'Lead'},
-                        {'field': 'created_at', 'operator': 'gte_days_ago', 'value': 7},
-                    ],
-                    'created_at': _utc_now(),
-                }
-            )
-
-        if not any(item.get('tenant_id') == tenant_id for item in STATE.keywords):
-            lead_tag = next((item for item in STATE.tags if item.get('tenant_id') == tenant_id and item.get('name') == 'Lead'), None)
-            STATE.keywords.append(
-                {
-                    'id': len(STATE.keywords) + 1,
-                    'tenant_id': tenant_id,
-                    'keyword': 'demo',
-                    'channel': 'instagram',
-                    'reply_text': 'Thanks for your interest. We sent the demo details via DM.',
-                    'assign_tag_ids': [int(lead_tag['id'])] if lead_tag else [],
-                    'created_at': _utc_now(),
-                }
-            )
-
-        if not any(item.get('tenant_id') == tenant_id for item in STATE.flows):
-            STATE.flows.append(
-                {
-                    'id': len(STATE.flows) + 1,
-                    'tenant_id': tenant_id,
-                    'name': 'IG Demo Request Flow',
-                    'channel': 'instagram',
-                    'trigger_type': 'keyword',
-                    'trigger_value': 'demo',
-                    'steps': [
-                        {'type': 'message', 'text': 'Welcome! Tell us your use case.'},
-                        {'type': 'tag', 'name': 'Lead'},
-                        {'type': 'notify', 'target': 'sales_queue'},
-                    ],
-                    'status': 'active',
-                    'created_at': _utc_now(),
-                    'updated_at': _utc_now(),
-                }
-            )
+    # Demo data is never created for a workspace; records exist only once a user or a connected provider creates them.
+    return
 
 
 def create_social_manychat_router() -> APIRouter:  # noqa: C901
